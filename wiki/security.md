@@ -28,7 +28,14 @@ studios, writes to suspended studios, sequence grants.
 
 Not fixed, by decision: see [open-items.md](open-items.md).
 
+## Review of the client portal and studio dashboard
+
+No finding. The studio activity endpoint answers 403 to anyone who is not a member of an active
+studio with that id, whether or not the studio exists, and returns no actor ids, tokens or emails.
+A client's plan is drawn as SVG in the designer's browser from values the backend schema bounds as
+finite numbers and fixed literals.
+
 ## Every stage
 
-Run the `security-review` skill on pending changes before each commit (`CLAUDE.md`, step 6), and add
+Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add
 the outcome here and to [log.md](log.md).

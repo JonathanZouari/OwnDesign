@@ -22,12 +22,13 @@ Talk to the user in Hebrew. Code, UI text, docs and commit messages are in Engli
    - **Edge cases:** new tests for the change's boundaries: empty, minimum and maximum values, invalid
      and malformed input, wrong role or wrong studio, repeated and concurrent requests.
    Report the real results. A failing or skipped test is reported as such, never hidden.
-6. **Security review at every stage.** Run the `security-review` skill on the pending changes after
-   each implementation step and before its commit, and review the plan itself when it touches auth,
-   tenant isolation, secrets or user data. Fix critical and high findings before committing; record
-   the rest in `wiki/open-items.md`.
-7. **Commit whenever a piece of code writing is finished.** Small commits on `dev`, format
+6. **Commit whenever a piece of code writing is finished.** Small commits on `dev`, format
    `<type>: <description>` (feat, fix, refactor, docs, test, chore, perf, ci). No attribution lines.
+7. **Security review at every stage.** Run the `security-review` skill after each implementation
+   step, once its commits exist locally and before anything is pushed: the skill reviews the
+   branch's commits against `origin/main`, so it does not see uncommitted work. Review the plan
+   itself when it touches auth, tenant isolation, secrets or user data. Fix critical and high
+   findings before pushing; record the rest in `wiki/open-items.md`.
 8. **Update the wiki** (rules below), commit it, and push `dev` to GitHub. The task is not done until
    the wiki is pushed.
 

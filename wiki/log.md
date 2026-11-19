@@ -46,3 +46,43 @@ Working rules (plan first, Fable 5.2, E2E + regression + edge tests, security re
 commit per finished piece of code, subagents for specialist work) and the wiki seeded from Phase 1.
 Model pinned in `.claude/settings.json`.
 Pages: all.
+
+## [2026-11-19] design | All Stitch screens pulled and compared with the app
+The Stitch project had grown to eight screens; only two had been pulled. All eight (HTML and a
+preview each) and two generated images are now in `design/stitch/`. Wizard and canvas were unchanged
+in Stitch. The Stitch PRD document is a shortened copy of the repository PRD with nothing new.
+Commit `c01e476`. Pages: [design](design.md).
+
+## [2026-11-19] plan | Integrate the two Phase 1 screens, keep four as reference
+Approved by the user: build the client portal and the studio dashboard now with real data only; keep
+branding, dossier, AI consultant and renderings as design references until their phases.
+Pages: [decisions](decisions.md), [open-items](open-items.md).
+
+## [2026-11-19] build | Studio activity endpoint
+`GET /v1/studios/{id}/audit`: latest 10 audit events, members only, read under RLS, metadata limited
+to `version_no` and `author_role`. Test written first. Commit `faec162`.
+Pages: [architecture](architecture.md).
+
+## [2026-11-19] build | Client portal and studio dashboard rebuilt from Stitch
+Built by the `ux-ui-designer` subagent. Portal: guest or account access, wizard or blank canvas,
+invite greeting. Dashboard: metrics, project cards with plan thumbnails, search, invites, recent
+activity. Code review (no critical or high) led to: a confirmation before a blank canvas replaces a
+draft, previews loaded as cards come into view instead of for the first 12 only, invites shown from
+the create response, and a fix for sidebar icons clipped by a descendant selector (wizard and editor
+were affected too). Commit `173e359`. Pages: [design](design.md), [overview](overview.md).
+
+## [2026-11-19] test | Portal and dashboard verified
+Backend 43 passed, including 3 browser journeys; frontend 17 passed. New edge tests found a real
+bug before commit: a long unbroken studio name widened the portal on a phone. Fixed in CSS.
+Pages: [testing](testing.md).
+
+## [2026-11-19] security | Review of the portal, dashboard and activity endpoint
+`security-review` run on the three local commits before pushing. No finding. Checked: endpoint
+authorization and RLS, response contents, plan geometry drawn as SVG in another user's browser,
+text-only DOM building, the blank-canvas flow, the content security policy on both pages.
+Noted, not fixed: audit event ids are sequential across studios.
+Pages: [security](security.md), [open-items](open-items.md).
+
+## [2026-11-19] docs | Workflow order corrected in CLAUDE.md
+The `security-review` skill reviews local commits against `origin/main`, so the rule is now: commit,
+review, then push. Pages: [security](security.md).
