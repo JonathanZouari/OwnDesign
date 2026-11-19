@@ -214,3 +214,23 @@ def test_database_refuses_a_second_owned_studio(world):
             {"studio_id": world.studio_b["id"], "user_id": world.designer_a.id, "role": "owner"}
         ).execute()
     assert error.value.code == "23505"
+
+
+def test_studio_activity_is_listed_for_members_only(api, world):
+    path = f"/v1/studios/{world.studio_a['id']}/audit"
+    events = api.get(path, headers=world.designer_a.headers).json()["data"]
+    assert 0 < len(events) <= 10
+    assert events == sorted(events, key=lambda event: event["created_at"], reverse=True)
+    assert set(events[0]) == {"id", "action", "metadata", "created_at", "project"}  # no actor ids leave the API
+    assert all(set(event["metadata"]) <= {"version_no", "author_role"} for event in events)
+    names = {event["project"]["name"] for event in events if event["project"]}
+    assert names and "Flat B" not in names
+
+    # The studio's own client and another studio's designer are not members.
+    for outsider in (world.client_a, world.designer_b):
+        assert api.get(path, headers=outsider.headers).status_code == 403
+    assert api.get(path).status_code == 401
+    assert api.get("/v1/studios/not-a-uuid/audit", headers=world.designer_a.headers).status_code == 422
+
+    other = api.get(f"/v1/studios/{world.studio_b['id']}/audit", headers=world.designer_b.headers).json()["data"]
+    assert other and "Flat A" not in {event["project"]["name"] for event in other if event["project"]}
