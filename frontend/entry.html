@@ -12,15 +12,114 @@
 </head>
 <body>
   <header class="appbar"><div class="group"><span class="brand">ATELIER</span><span class="chip studio" id="studio-brand" hidden></span></div></header>
-  <main class="page">
-    <section class="hero" id="welcome" hidden>
-      <h1 id="headline"></h1>
-      <p class="muted">Sketch your floor plan, arrange rooms and furniture, and share it with your designer. You can try it now and create an account only when you want to save.</p>
-      <div class="row">
-        <a class="button primary" href="wizard.html">Start designing</a>
-        <a class="button" href="auth.html">I already have an account</a>
+  <main class="page portal">
+    <div id="welcome" class="portal-flow" hidden>
+      <div class="portal-strip">
+        <span class="portal-studio" id="portal-studio"></span>
+        <span class="dot" aria-hidden="true">•</span>
+        <span class="label">Client portal</span>
+        <span class="chip ok" id="entry-kind"></span>
       </div>
-    </section>
+
+      <section class="portal-hero">
+        <div class="hero-card">
+          <span class="label accent">Welcome</span>
+          <h1 id="headline"></h1>
+          <p class="muted">Sketch your floor plan, arrange rooms and furniture, and share it with your designer. You can try it now and create an account only when you want to save.</p>
+        </div>
+        <figure class="hero-figure">
+          <img src="img/interior-concept.jpg" width="1376" height="768" alt="A living room with a wood-panelled wall, a low linen sofa and a dining table in warm afternoon light.">
+          <figcaption><span class="chip">Illustration</span><span>An example interior for inspiration. It is not a rendering of your home.</span></figcaption>
+        </figure>
+      </section>
+
+      <section class="portal-section" aria-labelledby="mode-title">
+        <div>
+          <span class="label accent">Your access</span>
+          <h2 id="mode-title">Select your design mode</h2>
+        </div>
+        <div class="option-grid">
+          <article class="card option" aria-labelledby="guest-title">
+            <div class="row between">
+              <span class="tile"><span class="icon" aria-hidden="true">explore</span></span>
+              <span class="chip">No account needed</span>
+            </div>
+            <h3 id="guest-title">Try it as a guest</h3>
+            <p class="muted">Begin planning right away. Nothing to sign up for.</p>
+            <ul class="checks">
+              <li><span class="icon" aria-hidden="true">check_circle</span>Guided wizard that builds rooms from rough dimensions</li>
+              <li><span class="icon" aria-hidden="true">check_circle</span>2D canvas for walls, doors, windows and furniture</li>
+              <li><span class="icon" aria-hidden="true">check_circle</span>Undo, redo and automatic floor-area totals</li>
+            </ul>
+            <p class="aside"><span class="icon" aria-hidden="true">info</span><span>Your plan is kept in this browser until you create a free account.</span></p>
+            <div class="option-actions">
+              <a class="button primary wide-button" href="wizard.html">Start designing<span class="icon" aria-hidden="true">arrow_forward</span></a>
+            </div>
+          </article>
+
+          <article class="card option" aria-labelledby="account-title">
+            <div class="row between">
+              <span class="tile accent"><span class="icon" aria-hidden="true">key</span></span>
+              <span class="chip accent">Free account</span>
+            </div>
+            <h3 id="account-title">Use a client account</h3>
+            <p class="muted">Keep your plan and work on it together with your designer.</p>
+            <ul class="checks">
+              <li><span class="icon" aria-hidden="true">history</span>Every save is kept as a version you can return to</li>
+              <li><span class="icon" aria-hidden="true">forum</span>Your plan is shared with your designer, who can revise it</li>
+              <li><span class="icon" aria-hidden="true">devices</span>Open your projects on any device</li>
+            </ul>
+            <div class="option-actions">
+              <a class="button wide-button" href="auth.html?mode=signup">Create account</a>
+              <a class="quiet-link" href="auth.html">I already have an account</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="portal-section portal-panel" aria-labelledby="start-title">
+        <div>
+          <span class="label accent">Starting point</span>
+          <h2 id="start-title">How would you like to start the layout?</h2>
+        </div>
+        <p class="aside" id="draft-notice" hidden><span class="icon" aria-hidden="true">info</span><span>You have an unsaved plan in this browser. <a href="editor.html">Continue editing it</a>. A blank canvas replaces it.</span></p>
+        <div class="option-grid">
+          <article class="card option" aria-labelledby="wizard-title">
+            <div class="row between">
+              <span class="tile"><span class="icon" aria-hidden="true">straighten</span></span>
+              <span class="chip accent">Recommended</span>
+            </div>
+            <h3 id="wizard-title">Guided dimension wizard</h3>
+            <p class="muted">List your rooms with rough widths and lengths. The 2D canvas is generated from them, ready to adjust.</p>
+            <div class="option-actions">
+              <a class="button wide-button" href="wizard.html">Open the wizard<span class="icon" aria-hidden="true">chevron_right</span></a>
+            </div>
+          </article>
+
+          <article class="card option" aria-labelledby="canvas-title">
+            <div class="row between">
+              <span class="tile"><span class="icon" aria-hidden="true">grid_4x4</span></span>
+              <span class="chip">Draw freely</span>
+            </div>
+            <h3 id="canvas-title">Interactive 2D canvas</h3>
+            <p class="muted">Start from an empty grid. Draw walls yourself, then place doors, windows and furniture.</p>
+            <div class="option-actions">
+              <button type="button" class="wide-button" id="blank-canvas">Open a blank canvas<span class="icon" aria-hidden="true">chevron_right</span></button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <aside class="disclaimer" aria-labelledby="disclaimer-title">
+        <span class="tile"><span class="icon" aria-hidden="true">architecture</span></span>
+        <div>
+          <h2 class="label" id="disclaimer-title">Conceptual planning</h2>
+          <p>Layouts made here are design explorations with approximate dimensions. They are not a measured survey or construction documents, and they do not replace a structural or engineering review.</p>
+        </div>
+      </aside>
+      <p class="code privacy"><span class="icon" aria-hidden="true">lock</span><span id="privacy"></span></p>
+    </div>
+
     <section class="card" id="missing" hidden>
       <h2>This link is not valid</h2>
       <p class="muted">Ask your designer to send you their studio link again.</p>

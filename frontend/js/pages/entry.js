@@ -1,33 +1,50 @@
 import { api } from "../api.js";
-import { KEYS, save } from "../store.js";
-import { $, run, showStudio } from "../ui.js";
+import { emptyPlan } from "../plan.js";
+import { KEYS, load, save } from "../store.js";
+import { $, action, run, showStudio } from "../ui.js";
 
 const params = new URLSearchParams(location.search);
 
-run(async () => {
-  const invite = params.get("invite");
-  const slug = params.get("studio");
-  let studio = null;
-  let greeting = "";
+// Who the link belongs to: { studio, clientName } or null when the link is missing or no longer valid.
+async function resolveLink(invite, slug) {
   try {
     if (invite) {
       const found = await api(`/v1/invites/${encodeURIComponent(invite)}`);
-      studio = found.studio;
-      greeting = `Hi ${found.client_name}, `;
-      save(KEYS.invite, invite);
-    } else if (slug) {
-      studio = await api(`/v1/studios/by-slug/${encodeURIComponent(slug)}`);
+      return { studio: found.studio, clientName: found.client_name };
     }
+    if (slug) return { studio: await api(`/v1/studios/by-slug/${encodeURIComponent(slug)}`), clientName: "" };
   } catch (error) {
     if (![404, 422].includes(error.status)) throw error;
   }
-  if (!studio) {
+  return null;
+}
+
+// Same draft the wizard's "Skip to 2D canvas" stores, so the editor opens on an empty plan.
+function startBlankCanvas(studio) {
+  // Checked at click time: a draft may have been started in another tab since this page loaded.
+  if (load(KEYS.draft) && !confirm("Replace your unsaved plan with a blank canvas?")) return;
+  const draft = { name: "My home", property_type: "existing", studio, plan: emptyPlan() };
+  if (!save(KEYS.draft, draft)) throw new Error("Your browser blocked local storage, so the plan cannot be kept. Allow site data and try again.");
+  location.assign("editor.html");
+}
+
+run(async () => {
+  const invite = params.get("invite");
+  const link = await resolveLink(invite, params.get("studio"));
+  if (!link) {
     $("#missing").hidden = false;
     return;
   }
+  const { studio, clientName } = link;
+  if (invite) save(KEYS.invite, invite);
   save(KEYS.studio, studio);
   showStudio(studio.name);
   document.title = `Start designing · ${studio.name}`;
-  $("#headline").textContent = `${greeting}${greeting ? "plan" : "Plan"} your home with ${studio.name}.`;
+  $("#headline").textContent = clientName ? `Hi ${clientName}, plan your home with ${studio.name}.` : `Plan your home with ${studio.name}.`;
+  $("#portal-studio").textContent = studio.name;
+  $("#entry-kind").textContent = invite ? "Personal invitation" : "Studio link";
+  $("#privacy").textContent = `Your plans are visible only to you and ${studio.name}.`;
+  $("#draft-notice").hidden = !load(KEYS.draft);
+  $("#blank-canvas").addEventListener("click", action(async () => startBlankCanvas(studio)));
   $("#welcome").hidden = false;
 });

@@ -144,10 +144,10 @@ body.app > * { min-width: 0; }
 body.app .appbar { grid-column: 1 / -1; }
 .palette { grid-row: 2; background: var(--surface-low); box-shadow: var(--shadow-1); padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; overflow-y: auto; }
 .palette nav { display: grid; gap: 4px; margin-top: 8px; }
-.palette nav a, .palette nav span { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 4px; color: var(--ink-soft); text-decoration: none; }
+.palette nav > a, .palette nav > span { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 4px; color: var(--ink-soft); text-decoration: none; }
 .palette nav a:hover { background: var(--surface-mid); color: var(--ink); }
 .palette nav a[aria-current="page"] { background: var(--primary-bright); color: #fffbff; font-weight: 600; }
-.palette nav span { opacity: 0.45; }
+.palette nav > span { opacity: 0.45; }
 .readout { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px; border-radius: 4px; background: var(--surface-mid); margin-top: 4px; }
 .readout .code { color: var(--primary); font-weight: 500; }
 .workspace { grid-row: 2; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
@@ -276,4 +276,131 @@ body.app .appbar { grid-column: 1 / -1; }
   .rail hr { display: none; }
   .inspector { order: 3; width: 100%; max-height: 34vh; }
   #catalog { width: auto; right: 8px; bottom: auto; max-height: 60%; }
+}
+
+/* ==========================================================================
+   Client portal (entry.html), after the Stitch screen
+   "Client Invitation & Guest Onboarding Portal"
+   ========================================================================== */
+.label.accent { color: var(--primary); }
+.tile { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 8px; background: var(--surface-high); color: var(--ink); }
+.tile .icon { font-size: 20px; }
+.tile.accent { background: var(--primary); color: var(--on-primary); }
+.aside { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--surface-low); color: var(--ink-soft); font-size: 12px; line-height: 18px; }
+.aside .icon { color: var(--primary); }
+.disclaimer { display: flex; align-items: flex-start; gap: 12px; padding: 1rem 1.25rem; border-radius: 8px; background: var(--surface-mid); }
+.disclaimer h2 { margin: 2px 0 4px; color: var(--ink); }
+.disclaimer p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 18px; }
+
+.portal-flow { display: grid; gap: 2rem; }
+.portal-flow > * { min-width: 0; }
+.portal .code { color: var(--ink-soft); }
+.portal-strip { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
+.portal-studio { font: 500 12px/16px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--primary); overflow-wrap: anywhere; }
+.portal-strip .dot { color: var(--outline); }
+.portal-hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 1rem; }
+.hero-card { display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 2rem; border-radius: 8px; background: var(--surface-low); box-shadow: var(--shadow-1); }
+.hero-card h1 { margin: 0; font-size: 34px; line-height: 42px; letter-spacing: -0.025em; overflow-wrap: anywhere; }
+.hero-card p { margin: 0; font-size: 16px; line-height: 24px; }
+.hero-figure { position: relative; margin: 0; min-height: 340px; border-radius: 8px; overflow: hidden; background: var(--surface-high); box-shadow: var(--shadow-2); }
+.hero-figure img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero-figure figcaption { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: 4px; background: var(--inverse); color: var(--on-inverse); font-size: 12px; line-height: 18px; }
+.portal-section { display: grid; gap: 1rem; }
+.portal-section h2 { margin: 2px 0 0; font-size: 22px; line-height: 30px; font-weight: 600; letter-spacing: -0.015em; }
+.portal-panel { padding: 1.5rem; border-radius: 8px; background: var(--surface-low); }
+.portal-panel .aside { background: var(--panel); }
+.option-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.option { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 1.5rem; box-shadow: var(--shadow-2); }
+.option h3 { font-size: 18px; line-height: 26px; font-weight: 600; letter-spacing: -0.01em; }
+.option p { margin: 0; }
+.option-actions { display: grid; gap: 10px; justify-items: center; margin-top: auto; padding-top: 8px; }
+.wide-button { width: 100%; min-height: 44px; }
+.quiet-link { padding: 4px 8px; font-size: 13px; }
+.checks { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; color: var(--ink-soft); font-size: 13px; }
+.checks li { display: flex; align-items: flex-start; gap: 8px; }
+.checks .icon { margin-top: 1px; color: var(--secondary); }
+.privacy { display: flex; align-items: center; gap: 6px; margin: 0; overflow-wrap: anywhere; } /* holds the studio name */
+.privacy .icon { font-size: 14px; }
+
+@media (max-width: 767px) {
+  .portal-flow { gap: 1.5rem; }
+  .portal-hero, .option-grid { grid-template-columns: 1fr; }
+  .hero-card { padding: 1.25rem; }
+  .hero-card h1 { font-size: 28px; line-height: 36px; }
+  .hero-figure { min-height: 0; }
+  .hero-figure img { position: static; height: auto; aspect-ratio: 16 / 9; display: block; }
+  .hero-figure figcaption { position: static; border-radius: 0; }
+  .portal-panel, .option { padding: 1rem; }
+}
+
+/* ==========================================================================
+   Studio dashboard (studio.html), after the Stitch screen
+   "Studio Overview & Project Directory". Lives in the body.app shell.
+   ========================================================================== */
+.dash { flex: 1; min-height: 0; overflow-y: auto; padding: 24px; }
+.dash .card { margin: 0; }
+.dash .code { color: var(--ink-soft); }
+.dash .dash-narrow { max-width: 440px; margin: 2rem auto 0; }
+.dash-flow { display: grid; gap: 1.25rem; max-width: 1280px; margin: 0 auto; }
+.dash-flow > *, .dash-body > * { min-width: 0; }
+.dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.dash-title { display: grid; gap: 4px; min-width: 0; }
+.dash-title h1 { font-size: 40px; line-height: 48px; letter-spacing: -0.03em; overflow-wrap: anywhere; }
+.dash-title p { margin: 0; overflow-wrap: anywhere; }
+.dash-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.metric { display: grid; gap: 10px; align-content: start; }
+.metric dd { display: grid; gap: 4px; margin: 0; }
+.metric .value { font: 600 40px/44px var(--font-head); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.dash-body { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 1.25rem; align-items: start; }
+.dash-main, .dash-side, .project-list { display: grid; gap: 12px; }
+.dash-main > *, .dash-side > * { min-width: 0; }
+.dash-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.dash-toolbar h2 { margin: 0; font-size: 22px; line-height: 30px; font-weight: 600; letter-spacing: -0.015em; }
+.dash-toolbar p { margin: 0; }
+.filter { flex: 0 1 260px; }
+
+.project { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 1.25rem; }
+.thumb { display: grid; place-content: center; justify-items: center; gap: 6px; align-self: start; width: 100%; aspect-ratio: 4 / 3; padding: 8px; border-radius: 4px; overflow: hidden; background: var(--surface-low); color: var(--outline); text-align: center; }
+.thumb .icon { font-size: 32px; }
+svg.thumb { display: block; padding: 0; }
+.thumb .wall { stroke: var(--ink); stroke-linecap: square; }
+.thumb .wall.partition { stroke: var(--outline); }
+.thumb .item { fill: var(--panel); stroke: var(--ink-soft); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.thumb text { font: 400 36px var(--font-mono); fill: var(--ink-soft); }
+.project-body { display: grid; gap: 10px; align-content: start; justify-items: start; min-width: 0; }
+.project-meta { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; }
+.project h3 { font-size: 22px; line-height: 30px; font-weight: 600; letter-spacing: -0.015em; overflow-wrap: anywhere; }
+.project .client { display: flex; align-items: center; gap: 6px; margin: 0; min-width: 0; color: var(--ink-soft); font: 400 12px/18px var(--font-mono); overflow-wrap: anywhere; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; margin: 0; padding: 8px 12px; border-radius: 4px; background: var(--surface-low); }
+.facts dt { font: 600 11px/14px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.facts dd { margin: 2px 0 0; font: 500 14px/20px var(--font-mono); }
+
+.dash-side h2 { display: flex; align-items: center; gap: 8px; margin: 0; }
+.dash-side h2 .icon { color: var(--primary); }
+.dash-side .card p { margin: 0; }
+.invites th, .invites td { padding: 8px 6px; }
+.invites th:first-child, .invites td:first-child { padding-left: 0; }
+.invites th:last-child, .invites td:last-child { padding-right: 0; text-align: right; }
+.invites .who, .invites .code { display: block; overflow-wrap: anywhere; }
+.invites .who { font-weight: 500; }
+.activity { display: grid; gap: 12px; list-style: none; margin: 0; padding: 0; }
+.activity li { position: relative; display: grid; gap: 2px; padding-left: 16px; overflow-wrap: anywhere; }
+.activity li::before { content: ""; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+
+@media (max-width: 1199px) {
+  .dash-body { grid-template-columns: minmax(0, 1fr); }
+  .dash-side { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .dash-side .disclaimer { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .dash { padding: 16px; }
+  .dash-side { grid-template-columns: minmax(0, 1fr); }
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .thumb { aspect-ratio: 16 / 9; }
+  .dash-title h1 { font-size: 28px; line-height: 36px; }
+  .dash-actions, .filter { flex: 1 1 100%; }
+  .dash-actions > * { flex: 1 1 auto; }
+  .metric .value { font-size: 32px; line-height: 36px; }
+  .project { grid-template-columns: minmax(0, 1fr); }
 }
