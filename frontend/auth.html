@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="appbar"><a class="brand" href="index.html">ATELIER</a></header>
+  <main class="page narrow">
+    <h1 id="title">Sign in</h1>
+    <p class="muted" id="subtitle"></p>
+    <form id="auth-form" class="card stack">
+      <label id="studio-field" hidden>Studio name
+        <input name="studio" maxlength="80" autocomplete="organization">
+      </label>
+      <label>Email
+        <input name="email" type="email" required autocomplete="email">
+      </label>
+      <label>Password
+        <input name="password" type="password" required minlength="8" autocomplete="current-password">
+      </label>
+      <button class="primary" id="submit">Sign in</button>
+    </form>
+    <p><button class="link" id="switch" type="button"></button></p>
+  </main>
+  <script type="module" src="js/pages/auth.js"></script>
+</body>
+</html>

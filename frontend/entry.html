@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Start designing · Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="appbar"><div class="group"><span class="brand">ATELIER</span><span class="chip studio" id="studio-brand" hidden></span></div></header>
+  <main class="page">
+    <section class="hero" id="welcome" hidden>
+      <h1 id="headline"></h1>
+      <p class="muted">Sketch your floor plan, arrange rooms and furniture, and share it with your designer. You can try it now and create an account only when you want to save.</p>
+      <div class="row">
+        <a class="button primary" href="wizard.html">Start designing</a>
+        <a class="button" href="auth.html">I already have an account</a>
+      </div>
+    </section>
+    <section class="card" id="missing" hidden>
+      <h2>This link is not valid</h2>
+      <p class="muted">Ask your designer to send you their studio link again.</p>
+    </section>
+  </main>
+  <script type="module" src="js/pages/entry.js"></script>
+</body>
+</html>
