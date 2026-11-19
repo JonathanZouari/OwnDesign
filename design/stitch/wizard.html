@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;family=Plus+Jakarta+Sans:wght@500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "secondary-fixed": "#c9ebce",
+          "on-error-container": "#93000a",
+          "on-background": "#1b1c1a",
+          "inverse-surface": "#30312f",
+          "tertiary-fixed-dim": "#f8bb73",
+          "on-tertiary": "#ffffff",
+          "on-secondary-fixed-variant": "#304d38",
+          "outline": "#8a726a",
+          "surface": "#fbf9f6",
+          "surface-tint": "#a23e18",
+          "tertiary": "#7f5214",
+          "on-secondary-container": "#4b6a53",
+          "primary-fixed": "#ffdbcf",
+          "on-secondary": "#ffffff",
+          "surface-dim": "#dbdad6",
+          "inverse-primary": "#ffb59c",
+          "on-primary": "#ffffff",
+          "on-primary-fixed-variant": "#822801",
+          "error-container": "#ffdad6",
+          "on-primary-container": "#fffbff",
+          "on-error": "#ffffff",
+          "surface-container-high": "#e9e8e4",
+          "tertiary-fixed": "#ffddb9",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#efeeea",
+          "outline-variant": "#dec0b7",
+          "surface-variant": "#e4e2df",
+          "on-tertiary-container": "#fffbff",
+          "on-primary-fixed": "#390c00",
+          "on-surface": "#1b1c1a",
+          "on-secondary-fixed": "#03210f",
+          "secondary": "#47654f",
+          "secondary-container": "#c6e8cc",
+          "primary-fixed-dim": "#ffb59c",
+          "primary-container": "#bf542c",
+          "secondary-fixed-dim": "#adcfb3",
+          "primary": "#9f3c16",
+          "error": "#ba1a1a",
+          "surface-bright": "#fbf9f6",
+          "tertiary-container": "#9b6a2b",
+          "surface-container-low": "#f5f3f0",
+          "on-surface-variant": "#57423b",
+          "background": "#fbf9f6",
+          "on-tertiary-fixed": "#2b1700",
+          "surface-container-highest": "#e4e2df",
+          "inverse-on-surface": "#f2f1ed",
+          "on-tertiary-fixed-variant": "#663e00"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.125rem",
+          "lg": "0.25rem",
+          "xl": "0.5rem",
+          "full": "0.75rem"
+        },
+        "spacing": {
+          "gutter": "1rem",
+          "space-md": "0.75rem",
+          "space-lg": "1.25rem",
+          "space-xl": "2rem",
+          "margin-desktop": "2rem",
+          "margin-tablet": "1.5rem",
+          "gutter-desktop": "1.5rem",
+          "margin": "1rem",
+          "space-sm": "0.5rem",
+          "space-xs": "0.25rem"
+        },
+        "fontFamily": {
+          "headline-xl-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "label-code-sm": [
+            "JetBrains Mono"
+          ],
+          "headline-xl": [
+            "Plus Jakarta Sans"
+          ],
+          "label-code-md": [
+            "JetBrains Mono"
+          ],
+          "label-ui": [
+            "Inter"
+          ],
+          "headline-md": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-lg-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-sm": [
+            "Plus Jakarta Sans"
+          ],
+          "body-md": [
+            "Inter"
+          ],
+          "headline-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "body-lg": [
+            "Inter"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "label-code-lg": [
+            "JetBrains Mono"
+          ]
+        },
+        "fontSize": {
+          "headline-xl-mobile": [
+            "28px",
+            {
+              "lineHeight": "36px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-code-sm": [
+            "10px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-xl": [
+            "40px",
+            {
+              "lineHeight": "48px",
+              "letterSpacing": "-0.03em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-code-md": [
+            "11px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "500"
+            }
+          ],
+          "label-ui": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.06em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "22px",
+            {
+              "lineHeight": "30px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "500"
+            }
+          ],
+          "headline-lg-mobile": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-sm": [
+            "18px",
+            {
+              "lineHeight": "26px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "500"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0em",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-lg": [
+            "30px",
+            {
+              "lineHeight": "38px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-lg": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "-0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "body-sm": [
+            "12px",
+            {
+              "lineHeight": "18px",
+              "letterSpacing": "0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "label-code-lg": [
+            "13px",
+            {
+              "lineHeight": "18px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "500"
+            }
+          ]
+        }
+      },
+    },
+  }</script></head><body class="bg-surface text-on-surface min-h-screen"><aside class="fixed left-0 top-16 bottom-8 w-64 bg-surface-container-low z-40 flex flex-col justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col gap-space-sm px-space-md"><div class="flex items-center justify-between px-space-xs mb-space-xs"><span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant">Studio Palette</span><span class="font-label-code-sm text-label-code-sm text-outline">ESC to deselect</span></div><nav class="flex flex-col gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-semibold"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="2d-interactive-canvas" href="#"><span class="material-symbols-outlined text-[18px]">architecture</span><span class="font-body-md text-body-md">Architectural Canvas</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg transition-colors bg-primary-container text-on-primary-container font-semibold" data-path="guided-room-wizard" href="#"><span class="material-symbols-outlined text-[18px]">auto_awesome</span><span class="font-body-md text-body-md">Guided Wizard</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="3d-render-views" href="#"><span class="material-symbols-outlined text-[18px]">view_in_ar</span><span class="font-body-md text-body-md">Spatial Renders</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="dossier-and-budget" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span class="font-body-md text-body-md">Dossier &amp; Specs</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="project-settings" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-body-md text-body-md">Atelier Config</span></a></nav></div><div class="px-space-md flex flex-col gap-space-xs"><div class="bg-surface-container p-space-sm rounded-lg flex items-center justify-between"><span class="font-label-ui text-label-ui uppercase text-on-surface-variant">Active Cursor Snap</span><span class="font-label-code-sm text-label-code-sm text-primary font-medium">Orthogonal</span></div><div class="bg-surface-container-high p-space-sm rounded-lg flex items-center justify-between"><span class="font-label-ui text-label-ui uppercase text-on-surface-variant">Active Layer</span><span class="font-label-code-sm text-label-code-sm text-on-surface">Partition Walls</span></div></div></aside><div class="pl-64 flex flex-col min-h-screen"><header class="fixed top-0 left-0 right-0 h-16 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex items-center justify-between px-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-on-surface">ATELIER</span><span class="bg-secondary-container text-on-secondary-container font-label-code-sm text-label-code-sm px-space-xs py-0.5 rounded">Studio Kōsen (White-label)</span></div><div class="hidden xl:flex items-center gap-space-xs font-label-code-md text-label-code-md text-on-surface-variant"><span class="material-symbols-outlined text-[14px] text-outline">folder_open</span><span>Penthouse Apt 4B</span><span class="text-outline">•</span><span class="text-on-surface font-medium">Plan Editor (v2.4 Draft)</span></div></div><div class="hidden md:flex items-center bg-surface-container-low p-space-xs rounded-full shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><nav class="flex items-center gap-space-xs" data-active-classes="bg-surface-container-lowest text-on-surface shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><a aria-current="page" class="font-label-ui px-space-md py-space-xs rounded-full transition-colors bg-surface-container-lowest text-on-surface shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-path="guided-room-wizard" href="#">Guided Room Wizard</a><a class="font-label-ui text-label-ui text-on-surface-variant hover:text-on-surface px-space-md py-space-xs rounded-full transition-colors" data-path="2d-interactive-canvas" href="#">2D Interactive Canvas (Active)</a><a class="font-label-ui text-label-ui text-on-surface-variant hover:text-on-surface px-space-md py-space-xs rounded-full transition-colors" data-path="3d-render-views" href="#">3D Render Views (3 queued)</a><a class="font-label-ui text-label-ui text-on-surface-variant hover:text-on-surface px-space-md py-space-xs rounded-full transition-colors" data-path="dossier-and-budget" href="#">Dossier &amp; Budget</a></nav></div><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs bg-tertiary-fixed text-on-tertiary-fixed px-space-sm py-1 rounded font-label-code-sm text-label-code-sm"><span class="material-symbols-outlined text-[14px]">warning</span><span>Conceptual — Non-Structural Review</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-1 rounded-full font-label-code-sm text-label-code-sm text-on-surface"><span class="text-primary font-medium">⚡</span><span>42 Credits</span></div><button class="hidden sm:flex items-center gap-space-xs bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container px-space-sm py-1.5 rounded transition-colors font-label-ui text-label-ui" type="button"><span class="material-symbols-outlined text-[16px]">ios_share</span><span>Share / Export Dossier</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="flex-1 pt-16 pb-8 bg-surface w-full"><div class="flex flex-col w-full">
+<!-- Architectural Top Sub-Header & Calibrated Step Track -->
+<div class="w-full bg-surface-container-low px-space-md py-space-sm shadow-sm">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="bg-primary/10 text-primary p-1.5 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">straighten</span>
+</span>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-on-surface">Spatial Specifier</span>
+<span class="font-label-code-sm text-label-code-sm bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant">FR-01 • METRIC ISO 216</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Geometric perimeter synthesis prior to vector CAD canvas compilation</p>
+</div>
+</div>
+<!-- Calibrated Architectural Scale Bar Progress Indicator -->
+<div class="flex items-center gap-space-md">
+<!-- Scale ticks progress -->
+<div class="flex items-center gap-space-xs">
+<!-- Step 1 Done -->
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-label-code-sm text-[10px]">✓</span>
+<div class="hidden lg:flex flex-col">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-secondary">01 • Property Scope</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Apt (Metric cm/m)</span>
+</div>
+</div>
+<div class="w-6 h-px bg-outline-variant/60"></div>
+<!-- Step 2 Active -->
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-code-sm text-[11px] font-semibold">2</span>
+<div class="flex flex-col">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-primary font-semibold">02 • Room Inventory</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface font-medium">5 of 6 Defined</span>
+</div>
+</div>
+<div class="w-6 h-px bg-outline-variant/60"></div>
+<!-- Step 3 Upcoming -->
+<div class="flex items-center gap-1.5 opacity-60">
+<span class="w-5 h-5 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-label-code-sm text-[11px]">3</span>
+<div class="hidden lg:flex flex-col">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant">03 • Fenestration</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">Openings &amp; Balconies</span>
+</div>
+</div>
+<div class="w-6 h-px bg-outline-variant/60"></div>
+<!-- Step 4 Review -->
+<div class="flex items-center gap-1.5 opacity-40">
+<span class="w-5 h-5 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-label-code-sm text-[11px]">4</span>
+<div class="hidden xl:flex flex-col">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant">04 • Vector Compile</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">Generate 2D Canvas</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Split Architecture: Builder (Left) & Real-time Composite Matrix (Right) -->
+<div class="w-full px-space-md py-space-md max-w-7xl mx-auto flex flex-col xl:flex-row gap-space-lg">
+<!-- LEFT COLUMN: Room Configuration & Dimension Builder (55% width) -->
+<div class="w-full xl:w-[56%] flex flex-col gap-space-md">
+<!-- Preset Quick Bar -->
+<div class="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-primary">space_dashboard</span>
+            Architectural Presets
+          </span>
+<span class="font-label-code-sm text-label-code-sm text-outline">Quick Inject</span>
+</div>
+<div class="grid grid-cols-3 sm:grid-cols-6 gap-space-xs">
+<button class="preset-pill bg-primary text-on-primary px-space-xs py-2 rounded-lg flex flex-col items-center gap-1 transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">weekend</span>
+<span class="font-label-ui text-[10px] leading-tight text-center">Living Room</span>
+</button>
+<button class="preset-pill bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-space-xs py-2 rounded-lg flex flex-col items-center gap-1 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">bed</span>
+<span class="font-label-ui text-[10px] leading-tight text-center">Primary Bed</span>
+</button>
+<button class="preset-pill bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-space-xs py-2 rounded-lg flex flex-col items-center gap-1 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">countertops</span>
+<span class="font-label-ui text-[10px] leading-tight text-center">Kitchen</span>
+</button>
+<button class="preset-pill bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-space-xs py-2 rounded-lg flex flex-col items-center gap-1 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">bathtub</span>
+<span class="font-label-ui text-[10px] leading-tight text-center">Bathroom</span>
+</button>
+<button class="preset-pill bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-space-xs py-2 rounded-lg flex flex-col items-center gap-1 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">desk</span>
+<span class="font-label-ui text-[10px] leading-tight text-center">Home Office</span>
+</button>
+<button class="preset-pill bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-space-xs py-2 rounded-lg flex flex-col items-center gap-1 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span class="font-label-ui text-[10px] leading-tight text-center">Custom</span>
+</button>
+</div>
+</div>
+<!-- Main Specification Form Card -->
+<div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-md flex flex-col gap-space-md">
+<!-- Room Title & Identifier -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs pb-space-xs">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-sm text-label-code-sm bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">ROOM ID: R-01</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary flex items-center gap-0.5 font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary inline-block"></span>
+                In Sync
+              </span>
+</div>
+<input class="bg-transparent font-headline-md text-headline-md font-semibold text-on-surface focus:outline-none w-full mt-1" id="roomNameInput" type="text" value="Living &amp; Dining Great Room"/>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1 bg-surface-container hover:bg-surface-container-high px-space-sm py-1.5 rounded text-on-surface font-label-ui text-label-ui transition-colors" id="dupRoomBtn" type="button">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+<span>Duplicate</span>
+</button>
+<button class="p-1.5 bg-surface-container hover:bg-error-container text-on-surface hover:text-on-error-container rounded transition-colors" title="Delete current room" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Wireframe Perimeter Shape Selector -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant flex items-center justify-between">
+<span>Perimeter Envelope Geometry</span>
+<span class="font-label-code-sm text-label-code-sm text-primary">Orthogonal Snap ON</span>
+</label>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-xs">
+<!-- Simple Rectangle (Selected) -->
+<label class="shape-card relative cursor-pointer bg-surface-container-high p-space-sm rounded-lg flex flex-col items-center text-center gap-space-xs transition-all shadow-sm">
+<input checked="" class="sr-only" name="roomShape" type="radio" value="rectangle"/>
+<div class="w-10 h-10 flex items-center justify-center text-primary">
+<!-- Architectural Wireframe SVG -->
+<svg class="text-primary" fill="none" height="24" viewbox="0 0 32 24" width="32">
+<rect fill="currentColor" fill-opacity="0.12" height="20" rx="1" stroke="currentColor" stroke-dasharray="0" stroke-width="2" width="28" x="2" y="2"></rect>
+<line stroke="currentColor" stroke-width="2" x1="2" x2="6" y1="2" y2="2"></line>
+<line stroke="currentColor" stroke-width="2" x1="2" x2="2" y1="2" y2="6"></line>
+</svg>
+</div>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Rectangle</span>
+<span class="font-label-code-sm text-[10px] text-on-surface-variant">4 Nodes (Standard)</span>
+</label>
+<!-- L-Shaped -->
+<label class="shape-card cursor-pointer bg-surface-container-low hover:bg-surface-container p-space-sm rounded-lg flex flex-col items-center text-center gap-space-xs transition-all">
+<input class="sr-only" name="roomShape" type="radio" value="l-shape"/>
+<div class="w-10 h-10 flex items-center justify-center text-on-surface-variant">
+<svg fill="none" height="26" viewbox="0 0 32 26" width="32">
+<path d="M2 2H18V12H30V24H2V2Z" fill="currentColor" fill-opacity="0.05" stroke="currentColor" stroke-width="1.75"></path>
+</svg>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface">L-Shaped Alcove</span>
+<span class="font-label-code-sm text-[10px] text-on-surface-variant">6 Ortho Nodes</span>
+</label>
+<!-- T-Shaped -->
+<label class="shape-card cursor-pointer bg-surface-container-low hover:bg-surface-container p-space-sm rounded-lg flex flex-col items-center text-center gap-space-xs transition-all">
+<input class="sr-only" name="roomShape" type="radio" value="t-shape"/>
+<div class="w-10 h-10 flex items-center justify-center text-on-surface-variant">
+<svg fill="none" height="26" viewbox="0 0 32 26" width="32">
+<path d="M2 2H30V10H22V24H10V10H2V2Z" fill="currentColor" fill-opacity="0.05" stroke="currentColor" stroke-width="1.75"></path>
+</svg>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface">T-Shaped Loft</span>
+<span class="font-label-code-sm text-[10px] text-on-surface-variant">8 Ortho Nodes</span>
+</label>
+<!-- Chamfered / Angled Wall -->
+<label class="shape-card cursor-pointer bg-surface-container-low hover:bg-surface-container p-space-sm rounded-lg flex flex-col items-center text-center gap-space-xs transition-all">
+<input class="sr-only" name="roomShape" type="radio" value="chamfer"/>
+<div class="w-10 h-10 flex items-center justify-center text-on-surface-variant">
+<svg fill="none" height="26" viewbox="0 0 32 26" width="32">
+<path d="M2 2H20L30 12V24H2V2Z" fill="currentColor" fill-opacity="0.05" stroke="currentColor" stroke-width="1.75"></path>
+</svg>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface">Angled Bay</span>
+<span class="font-label-code-sm text-[10px] text-on-surface-variant">45° Chamfered</span>
+</label>
+</div>
+</div>
+<!-- Precise Metric Dimension Inputs & Dynamic Calculation Strip -->
+<div class="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant">Linear Dimensions &amp; Clearances</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-medium">BIM LOD-200</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
+<!-- Length Wall A -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<label class="font-label-ui text-label-ui text-on-surface" for="wallLength">Wall A (Length)</label>
+<span class="font-label-code-sm text-label-code-sm text-outline" id="wallLengthMM">6,800 mm</span>
+</div>
+<div class="flex items-center bg-surface-container-lowest rounded px-space-xs py-1 shadow-sm">
+<button class="dim-step-down px-2 py-1 text-on-surface-variant hover:text-on-surface font-label-code-md text-label-code-md font-bold" type="button">−</button>
+<input class="w-full text-center bg-transparent font-label-code-lg text-label-code-lg font-medium text-on-surface focus:outline-none" id="wallLength" max="25.0" min="1.0" step="0.05" type="number" value="6.80"/>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant pr-1">m</span>
+<button class="dim-step-up px-2 py-1 text-on-surface-variant hover:text-on-surface font-label-code-md text-label-code-md font-bold" type="button">+</button>
+</div>
+</div>
+<!-- Width Wall B -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<label class="font-label-ui text-label-ui text-on-surface" for="wallWidth">Wall B (Width)</label>
+<span class="font-label-code-sm text-label-code-sm text-outline" id="wallWidthMM">4,750 mm</span>
+</div>
+<div class="flex items-center bg-surface-container-lowest rounded px-space-xs py-1 shadow-sm">
+<button class="dim-step-down px-2 py-1 text-on-surface-variant hover:text-on-surface font-label-code-md text-label-code-md font-bold" type="button">−</button>
+<input class="w-full text-center bg-transparent font-label-code-lg text-label-code-lg font-medium text-on-surface focus:outline-none" id="wallWidth" max="20.0" min="1.0" step="0.05" type="number" value="4.75"/>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant pr-1">m</span>
+<button class="dim-step-up px-2 py-1 text-on-surface-variant hover:text-on-surface font-label-code-md text-label-code-md font-bold" type="button">+</button>
+</div>
+</div>
+<!-- Ceiling Height -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<label class="font-label-ui text-label-ui text-on-surface" for="ceilingHeight">Ceiling Clear</label>
+<span class="font-label-code-sm text-label-code-sm text-outline">Clear span</span>
+</div>
+<div class="flex items-center bg-surface-container-lowest rounded px-space-xs py-1 shadow-sm">
+<button class="dim-step-down px-2 py-1 text-on-surface-variant hover:text-on-surface font-label-code-md text-label-code-md font-bold" type="button">−</button>
+<input class="w-full text-center bg-transparent font-label-code-lg text-label-code-lg font-medium text-on-surface focus:outline-none" id="ceilingHeight" max="6.0" min="2.1" step="0.05" type="number" value="2.80"/>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant pr-1">m</span>
+<button class="dim-step-up px-2 py-1 text-on-surface-variant hover:text-on-surface font-label-code-md text-label-code-md font-bold" type="button">+</button>
+</div>
+</div>
+</div>
+<!-- Dynamic Output Calculated Tile -->
+<div class="bg-surface-container-high p-space-sm rounded-lg flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md">
+<div>
+<span class="font-label-ui text-[10px] uppercase text-on-surface-variant block">Calculated Floor Area</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-primary" id="calculatedArea">32.30 m²</span>
+</div>
+<div class="h-8 w-px bg-outline-variant"></div>
+<div>
+<span class="font-label-ui text-[10px] uppercase text-on-surface-variant block">Imperial Equivalent</span>
+<span class="font-label-code-md text-label-code-md text-on-surface font-medium" id="calculatedAreaSqFt">347.67 sq ft</span>
+</div>
+<div class="h-8 w-px bg-outline-variant"></div>
+<div>
+<span class="font-label-ui text-[10px] uppercase text-on-surface-variant block">Spatial Volume</span>
+<span class="font-label-code-md text-label-code-md text-on-surface font-medium" id="calculatedVolume">90.44 m³</span>
+</div>
+</div>
+<div class="flex items-center gap-1 bg-secondary-container text-on-secondary-container px-2 py-1 rounded font-label-code-sm text-[11px]">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+<span>Complies with HAB-EU standard</span>
+</div>
+</div>
+</div>
+<!-- Wall Properties & Adjacency Specifier -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant">Perimeter Assemblies &amp; Party Partitions</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">Thermal &amp; Acoustic Spec</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-xs">
+<!-- North Wall -->
+<div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-md text-label-code-md font-semibold text-primary w-5 text-center">N</span>
+<div>
+<span class="font-body-sm text-body-sm font-medium text-on-surface block">North: External Envelope</span>
+<span class="font-label-code-sm text-[10px] text-on-surface-variant">250mm Cavity Brick • 2 Windows</span>
+</div>
+</div>
+<button class="p-1 hover:bg-surface-container rounded text-outline hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+</button>
+</div>
+<!-- South Wall -->
+<div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-md text-label-code-md font-semibold text-secondary w-5 text-center">S</span>
+<div>
+<span class="font-body-sm text-body-sm font-medium text-on-surface block">South: Interior Partition</span>
+<span class="font-label-code-sm text-[10px] text-on-surface-variant">100mm Stud Drywall • Non-load</span>
+</div>
+</div>
+<button class="p-1 hover:bg-surface-container rounded text-outline hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+</button>
+</div>
+<!-- East Wall -->
+<div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-md text-label-code-md font-semibold text-tertiary w-5 text-center">E</span>
+<div>
+<span class="font-body-sm text-body-sm font-medium text-on-surface block">East: Party / Demising Wall</span>
+<span class="font-label-code-sm text-[10px] text-on-surface-variant">200mm Acoustic Masonry Block</span>
+</div>
+</div>
+<button class="p-1 hover:bg-surface-container rounded text-outline hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+</button>
+</div>
+<!-- West Wall -->
+<div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-md text-label-code-md font-semibold text-primary-container w-5 text-center">W</span>
+<div>
+<span class="font-body-sm text-body-sm font-medium text-on-surface block">West: Open Archway</span>
+<span class="font-label-code-sm text-[10px] text-on-surface-variant">2.40m Clear Opening to Kitchen</span>
+</div>
+</div>
+<button class="p-1 hover:bg-surface-container rounded text-outline hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Solar Orientation & Natural Light -->
+<div class="bg-surface-container-low p-space-sm rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-tertiary">wb_sunny</span>
+<div>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Solar Exposure &amp; Glazing Orientation</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant block">South-West (Abundant Afternoon Natural Light)</span>
+</div>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-highest p-1 rounded-lg">
+<button class="px-2 py-0.5 rounded text-[11px] font-label-code-sm bg-surface-container-lowest text-on-surface shadow-sm font-medium" type="button">SW</button>
+<button class="px-2 py-0.5 rounded text-[11px] font-label-code-sm text-on-surface-variant hover:text-on-surface" type="button">SE</button>
+<button class="px-2 py-0.5 rounded text-[11px] font-label-code-sm text-on-surface-variant hover:text-on-surface" type="button">NW</button>
+<button class="px-2 py-0.5 rounded text-[11px] font-label-code-sm text-on-surface-variant hover:text-on-surface" type="button">NE</button>
+</div>
+</div>
+<!-- Form Commit Buttons -->
+<div class="flex flex-col sm:flex-row items-center gap-space-sm pt-space-xs">
+<button class="w-full sm:flex-1 bg-primary text-on-primary hover:bg-primary-container px-space-md py-2.5 rounded-lg flex items-center justify-center gap-space-xs transition-colors font-label-ui text-label-ui uppercase tracking-wider shadow-sm" id="saveRoomBtn" type="button">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span>Update Room Configuration</span>
+</button>
+<button class="w-full sm:w-auto bg-surface-container-high hover:bg-surface-container-highest text-on-surface px-space-md py-2.5 rounded-lg flex items-center justify-center gap-space-xs transition-colors font-label-ui text-label-ui uppercase tracking-wider" id="addNewRoomBtn" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>+ Add Another Room</span>
+</button>
+</div>
+</div>
+<!-- Atelier Material / Mood Preview Teaser (Photo-rich visual context) -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant">Architectural Tactility Palette</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">Nordic Warm Minimalist</span>
+</div>
+<div class="grid grid-cols-3 gap-space-sm">
+<div class="relative h-20 rounded-lg overflow-hidden group">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105" data-alt="A textured limestone surface sample with warm cream undertones, architectural materials swatch in soft daylight" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBvFR10VtIu6yv7QNU4Hgvtctf0YavlzfX6Ccrjmz7WQNjEJKe--PSCk1qICy6B56zGA1BpeH4KXFt7C_yyCmZLzdg8wcWjRBtmfJlWbhBxpwQayKPisEZqGJscQNDrsc4f-04eZvMh9c3SpxiGn5SH3TGuImauaBW2tIYhPssSls1TeeMtI0razcVIv-DhU8JeOPwjuoYaZG48a6UQ12Z-aD7vxhxFMKsOe6RIQyY')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-1.5">
+<span class="font-label-code-sm text-[9px] text-white">Honed Limestone</span>
+</div>
+</div>
+<div class="relative h-20 rounded-lg overflow-hidden group">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105" data-alt="Natural white oiled oak wood flooring plank texture, architectural herringbone finish sample with subtle grain" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCJ34XnYvaGbjubPoxwjAkRxLsMUnjFAcx-c7eYhgKgb3JFXiPFLIASkXo-sguCBcNrcShIcY7zgw9-hCpztjPzEPfjenYAAnWho68v23VJu_HfAjuWHgZPrTabwkv1vgk-7PaHab0EmFJUztT-eJPBfOOudmLp0O_WFnaD7xPMlktttPxFgljBoXssR0drwN90VjN6-Uf_fCNP-hsGPCD8YQSZmbISkd5fIHUCTPI')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-1.5">
+<span class="font-label-code-sm text-[9px] text-white">Oiled White Oak</span>
+</div>
+</div>
+<div class="relative h-20 rounded-lg overflow-hidden group">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105" data-alt="Warm terracotta architectural ceramic tile swatch in soft studio lighting with tactile matte texture" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAzH7JdIDF8JsiQlyjNfGXT35JvuhrgxC6PB0XVU8Qjkgkk1ce5FeLD9ls4izoFlUFx_3ikkpnD3gkgGmq3TZqeqbB6qBLGf2jbHyz3-x6Bzd8ryj0EVkGxkUHvD453i6UgyVZfwuudP5tItwu5vzlm9rleacm0wvV1rzXaZVC0sHxN8hcqYc5Yuz0iV2jNP_z4T-HK08yS7N9rY_GPlwz4XNye_7p9TiWBce5gFW4')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-1.5">
+<span class="font-label-code-sm text-[9px] text-white">Terracotta Accent</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Real-time Property Layout Preview & Room Matrix (44% width) -->
+<div class="w-full xl:w-[44%] flex flex-col gap-space-md">
+<!-- Real-time Dynamic Footprint Preview Card -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-md flex flex-col gap-space-sm relative">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">view_quilt</span>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface">Floorplan Footprint Preview</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-sm text-label-code-sm bg-surface-container px-2 py-0.5 rounded text-on-surface font-medium">12.40 m × 8.20 m</span>
+<span class="font-label-code-sm text-label-code-sm bg-secondary-container text-on-secondary-container px-1.5 py-0.5 rounded font-semibold">Total: 84.5 m²</span>
+</div>
+</div>
+<!-- CAD Wireframe Canvas Area -->
+<div class="relative w-full h-72 bg-[#F3EFEA] rounded-lg overflow-hidden flex items-center justify-center p-3 select-none">
+<!-- Subtle Hairline Drafting Grid Pattern -->
+<svg class="absolute inset-0 w-full h-full opacity-35" height="100%" width="100%">
+<defs>
+<pattern height="20" id="wizardCadGrid" patternunits="userSpaceOnUse" width="20">
+<path d="M 20 0 L 0 0 0 20" fill="none" stroke="#242523" stroke-opacity="0.18" stroke-width="0.5"></path>
+</pattern>
+</defs>
+<rect fill="url(#wizardCadGrid)" height="100%" width="100%"></rect>
+</svg>
+<!-- Top & Left Viewport Metric Rulers -->
+<div class="absolute top-0 left-0 right-0 h-4 bg-surface-container flex items-center justify-between px-2 font-label-code-sm text-[9px] text-outline">
+<span>0m</span>
+<span>2.5m</span>
+<span>5.0m</span>
+<span>7.5m</span>
+<span>10.0m</span>
+<span>12.4m</span>
+</div>
+<div class="absolute top-4 left-0 bottom-0 w-4 bg-surface-container flex flex-col justify-between py-2 items-center font-label-code-sm text-[9px] text-outline">
+<span>0</span>
+<span>2</span>
+<span>4</span>
+<span>6</span>
+<span>8m</span>
+</div>
+<!-- Dynamic SVG Architectural Orthogonal Representation -->
+<svg class="relative w-full h-full max-h-60 mt-3 ml-3" fill="none" viewbox="0 0 480 270">
+<!-- Exterior Boundary Envelope Thick Wall -->
+<rect fill="none" height="240" stroke="#1B1C1A" stroke-linejoin="round" stroke-width="4" width="430" x="25" y="15"></rect>
+<!-- Room 01: Living & Dining (ACTIVE - High Terracotta Accent) -->
+<g class="cursor-pointer transition-all hover:opacity-95" id="svgRoom01">
+<rect fill="#C85A32" fill-opacity="0.14" height="150" stroke="#9F3C16" stroke-dasharray="2 0" stroke-width="2" width="250" x="27" y="17"></rect>
+<!-- Wall tick indicators -->
+<line stroke="#9F3C16" stroke-width="3" x1="27" x2="277" y1="17" y2="17"></line>
+<!-- Room Label Tag -->
+<rect fill="#1B1C1A" fill-opacity="0.88" height="42" rx="4" width="124" x="90" y="65"></rect>
+<text fill="#FFFFFF" font-family="Plus Jakarta Sans" font-size="11" font-weight="600" text-anchor="middle" x="152" y="82">LIVING &amp; DINING</text>
+<text fill="#FFB59C" font-family="JetBrains Mono" font-size="10" font-weight="500" text-anchor="middle" x="152" y="97">32.3 m² (6.80×4.75m)</text>
+<!-- Dimension Callout Overlay -->
+<text fill="#9F3C16" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="152" y="32">◄ 6.80 m ►</text>
+<text fill="#9F3C16" font-family="JetBrains Mono" font-size="9" text-anchor="middle" transform="rotate(-90 42 95)" x="42" y="95">◄ 4.75 m ►</text>
+</g>
+<!-- Room 02: Kitchen & Dining Adjacency -->
+<g class="cursor-pointer" id="svgRoom02">
+<rect fill="#dec0b7" fill-opacity="0.25" height="110" stroke="#8A726A" stroke-width="1.5" width="174" x="279" y="17"></rect>
+<text fill="#1B1C1A" font-family="Plus Jakarta Sans" font-size="10" font-weight="600" text-anchor="middle" x="366" y="65">KITCHEN</text>
+<text fill="#57423B" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="366" y="79">14.4 m² • 4.0×3.6m</text>
+<!-- Open passway swing indicator -->
+<line stroke="#FFFFFF" stroke-width="3" x1="278" x2="278" y1="50" y2="105"></line>
+<line stroke="#C85A32" stroke-dasharray="3 3" stroke-width="1.5" x1="278" x2="278" y1="50" y2="105"></line>
+</g>
+<!-- Room 03: Primary Ensuite -->
+<g class="cursor-pointer" id="svgRoom03">
+<rect fill="#47654F" fill-opacity="0.10" height="60" stroke="#47654F" stroke-width="1.5" width="174" x="279" y="129"></rect>
+<text fill="#1B1C1A" font-family="Plus Jakarta Sans" font-size="10" font-weight="600" text-anchor="middle" x="366" y="157">PRIMARY ENSUITE</text>
+<text fill="#47654F" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="366" y="171">6.8 m² • 2.7×2.5m</text>
+</g>
+<!-- Room 04: Master Bedroom -->
+<g class="cursor-pointer" id="svgRoom04">
+<rect fill="#dec0b7" fill-opacity="0.2" height="84" stroke="#8A726A" stroke-width="1.5" width="180" x="27" y="169"></rect>
+<text fill="#1B1C1A" font-family="Plus Jakarta Sans" font-size="10" font-weight="600" text-anchor="middle" x="117" y="206">MASTER BEDROOM</text>
+<text fill="#57423B" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="117" y="220">18.2 m² • 4.55×4.0m</text>
+</g>
+<!-- Room 05: Office / Bed 02 -->
+<g class="cursor-pointer" id="svgRoom05">
+<rect fill="#dec0b7" fill-opacity="0.15" height="84" stroke="#8A726A" stroke-width="1.5" width="140" x="209" y="169"></rect>
+<text fill="#1B1C1A" font-family="Plus Jakarta Sans" font-size="9" font-weight="600" text-anchor="middle" x="279" y="206">OFFICE / BED 02</text>
+<text fill="#57423B" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="279" y="220">12.8 m²</text>
+</g>
+<!-- Hallway / Circulation Area -->
+<rect fill="#efeeea" height="62" stroke="#dec0b7" stroke-dasharray="2 2" stroke-width="1" width="102" x="351" y="191"></rect>
+<text fill="#8A726A" font-family="JetBrains Mono" font-size="8" text-anchor="middle" x="402" y="225">CIRCULATION</text>
+<text fill="#8A726A" font-family="JetBrains Mono" font-size="8" text-anchor="middle" x="402" y="236">10.2 m²</text>
+<!-- Fenestration (Windows on North wall) -->
+<line stroke="#2563EB" stroke-width="5" x1="60" x2="110" y1="15" y2="15"></line>
+<line stroke="#2563EB" stroke-width="5" x1="160" x2="220" y1="15" y2="15"></line>
+<text fill="#2563EB" font-family="JetBrains Mono" font-size="8" text-anchor="middle" x="190" y="11">W-01</text>
+</svg>
+<!-- Floating Cursor Mini HUD Badge -->
+<div class="absolute bottom-2 right-2 bg-inverse-surface text-inverse-on-surface px-space-xs py-1 rounded shadow-sm font-label-code-sm text-[10px] flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Orthogonal Snap: 0.05m</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-code-sm text-[11px] px-1">
+<span>Click any room wireframe to load parameters</span>
+<span class="text-primary font-medium">Room 01 highlighted in workspace</span>
+</div>
+</div>
+<!-- Configured Room Matrix List -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface">Spatial Matrix Breakdown</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">5 Configured</span>
+</div>
+<div class="flex flex-col gap-space-xs max-h-64 overflow-y-auto pr-1">
+<!-- Matrix Row 1 (Selected) -->
+<div class="room-matrix-row bg-primary/10 border-l-2 border-primary p-space-sm rounded-r-lg flex items-center justify-between transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<div>
+<span class="font-body-md text-body-md font-semibold text-on-surface block">Living &amp; Dining Room</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">6.80 × 4.75 m • 2.80m Clear Height</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="font-label-code-md text-label-code-md font-bold text-primary">32.3 m²</span>
+<div class="flex items-center gap-1">
+<button class="p-1 text-primary hover:bg-primary/20 rounded" title="Active room" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Matrix Row 2 -->
+<div class="room-matrix-row bg-surface-container-low hover:bg-surface-container p-space-sm rounded-lg flex items-center justify-between transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<div>
+<span class="font-body-md text-body-md font-medium text-on-surface block">Master Bedroom</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">4.55 × 4.00 m • 2.80m Clear Height</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="font-label-code-md text-label-code-md font-semibold text-on-surface">18.2 m²</span>
+<div class="flex items-center gap-1">
+<button class="p-1 text-outline hover:text-on-surface hover:bg-surface-container-high rounded" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 text-outline hover:text-error hover:bg-surface-container-high rounded" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Matrix Row 3 -->
+<div class="room-matrix-row bg-surface-container-low hover:bg-surface-container p-space-sm rounded-lg flex items-center justify-between transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<div>
+<span class="font-body-md text-body-md font-medium text-on-surface block">Kitchen &amp; Pantry</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">4.00 × 3.60 m • 2.80m Clear Height</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="font-label-code-md text-label-code-md font-semibold text-on-surface">14.4 m²</span>
+<div class="flex items-center gap-1">
+<button class="p-1 text-outline hover:text-on-surface hover:bg-surface-container-high rounded" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 text-outline hover:text-error hover:bg-surface-container-high rounded" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Matrix Row 4 -->
+<div class="room-matrix-row bg-surface-container-low hover:bg-surface-container p-space-sm rounded-lg flex items-center justify-between transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<div>
+<span class="font-body-md text-body-md font-medium text-on-surface block">Bedroom 02 / Office</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">3.65 × 3.50 m • 2.80m Clear Height</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="font-label-code-md text-label-code-md font-semibold text-on-surface">12.8 m²</span>
+<div class="flex items-center gap-1">
+<button class="p-1 text-outline hover:text-on-surface hover:bg-surface-container-high rounded" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 text-outline hover:text-error hover:bg-surface-container-high rounded" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Matrix Row 5 -->
+<div class="room-matrix-row bg-surface-container-low hover:bg-surface-container p-space-sm rounded-lg flex items-center justify-between transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<div>
+<span class="font-body-md text-body-md font-medium text-on-surface block">Primary Ensuite Bath</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">2.70 × 2.50 m • 2.80m Clear Height</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="font-label-code-md text-label-code-md font-semibold text-on-surface">6.8 m²</span>
+<div class="flex items-center gap-1">
+<button class="p-1 text-outline hover:text-on-surface hover:bg-surface-container-high rounded" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button class="p-1 text-outline hover:text-error hover:bg-surface-container-high rounded" type="button">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footprint Aggregates & AI Spatial Efficiency Validation Card -->
+<div class="bg-surface-container-low p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant">Spatial Intelligence &amp; Budget Forecast</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-semibold">Ready for Review</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="bg-surface-container-lowest p-space-sm rounded-lg">
+<span class="font-label-ui text-[10px] uppercase text-on-surface-variant block">Total Net Footprint</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">84.5 m²</span>
+<span class="font-label-code-sm text-[10px] text-outline block">909.5 sq ft usable</span>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded-lg">
+<span class="font-label-ui text-[10px] uppercase text-on-surface-variant block">Est. Renovation Budget</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-primary">€45k – €72k</span>
+<span class="font-label-code-sm text-[10px] text-outline block">€650–€950/m² finish tier</span>
+</div>
+</div>
+<!-- AI Spatial Validation Chip -->
+<div class="bg-secondary-container/40 p-space-sm rounded-lg flex items-start gap-space-xs text-on-secondary-container">
+<span class="material-symbols-outlined text-[18px] text-secondary mt-0.5">verified</span>
+<div>
+<span class="font-body-sm text-body-sm font-medium block">Circulation Ratio Optimized: 88% Living / 12% Hallway</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Passes egress corridor clearance (min. 1,000 mm). Living room natural illumination factor: 1.48 (Excellent).</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Wizard Action Bar / Step Transition Dock -->
+<div class="w-full bg-surface-container-high px-space-md py-space-sm mt-space-md shadow-md">
+<div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-space-sm">
+<!-- Back Button -->
+<button class="flex items-center gap-space-xs text-on-surface-variant hover:text-on-surface px-space-sm py-2 rounded-lg font-label-ui text-label-ui transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span>Back to Property Details</span>
+</button>
+<!-- Supabase Cloud State Indicator -->
+<div class="flex items-center gap-space-xs font-label-code-sm text-label-code-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-secondary inline-block"></span>
+<span>Cloud Synced: Penthouse Apt 4B • Schema v2.4</span>
+</div>
+<!-- Forward Proceed Buttons -->
+<div class="flex items-center gap-space-sm w-full sm:w-auto justify-end">
+<a class="flex items-center gap-space-xs bg-surface-container-lowest hover:bg-surface-container text-on-surface px-space-md py-2 rounded font-label-ui text-label-ui transition-colors shadow-sm" data-path="2d-interactive-canvas" href="#">
+<span class="material-symbols-outlined text-[16px]">skip_next</span>
+<span>Skip to 2D Canvas</span>
+</a>
+<button class="flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container px-space-lg py-2 rounded font-label-ui text-label-ui uppercase tracking-wider transition-colors shadow-sm" id="proceedBtn" type="button">
+<span>Proceed to Openings (Step 3)</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Client-side Interactive Dimension Steppers & Real-time Math Logic -->
+<script>
+  (function() {
+    const wallLengthInput = document.getElementById('wallLength');
+    const wallWidthInput = document.getElementById('wallWidth');
+    const ceilingHeightInput = document.getElementById('ceilingHeight');
+    const lengthMM = document.getElementById('wallLengthMM');
+    const widthMM = document.getElementById('wallWidthMM');
+    const calculatedArea = document.getElementById('calculatedArea');
+    const calculatedAreaSqFt = document.getElementById('calculatedAreaSqFt');
+    const calculatedVolume = document.getElementById('calculatedVolume');
+    const saveRoomBtn = document.getElementById('saveRoomBtn');
+    const roomNameInput = document.getElementById('roomNameInput');
+
+    function updateCalculations() {
+      const length = parseFloat(wallLengthInput.value) || 0;
+      const width = parseFloat(wallWidthInput.value) || 0;
+      const height = parseFloat(ceilingHeightInput.value) || 0;
+
+      lengthMM.textContent = (length * 1000).toLocaleString() + ' mm';
+      widthMM.textContent = (width * 1000).toLocaleString() + ' mm';
+
+      const areaM2 = (length * width).toFixed(2);
+      const areaSqFt = (length * width * 10.7639).toFixed(2);
+      const volumeM3 = (length * width * height).toFixed(2);
+
+      calculatedArea.textContent = areaM2 + ' m²';
+      calculatedAreaSqFt.textContent = areaSqFt + ' sq ft';
+      calculatedVolume.textContent = volumeM3 + ' m³';
+    }
+
+    wallLengthInput.addEventListener('input', updateCalculations);
+    wallWidthInput.addEventListener('input', updateCalculations);
+    ceilingHeightInput.addEventListener('input', updateCalculations);
+
+    // Stepper Button Support
+    document.querySelectorAll('.dim-step-up').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = btn.parentElement.querySelector('input');
+        input.value = (parseFloat(input.value) + 0.10).toFixed(2);
+        updateCalculations();
+      });
+    });
+
+    document.querySelectorAll('.dim-step-down').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = btn.parentElement.querySelector('input');
+        const nextVal = parseFloat(input.value) - 0.10;
+        if (nextVal >= parseFloat(input.min || 1.0)) {
+          input.value = nextVal.toFixed(2);
+          updateCalculations();
+        }
+      });
+    });
+
+    // Preset button handlers
+    const presets = {
+      'Living Room': { name: 'Living & Dining Room', l: 6.80, w: 4.75, h: 2.80 },
+      'Primary Bed': { name: 'Master Suite & Dressing', l: 5.20, w: 4.20, h: 2.80 },
+      'Kitchen': { name: 'Open Chef Kitchen', l: 4.20, w: 3.80, h: 2.80 },
+      'Bathroom': { name: 'Powder Room & Bath', l: 2.60, w: 2.20, h: 2.60 },
+      'Home Office': { name: 'Atelier / Workspace', l: 3.50, w: 3.20, h: 2.80 },
+      'Custom': { name: 'New Custom Room', l: 4.00, w: 4.00, h: 2.80 }
+    };
+
+    document.querySelectorAll('.preset-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.preset-pill').forEach(p => {
+          p.classList.remove('bg-primary', 'text-on-primary');
+          p.classList.add('bg-surface-container-high', 'text-on-surface');
+        });
+        pill.classList.remove('bg-surface-container-high', 'text-on-surface');
+        pill.classList.add('bg-primary', 'text-on-primary');
+
+        const label = pill.querySelector('span:last-child').textContent.trim();
+        const conf = presets[label];
+        if (conf) {
+          roomNameInput.value = conf.name;
+          wallLengthInput.value = conf.l.toFixed(2);
+          wallWidthInput.value = conf.w.toFixed(2);
+          ceilingHeightInput.value = conf.h.toFixed(2);
+          updateCalculations();
+        }
+      });
+    });
+
+    // Save notification micro-interaction
+    saveRoomBtn.addEventListener('click', () => {
+      const origText = saveRoomBtn.innerHTML;
+      saveRoomBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">done</span> Saved to Floorplan Matrix';
+      saveRoomBtn.classList.remove('bg-primary');
+      saveRoomBtn.classList.add('bg-secondary');
+      setTimeout(() => {
+        saveRoomBtn.innerHTML = origText;
+        saveRoomBtn.classList.remove('bg-secondary');
+        saveRoomBtn.classList.add('bg-primary');
+      }, 1500);
+    });
+  })();
+</script></main><footer class="fixed bottom-0 left-0 right-0 h-8 bg-surface-container-high/95 backdrop-blur-md z-50 flex items-center justify-between px-space-md font-label-code-sm text-label-code-sm text-on-surface shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center gap-space-md"><span class="text-on-surface font-medium">Zoom: 100%</span><span class="text-outline">|</span><span>Scale: 1:50 metric</span><span class="text-outline">|</span><span>Grid Snap: 0.1m active</span><span class="text-outline">|</span><span>Units: Meters / cm</span></div><div class="flex items-center gap-space-xs text-on-surface-variant"><span class="material-symbols-outlined text-[13px] text-secondary">cloud_done</span><span>Supabase: Synced just now</span></div></footer></div></body></html>

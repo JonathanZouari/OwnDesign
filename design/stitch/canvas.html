@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;family=Plus+Jakarta+Sans:wght@500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "secondary-fixed": "#c9ebce",
+          "on-error-container": "#93000a",
+          "on-background": "#1b1c1a",
+          "inverse-surface": "#30312f",
+          "tertiary-fixed-dim": "#f8bb73",
+          "on-tertiary": "#ffffff",
+          "on-secondary-fixed-variant": "#304d38",
+          "outline": "#8a726a",
+          "surface": "#fbf9f6",
+          "surface-tint": "#a23e18",
+          "tertiary": "#7f5214",
+          "on-secondary-container": "#4b6a53",
+          "primary-fixed": "#ffdbcf",
+          "on-secondary": "#ffffff",
+          "surface-dim": "#dbdad6",
+          "inverse-primary": "#ffb59c",
+          "on-primary": "#ffffff",
+          "on-primary-fixed-variant": "#822801",
+          "error-container": "#ffdad6",
+          "on-primary-container": "#fffbff",
+          "on-error": "#ffffff",
+          "surface-container-high": "#e9e8e4",
+          "tertiary-fixed": "#ffddb9",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#efeeea",
+          "outline-variant": "#dec0b7",
+          "surface-variant": "#e4e2df",
+          "on-tertiary-container": "#fffbff",
+          "on-primary-fixed": "#390c00",
+          "on-surface": "#1b1c1a",
+          "on-secondary-fixed": "#03210f",
+          "secondary": "#47654f",
+          "secondary-container": "#c6e8cc",
+          "primary-fixed-dim": "#ffb59c",
+          "primary-container": "#bf542c",
+          "secondary-fixed-dim": "#adcfb3",
+          "primary": "#9f3c16",
+          "error": "#ba1a1a",
+          "surface-bright": "#fbf9f6",
+          "tertiary-container": "#9b6a2b",
+          "surface-container-low": "#f5f3f0",
+          "on-surface-variant": "#57423b",
+          "background": "#fbf9f6",
+          "on-tertiary-fixed": "#2b1700",
+          "surface-container-highest": "#e4e2df",
+          "inverse-on-surface": "#f2f1ed",
+          "on-tertiary-fixed-variant": "#663e00"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.125rem",
+          "lg": "0.25rem",
+          "xl": "0.5rem",
+          "full": "0.75rem"
+        },
+        "spacing": {
+          "gutter": "1rem",
+          "space-md": "0.75rem",
+          "space-lg": "1.25rem",
+          "space-xl": "2rem",
+          "margin-desktop": "2rem",
+          "margin-tablet": "1.5rem",
+          "gutter-desktop": "1.5rem",
+          "margin": "1rem",
+          "space-sm": "0.5rem",
+          "space-xs": "0.25rem"
+        },
+        "fontFamily": {
+          "headline-xl-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "label-code-sm": [
+            "JetBrains Mono"
+          ],
+          "headline-xl": [
+            "Plus Jakarta Sans"
+          ],
+          "label-code-md": [
+            "JetBrains Mono"
+          ],
+          "label-ui": [
+            "Inter"
+          ],
+          "headline-md": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-lg-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-sm": [
+            "Plus Jakarta Sans"
+          ],
+          "body-md": [
+            "Inter"
+          ],
+          "headline-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "body-lg": [
+            "Inter"
+          ],
+          "body-sm": [
+            "Inter"
+          ],
+          "label-code-lg": [
+            "JetBrains Mono"
+          ]
+        },
+        "fontSize": {
+          "headline-xl-mobile": [
+            "28px",
+            {
+              "lineHeight": "36px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-code-sm": [
+            "10px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-xl": [
+            "40px",
+            {
+              "lineHeight": "48px",
+              "letterSpacing": "-0.03em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-code-md": [
+            "11px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "500"
+            }
+          ],
+          "label-ui": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.06em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "22px",
+            {
+              "lineHeight": "30px",
+              "letterSpacing": "-0.015em",
+              "fontWeight": "500"
+            }
+          ],
+          "headline-lg-mobile": [
+            "24px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-sm": [
+            "18px",
+            {
+              "lineHeight": "26px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "500"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "letterSpacing": "0em",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-lg": [
+            "30px",
+            {
+              "lineHeight": "38px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-lg": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "-0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "body-sm": [
+            "12px",
+            {
+              "lineHeight": "18px",
+              "letterSpacing": "0.005em",
+              "fontWeight": "400"
+            }
+          ],
+          "label-code-lg": [
+            "13px",
+            {
+              "lineHeight": "18px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "500"
+            }
+          ]
+        }
+      },
+    },
+  }</script></head><body class="bg-surface text-on-surface min-h-screen"><aside class="fixed left-0 top-16 bottom-8 w-64 bg-surface-container-low z-40 flex flex-col justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col gap-space-sm px-space-md"><div class="flex items-center justify-between px-space-xs mb-space-xs"><span class="font-label-ui text-label-ui uppercase tracking-wider text-on-surface-variant">Studio Palette</span><span class="font-label-code-sm text-label-code-sm text-outline">ESC to deselect</span></div><nav class="flex flex-col gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-semibold"><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg transition-colors bg-primary-container text-on-primary-container font-semibold" data-path="2d-interactive-canvas" href="#"><span class="material-symbols-outlined text-[18px]">architecture</span><span class="font-body-md text-body-md">Architectural Canvas</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="guided-room-wizard" href="#"><span class="material-symbols-outlined text-[18px]">auto_awesome</span><span class="font-body-md text-body-md">Guided Wizard</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="3d-render-views" href="#"><span class="material-symbols-outlined text-[18px]">view_in_ar</span><span class="font-body-md text-body-md">Spatial Renders</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="dossier-and-budget" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span class="font-body-md text-body-md">Dossier &amp; Specs</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="project-settings" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-body-md text-body-md">Atelier Config</span></a></nav></div><div class="px-space-md flex flex-col gap-space-xs"><div class="bg-surface-container p-space-sm rounded-lg flex items-center justify-between"><span class="font-label-ui text-label-ui uppercase text-on-surface-variant">Active Cursor Snap</span><span class="font-label-code-sm text-label-code-sm text-primary font-medium">Orthogonal</span></div><div class="bg-surface-container-high p-space-sm rounded-lg flex items-center justify-between"><span class="font-label-ui text-label-ui uppercase text-on-surface-variant">Active Layer</span><span class="font-label-code-sm text-label-code-sm text-on-surface">Partition Walls</span></div></div></aside><div class="pl-64 flex flex-col min-h-screen"><header class="fixed top-0 left-0 right-0 h-16 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex items-center justify-between px-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-on-surface">ATELIER</span><span class="bg-secondary-container text-on-secondary-container font-label-code-sm text-label-code-sm px-space-xs py-0.5 rounded">Studio Kōsen (White-label)</span></div><div class="hidden xl:flex items-center gap-space-xs font-label-code-md text-label-code-md text-on-surface-variant"><span class="material-symbols-outlined text-[14px] text-outline">folder_open</span><span>Penthouse Apt 4B</span><span class="text-outline">•</span><span class="text-on-surface font-medium">Plan Editor (v2.4 Draft)</span></div></div><div class="hidden md:flex items-center bg-surface-container-low p-space-xs rounded-full shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><nav class="flex items-center gap-space-xs" data-active-classes="bg-surface-container-lowest text-on-surface shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><a class="font-label-ui text-label-ui text-on-surface-variant hover:text-on-surface px-space-md py-space-xs rounded-full transition-colors" data-path="guided-room-wizard" href="#">Guided Room Wizard</a><a aria-current="page" class="font-label-ui px-space-md py-space-xs rounded-full transition-colors bg-surface-container-lowest text-on-surface shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-path="2d-interactive-canvas" href="#">2D Interactive Canvas (Active)</a><a class="font-label-ui text-label-ui text-on-surface-variant hover:text-on-surface px-space-md py-space-xs rounded-full transition-colors" data-path="3d-render-views" href="#">3D Render Views (3 queued)</a><a class="font-label-ui text-label-ui text-on-surface-variant hover:text-on-surface px-space-md py-space-xs rounded-full transition-colors" data-path="dossier-and-budget" href="#">Dossier &amp; Budget</a></nav></div><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs bg-tertiary-fixed text-on-tertiary-fixed px-space-sm py-1 rounded font-label-code-sm text-label-code-sm"><span class="material-symbols-outlined text-[14px]">warning</span><span>Conceptual — Non-Structural Review</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-1 rounded-full font-label-code-sm text-label-code-sm text-on-surface"><span class="text-primary font-medium">⚡</span><span>42 Credits</span></div><button class="hidden sm:flex items-center gap-space-xs bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container px-space-sm py-1.5 rounded transition-colors font-label-ui text-label-ui" type="button"><span class="material-symbols-outlined text-[16px]">ios_share</span><span>Share / Export Dossier</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="flex-1 pt-16 pb-8 bg-surface w-full"><div class="flex flex-col w-full relative">
+<!-- Top Viewport Context Bar (Below Shell Header) -->
+<div class="w-full bg-surface-container-low px-space-md py-space-xs flex items-center justify-between shadow-sm z-20">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs font-label-code-md text-label-code-md">
+<span class="text-primary font-semibold">UNIT 4B</span>
+<span class="text-outline">/</span>
+<span class="text-on-surface font-medium">84.5 m² (910 sq ft)</span>
+<span class="text-outline">•</span>
+<span class="bg-secondary-container text-on-secondary-container px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm">Nordic Ochre Scheme</span>
+</div>
+<div class="hidden lg:flex items-center gap-space-sm pl-space-md">
+<button class="flex items-center gap-space-xs px-space-sm py-1 bg-surface-container hover:bg-surface-container-high rounded text-on-surface text-label-ui font-label-ui transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px]">grid_4x4</span>
+<span>Grid: 0.1m snap</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-1 bg-surface-container hover:bg-surface-container-high rounded text-on-surface text-label-ui font-label-ui transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px]">straighten</span>
+<span>Auto-Dim: ON</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-1 bg-surface-container hover:bg-surface-container-high rounded text-on-surface text-label-ui font-label-ui transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px]">group_work</span>
+<span>Symmetry Lock</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-space-xs font-label-code-sm text-label-code-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>Structural Egress: Clear (1,150 mm min)</span>
+</div>
+<div class="flex items-center bg-surface-container rounded p-0.5">
+<button class="px-space-sm py-0.5 bg-surface text-on-surface rounded font-label-ui text-label-ui shadow-sm" id="view-mode-2d">2D Plan</button>
+<button class="px-space-sm py-0.5 text-on-surface-variant hover:text-on-surface rounded font-label-ui text-label-ui" id="view-mode-axon">Axonometric</button>
+</div>
+</div>
+</div>
+<!-- Main Drafting Canvas & Panels Layout -->
+<div class="relative w-full flex overflow-hidden" style="height: calc(100vh - 7rem);">
+<!-- LEFT VERTICAL TOOL PALETTE (Docked Floating CAD Island) -->
+<div class="relative z-30 flex flex-col justify-between w-14 bg-surface-container-lowest py-space-sm px-1.5 shadow-md">
+<!-- Top Tool Group -->
+<div class="flex flex-col items-center gap-1.5">
+<!-- Select Tool (Active) -->
+<button class="relative group w-10 h-10 flex flex-col items-center justify-center rounded-lg bg-inverse-surface text-inverse-on-surface" id="tool-select" title="Pointer Select (V)">
+<span class="material-symbols-outlined text-[20px]">near_me</span>
+<span class="font-label-code-sm text-[9px] leading-tight">V</span>
+<span class="absolute -right-1 top-2 w-1 h-3 bg-primary rounded-full"></span>
+</button>
+<!-- Wall Drawing Tool -->
+<div class="relative group">
+<button class="w-10 h-10 flex flex-col items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" id="tool-wall" title="Wall Drawing Tool (W)">
+<span class="material-symbols-outlined text-[20px]">polyline</span>
+<span class="font-label-code-sm text-[9px] leading-tight">W</span>
+</button>
+<!-- Wall Sub-options flyout on hover -->
+<div class="absolute left-12 top-0 hidden group-hover:flex flex-col bg-surface-container-lowest p-space-xs rounded-lg shadow-xl min-w-44 z-50">
+<span class="font-label-ui text-label-ui text-on-surface-variant px-space-xs py-1">Wall Type</span>
+<button class="flex items-center justify-between px-space-xs py-1.5 text-left rounded hover:bg-surface-container font-body-sm text-body-sm text-on-surface">
+<span>Partition Wall</span>
+<span class="font-label-code-sm text-outline">100mm</span>
+</button>
+<button class="flex items-center justify-between px-space-xs py-1.5 text-left rounded hover:bg-surface-container font-body-sm text-body-sm text-on-surface">
+<span>Load Bearing</span>
+<span class="font-label-code-sm text-outline">250mm</span>
+</button>
+</div>
+</div>
+<!-- Openings Tool -->
+<div class="relative group">
+<button class="w-10 h-10 flex flex-col items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" id="tool-openings" title="Openings Tool (D)">
+<span class="material-symbols-outlined text-[20px]">meeting_room</span>
+<span class="font-label-code-sm text-[9px] leading-tight">D</span>
+</button>
+<div class="absolute left-12 top-0 hidden group-hover:flex flex-col bg-surface-container-lowest p-space-xs rounded-lg shadow-xl min-w-44 z-50">
+<span class="font-label-ui text-label-ui text-on-surface-variant px-space-xs py-1">Openings</span>
+<button class="flex items-center gap-space-xs px-space-xs py-1.5 text-left rounded hover:bg-surface-container font-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-[16px]">door_front</span>
+<span>Swing Door</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-xs py-1.5 text-left rounded hover:bg-surface-container font-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-[16px]">door_sliding</span>
+<span>Pocket / Slider</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-xs py-1.5 text-left rounded hover:bg-surface-container font-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-[16px]">window</span>
+<span>Casement Window</span>
+</button>
+</div>
+</div>
+<!-- Room Zone Tool -->
+<button class="w-10 h-10 flex flex-col items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" id="tool-rooms" title="Room Boundaries (R)">
+<span class="material-symbols-outlined text-[20px]">space_dashboard</span>
+<span class="font-label-code-sm text-[9px] leading-tight">R</span>
+</button>
+<!-- Furniture Catalog Tool -->
+<button class="w-10 h-10 flex flex-col items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" id="tool-furniture" title="Furniture Catalog">
+<span class="material-symbols-outlined text-[20px]">chair</span>
+<span class="font-label-code-sm text-[9px] leading-tight">F</span>
+</button>
+<!-- Dimension Ruler Tool -->
+<button class="w-10 h-10 flex flex-col items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" id="tool-measure" title="Dimension Ruler (M)">
+<span class="material-symbols-outlined text-[20px]">square_foot</span>
+<span class="font-label-code-sm text-[9px] leading-tight">M</span>
+</button>
+<div class="w-6 h-px bg-surface-container-high my-1"></div>
+<!-- AI Layout Assist Trigger -->
+<button class="w-10 h-10 flex flex-col items-center justify-center rounded-lg bg-primary-fixed text-on-primary-fixed hover:bg-primary-container hover:text-on-primary-container transition-colors" title="Auto-Furnish Suggestion">
+<span class="material-symbols-outlined text-[20px]">auto_fix_high</span>
+<span class="font-label-code-sm text-[9px] leading-tight">AI</span>
+</button>
+</div>
+<!-- Bottom History / Action Tool Group -->
+<div class="flex flex-col items-center gap-1.5">
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container transition-colors" title="Undo (Ctrl+Z)">
+<span class="material-symbols-outlined text-[18px]">undo</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container transition-colors" title="Redo (Ctrl+Y)">
+<span class="material-symbols-outlined text-[18px]">redo</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container transition-colors" title="Layers Lock">
+<span class="material-symbols-outlined text-[18px]">lock_open</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors" title="Clear Canvas">
+<span class="material-symbols-outlined text-[18px]">delete_sweep</span>
+</button>
+</div>
+</div>
+<!-- CANVAS VIEWPORT (Interactive Architectural Plan Paper) -->
+<div class="flex-1 relative bg-surface overflow-hidden select-none cursor-crosshair" id="blueprint-canvas-container">
+<!-- Top Metric Ruler (X-Axis) -->
+<div class="absolute top-0 left-0 right-0 h-6 bg-surface-container-high/70 backdrop-blur-sm z-10 flex items-end pl-6 overflow-hidden pointer-events-none">
+<div class="w-full flex justify-between font-label-code-sm text-[9px] text-outline px-4 pb-0.5">
+<span>0.00m</span>
+<span>1.00m</span>
+<span>2.00m</span>
+<span>3.00m</span>
+<span>4.00m</span>
+<span>5.00m</span>
+<span>6.00m</span>
+<span>7.00m</span>
+<span>8.00m</span>
+<span>9.00m</span>
+<span>10.00m</span>
+<span>11.00m</span>
+<span>12.00m</span>
+</div>
+</div>
+<!-- Left Metric Ruler (Y-Axis) -->
+<div class="absolute top-0 bottom-0 left-0 w-6 bg-surface-container-high/70 backdrop-blur-sm z-10 flex flex-col justify-between pt-8 pb-4 items-center overflow-hidden pointer-events-none">
+<span class="font-label-code-sm text-[9px] text-outline [writing-mode:vertical-rl] rotate-180">0.0m</span>
+<span class="font-label-code-sm text-[9px] text-outline [writing-mode:vertical-rl] rotate-180">2.0m</span>
+<span class="font-label-code-sm text-[9px] text-outline [writing-mode:vertical-rl] rotate-180">4.0m</span>
+<span class="font-label-code-sm text-[9px] text-outline [writing-mode:vertical-rl] rotate-180">6.0m</span>
+<span class="font-label-code-sm text-[9px] text-outline [writing-mode:vertical-rl] rotate-180">8.0m</span>
+<span class="font-label-code-sm text-[9px] text-outline [writing-mode:vertical-rl] rotate-180">10.0m</span>
+</div>
+<!-- Architectural Drafting Grid Pattern (SVG) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none opacity-40" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="20" id="smallGrid" patternunits="userSpaceOnUse" width="20">
+<path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(57, 12, 0, 0.08)" stroke-width="0.5"></path>
+</pattern>
+<pattern height="100" id="grid" patternunits="userSpaceOnUse" width="100">
+<rect fill="url(#smallGrid)" height="100" width="100"></rect>
+<path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(57, 12, 0, 0.18)" stroke-width="1"></path>
+</pattern>
+</defs>
+<rect fill="url(#grid)" height="100%" width="100%"></rect>
+</svg>
+<!-- ACTIVE PLAN VIEWPORT CONTENT (Scalable Interactive Vector Layer) -->
+<div class="relative w-full h-full flex items-center justify-center p-8 overflow-auto">
+<div class="relative w-[960px] h-[640px] bg-surface-container-lowest/80 shadow-2xl rounded-sm p-6">
+<!-- Architectural Floor Plan Vector Graphic Overlay -->
+<svg class="w-full h-full" viewbox="0 0 960 640">
+<defs>
+<!-- Architectural Wall Hatch Pattern -->
+<pattern height="8" id="wallHatch" patterntransform="rotate(45 0 0)" patternunits="userSpaceOnUse" width="8">
+<line opacity="0.3" stroke="#1b1c1a" stroke-width="1.2" x1="0" x2="0" y1="0" y2="8"></line>
+</pattern>
+<!-- Decking Hatch for Balcony -->
+<pattern height="16" id="deckHatch" patternunits="userSpaceOnUse" width="16">
+<line opacity="0.4" stroke="#7f5214" stroke-width="1" x1="0" x2="16" y1="0" y2="0"></line>
+</pattern>
+<!-- Rug Weave Texture -->
+<pattern height="6" id="rugTexture" patternunits="userSpaceOnUse" width="6">
+<circle cx="3" cy="3" fill="#dec0b7" opacity="0.5" r="1"></circle>
+</pattern>
+</defs>
+<!-- EXTERIOR PERIMETER BOUNDARY -->
+<rect fill="none" height="560" stroke="#1b1c1a" stroke-linejoin="miter" stroke-width="14" width="880" x="40" y="40"></rect>
+<!-- BALCONY / TERRACE ZONE (Top Left) -->
+<rect fill="url(#deckHatch)" height="130" width="280" x="40" y="40"></rect>
+<line stroke="#1b1c1a" stroke-dasharray="12 6" stroke-width="4" x1="40" x2="320" y1="170" y2="170"></line>
+<text class="font-label-ui text-label-ui fill-tertiary uppercase tracking-wider font-semibold" x="56" y="70">Terrace / Balcony</text>
+<text class="font-label-code-sm text-label-code-sm fill-outline" x="56" y="90">9.6 m² • Cedar Decking</text>
+<!-- MAIN LIVING & DINING OPEN CONCEPT (Left Center to Bottom) -->
+<rect fill="#fbf9f6" height="430" opacity="0.4" width="540" x="40" y="170"></rect>
+<text class="font-headline-sm text-headline-sm fill-on-surface font-semibold tracking-tight" x="60" y="200">01. Living &amp; Dining Atelier</text>
+<text class="font-label-code-md text-label-code-md fill-outline font-medium" x="60" y="222">32.4 m² • Natural White Oak Chevron</text>
+<!-- DINING SUB-ZONE (Top Middle) -->
+<!-- Dining Table (6-Person) -->
+<g transform="translate(100, 240)">
+<!-- Dining Area Rug -->
+<rect fill="none" height="150" rx="4" stroke="#dec0b7" stroke-dasharray="4 3" stroke-width="1.5" width="210" x="-15" y="-15"></rect>
+<!-- Table Surface -->
+<rect fill="#efeeea" height="120" rx="4" stroke="#1b1c1a" stroke-width="1.5" width="180" x="0" y="0"></rect>
+<text class="font-label-code-sm text-label-code-sm fill-on-surface-variant" text-anchor="middle" x="90" y="65">Oak Dining 1.80 × 1.20m</text>
+<!-- 6 Chairs -->
+<rect fill="#dec0b7" height="10" rx="2" width="36" x="25" y="-12"></rect>
+<rect fill="#dec0b7" height="10" rx="2" width="36" x="119" y="-12"></rect>
+<rect fill="#dec0b7" height="10" rx="2" width="36" x="25" y="122"></rect>
+<rect fill="#dec0b7" height="10" rx="2" width="36" x="119" y="122"></rect>
+<rect fill="#dec0b7" height="36" rx="2" width="10" x="-12" y="42"></rect>
+<rect fill="#dec0b7" height="36" rx="2" width="10" x="182" y="42"></rect>
+</g>
+<!-- Media Console along Left Wall -->
+<rect fill="#e4e2df" height="140" stroke="#1b1c1a" stroke-width="1" width="22" x="47" y="420"></rect>
+<text class="font-label-code-sm text-[8px] fill-outline [writing-mode:vertical-rl] rotate-180" text-anchor="middle" x="58" y="490">Low Media Console 2.0m</text>
+<!-- Area Rug for Living Lounge -->
+<rect fill="url(#rugTexture)" height="180" rx="8" stroke="#dec0b7" stroke-width="1" width="280" x="110" y="405"></rect>
+<!-- Coffee Table -->
+<ellipse cx="230" cy="495" fill="#f5f3f0" rx="42" ry="26" stroke="#1b1c1a" stroke-width="1.5"></ellipse>
+<text class="font-label-code-sm text-[9px] fill-on-surface-variant" text-anchor="middle" x="230" y="498">Travertine Table</text>
+<!-- Floor Arc Lamp Symbol -->
+<circle cx="125" cy="425" fill="none" r="12" stroke="#8a726a" stroke-width="1.5"></circle>
+<path d="M 125 425 Q 160 440 180 460" fill="none" stroke="#8a726a" stroke-dasharray="2 2" stroke-width="1"></path>
+<!-- Wall Divider between Living & Bedroom/Baths -->
+<rect fill="url(#wallHatch)" height="560" stroke="#1b1c1a" stroke-width="2" width="14" x="580" y="40"></rect>
+<!-- Wall Divider between Living & Kitchen -->
+<rect fill="url(#wallHatch)" height="180" stroke="#1b1c1a" stroke-width="2" width="12" x="320" y="40"></rect>
+<rect fill="url(#wallHatch)" height="12" stroke="#1b1c1a" stroke-width="2" width="260" x="320" y="210"></rect>
+<!-- KITCHEN & PANTRY ZONE (Center Top) -->
+<rect fill="#f5f3f0" height="158" width="248" x="332" y="52"></rect>
+<text class="font-headline-sm text-headline-sm fill-on-surface font-medium" x="345" y="76">02. Kitchen</text>
+<text class="font-label-code-sm text-label-code-sm fill-outline" x="345" y="94">11.5 m² • Honed Granite Counter</text>
+<!-- Kitchen Island / Counter with Sink & Hob -->
+<g transform="translate(345, 110)">
+<rect fill="#efeeea" height="60" rx="2" stroke="#1b1c1a" stroke-width="1.5" width="220" x="0" y="0"></rect>
+<!-- Sink Double Basin -->
+<rect fill="#dbdad6" height="36" stroke="#8a726a" stroke-width="1" width="48" x="20" y="12"></rect>
+<line stroke="#8a726a" stroke-width="1" x1="44" x2="44" y1="12" y2="48"></line>
+<!-- Induction Hob (4 zones) -->
+<rect fill="#1b1c1a" height="32" opacity="0.8" rx="2" width="46" x="90" y="14"></rect>
+<circle cx="102" cy="24" fill="#fbf9f6" opacity="0.6" r="5"></circle>
+<circle cx="124" cy="24" fill="#fbf9f6" opacity="0.6" r="6"></circle>
+<circle cx="102" cy="36" fill="#fbf9f6" opacity="0.6" r="4"></circle>
+<circle cx="124" cy="36" fill="#fbf9f6" opacity="0.6" r="5"></circle>
+<!-- Refrigerator / Pantry Tower -->
+<rect fill="#dbdad6" height="52" stroke="#1b1c1a" stroke-width="1" width="50" x="160" y="4"></rect>
+<text class="font-label-code-sm text-[8px] fill-on-surface" text-anchor="middle" x="185" y="34">REF</text>
+</g>
+<!-- PRIMARY BEDROOM ZONE (Right Bottom) -->
+<rect fill="#fbf9f6" height="348" width="314" x="594" y="240"></rect>
+<text class="font-headline-sm text-headline-sm fill-on-surface font-semibold tracking-tight" x="614" y="270">03. Master Suite</text>
+<text class="font-label-code-md text-label-code-md fill-outline font-medium" x="614" y="292">18.2 m² • Acoustic Felt Ceiling</text>
+<!-- King Size Bed -->
+<g transform="translate(680, 360)">
+<rect fill="none" height="200" rx="3" stroke="#dec0b7" stroke-dasharray="3 3" stroke-width="1" width="168" x="-14" y="-14"></rect>
+<!-- Headboard -->
+<rect fill="#8a726a" height="16" rx="2" width="140" x="0" y="0"></rect>
+<!-- Mattress -->
+<rect fill="#ffffff" height="165" rx="3" stroke="#1b1c1a" stroke-width="1.5" width="130" x="5" y="16"></rect>
+<!-- Pillows -->
+<rect fill="#efeeea" height="30" rx="4" stroke="#dec0b7" stroke-width="1" width="48" x="15" y="24"></rect>
+<rect fill="#efeeea" height="30" rx="4" stroke="#dec0b7" stroke-width="1" width="48" x="77" y="24"></rect>
+<!-- Duvet fold line -->
+<path d="M 5 80 Q 70 95 135 80" fill="none" stroke="#dec0b7" stroke-width="1.2"></path>
+<!-- Side tables -->
+<rect fill="#efeeea" height="34" rx="2" stroke="#1b1c1a" stroke-width="1" width="28" x="-35" y="10"></rect>
+<rect fill="#1b1c1a" height="34" opacity="0.1" rx="2" stroke="#1b1c1a" stroke-width="1" width="28" x="147" y="10"></rect>
+</g>
+<!-- Wardrobe Built-in (3.2m along Bedroom West Wall) -->
+<g transform="translate(594, 320)">
+<rect fill="#e4e2df" height="220" stroke="#1b1c1a" stroke-width="1.2" width="34" x="0" y="0"></rect>
+<line stroke="#8a726a" stroke-dasharray="4 2" stroke-width="0.8" x1="17" x2="17" y1="0" y2="220"></line>
+<text class="font-label-code-sm text-[8px] fill-on-surface-variant [writing-mode:vertical-rl] rotate-180" text-anchor="middle" x="17" y="120">Built-in Wardrobe (3.20m)</text>
+</g>
+<!-- Double Casement Window on Master Bedroom East Wall -->
+<g transform="translate(900, 360)">
+<rect fill="#ffffff" height="140" stroke="#1b1c1a" stroke-width="2" width="14" x="0" y="0"></rect>
+<line stroke="#9f3c16" stroke-width="2" x1="7" x2="7" y1="0" y2="140"></line>
+<!-- Natural Light Orientation Marker -->
+<path d="M 28 60 L 40 70 L 28 80 Z" fill="#7f5214" opacity="0.7"></path>
+<text class="font-label-code-sm text-[8px] fill-tertiary" x="35" y="100">Morning Sun E</text>
+</g>
+<!-- ENSUITE BATHROOM ZONE (Right Top) -->
+<rect fill="#f5f3f0" height="188" width="314" x="594" y="52"></rect>
+<line stroke="#1b1c1a" stroke-width="8" x1="594" x2="908" y1="240" y2="240"></line>
+<text class="font-headline-sm text-headline-sm fill-on-surface font-semibold tracking-tight" x="614" y="76">04. Ensuite Bath</text>
+<text class="font-label-code-sm text-label-code-sm fill-outline" x="614" y="94">6.8 m² • Micro-cement Wet Room</text>
+<!-- Bath Fixtures: Walk-in Shower & WC & Double Basin -->
+<g transform="translate(614, 110)">
+<!-- Shower glass partition -->
+<rect fill="#dbdad6" height="110" opacity="0.3" stroke="#8a726a" stroke-dasharray="3 2" stroke-width="1.5" width="90" x="0" y="0"></rect>
+<circle cx="45" cy="55" fill="none" r="8" stroke="#8a726a" stroke-width="1.5"></circle>
+<circle cx="45" cy="55" fill="#8a726a" r="2"></circle>
+<text class="font-label-code-sm text-[8px] fill-outline" text-anchor="middle" x="45" y="80">Walk-in Shower</text>
+<!-- Double Basin Vanity -->
+<rect fill="#efeeea" height="42" stroke="#1b1c1a" stroke-width="1" width="160" x="110" y="0"></rect>
+<ellipse cx="145" cy="21" fill="#ffffff" rx="18" ry="12" stroke="#8a726a" stroke-width="1"></ellipse>
+<ellipse cx="225" cy="21" fill="#ffffff" rx="18" ry="12" stroke="#8a726a" stroke-width="1"></ellipse>
+<!-- Wall-hung WC -->
+<g transform="translate(230, 65)">
+<rect fill="#dbdad6" height="16" stroke="#1b1c1a" stroke-width="1" width="36" x="0" y="0"></rect>
+<path d="M 4 16 C 4 38, 32 38, 32 16 Z" fill="#ffffff" stroke="#1b1c1a" stroke-width="1"></path>
+</g>
+</g>
+<!-- ARCHITECTURAL DIMENSION STRINGS & TICKS -->
+<!-- Top Exterior Dimension (6.80m Living Span) -->
+<g transform="translate(40, 20)">
+<line stroke="#8a726a" stroke-width="1" x1="0" x2="540" y1="0" y2="0"></line>
+<line stroke="#8a726a" stroke-width="1.5" x1="0" x2="0" y1="-5" y2="5"></line>
+<line stroke="#8a726a" stroke-width="1.5" x1="540" x2="540" y1="-5" y2="5"></line>
+<!-- Architectural Tick Marks (45 deg) -->
+<line stroke="#1b1c1a" stroke-width="2" x1="-4" x2="4" y1="-4" y2="4"></line>
+<line stroke="#1b1c1a" stroke-width="2" x1="536" x2="544" y1="-4" y2="4"></line>
+<rect fill="#fbf9f6" height="18" rx="2" width="70" x="235" y="-10"></rect>
+<text class="font-label-code-sm text-label-code-sm fill-on-surface font-semibold" text-anchor="middle" x="270" y="2">6.80 m</text>
+</g>
+<!-- Master Suite Dimension (3.80m) -->
+<g transform="translate(594, 20)">
+<line stroke="#8a726a" stroke-width="1" x1="0" x2="314" y1="0" y2="0"></line>
+<line stroke="#1b1c1a" stroke-width="2" x1="-4" x2="4" y1="-4" y2="4"></line>
+<line stroke="#1b1c1a" stroke-width="2" x1="310" x2="318" y1="-4" y2="4"></line>
+<rect fill="#fbf9f6" height="18" rx="2" width="65" x="125" y="-10"></rect>
+<text class="font-label-code-sm text-label-code-sm fill-on-surface font-semibold" text-anchor="middle" x="157" y="2">3.80 m</text>
+</g>
+<!-- Left Side Dimension (4.75m Living Depth) -->
+<g transform="translate(20, 170)">
+<line stroke="#8a726a" stroke-width="1" x1="0" x2="0" y1="0" y2="430"></line>
+<line stroke="#1b1c1a" stroke-width="2" x1="-4" x2="4" y1="-4" y2="4"></line>
+<line stroke="#1b1c1a" stroke-width="2" x1="-4" x2="4" y1="426" y2="434"></line>
+<rect fill="#fbf9f6" height="60" rx="2" width="20" x="-10" y="200"></rect>
+<text class="font-label-code-sm text-label-code-sm fill-on-surface font-semibold [writing-mode:vertical-rl] rotate-180" text-anchor="middle" x="0" y="235">4.75 m</text>
+</g>
+<!-- DIRECT WALL EDITING VERTEX NODES (FR-02) -->
+<!-- Partition Wall Drag Node -->
+<g class="cursor-move group" transform="translate(320, 210)">
+<circle cx="0" cy="0" fill="#ffffff" r="8" stroke="#9f3c16" stroke-width="2.5"></circle>
+<circle cx="0" cy="0" fill="#9f3c16" r="3"></circle>
+<!-- Feedback Tag on Wall Node -->
+<rect fill="#1b1c1a" height="22" rx="3" width="155" x="14" y="-16"></rect>
+<text class="font-label-code-sm text-[10px] fill-inverse-on-surface" x="20" y="-1">4.20m • Snap Grid 0.1m</text>
+</g>
+<!-- ACTIVE SELECTION: MODULAR 3-SEATER SOFA (Living Room) -->
+<g class="cursor-pointer" id="selected-sofa-group" transform="translate(180, 440)">
+<!-- Sofa Geometry Structure -->
+<rect fill="#dec0b7" height="85" rx="6" stroke="#1b1c1a" stroke-width="1.8" width="180" x="0" y="0"></rect>
+<!-- Back Cushion -->
+<rect fill="#dec0b7" height="24" rx="4" stroke="#8a726a" stroke-width="1" width="180" x="0" y="0"></rect>
+<line stroke="#8a726a" stroke-width="1" x1="60" x2="60" y1="0" y2="24"></line>
+<line stroke="#8a726a" stroke-width="1" x1="120" x2="120" y1="0" y2="24"></line>
+<!-- Seat Separators -->
+<line stroke="#8a726a" stroke-dasharray="3 3" stroke-width="1" x1="60" x2="60" y1="24" y2="85"></line>
+<line stroke="#8a726a" stroke-dasharray="3 3" stroke-width="1" x1="120" x2="120" y1="24" y2="85"></line>
+<!-- Armrests -->
+<rect fill="#dec0b7" height="75" rx="3" stroke="#8a726a" stroke-width="1" width="14" x="0" y="10"></rect>
+<rect fill="#dec0b7" height="75" rx="3" stroke="#8a726a" stroke-width="1" width="14" x="166" y="10"></rect>
+<!-- SELECTION BOUNDING BOX (Terracotta Accent CAD Style) -->
+<rect fill="none" height="101" stroke="#9f3c16" stroke-dasharray="4 4" stroke-width="1.5" width="196" x="-8" y="-8"></rect>
+<!-- 4 Corner Resizing Anchors -->
+<rect fill="#9f3c16" height="8" stroke="#ffffff" stroke-width="1.5" width="8" x="-12" y="-12"></rect>
+<rect fill="#9f3c16" height="8" stroke="#ffffff" stroke-width="1.5" width="8" x="184" y="-12"></rect>
+<rect fill="#9f3c16" height="8" stroke="#ffffff" stroke-width="1.5" width="8" x="-12" y="89"></rect>
+<rect fill="#9f3c16" height="8" stroke="#ffffff" stroke-width="1.5" width="8" x="184" y="89"></rect>
+<!-- Top Rotation Handle -->
+<line stroke="#9f3c16" stroke-width="1.5" x1="90" x2="90" y1="-8" y2="-28"></line>
+<circle class="cursor-alias" cx="90" cy="-28" fill="#9f3c16" r="6" stroke="#ffffff" stroke-width="2"></circle>
+<!-- Dimension Indicators Over Bounding Box -->
+<rect fill="#1b1c1a" height="18" rx="2" width="54" x="65" y="97"></rect>
+<text class="font-label-code-sm text-[10px] fill-inverse-on-surface" text-anchor="middle" x="92" y="109">2.20 m</text>
+<rect fill="#1b1c1a" height="18" rx="2" width="30" x="-42" y="34"></rect>
+<text class="font-label-code-sm text-[10px] fill-inverse-on-surface" text-anchor="middle" x="-27" y="46">0.95m</text>
+</g>
+<!-- Provisional Kitchen Plumbing Badge (Overlay) -->
+<g transform="translate(340, 185)">
+<rect fill="#ffddb9" height="20" rx="3" width="225" x="0" y="0"></rect>
+<text class="font-label-code-sm text-[9px] fill-on-tertiary-fixed font-medium" x="8" y="14">⚠️ Provisional Plumbing — Needs Architect Sign-off</text>
+</g>
+</svg>
+<!-- FLOATING CONTEXT PILL (Over Selected Sofa Instance) -->
+<div class="absolute left-64 bottom-40 bg-inverse-surface text-inverse-on-surface rounded-full px-space-sm py-1 shadow-xl flex items-center gap-space-xs z-30 font-label-ui text-[11px]">
+<button class="flex items-center gap-1 px-space-xs py-0.5 hover:bg-surface-container/20 rounded transition-colors" title="Rotate 90 deg">
+<span class="material-symbols-outlined text-[14px] text-tertiary-fixed-dim">rotate_90_degrees_cw</span>
+<span>Rotate 90°</span>
+</button>
+<span class="text-outline text-xs">|</span>
+<button class="flex items-center gap-1 px-space-xs py-0.5 hover:bg-surface-container/20 rounded transition-colors">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+<span>Duplicate</span>
+</button>
+<span class="text-outline text-xs">|</span>
+<button class="flex items-center gap-1 px-space-xs py-0.5 hover:bg-surface-container/20 rounded transition-colors text-primary-fixed">
+<span class="material-symbols-outlined text-[14px]">palette</span>
+<span>Bouclé Off-White</span>
+</button>
+<span class="text-outline text-xs">|</span>
+<button class="hover:text-error-container p-0.5 transition-colors" title="Delete">
+<span class="material-symbols-outlined text-[15px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- BOTTOM-LEFT FLOATING LAYER & DISPLAY TOGGLES -->
+<div class="absolute bottom-4 left-4 bg-surface-container-lowest/95 backdrop-blur-md rounded-lg p-space-xs shadow-lg flex items-center gap-space-xs z-30 font-label-code-sm text-label-code-sm text-on-surface">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline px-1.5">Layers:</span>
+<label class="flex items-center gap-1 px-2 py-1 bg-surface-container rounded cursor-pointer">
+<input checked="" class="accent-primary w-3 h-3" type="checkbox"/>
+<span>Dimensions</span>
+</label>
+<label class="flex items-center gap-1 px-2 py-1 bg-surface-container rounded cursor-pointer">
+<input checked="" class="accent-primary w-3 h-3" type="checkbox"/>
+<span>Furniture (14)</span>
+</label>
+<label class="flex items-center gap-1 px-2 py-1 bg-surface-container rounded cursor-pointer">
+<input checked="" class="accent-primary w-3 h-3" type="checkbox"/>
+<span>Annotations</span>
+</label>
+<label class="flex items-center gap-1 px-2 py-1 bg-surface-container rounded cursor-pointer">
+<input checked="" class="accent-primary w-3 h-3" type="checkbox"/>
+<span>0.1m Grid</span>
+</label>
+</div>
+<!-- BOTTOM-RIGHT INTERACTIVE MINIMAP & ZOOM PILL -->
+<div class="absolute bottom-4 right-4 flex items-end gap-space-sm z-30">
+<!-- Zoom Controls -->
+<div class="bg-surface-container-lowest/95 backdrop-blur-md rounded-lg p-1 shadow-lg flex flex-col gap-1 items-center">
+<button class="w-7 h-7 flex items-center justify-center hover:bg-surface-container rounded text-on-surface" title="Zoom In">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+<span class="font-label-code-sm text-[9px] text-outline">100%</span>
+<button class="w-7 h-7 flex items-center justify-center hover:bg-surface-container rounded text-on-surface" title="Zoom Out">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center hover:bg-surface-container rounded text-on-surface" title="Reset View">
+<span class="material-symbols-outlined text-[16px]">fit_screen</span>
+</button>
+</div>
+<!-- Blueprint Mini-Map -->
+<div class="w-36 h-24 bg-surface-container-high/90 backdrop-blur-md rounded-lg p-1.5 shadow-lg relative overflow-hidden hidden sm:block">
+<div class="w-full h-full bg-surface-container border-dashed border-outline-variant relative">
+<!-- Simplified apartment geometry -->
+<div class="absolute left-1 top-1 w-14 h-6 bg-tertiary-fixed-dim/40 rounded-xs"></div>
+<div class="absolute left-1 top-7 w-20 h-14 bg-primary-fixed/40 rounded-xs"></div>
+<div class="absolute left-15 top-1 w-10 h-7 bg-surface-container-highest rounded-xs"></div>
+<div class="absolute right-1 bottom-1 w-12 h-14 bg-secondary-fixed/40 rounded-xs"></div>
+<!-- Viewport Frustum Box -->
+<div class="absolute inset-1.5 border-2 border-primary rounded-xs pointer-events-none"></div>
+</div>
+<span class="absolute bottom-1 right-2 font-label-code-sm text-[8px] text-outline">MAP 1:250</span>
+</div>
+</div>
+</div>
+<!-- RIGHT INSPECTOR & AI CONSULTANT DOCK (Split-Section Architecture) -->
+<div class="w-80 lg:w-96 bg-surface-container-low flex flex-col justify-between shadow-xl z-30 overflow-y-auto">
+<!-- TOP SECTION: ELEMENT CAD INSPECTOR -->
+<div class="p-space-md flex flex-col gap-space-md">
+<!-- Header -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">chair</span>
+<div>
+<h2 class="font-headline-sm text-headline-sm font-semibold text-on-surface leading-tight">Element Inspector</h2>
+<p class="font-label-code-sm text-label-code-sm text-outline">Generic Instance #LF-04 • Living</p>
+</div>
+</div>
+<span class="bg-secondary-fixed text-on-secondary-fixed font-label-code-sm text-label-code-sm px-2 py-0.5 rounded font-medium">Valid Egress</span>
+</div>
+<!-- Active Item Name & Swatch Preview Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex items-center gap-space-sm">
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-surface-container relative">
+<img class="w-full h-full object-cover" data-alt="Close up architectural fabric texture of Kvadrat canvas upholstery wool in warm sand tones with delicate tactile weave under soft Scandinavian window daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3zEt6vProuxTcqblfz8cYggBVdsJ8wSYLcrI0p3NRNA6DzCxgnbpNkqru6EhDq29CU1uunUYUJt2VntTE87zGd7eShama0g4R1w4_aKYgB6DNHvDgC2BXxzYR9noK1F74WBgFXJp3RriVkIDLbzVJ0G5Qv4M5CXBBAl3IgIdRGmMDWUoi5jyU-KbdFZ0LDGecZ1swQuWDBNYtH76qrz_hWdWOgaJMbK4whSi-AaA"/>
+<span class="absolute bottom-0 right-0 bg-surface-container-highest/90 px-1 rounded-tl font-label-code-sm text-[8px] text-on-surface">WOOL</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Active Selection</div>
+<div class="font-headline-sm text-body-lg font-semibold text-on-surface truncate">Modular 3-Seater Sofa</div>
+<div class="font-label-code-md text-label-code-md text-on-surface-variant truncate">Kvadrat Canvas • Warm Sand</div>
+<div class="font-label-code-sm text-label-code-sm text-primary font-medium mt-0.5">Est. ~$1,450 (Trade Indicative)</div>
+</div>
+</div>
+<!-- Parametric Dimensions Stepper Grid -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase text-on-surface-variant">Bounding Dimensions</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">mm metric</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<!-- Width -->
+<div class="bg-surface-container p-2 rounded flex flex-col">
+<span class="font-label-code-sm text-[9px] text-outline">WIDTH (X)</span>
+<div class="flex items-center justify-between mt-1">
+<span class="font-label-code-md text-label-code-md font-semibold text-on-surface">2,200</span>
+<span class="font-label-code-sm text-[9px] text-outline">mm</span>
+</div>
+</div>
+<!-- Depth -->
+<div class="bg-surface-container p-2 rounded flex flex-col">
+<span class="font-label-code-sm text-[9px] text-outline">DEPTH (Y)</span>
+<div class="flex items-center justify-between mt-1">
+<span class="font-label-code-md text-label-code-md font-semibold text-on-surface">950</span>
+<span class="font-label-code-sm text-[9px] text-outline">mm</span>
+</div>
+</div>
+<!-- Height -->
+<div class="bg-surface-container p-2 rounded flex flex-col">
+<span class="font-label-code-sm text-[9px] text-outline">HEIGHT (Z)</span>
+<div class="flex items-center justify-between mt-1">
+<span class="font-label-code-md text-label-code-md font-semibold text-on-surface">780</span>
+<span class="font-label-code-sm text-[9px] text-outline">mm</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Clearance & Structural Verification Metric -->
+<div class="bg-secondary-container/40 p-space-sm rounded-lg flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px] shrink-0 mt-0.5">verified</span>
+<div>
+<div class="font-label-ui text-label-ui font-semibold text-on-secondary-container">Circulation Checked</div>
+<p class="font-body-sm text-body-sm text-on-secondary-container/90 leading-snug">920 mm clear aisle path maintained to dining boundary. Meets standard 800 mm residential clearance guidelines.</p>
+</div>
+</div>
+<!-- Material Variant Selector -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-ui text-label-ui uppercase text-on-surface-variant">Finish Presets</span>
+<div class="grid grid-cols-4 gap-2">
+<button class="flex flex-col items-center gap-1 p-1 bg-surface-container-lowest rounded-lg ring-2 ring-primary">
+<div class="w-8 h-8 rounded bg-[#dec0b7]"></div>
+<span class="font-label-code-sm text-[8px] text-on-surface">Sand</span>
+</button>
+<button class="flex flex-col items-center gap-1 p-1 bg-surface-container rounded-lg hover:bg-surface-container-high transition-colors">
+<div class="w-8 h-8 rounded bg-[#efeeea]"></div>
+<span class="font-label-code-sm text-[8px] text-outline">Ecru</span>
+</button>
+<button class="flex flex-col items-center gap-1 p-1 bg-surface-container rounded-lg hover:bg-surface-container-high transition-colors">
+<div class="w-8 h-8 rounded bg-[#7f5214]"></div>
+<span class="font-label-code-sm text-[8px] text-outline">Cognac</span>
+</button>
+<button class="flex flex-col items-center gap-1 p-1 bg-surface-container rounded-lg hover:bg-surface-container-high transition-colors">
+<div class="w-8 h-8 rounded bg-[#30312f]"></div>
+<span class="font-label-code-sm text-[8px] text-outline">Charcoal</span>
+</button>
+</div>
+</div>
+</div>
+<!-- BOTTOM SECTION: CONVERSATIONAL AI CONSULTANT (FR-06 Grounded Advisor) -->
+<div class="bg-surface-container-lowest p-space-md shadow-inner flex flex-col gap-space-sm">
+<!-- Consultant Header with Advisory Disclaimer -->
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-space-xs">
+<div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined text-[14px]">psychology</span>
+</div>
+<span class="font-headline-sm text-body-md font-semibold text-on-surface">AI Spatial Advisor</span>
+</div>
+<span class="font-label-code-sm text-[9px] bg-surface-container px-1.5 py-0.5 rounded text-outline">Grounded (FR-06)</span>
+</div>
+<!-- Chat Bubble History -->
+<div class="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1">
+<!-- Client Question -->
+<div class="self-end bg-surface-container max-w-[85%] rounded-xl rounded-tr-xs p-space-xs text-right">
+<p class="font-body-sm text-body-sm text-on-surface">Can we fit an L-shaped sectional in the living area without blocking the balcony slider?</p>
+<span class="font-label-code-sm text-[8px] text-outline">10:42 AM</span>
+</div>
+<!-- AI Grounded Response -->
+<div class="self-start bg-primary-fixed/20 max-w-[92%] rounded-xl rounded-tl-xs p-space-xs">
+<div class="flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-primary text-[14px]">auto_awesome</span>
+<span class="font-label-ui text-[10px] text-primary font-semibold">CAD Recommendation</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface leading-snug">
+              Based on your <span class="font-semibold text-on-surface font-label-code-sm">6.80 m</span> living wall span, an L-shape up to <span class="font-semibold text-on-surface font-label-code-sm">2.80 m</span> leaves <span class="font-semibold text-secondary font-label-code-sm">1,250 mm</span> egress clearance to the terrace sliding door.
+            </p>
+<div class="mt-2 pt-1 border-t border-outline-variant/30">
+<span class="font-label-code-sm text-[8px] text-outline block leading-tight">Notice: Advisory review only. Non-structural recommendation.</span>
+</div>
+</div>
+</div>
+<!-- Action Chip: Load Suggestion to Staging Layer -->
+<button class="w-full flex items-center justify-between px-space-sm py-2 bg-primary-fixed hover:bg-primary-container text-on-primary-fixed hover:text-on-primary-container rounded-lg font-label-ui text-label-ui transition-colors" type="button">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+<span>Preview Staged L-Shape Option B</span>
+</div>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+<!-- Prompt Input Field -->
+<div class="relative flex items-center mt-1">
+<input class="w-full h-8 pl-2 pr-8 bg-surface-container text-on-surface font-body-sm text-body-sm rounded-lg focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-outline/70" placeholder="Ask AI about clearances, lighting, specs..." type="text"/>
+<button class="absolute right-1 w-6 h-6 rounded flex items-center justify-center text-primary hover:bg-primary/10 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Interactive micro-behavior for CAD tool selection and toggling
+  (function initCadCanvas() {
+    const tools = ['tool-select', 'tool-wall', 'tool-openings', 'tool-rooms', 'tool-furniture', 'tool-measure'];
+    
+    tools.forEach(toolId => {
+      const el = document.getElementById(toolId);
+      if (!el) return;
+      
+      el.addEventListener('click', () => {
+        // Remove active visual treatment
+        tools.forEach(id => {
+          const btn = document.getElementById(id);
+          if (btn) {
+            btn.classList.remove('bg-inverse-surface', 'text-inverse-on-surface');
+            btn.classList.add('text-on-surface-variant');
+            const tick = btn.querySelector('.bg-primary');
+            if (tick) tick.remove();
+          }
+        });
+        
+        // Apply active visual treatment to clicked tool
+        el.classList.add('bg-inverse-surface', 'text-inverse-on-surface');
+        el.classList.remove('text-on-surface-variant');
+        
+        const tick = document.createElement('span');
+        tick.className = 'absolute -right-1 top-2 w-1 h-3 bg-primary rounded-full';
+        el.appendChild(tick);
+      });
+    });
+
+    // Keyboard shortcuts listener for rapid drafting
+    window.addEventListener('keydown', (e) => {
+      const key = e.key.toUpperCase();
+      if (key === 'V') document.getElementById('tool-select')?.click();
+      if (key === 'W') document.getElementById('tool-wall')?.click();
+      if (key === 'D') document.getElementById('tool-openings')?.click();
+      if (key === 'R') document.getElementById('tool-rooms')?.click();
+      if (key === 'M') document.getElementById('tool-measure')?.click();
+    });
+  })();
+</script></main><footer class="fixed bottom-0 left-0 right-0 h-8 bg-surface-container-high/95 backdrop-blur-md z-50 flex items-center justify-between px-space-md font-label-code-sm text-label-code-sm text-on-surface shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center gap-space-md"><span class="text-on-surface font-medium">Zoom: 100%</span><span class="text-outline">|</span><span>Scale: 1:50 metric</span><span class="text-outline">|</span><span>Grid Snap: 0.1m active</span><span class="text-outline">|</span><span>Units: Meters / cm</span></div><div class="flex items-center gap-space-xs text-on-surface-variant"><span class="material-symbols-outlined text-[13px] text-secondary">cloud_done</span><span>Supabase: Synced just now</span></div></footer></div></body></html>
