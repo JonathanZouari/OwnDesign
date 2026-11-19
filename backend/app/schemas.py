@@ -102,7 +102,7 @@ class InviteCreate(Strict):
 
 
 class ProjectCreate(Strict):
-    studio_id: UUID
+    studio_id: UUID | None = None
     name: Name
     property_type: Literal["existing", "new_build"]
 

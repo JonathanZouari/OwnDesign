@@ -76,3 +76,13 @@ page). `auth.html` gained forgot (`resetPasswordForEmail`, same message for any 
 implemented by a Sonnet subagent. Tests: backend 48 passed (7 new E2E/edge), frontend 13 passed.
 Security review: no findings; two items recorded in open-items.
 Pages: [architecture](architecture.md), [open-items](open-items.md).
+
+## [2026-11-19] build | Homeowner projects without a studio; studio UI hidden
+User decision: Phase 1 focuses on a homeowner designing alone. Migration `20261119143225` makes
+`projects.studio_id` nullable (pushed to dev). Backend creates and saves studio-less projects (quota per
+user, author `client`); home page goes straight to the wizard; studio card, column and dashboard link
+removed from the UI (code kept). The wizard only uses a remembered studio when reached via
+`wizard.html?via=studio`, so an old studio link cannot attach a homeowner's project to that studio.
+Planned on Opus, implemented by a Sonnet subagent, stale-studio fix and its test by the main session.
+Tests: backend 52 passed, frontend 13 passed. Security review: no findings.
+Pages: [overview](overview.md), [decisions](decisions.md), [architecture](architecture.md).

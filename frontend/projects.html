@@ -14,7 +14,6 @@
   <header class="appbar">
     <a class="brand" href="projects.html">ATELIER</a>
     <nav>
-      <a class="button" id="studio-link" href="studio.html" hidden>Studio dashboard</a>
       <button id="sign-out" type="button">Sign out</button>
     </nav>
   </header>
@@ -27,20 +26,11 @@
     <section class="card">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Project</th><th>Studio</th><th>Type</th><th>Created</th><th></th></tr></thead>
+          <thead><tr><th>Project</th><th>Type</th><th>Created</th><th></th></tr></thead>
           <tbody id="projects"></tbody>
         </table>
       </div>
-      <p class="muted" id="empty" hidden>No projects yet. Use your designer's link, or "New project", to start one.</p>
-    </section>
-    <section class="card stack" id="open-studio" hidden>
-      <h2>Are you a designer? Open your studio</h2>
-      <form id="studio-form" class="stack">
-        <label>Studio name
-          <input name="studio" required maxlength="80" autocomplete="organization">
-        </label>
-        <button class="primary" type="submit">Open studio</button>
-      </form>
+      <p class="muted" id="empty" hidden>No projects yet. Start one with "New project".</p>
     </section>
   </main>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>

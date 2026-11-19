@@ -214,3 +214,64 @@ def test_database_refuses_a_second_owned_studio(world):
             {"studio_id": world.studio_b["id"], "user_id": world.designer_a.id, "role": "owner"}
         ).execute()
     assert error.value.code == "23505"
+
+
+@pytest.fixture(scope="module")
+def homeowner_world(api, make_user):
+    owner, stranger = make_user("home-owner"), make_user("home-stranger")
+    project = api.post("/v1/projects", json={"name": "My flat", "property_type": "existing"}, headers=owner.headers)
+    assert project.status_code == 201
+    return SimpleNamespace(owner=owner, stranger=stranger, project=project.json()["data"])
+
+
+def test_homeowner_project_without_studio(api, homeowner_world):
+    w = homeowner_world
+    base = f"/v1/projects/{w.project['id']}"
+    assert w.project["studio_id"] is None and w.project["client_user_id"] == w.owner.id
+    saved = api.post(f"{base}/versions", json={"label": "v1", "geometry": VALID}, headers=w.owner.headers)
+    assert saved.status_code == 201 and saved.json()["data"]["author_role"] == "client"
+    got = api.get(base, headers=w.owner.headers).json()["data"]
+    assert got["my_role"] == "client" and got["studio"] is None
+    assert [p["id"] for p in api.get("/v1/projects", headers=w.owner.headers).json()["data"]] == [w.project["id"]]
+    assert api.get(f"{base}/versions/latest", headers=w.owner.headers).json()["data"]["geometry"] == VALID
+
+
+def test_homeowner_project_is_private(api, homeowner_world):
+    from app.db import user_client
+
+    w = homeowner_world
+    base = f"/v1/projects/{w.project['id']}"
+    api.post(f"{base}/versions", json={"geometry": VALID}, headers=w.owner.headers)
+    headers = w.stranger.headers
+    assert api.get(base, headers=headers).status_code == 404
+    assert api.get(f"{base}/versions", headers=headers).status_code == 404
+    assert api.get(f"{base}/versions/latest", headers=headers).status_code == 404
+    assert api.post(f"{base}/versions", json={"geometry": VALID}, headers=headers).status_code == 404
+    assert api.get("/v1/projects", headers=headers).json()["data"] == []
+    db = user_client(w.stranger.token)
+    assert db.table("projects").select("id").eq("id", w.project["id"]).execute().data == []
+    assert db.table("plan_versions").select("id").eq("project_id", w.project["id"]).execute().data == []
+
+
+def test_explicit_null_studio_and_unknown_fields(api, make_user):
+    user = make_user("home-null")
+    created = api.post("/v1/projects", json={"studio_id": None, "name": "Null", "property_type": "new_build"}, headers=user.headers)
+    assert created.status_code == 201 and created.json()["data"]["studio_id"] is None
+    extra = api.post("/v1/projects", json={"name": "X", "property_type": "existing", "role": "admin"}, headers=user.headers)
+    assert extra.status_code == 422
+    bad = api.post("/v1/projects", json={"name": "X", "property_type": "castle"}, headers=user.headers)
+    assert bad.status_code == 422
+
+
+def test_quota_counts_studioless_projects_per_user(api, world, make_user, monkeypatch):
+    from app.routes import projects
+
+    user = make_user("home-quota")
+    monkeypatch.setattr(projects, "MAX_PROJECTS_PER_CLIENT", 1)
+    body = {"name": "One", "property_type": "existing"}
+    assert api.post("/v1/projects", json=body, headers=user.headers).status_code == 201
+    assert api.post("/v1/projects", json=body, headers=user.headers).status_code == 409
+    # Another user is unaffected, and a studio project does not count against the studio-less quota.
+    assert api.post("/v1/projects", json=body, headers=make_user("home-quota2").headers).status_code == 201
+    in_studio = {**body, "studio_id": world.studio_a["id"]}
+    assert api.post("/v1/projects", json=in_studio, headers=user.headers).status_code == 201

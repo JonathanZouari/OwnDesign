@@ -14,7 +14,7 @@ router = APIRouter(prefix="/v1/projects")
 PROJECT_COLUMNS = "id, studio_id, client_user_id, client_email, name, property_type, status, created_at, studio:studios(name, slug, status)"
 VERSION_SUMMARY = "id, version_no, label, author_role, created_at"
 UNIQUE_VIOLATION = "23505"
-# Quotas: anyone with a studio link may create projects there, so each account is bounded per studio.
+# Quotas: each account is bounded per studio, and separately for projects that have no studio.
 MAX_PROJECTS_PER_CLIENT = 20
 MAX_VERSIONS_PER_PROJECT = 500
 
@@ -36,13 +36,16 @@ def list_projects(studio_id: UUID | None = None, user: CurrentUser = Depends(cur
 
 @router.post("", status_code=201)
 def create_project(body: ProjectCreate, user: CurrentUser = Depends(current_user)):
-    studio_id = str(body.studio_id)
-    studio = service().table("studios").select("id").eq("id", studio_id).eq("status", "active").execute().data
-    if not studio:
-        raise HTTPException(404, "Studio not found")
-    mine = user.db.table("projects").select("id").eq("studio_id", studio_id).eq("client_user_id", user.id).execute().data
+    studio_id = str(body.studio_id) if body.studio_id else None
+    if studio_id:
+        studio = service().table("studios").select("id").eq("id", studio_id).eq("status", "active").execute().data
+        if not studio:
+            raise HTTPException(404, "Studio not found")
+        mine = user.db.table("projects").select("id").eq("studio_id", studio_id).eq("client_user_id", user.id).execute().data
+    else:
+        mine = user.db.table("projects").select("id").is_("studio_id", "null").eq("client_user_id", user.id).execute().data
     if len(mine) >= MAX_PROJECTS_PER_CLIENT:
-        raise HTTPException(409, "You have reached the number of projects allowed with this studio")
+        raise HTTPException(409, "You have reached the number of projects allowed" + (" with this studio" if studio_id else ""))
     project = (
         service()
         .table("projects")
@@ -96,7 +99,7 @@ def get_version(project_id: UUID, version: UUID | Literal["latest"], user: Curre
 @router.post("/{project_id}/versions", status_code=201)
 def create_version(project_id: UUID, body: VersionCreate, user: CurrentUser = Depends(current_user)):
     project = _project_or_404(user, project_id)
-    if project["studio"]["status"] != "active":
+    if project["studio"] is not None and project["studio"]["status"] != "active":
         raise HTTPException(403, "This studio is not active")
     author_role = "designer" if user.role_in(project["studio_id"]) else "client"
     latest = (

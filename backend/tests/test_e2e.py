@@ -194,53 +194,100 @@ def _sign_in(page, user):
     page.get_by_role("button", name="Sign in").click()
 
 
-def test_client_account_opens_a_studio_from_projects(servers, page, api, make_user):
-    client = make_user("e2e-opener")
-    _sign_in(page, client)
-    page.wait_for_url("**/projects.html")
-    page.get_by_role("heading", name="Are you a designer? Open your studio").wait_for()
+def _place_sofa(page):
+    box = page.locator("#canvas").bounding_box()
+    page.keyboard.press("f")
+    page.locator("#catalog button[data-type=sofa]").click()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
 
-    # Without a studio the new-project toast points at the card.
-    page.locator("#new-project").click()
-    page.get_by_text("To start a project, open your designer's link, or open your own studio below.").wait_for()
 
-    page.get_by_label("Studio name").fill("Opened Later Studio")
-    page.get_by_role("button", name="Open studio").click()
-    page.wait_for_url("**/studio.html")
-    page.get_by_role("heading", name="Opened Later Studio").wait_for()
-    assert page.get_by_label("Studio link").input_value().startswith(f"{SITE}/entry.html?studio=")
+def test_homeowner_designs_without_a_studio_and_saves(servers, page):
+    walls = page.locator("#canvas [data-kind=walls]")
+    furniture = page.locator("#canvas [data-kind=furniture]")
+    page.goto(f"{SITE}/index.html")
+    assert page.get_by_text("an interior designer").count() == 0
+    page.get_by_role("link", name="Start designing").click()
+    page.wait_for_url("**/wizard.html")
+    page.get_by_label("Project name").fill("Home Flat")
+    page.get_by_role("button", name="Generate 2D canvas").click()
+    page.wait_for_url("**/editor.html")
+    walls.first.wait_for(state="attached")
+    _place_sofa(page)
+    assert furniture.count() == 1
 
-    me = api.get("/v1/me", headers=client.headers).json()["data"]
-    assert [m["role"] for m in me["memberships"]] == ["owner"]
-    # A second studio is refused by the API.
-    assert api.post("/v1/studios", json={"name": "Second"}, headers=client.headers).status_code == 409
+    page.locator("#save").click()
+    page.get_by_role("heading", name="Create an account to save your plan").wait_for()
+    page.get_by_role("link", name="Create account").click()
+    page.get_by_label("Email").fill(unique_email("e2e-home"))
+    page.get_by_label("Password").fill("e2e-Password-123")
+    page.get_by_role("button", name="Create account").click()
+    page.get_by_label("Version note (optional)").fill("first")
+    page.keyboard.press("Enter")
+    page.wait_for_url("**/editor.html?project=*")
+    page.get_by_text("Saved · v1").wait_for()
+    project_id = page.url.split("project=")[1]
 
-    # Back on the projects page the card is gone.
     page.goto(f"{SITE}/projects.html")
-    page.locator("#studio-link").wait_for(state="visible")
-    assert not page.get_by_role("heading", name="Are you a designer? Open your studio").is_visible()
+    row = page.get_by_role("row", name="Home Flat")
+    row.wait_for()
+    assert page.locator("#studio-link").count() == 0 and page.get_by_text("Open your studio").count() == 0
+    row.get_by_role("link", name="Open").click()
+    page.wait_for_url(f"**/editor.html?project={project_id}")
+    page.get_by_text("Editing as client").wait_for()
+    page.goto(f"{SITE}/projects.html")
+    page.get_by_role("row", name="Home Flat").wait_for()  # the page's script has run and bound the button
+    page.locator("#new-project").click()
+    page.wait_for_url("**/wizard.html")
 
 
-def test_open_studio_conflict_still_lands_on_studio_page(servers, page, api, make_user):
-    client = make_user("e2e-race")
-    _sign_in(page, client)
+def test_wizard_draft_in_the_old_format_with_a_studio_still_saves(servers, page, api, make_user):
+    designer = make_user("e2e-olddraft-designer")
+    studio = api.post("/v1/studios", json={"name": "Old Draft Studio"}, headers=designer.headers).json()["data"]
+    user = make_user("e2e-olddraft")
+    _sign_in(page, user)
     page.wait_for_url("**/projects.html")
-    page.get_by_role("heading", name="Are you a designer? Open your studio").wait_for()
-    # The studio is created elsewhere after the page loaded.
-    assert api.post("/v1/studios", json={"name": "Raced Studio"}, headers=client.headers).status_code == 201
-    page.get_by_label("Studio name").fill("Raced Again")
-    page.get_by_role("button", name="Open studio").click()
-    page.wait_for_url("**/studio.html")
-    page.get_by_role("heading", name="Raced Studio").wait_for()
+    page.goto(f"{SITE}/wizard.html")
+    page.get_by_label("Project name").fill("Old Draft Flat")
+    page.get_by_role("button", name="Generate 2D canvas").click()
+    page.wait_for_url("**/editor.html")
+    # Rewrite the draft the way the previous version stored it: with the studio inside.
+    page.evaluate(
+        "s => { const d = JSON.parse(localStorage.getItem('od.draft')); d.studio = s; localStorage.setItem('od.draft', JSON.stringify(d)); }",
+        {"id": studio["id"], "name": studio["name"], "slug": studio["slug"]},
+    )
+    page.goto(f"{SITE}/editor.html")
+    page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
+    page.locator("#save").click()
+    page.get_by_role("button", name="Save version").click()
+    page.get_by_text("Saved · v1").wait_for()
+    project_id = page.url.split("project=")[1]
+    assert api.get(f"/v1/projects/{project_id}", headers=user.headers).json()["data"]["studio"]["name"] == "Old Draft Studio"
 
 
-def test_open_studio_requires_a_name(servers, page, make_user):
-    client = make_user("e2e-noname")
-    _sign_in(page, client)
-    page.wait_for_url("**/projects.html")
-    page.get_by_role("button", name="Open studio").click()
-    page.wait_for_timeout(500)
-    assert page.url.endswith("projects.html")
+def test_studio_remembered_from_an_old_link_is_not_attached_to_a_new_project(servers, page, api, make_user):
+    designer = make_user("e2e-stale-designer")
+    studio = api.post("/v1/studios", json={"name": "Stale Link Studio"}, headers=designer.headers).json()["data"]
+    user = make_user("e2e-stale")
+    # This browser once opened the studio's link, which remembered the studio.
+    page.goto(f"{SITE}/entry.html?studio={studio['slug']}")
+    page.get_by_role("link", name="Start designing").wait_for()
+    # Later the homeowner starts from the home page: the remembered studio must not be used.
+    page.goto(f"{SITE}/index.html")
+    page.get_by_role("link", name="Start designing").click()
+    page.get_by_label("Project name").fill("My Own Flat")
+    page.get_by_role("button", name="Generate 2D canvas").click()
+    page.wait_for_url("**/editor.html")
+    assert page.evaluate("JSON.parse(localStorage.getItem('od.draft')).studio") is None
+    _sign_in(page, user)
+    page.wait_for_url("**/editor.html")  # signing in with a draft returns to it
+    page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
+    page.locator("#save").click()
+    page.get_by_role("button", name="Save version").click()
+    page.get_by_text("Saved · v1").wait_for()
+    project_id = page.url.split("project=")[1]
+    assert api.get(f"/v1/projects/{project_id}", headers=user.headers).json()["data"]["studio"] is None
+    # The designer of that studio cannot see the homeowner's project.
+    assert api.get(f"/v1/projects/{project_id}", headers=designer.headers).status_code == 404
 
 
 FORGOT_MESSAGE = "If an account exists for this email, a reset link is on its way. Check your inbox."

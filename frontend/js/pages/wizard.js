@@ -16,7 +16,9 @@ const PRESETS = [
   { label: "Custom", icon: "add_circle", type: "other", width: 300, length: 300 },
 ];
 
-const studio = load(KEYS.studio);
+// Only a visitor who just came through a studio link works with that studio; a homeowner who once
+// opened such a link in this browser must not have new projects attached to it silently.
+const studio = new URLSearchParams(location.search).get("via") === "studio" ? load(KEYS.studio) : null;
 const form = $("#wizard");
 // Rooms are replaced, never mutated: each edit builds a new array.
 let rooms = [
@@ -113,7 +115,7 @@ function addRoom(room) {
 }
 
 function start() {
-  showStudio(studio.name);
+  if (studio) showStudio(studio.name);
   $("#draft-notice").hidden = !load(KEYS.draft);
   form.hidden = false;
 
@@ -155,7 +157,7 @@ function start() {
       }
       const data = new FormData(form);
       if (!data.get("name").trim()) throw new Error("Give your project a name.");
-      const draft = { name: data.get("name").trim(), property_type: data.get("property_type"), studio, plan: blank ? emptyPlan() : fromRooms(named) };
+      const draft = { name: data.get("name").trim(), property_type: data.get("property_type"), ...(studio ? { studio } : {}), plan: blank ? emptyPlan() : fromRooms(named) };
       if (!save(KEYS.draft, draft)) throw new Error("Your browser blocked local storage, so the plan cannot be kept. Allow site data and try again.");
       location.assign("editor.html");
     }),
@@ -165,5 +167,4 @@ function start() {
   renderDerived();
 }
 
-if (studio) start();
-else $("#no-studio").hidden = false;
+start();

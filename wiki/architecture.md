@@ -31,6 +31,11 @@ supabase/   migrations and managed auth settings
 `studios`, `studio_memberships` (owner or designer; one owned studio per user), `studio_invites`,
 `projects`, `plan_versions` (insert only, unique `(project_id, version_no)`), `audit_events` (insert only).
 
+`projects.studio_id` is nullable (migration `20261119143225`): a homeowner's project has no studio and is
+visible only to its `client_user_id`. Quotas count per studio, and separately per user for studio-less
+projects. The wizard attaches a remembered studio only when reached from a studio link
+(`wizard.html?via=studio`), so an old link never silently shares a homeowner's project with that studio.
+
 ## Plan geometry
 
 One JSON document per version, validated in `backend/app/schemas.py` and edited by pure functions in

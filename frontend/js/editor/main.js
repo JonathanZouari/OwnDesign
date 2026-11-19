@@ -267,7 +267,9 @@ async function savePlan(label) {
     // First save of a draft: create the project, then store the plan as version 1.
     const { name, property_type: propertyType, studio } = state.draft;
     const remembered = state.draft.projectId;
-    const id = remembered ?? (await api("/v1/projects", { method: "POST", body: { studio_id: studio.id, name, property_type: propertyType } })).id;
+    // A homeowner's project has no studio; an old draft that still names one keeps it.
+    const body = { name, property_type: propertyType, ...(studio?.id ? { studio_id: studio.id } : {}) };
+    const id = remembered ?? (await api("/v1/projects", { method: "POST", body })).id;
     state.draft = { ...state.draft, projectId: id }; // if the next call fails, a retry reuses this project
     store(KEYS.draft, state.draft);
     try {
@@ -363,7 +365,7 @@ run(async () => {
     plan = state.versions.length ? (await api(`${base}/versions/latest`)).geometry : P.emptyPlan();
     name = state.project.name;
     role = `Editing as ${state.project.my_role}`;
-    showStudio(state.project.studio.name);
+    if (state.project.studio) showStudio(state.project.studio.name);
     // Starting over from the wizard would discard this saved plan's context, so those links go to the project list.
     $("#tab-wizard").href = state.project.my_role === "designer" ? "studio.html" : "projects.html";
     $("#tab-wizard").textContent = "All projects";
@@ -375,7 +377,7 @@ run(async () => {
     plan = state.draft.plan;
     name = state.draft.name;
     role = "Draft";
-    showStudio(state.draft.studio.name);
+    if (state.draft.studio) showStudio(state.draft.studio.name);
   }
   state.history = P.history.start(plan);
   state.saved = plan;
