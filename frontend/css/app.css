@@ -295,6 +295,12 @@ input[type="email"], input[type="password"] { direction: ltr; text-align: end; }
 #import-canvas .iw[aria-pressed="false"] .body { stroke: var(--outline); stroke-opacity: 0.55; stroke-dasharray: 10 8; stroke-width: 4; }
 #import-canvas .iw:focus-visible .body { stroke: var(--ink); stroke-opacity: 1; }
 #import-canvas.picking .iw { pointer-events: none; }
+#import-canvas.drawing { cursor: crosshair; }
+#import-canvas.drawing .iw { pointer-events: none; }
+#import-canvas .ow { stroke: var(--outline); stroke-opacity: 0.45; stroke-linecap: butt; pointer-events: none; }
+#import-canvas .area-rect { fill: none; stroke: var(--secondary); stroke-width: 3; stroke-dasharray: 14 8; vector-effect: non-scaling-stroke; pointer-events: none; }
+#import-canvas .area-draft { fill: var(--secondary); fill-opacity: 0.12; stroke: var(--secondary); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
+.area-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #import-canvas .cal-line { stroke: var(--secondary); stroke-width: 3; vector-effect: non-scaling-stroke; }
 #import-canvas .cal-dot { fill: var(--secondary); stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; }
 .import-viewer .zoombar { position: absolute; inset-inline-end: 10px; bottom: 10px; display: flex; gap: 2px; padding: 2px; }

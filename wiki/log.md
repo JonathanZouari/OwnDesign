@@ -115,3 +115,15 @@ drive 12 import E2E tests. Real drawing (local only): full apartment at 1:20 wit
 about 40–50 % of walls found and much noise from the title block and legend table → step 2b.
 Planned on Opus, implemented by a Sonnet subagent; a test bug in the Hebrew scan fixed by the main session.
 Security review: no findings. Pages: [architecture](architecture.md), [open-items](open-items.md).
+
+## [2026-11-19] build | PDF import, step 2b: detection on real drawings
+Plan-area rectangle in review (drag, numeric inputs, reset) with an automatic guess (largest wall cluster,
+tables, title blocks and dense text excluded). Hatched parallel pairs read as strong walls; table rows,
+over-thick bars and stray lines rejected; closed rectangles with a repeated closing point now read whole.
+Honest confidence (joined ends, enclosed area, length outside the area). Switched-off walls survive
+recalibration. Scale suggestion (1:20/1:50/1:100) when no ratio text exists, confirmed by the user.
+Real drawing (local only, numbers only): junk outside the plan from about 77 m to 0, plan walls found from
+about 40–50 % to about 80 %, scale suggestion 1:20 correct, confidence "poor" (conservative).
+Planned on Opus, implemented by a Sonnet subagent. Tests: backend 72 passed, frontend 63 passed + 1 skipped.
+Security and privacy review: no findings, nothing from the real drawing in the repo.
+Pages: [open-items](open-items.md).

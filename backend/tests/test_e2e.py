@@ -674,7 +674,7 @@ def test_import_calibration_by_two_clicks_rescales(servers, page, tmp_path):
 def test_import_without_scale_text_requires_calibration(servers, page, tmp_path):
     _import(page, make_plans.apartment(tmp_path / "ns.pdf", scale_texts=[]))
     assert page.locator("#continue").is_disabled()
-    page.get_by_text("כיול חובה לפני ההמשך").first.wait_for()
+    page.get_by_text("קנה מידה משוער").first.wait_for()  # no ratio text: a suggestion the user must confirm or calibrate
     longest = max(_review_walls(page), key=lambda w: w["len"])
     page.locator("#calibrate").click()
     page.mouse.click(*_screen(page, longest["x1"], longest["y1"]))
@@ -687,6 +687,116 @@ def test_import_without_scale_text_requires_calibration(servers, page, tmp_path)
     walls = _draft(page)["plan"]["walls"]
     assert len(walls) == 7
     assert max(((w["x2"] - w["x1"]) ** 2 + (w["y2"] - w["y1"]) ** 2) ** 0.5 for w in walls) == pytest.approx(800, rel=0.03)
+
+
+def _plan_area(page):
+    return page.evaluate(
+        """() => { const r = document.querySelector('#import-canvas [data-area]'); const n = (a) => Number(r.getAttribute(a));
+            return { x: n('x'), y: n('y'), w: n('width'), h: n('height') } }"""
+    )
+
+
+def _score_against_truth(walls, truth, tol=2.0):
+    """(matched share of truth length, junk share of detected length) for centre-line walls."""
+    def length(w):
+        return ((w[2] - w[0]) ** 2 + (w[3] - w[1]) ** 2) ** 0.5
+
+    detected = [(w["x1"], w["y1"], w["x2"], w["y2"], w["t"]) for w in walls]
+    good = 0.0
+    matched_det = set()
+    for t in truth:
+        for i, d in enumerate(detected):
+            same = all(abs(a - b) <= tol for a, b in zip(d[:4], t[:4]))
+            flip = all(abs(a - b) <= tol for a, b in zip(d[:4], (t[2], t[3], t[0], t[1])))
+            if (same or flip) and abs(d[4] - t[4]) <= tol and i not in matched_det:
+                matched_det.add(i)
+                good += length(t)
+                break
+    total_truth = sum(length(t) for t in truth)
+    total_det = sum(length(d) for d in detected)
+    junk = sum(length(d) for i, d in enumerate(detected) if i not in matched_det)
+    return good / total_truth, junk / total_det
+
+
+def test_import_realistic_sheet_excludes_title_block_and_matches_truth(servers, page, tmp_path):
+    _import(page, make_plans.realistic(tmp_path / "real.pdf"))
+    # The automatic plan area leaves out the title block (right) and the legend table (bottom).
+    area = _plan_area(page)
+    ox, oy = make_plans.REAL_OX - 10, make_plans.REAL_OY - 10  # page cm of the plan origin
+    tx, ty, _, _ = make_plans.REAL_TITLE_BLOCK
+    _, ly, _, _ = make_plans.REAL_LEGEND
+    assert area["x"] + area["w"] + ox <= tx, area
+    assert area["y"] + area["h"] + oy <= ly, area
+    walls = _review_walls(page)
+    assert len(walls) == len(make_plans.REAL_WALLS), walls
+    matched, junk = _score_against_truth(walls, make_plans.real_truth())
+    assert matched >= 0.9 and junk <= 0.1, (matched, junk, walls)
+    assert page.locator("#import-canvas .ow").count() == 0
+    # No ratio text exists (the scale is drawn as outlines): a suggestion, confirmed by the user.
+    scale = page.locator("#scale-text").inner_text()
+    assert "קנה מידה משוער" in scale and "1:20" in scale, scale
+    assert page.locator("#continue").is_disabled()
+    assert "בדקו" in page.locator("#confidence").inner_text() or "טוב" in page.locator("#confidence").inner_text()
+    page.locator("#scale-confirm").click()
+    page.wait_for_function("!document.querySelector('#continue').disabled")
+    _to_editor(page)
+    _assert_matches_truth_real(_draft(page)["plan"]["walls"])
+
+
+def _assert_matches_truth_real(walls):
+    detected = [{"x1": w["x1"], "y1": w["y1"], "x2": w["x2"], "y2": w["y2"], "t": w["thickness"]} for w in walls]
+    matched, junk = _score_against_truth(detected, make_plans.real_truth())
+    assert matched >= 0.9 and junk <= 0.1, (matched, junk, walls)
+
+
+def test_import_switched_off_wall_survives_recalibration(servers, page, tmp_path):
+    _import(page, make_plans.realistic(tmp_path / "real.pdf"))
+    page.locator("#scale-confirm").click()
+    walls = _review_walls(page)
+    victim = min(walls, key=lambda w: w["len"])
+    page.mouse.click(*_screen(page, (victim["x1"] + victim["x2"]) / 2, (victim["y1"] + victim["y2"]) / 2))
+    assert page.locator("#import-canvas .iw[aria-pressed=false]").count() == 1
+    longest = max(walls, key=lambda w: w["len"])
+    page.locator("#calibrate").click()
+    page.mouse.click(*_screen(page, longest["x1"], longest["y1"]))
+    page.mouse.click(*_screen(page, longest["x2"], longest["y2"]))
+    page.locator("#real-length").fill(str(round(longest["len"] * 1.5)))
+    page.locator("#real-unit").select_option("cm")
+    page.locator("#calibrate-apply").click()
+    page.get_by_text("כויל ידנית").wait_for()
+    after = _review_walls(page)
+    off = [w for w in after if not w["on"]]
+    assert len(off) == 1 and len(after) == len(walls), off
+    assert off[0]["len"] == pytest.approx(victim["len"] * 1.5, rel=0.05)
+
+
+def test_import_dragging_the_plan_area_changes_the_included_walls(servers, page, tmp_path):
+    _import(page, make_plans.realistic(tmp_path / "real.pdf"))
+    page.locator("#scale-confirm").click()
+    assert page.locator("#import-canvas .iw").count() == 8
+    a = _plan_area(page)
+    # Drag a rectangle around the left part only: the left wall and the short partition stay (middle point inside).
+    page.locator("#area-draw").click()
+    page.mouse.move(*_screen(page, a["x"], a["y"]))
+    page.mouse.down()
+    page.mouse.move(*_screen(page, 150, 200), steps=4)
+    page.mouse.move(*_screen(page, 300, a["y"] + a["h"]), steps=4)
+    page.mouse.up()
+    page.wait_for_function("document.querySelectorAll('#import-canvas .iw').length === 2")
+    assert page.locator("#import-canvas .ow").count() == 6  # the rest is shown dimmed, not selectable
+    assert "ידנית" in page.locator("#area-hint").inner_text()
+    _to_editor_walls = page.locator("#walls-count").inner_text()
+    assert "2 מתוך 2" in _to_editor_walls
+    # Numeric fallback (keyboard): widen it back over everything.
+    page.locator("#area-card summary").click()
+    for name, value in (("x0", -20), ("y0", -20), ("x1", 800), ("y1", 600)):
+        page.locator(f"#area-{name}").fill(str(value))
+    page.locator("#area-apply").click()
+    page.wait_for_function("document.querySelectorAll('#import-canvas .iw').length === 8")
+    # Reset goes back to the automatic guess.
+    page.locator("#area-reset").click()
+    page.wait_for_function("document.querySelector('#area-reset').disabled")
+    assert page.locator("#import-canvas .iw").count() == 8
 
 
 def test_import_image_only_pdf_explains_and_still_works_as_a_background(servers, page, tmp_path):

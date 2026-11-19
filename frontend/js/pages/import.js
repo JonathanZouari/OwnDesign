@@ -2,7 +2,7 @@
 // calibrate the scale, then hand a draft (plan + underlay) to the editor. Everything stays in the browser.
 // Text that comes from the PDF is never inserted as HTML.
 import { emptyPlan, metres } from "../plan.js";
-import { detectScale, detectWalls, wallLength } from "../import/walls.js";
+import { areaToPage, carryOverDisabled, detectScale, detectWalls, suggestScale, wallLength } from "../import/walls.js";
 import { calibrationFactor, imagePlacement, parseLength } from "../import/placement.js";
 import { deleteImage, draftKey, putImage } from "../import/underlay.js";
 import { svg, visibleArea } from "../editor/render.js";
@@ -31,6 +31,10 @@ const state = {
   candidates: [],
   ratio: null, // chosen printed ratio, or null when none was found
   calibrated: false,
+  suggested: null, // scale guessed from shapes when no ratio text exists (a suggestion until confirmed)
+  confirmed: false,
+  areaPage: null, // plan area the user chose, PDF units { x0, y0, x1, y1 }; null = automatic guess
+  drawingArea: false,
   disabled: new Set(), // ids of walls the user switched off
   opacity: 0.55,
   picking: false,
@@ -39,14 +43,14 @@ const state = {
   token: 0, // guards against a slow analysis finishing after a newer one started
 };
 
-const nodes = { image: null, walls: null, cal: null };
+const nodes = { image: null, outside: null, walls: null, area: null, cal: null };
 const wallNodes = new Map();
 
 // ---------------------------------------------------------------- derived data
 
 const walls = () => state.base?.walls ?? [];
 const enabledWalls = () => walls().filter((w) => !state.disabled.has(w.id));
-const needsCalibration = () => state.ratio === null && !state.calibrated;
+const needsCalibration = () => state.ratio === null && !state.calibrated && !state.confirmed;
 const placement = () => imagePlacement(state.page, state.base.cmPerUnit, state.base.originCm);
 const lengthText = (cm) => ltr(metres(cm));
 
@@ -107,6 +111,18 @@ function drawWalls() {
   syncWallNodes();
 }
 
+function drawArea() {
+  const a = state.base?.areaCm;
+  nodes.outside.replaceChildren(
+    ...(state.base?.outside ?? []).map((w) => svg("line", { x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2, class: "ow", "stroke-width": w.thickness })),
+  );
+  nodes.area.replaceChildren(...(a ? [svg("rect", { x: a.x, y: a.y, width: a.w, height: a.h, class: "area-rect", "data-area": "" })] : []));
+  const ids = { "area-x0": a?.x, "area-y0": a?.y, "area-x1": a ? a.x + a.w : undefined, "area-y1": a ? a.y + a.h : undefined };
+  for (const [id, v] of Object.entries(ids)) $(`#${id}`).value = v === undefined ? "" : String(Math.round(v));
+  $("#area-hint").textContent = state.areaPage ? IMPORT.areaHintManual : IMPORT.areaHint;
+  $("#area-reset").disabled = !state.areaPage;
+}
+
 function drawCalibration() {
   const scale = visibleArea(canvas).scale;
   const [a, b] = state.points;
@@ -124,18 +140,36 @@ const toPlan = (event) => {
 
 function attachViewer() {
   nodes.image = svg("image", { preserveAspectRatio: "none", "pointer-events": "none" });
+  nodes.outside = svg("g");
   nodes.walls = svg("g");
+  nodes.area = svg("g", { "pointer-events": "none" });
   nodes.cal = svg("g", { "pointer-events": "none" });
-  canvas.replaceChildren(nodes.image, nodes.walls, nodes.cal);
+  canvas.replaceChildren(nodes.image, nodes.outside, nodes.walls, nodes.area, nodes.cal);
 
   let drag = null;
+  let box = null; // plan-area rectangle being drawn: { id, from, rect }
   canvas.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
+    if (state.drawingArea) {
+      const from = toPlan(event);
+      box = { id: event.pointerId, from, rect: svg("rect", { class: "area-draft", x: from.x, y: from.y, width: 0, height: 0 }) };
+      nodes.cal.append(box.rect);
+      canvas.setPointerCapture?.(event.pointerId);
+      return;
+    }
     drag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, view: state.view, inverse: canvas.getScreenCTM().inverse(), moved: false, target: event.target.closest?.("[data-wall]") };
     drag.start = new DOMPoint(event.clientX, event.clientY).matrixTransform(drag.inverse);
     canvas.setPointerCapture?.(event.pointerId);
   });
   canvas.addEventListener("pointermove", (event) => {
+    if (box && event.pointerId === box.id) {
+      const p = toPlan(event);
+      box.rect.setAttribute("x", Math.min(box.from.x, p.x));
+      box.rect.setAttribute("y", Math.min(box.from.y, p.y));
+      box.rect.setAttribute("width", Math.abs(p.x - box.from.x));
+      box.rect.setAttribute("height", Math.abs(p.y - box.from.y));
+      return;
+    }
     if (!drag || event.pointerId !== drag.id) return;
     if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 5) return;
     drag.moved = true;
@@ -143,6 +177,16 @@ function attachViewer() {
     setView({ ...drag.view, x: drag.view.x - (now.x - drag.start.x), y: drag.view.y - (now.y - drag.start.y) });
   });
   const finish = (event) => {
+    if (box && event.pointerId === box.id) {
+      const done = box;
+      box = null;
+      done.rect.remove();
+      const p = toPlan(event);
+      if (event.type === "pointerup" && Math.abs(p.x - done.from.x) >= 20 && Math.abs(p.y - done.from.y) >= 20) {
+        setArea({ x: Math.min(done.from.x, p.x), y: Math.min(done.from.y, p.y), w: Math.abs(p.x - done.from.x), h: Math.abs(p.y - done.from.y) });
+      }
+      return;
+    }
     if (!drag || event.pointerId !== drag.id) return;
     const current = drag;
     drag = null;
@@ -178,9 +222,33 @@ function attachViewer() {
   $("#v-zoom-fit").addEventListener("click", fit);
 }
 
+// ---------------------------------------------------------------- plan area
+
+// The area is kept in PDF units, so it survives a change of scale or a recalibration.
+function setArea(areaCm) {
+  state.areaPage = areaToPage(areaCm, state.base);
+  setDrawingArea(false);
+  redetect(state.base.cmPerUnit);
+  refresh();
+}
+
+function setDrawingArea(on) {
+  state.drawingArea = on;
+  canvas.classList.toggle("drawing", on);
+  $("#area-draw").setAttribute("aria-pressed", String(on));
+  $("#area-draw").textContent = on ? IMPORT.areaDrawing : IMPORT.areaDraw;
+}
+
+function applyAreaInputs() {
+  const [x0, y0, x1, y1] = ["x0", "y0", "x1", "y1"].map((id) => Number($(`#area-${id}`).value.trim().replace(",", ".")));
+  if (![x0, y0, x1, y1].every(Number.isFinite) || Math.abs(x1 - x0) < 20 || Math.abs(y1 - y0) < 20) return toast(IMPORT.badLength, "error");
+  setArea({ x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) });
+}
+
 // ---------------------------------------------------------------- calibration
 
 function setPicking(on) {
+  if (on) setDrawingArea(false);
   state.picking = on;
   state.points = [];
   canvas.classList.toggle("picking", on);
@@ -223,14 +291,11 @@ function applyCalibration() {
   const multiplier = calibrationFactor(distance, real);
   if (multiplier === null) return fail(IMPORT.badFactor);
   // Detection thresholds are in cm, so the walls are detected again at the corrected scale instead of just stretched.
-  state.base = detect(state.base.cmPerUnit * multiplier);
-  state.disabled = new Set();
+  redetect(state.base.cmPerUnit * multiplier);
   state.calibrated = true;
   setPicking(false);
-  drawWalls();
-  drawImage();
+  refresh();
   fit();
-  renderAll();
 }
 
 // ---------------------------------------------------------------- side panel
@@ -250,17 +315,34 @@ function renderAll() {
   $("#confidence").textContent = total === 0 ? IMPORT.confidence.none : base.confidence >= 0.75 ? IMPORT.confidence.good : base.confidence >= 0.4 ? IMPORT.confidence.partial : IMPORT.confidence.weak;
   $("#warnings").replaceChildren(...base.warnings.filter((code) => IMPORT.warnings[code]).map((code) => h("li", {}, IMPORT.warnings[code])));
 
-  $("#scale-text").textContent = state.calibrated ? IMPORT.scaleCalibrated : state.ratio === null ? IMPORT.scaleMissing : IMPORT.scaleDetected(state.ratio);
-  const choose = state.candidates.length > 1;
+  const suggesting = state.ratio === null && !state.calibrated && state.suggested !== null;
+  $("#scale-text").textContent = state.calibrated
+    ? IMPORT.scaleCalibrated
+    : state.ratio !== null
+      ? IMPORT.scaleDetected(state.ratio)
+      : suggesting
+        ? state.confirmed
+          ? IMPORT.scaleConfirmed(state.suggested)
+          : IMPORT.scaleSuggested(state.suggested)
+        : IMPORT.scaleMissing;
+  $("#scale-confirm").hidden = !(suggesting && !state.confirmed);
+  const options = suggesting ? SUGGESTED_RATIOS : state.candidates;
+  const choose = suggesting || state.candidates.length > 1;
   $("#scale-candidates").hidden = !choose;
   if (choose) {
-    $("#candidates-legend").textContent = IMPORT.scaleCandidates;
+    $("#candidates-legend").textContent = suggesting ? IMPORT.scaleSuggestedChoose : IMPORT.scaleCandidates;
     $("#candidates-list").replaceChildren(
-      ...state.candidates.map((ratio) =>
+      ...options.map((ratio) =>
         h(
           "label",
           {},
-          h("input", { type: "radio", name: "scale-candidate", value: String(ratio), checked: !state.calibrated && ratio === state.ratio, onchange: () => chooseRatio(ratio) }),
+          h("input", {
+            type: "radio",
+            name: "scale-candidate",
+            value: String(ratio),
+            checked: !state.calibrated && ratio === (suggesting ? state.suggested : state.ratio),
+            onchange: () => (suggesting ? chooseSuggested(ratio) : chooseRatio(ratio)),
+          }),
           `1:${ratio}`,
         ),
       ),
@@ -273,23 +355,46 @@ function renderAll() {
 
 // ---------------------------------------------------------------- analysis
 
+const SUGGESTED_RATIOS = [20, 50, 100];
+
 function detect(cmPerUnit) {
   const page = state.page.hasVector ? state.page : { ...state.page, paths: [] };
-  const result = detectWalls(page, { cmPerUnit });
+  const result = detectWalls(page, { cmPerUnit, area: state.areaPage ?? undefined });
   if (!state.page.hasVector && !result.warnings.includes("no_vector")) result.warnings.push("no_vector");
+  if (state.ratio === null && !state.calibrated && state.suggested !== null && !result.warnings.includes("no_scale")) result.warnings.push("no_scale");
   return result;
+}
+
+// A new detection (other scale, calibration, other area) keeps the walls the user switched off.
+function redetect(cmPerUnit) {
+  const previous = state.base;
+  const next = detect(cmPerUnit);
+  state.disabled = previous ? carryOverDisabled(previous, state.disabled, next) : new Set();
+  state.base = next;
+}
+
+function refresh() {
+  drawWalls();
+  drawArea();
+  drawImage();
+  renderAll();
 }
 
 function chooseRatio(ratio) {
   state.ratio = ratio;
   state.calibrated = false;
-  state.disabled = new Set();
-  state.base = detect((2.54 / 72) * ratio);
+  redetect((2.54 / 72) * ratio);
   setPicking(false);
-  drawWalls();
-  drawImage();
+  refresh();
   fit();
-  renderAll();
+}
+
+function chooseSuggested(ratio) {
+  state.suggested = ratio;
+  state.confirmed = false;
+  redetect((2.54 / 72) * ratio);
+  refresh();
+  fit();
 }
 
 function showError(message) {
@@ -327,14 +432,17 @@ async function analyze(pageNumber) {
     state.candidates = scale.candidates;
     state.ratio = scale.ratio;
     state.calibrated = false;
+    state.confirmed = false;
+    state.areaPage = null;
+    state.base = null;
     state.disabled = new Set();
-    state.base = detect(scale.cmPerUnit ?? undefined);
+    state.suggested = scale.ratio === null && page.hasVector ? suggestScale(page).ratio : null;
+    redetect(scale.cmPerUnit ?? (state.suggested ? (2.54 / 72) * state.suggested : undefined));
     setPicking(false);
+    setDrawingArea(false);
     $("#step-review").hidden = false;
-    drawWalls();
-    drawImage();
+    refresh();
     fit();
-    renderAll();
     setStatus("");
     $("#step-review").scrollIntoView?.({ block: "nearest" });
   } catch (error) {
@@ -415,6 +523,20 @@ attachViewer();
 $("#pdf-file").addEventListener("change", onFile);
 $("#page-go").addEventListener("click", () => analyze(Number($("#page-select").value)));
 $("#calibrate").addEventListener("click", () => setPicking(true));
+$("#scale-confirm").addEventListener("click", () => {
+  state.confirmed = true;
+  renderAll();
+});
+$("#area-draw").addEventListener("click", () => {
+  setPicking(false);
+  setDrawingArea(!state.drawingArea);
+});
+$("#area-reset").addEventListener("click", () => {
+  state.areaPage = null;
+  redetect(state.base.cmPerUnit);
+  refresh();
+});
+$("#area-apply").addEventListener("click", applyAreaInputs);
 $("#calibrate-cancel").addEventListener("click", () => setPicking(false));
 $("#calibrate-apply").addEventListener("click", applyCalibration);
 $("#real-length").addEventListener("keydown", (event) => {

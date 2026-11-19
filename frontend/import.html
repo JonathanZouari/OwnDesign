@@ -80,6 +80,7 @@
               <div class="choice" id="candidates-list"></div>
             </fieldset>
             <p id="sample-wall" class="small muted" style="margin: 0"></p>
+            <button type="button" class="primary" id="scale-confirm" hidden>אישור קנה המידה המשוער</button>
             <button type="button" id="calibrate">סמנו קיר שאתם יודעים את אורכו</button>
             <div class="stack" id="calibrate-panel" hidden>
               <p class="small muted" style="margin: 0">לחצו על שתי נקודות בשרטוט בקצות מידה ידועה (אפשר להגדיל כדי לדייק).</p>
@@ -98,6 +99,25 @@
                 <button type="button" id="calibrate-cancel">ביטול</button>
               </div>
             </div>
+          </section>
+
+          <section class="card stack" id="area-card">
+            <span class="label">אזור התוכנית</span>
+            <p class="small muted" style="margin: 0" id="area-hint"></p>
+            <div class="row">
+              <button type="button" id="area-draw" aria-pressed="false">סימון אזור על השרטוט</button>
+              <button type="button" id="area-reset">איפוס לאוטומטי</button>
+            </div>
+            <details>
+              <summary class="small">הזנת גבולות האזור (ס״מ)</summary>
+              <div class="area-grid stack" style="margin-top: 8px">
+                <label>שמאל <input id="area-x0" inputmode="numeric" autocomplete="off"></label>
+                <label>ימין <input id="area-x1" inputmode="numeric" autocomplete="off"></label>
+                <label>עליון <input id="area-y0" inputmode="numeric" autocomplete="off"></label>
+                <label>תחתון <input id="area-y1" inputmode="numeric" autocomplete="off"></label>
+              </div>
+              <button type="button" id="area-apply" style="margin-top: 8px">עדכון האזור</button>
+            </details>
           </section>
 
           <section class="card stack">
