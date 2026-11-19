@@ -1,6 +1,7 @@
 import { ROOM_TYPES } from "../catalog.js";
 import { emptyPlan, fromRooms, metres, planBox, roomBox } from "../plan.js";
 import { svg } from "../editor/render.js";
+import { UNITS, WIZARD, ltr } from "../strings.js";
 import { KEYS, load, save } from "../store.js";
 import { $, action, h, showStudio } from "../ui.js";
 
@@ -8,12 +9,12 @@ const MAX_ROOMS = 30;
 const MIN_CM = 50;
 const MAX_CM = 3000;
 const PRESETS = [
-  { label: "Living Room", icon: "weekend", type: "living", width: 500, length: 400 },
-  { label: "Primary Bed", icon: "bed", type: "bedroom", width: 400, length: 350 },
-  { label: "Kitchen", icon: "countertops", type: "kitchen", width: 350, length: 300 },
-  { label: "Bathroom", icon: "bathtub", type: "bathroom", width: 250, length: 200 },
-  { label: "Home Office", icon: "desk", type: "other", width: 300, length: 300 },
-  { label: "Custom", icon: "add_circle", type: "other", width: 300, length: 300 },
+  { label: WIZARD.presets["Living Room"], icon: "weekend", type: "living", width: 500, length: 400 },
+  { label: WIZARD.presets["Primary Bed"], icon: "bed", type: "bedroom", width: 400, length: 350 },
+  { label: WIZARD.presets.Kitchen, icon: "countertops", type: "kitchen", width: 350, length: 300 },
+  { label: WIZARD.presets.Bathroom, icon: "bathtub", type: "bathroom", width: 250, length: 200 },
+  { label: WIZARD.presets["Home Office"], icon: "desk", type: "other", width: 300, length: 300 },
+  { label: WIZARD.presets.Custom, icon: "add_circle", type: "other", width: 300, length: 300 },
 ];
 
 // Only a visitor who just came through a studio link works with that studio; a homeowner who once
@@ -22,8 +23,8 @@ const studio = new URLSearchParams(location.search).get("via") === "studio" ? lo
 const form = $("#wizard");
 // Rooms are replaced, never mutated: each edit builds a new array.
 let rooms = [
-  { name: "Living Room", type: "living", width: 500, length: 400 },
-  { name: "Primary Bed", type: "bedroom", width: 400, length: 350 },
+  { name: WIZARD.presets["Living Room"], type: "living", width: 500, length: 400 },
+  { name: WIZARD.presets["Primary Bed"], type: "bedroom", width: 400, length: 350 },
 ];
 let current = 0;
 
@@ -47,7 +48,7 @@ function renderEditor() {
   const room = rooms[current];
   $("#room-editor").hidden = !room;
   if (!room) return;
-  $("#room-id").textContent = `ROOM R-${String(current + 1).padStart(2, "0")}`;
+  $("#room-id").textContent = WIZARD.roomId(current + 1);
   $("#room-name").value = room.name;
   $("#room-type").value = room.type;
   $("#room-width").value = metres(room.width);
@@ -68,8 +69,8 @@ function renderPreview() {
       const cy = b.y + b.h / 2;
       const rect = svg("rect", { x: b.x, y: b.y, width: b.w, height: b.h, class: i === current ? "room current" : "room" });
       rect.addEventListener("click", () => setRooms(rooms, i));
-      const name = svg("text", { x: cx, y: cy, "text-anchor": "middle", "font-size": font, "font-weight": 500 }, rooms[i].name.toUpperCase());
-      const size = svg("text", { x: cx, y: cy + font * 1.3, "text-anchor": "middle", "font-size": font * 0.8 }, `${area(rooms[i]).toFixed(1)} m²`);
+      const name = svg("text", { x: cx, y: cy, "text-anchor": "middle", "font-size": font, "font-weight": 500 }, rooms[i].name);
+      const size = svg("text", { x: cx, y: cy + font * 1.3, "text-anchor": "middle", "font-size": font * 0.8 }, `${area(rooms[i]).toFixed(1)} ${UNITS.m2}`);
       return [rect, name, size];
     }),
   );
@@ -78,10 +79,10 @@ function renderPreview() {
 function renderDerived() {
   const room = rooms[current];
   const total = rooms.reduce((sum, each) => sum + area(each), 0);
-  if (room) $("#room-area").textContent = `${area(room).toFixed(2)} m²`;
-  $("#total-area").textContent = `${total.toFixed(1)} m²`;
-  $("#total-chip").textContent = `Total: ${total.toFixed(1)} m²`;
-  $("#room-count").textContent = `${rooms.length} configured`;
+  if (room) $("#room-area").textContent = `${area(room).toFixed(2)} ${UNITS.m2}`;
+  $("#total-area").textContent = `${total.toFixed(1)} ${UNITS.m2}`;
+  $("#total-chip").textContent = WIZARD.total(total.toFixed(1));
+  $("#room-count").textContent = WIZARD.configured(rooms.length);
   $("#no-rooms").hidden = rooms.length > 0;
   $("#room-list").replaceChildren(
     ...rooms.map((each, i) =>
@@ -91,14 +92,14 @@ function renderDerived() {
         h(
           "div",
           { class: "grow" },
-          h("div", { class: "name" }, each.name || "Unnamed room"),
-          h("div", { class: "code" }, `${metres(each.width)} × ${metres(each.length)} m`),
+          h("div", { class: "name" }, each.name || WIZARD.unnamedRoom),
+          h("div", { class: "code" }, `${ltr(`${metres(each.width)} × ${metres(each.length)}`)} ${UNITS.m}`),
         ),
-        h("span", { class: "mono" }, `${area(each).toFixed(1)} m²`),
-        h("button", { type: "button", "aria-label": `Edit ${each.name}`, onclick: () => setRooms(rooms, i) }, h("span", { class: "icon", "aria-hidden": "true" }, "edit")),
+        h("span", { class: "mono" }, `${area(each).toFixed(1)} ${UNITS.m2}`),
+        h("button", { type: "button", "aria-label": WIZARD.edit(each.name), onclick: () => setRooms(rooms, i) }, h("span", { class: "icon", "aria-hidden": "true" }, "edit")),
         h(
           "button",
-          { type: "button", "aria-label": `Delete ${each.name}`, onclick: () => setRooms(rooms.filter((_, j) => j !== i), current > i ? current - 1 : current) },
+          { type: "button", "aria-label": WIZARD.remove(each.name), onclick: () => setRooms(rooms.filter((_, j) => j !== i), current > i ? current - 1 : current) },
           h("span", { class: "icon", "aria-hidden": "true" }, "delete"),
         ),
       ),
@@ -122,7 +123,7 @@ function start() {
   $("#room-type").replaceChildren(...ROOM_TYPES.map(([value, label]) => h("option", { value }, label)));
   $("#presets").replaceChildren(
     ...PRESETS.map(({ label, icon, ...room }) =>
-      h("button", { type: "button", onclick: () => addRoom({ name: label === "Custom" ? "New room" : label, ...room }) }, h("span", { class: "icon", "aria-hidden": "true" }, icon), label),
+      h("button", { type: "button", onclick: () => addRoom({ name: label === WIZARD.presets.Custom ? WIZARD.newRoom : label, ...room }) }, h("span", { class: "icon", "aria-hidden": "true" }, icon), label),
     ),
   );
 
@@ -141,7 +142,7 @@ function start() {
       input.dispatchEvent(new Event("input"));
     });
   }
-  $("#duplicate-room").addEventListener("click", () => addRoom({ ...rooms[current], name: `${rooms[current].name} copy`.slice(0, 80) }));
+  $("#duplicate-room").addEventListener("click", () => addRoom({ ...rooms[current], name: WIZARD.copyOf(rooms[current].name).slice(0, 80) }));
   $("#delete-room").addEventListener("click", () => setRooms(rooms.filter((_, i) => i !== current)));
 
   form.addEventListener(
@@ -153,12 +154,12 @@ function start() {
       if (!blank && unnamed >= 0) {
         setRooms(rooms, unnamed);
         $("#room-name").focus();
-        throw new Error("Give every room a name before generating the canvas.");
+        throw new Error(WIZARD.nameEveryRoom);
       }
       const data = new FormData(form);
-      if (!data.get("name").trim()) throw new Error("Give your project a name.");
+      if (!data.get("name").trim()) throw new Error(WIZARD.nameProject);
       const draft = { name: data.get("name").trim(), property_type: data.get("property_type"), ...(studio ? { studio } : {}), plan: blank ? emptyPlan() : fromRooms(named) };
-      if (!save(KEYS.draft, draft)) throw new Error("Your browser blocked local storage, so the plan cannot be kept. Allow site data and try again.");
+      if (!save(KEYS.draft, draft)) throw new Error(WIZARD.storageBlocked);
       location.assign("editor.html");
     }),
   );

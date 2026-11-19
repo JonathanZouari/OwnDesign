@@ -2,6 +2,7 @@
 // hundred elements, so this stays fast and there is no stale state to reconcile.
 // User text (room names) only ever enters as text nodes.
 import { FURNITURE_BY_TYPE } from "../catalog.js";
+import { RENDER, UNITS } from "../strings.js";
 import { metres, openingSegment, roomBox, squareMetres, wallLength } from "../plan.js";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -43,7 +44,7 @@ function rulers(area) {
   const band = RULER_PX * scale;
   const step = (RULER_STEPS_M.find((m) => (m * 100) / scale >= 60) ?? 100) * 100;
   const font = 10 * scale;
-  const label = (cm) => `${(cm / 100).toFixed(step < 100 ? 1 : 0)}m`;
+  const label = (cm) => `${(cm / 100).toFixed(step < 100 ? 1 : 0)}${UNITS.m}`;
   const marks = [];
   for (let cm = Math.ceil((x + band) / step) * step; cm < x + w; cm += step) {
     marks.push(
@@ -67,7 +68,7 @@ function rulers(area) {
 // A dark measurement pill that keeps a constant on-screen size.
 function chip(x, y, text, scale) {
   const font = 11 * scale;
-  const width = (text.length * 0.62 + 1.4) * font;
+  const width = (text.length * 0.7 + 1.8) * font;
   const height = font * 1.7;
   return svg("g", { "pointer-events": "none" },
     svg("rect", { x: x - width / 2, y: y - height / 2, width, height, rx: 3 * scale, class: "chip-bg" }),
@@ -79,8 +80,8 @@ const focusable = (kind, id, label, cls) => ({ "data-kind": kind, "data-id": id,
 
 function wallNode(wall, selected) {
   const line = (cls, width) => svg("line", { x1: wall.x1, y1: wall.y1, x2: wall.x2, y2: wall.y2, class: cls, "stroke-width": width });
-  const name = wall.kind === "exterior" ? "Exterior wall" : "Partition";
-  return svg("g", focusable("walls", wall.id, `${name}, ${metres(wallLength(wall))} m`, selected ? "selected" : ""),
+  const name = wall.kind === "exterior" ? RENDER.exteriorWall : RENDER.partition;
+  return svg("g", focusable("walls", wall.id, RENDER.wallLabel(name, metres(wallLength(wall))), selected ? "selected" : ""),
     line(`wall ${wall.kind}`, wall.thickness),
     line("hit", Math.max(wall.thickness, 36)),
   );
@@ -101,7 +102,7 @@ function openingNode(opening, wall, selected) {
           svg("path", { d: `M${s.x1 + nx * opening.width} ${s.y1 + ny * opening.width} A${opening.width} ${opening.width} 0 0 0 ${s.x2} ${s.y2}`, class: "symbol", "stroke-dasharray": "6 6" }),
         ]
       : [along("symbol", 2, t / 4), along("symbol", 2, -t / 4)];
-  const label = `${opening.type === "door" ? "Door" : "Window"}, ${Math.round(opening.width)} cm wide`;
+  const label = RENDER.openingLabel(opening.type === "door" ? RENDER.door : RENDER.window, Math.round(opening.width));
   return svg("g", focusable("openings", opening.id, label, selected ? "selected" : ""), along("gap", t + 4), symbol, along("hit", Math.max(t, 36)));
 }
 
@@ -110,7 +111,7 @@ function furnitureNode(item, selected) {
   const label = spec?.label ?? item.type;
   const font = Math.min(Math.max(Math.min(item.w, item.d) * 0.16, 9), 15);
   const cls = ["item", spec?.review && "review", selected && "selected"].filter(Boolean).join(" ");
-  return svg("g", { ...focusable("furniture", item.id, `${label}, ${Math.round(item.w)} by ${Math.round(item.d)} cm`, cls), transform: `translate(${item.x} ${item.y}) rotate(${item.rotation})` },
+  return svg("g", { ...focusable("furniture", item.id, RENDER.furnitureLabel(label, Math.round(item.w), Math.round(item.d)), cls), transform: `translate(${item.x} ${item.y}) rotate(${item.rotation})` },
     svg("rect", { x: -item.w / 2, y: -item.d / 2, width: item.w, height: item.d, rx: 4 }),
     svg("text", { y: font * 0.35, "text-anchor": "middle", "font-size": font }, label),
   );
@@ -123,11 +124,11 @@ function roomNode(plan, room, selected, scale) {
   const cy = b.y + Math.min(b.h / 2, 60);
   const nameSize = Math.max(22, 13 * scale); // never smaller than 13 px on screen
   const metaSize = Math.max(13, 10 * scale);
-  const width = Math.max(room.name.length * nameSize * 0.6, nameSize * 5);
-  return svg("g", focusable("rooms", room.id, `Room ${room.name}, ${squareMetres(b).toFixed(1)} square metres`, selected ? "selected" : ""),
+  const width = Math.max(room.name.length * nameSize * 0.7, nameSize * 5);
+  return svg("g", focusable("rooms", room.id, RENDER.roomLabel(room.name, squareMetres(b).toFixed(1)), selected ? "selected" : ""),
     svg("rect", { x: cx - width / 2, y: cy - nameSize * 1.3, width, height: nameSize * 2.8, class: "room-hit" }),
     svg("text", { x: cx, y: cy, "text-anchor": "middle", "font-size": nameSize, class: "room-name" }, room.name),
-    svg("text", { x: cx, y: cy + metaSize * 1.6, "text-anchor": "middle", "font-size": metaSize, class: "room-meta" }, `${squareMetres(b).toFixed(1)} m²`),
+    svg("text", { x: cx, y: cy + metaSize * 1.6, "text-anchor": "middle", "font-size": metaSize, class: "room-meta" }, `${squareMetres(b).toFixed(1)} ${UNITS.m2}`),
   );
 }
 
@@ -145,7 +146,7 @@ function dimensions(plan, scale) {
     const off = wall.thickness / 2 + font * 1.2;
     const nx = -(wall.y2 - wall.y1) / length;
     const ny = (wall.x2 - wall.x1) / length;
-    return [svg("text", { x: mx - nx * off, y: my - ny * off + font * 0.35, "text-anchor": "middle", "font-size": font, class: "dim" }, `${metres(length)} m`)];
+    return [svg("text", { x: mx - nx * off, y: my - ny * off + font * 0.35, "text-anchor": "middle", "font-size": font, class: "dim" }, `${metres(length)} ${UNITS.m}`)];
   });
 }
 
@@ -155,13 +156,13 @@ function selectionOverlay(plan, selection, scale) {
     const wall = plan.walls.find((w) => w.id === selection.id);
     if (!wall) return [];
     const handle = (end, x, y) => svg("circle", { cx: x, cy: y, r: 7 * scale, class: "handle", "stroke-width": 2 * scale, "data-kind": "handle", "data-end": end });
-    return [chip((wall.x1 + wall.x2) / 2, (wall.y1 + wall.y2) / 2, `${metres(wallLength(wall))} m`, scale), handle(1, wall.x1, wall.y1), handle(2, wall.x2, wall.y2)];
+    return [chip((wall.x1 + wall.x2) / 2, (wall.y1 + wall.y2) / 2, `${metres(wallLength(wall))} ${UNITS.m}`, scale), handle(1, wall.x1, wall.y1), handle(2, wall.x2, wall.y2)];
   }
   if (selection.kind === "furniture") {
     const item = plan.furniture.find((f) => f.id === selection.id);
     if (!item) return [];
     const reach = Math.hypot(item.w, item.d) / 2;
-    return [chip(item.x, item.y + reach + 14 * scale, `${metres(item.w)} × ${metres(item.d)} m`, scale)];
+    return [chip(item.x, item.y + reach + 14 * scale, `${metres(item.w)} × ${metres(item.d)} ${UNITS.m}`, scale)];
   }
   return [];
 }
@@ -181,7 +182,7 @@ export function draw(canvas, { plan, selection, preview }) {
       selectionOverlay(plan, selection, area.scale),
       preview && [
         svg("line", { ...preview, class: "preview", "stroke-width": 3 * area.scale, "pointer-events": "none" }),
-        chip((preview.x1 + preview.x2) / 2, (preview.y1 + preview.y2) / 2 - 16 * area.scale, `${metres(Math.hypot(preview.x2 - preview.x1, preview.y2 - preview.y1))} m`, area.scale),
+        chip((preview.x1 + preview.x2) / 2, (preview.y1 + preview.y2) / 2 - 16 * area.scale, `${metres(Math.hypot(preview.x2 - preview.x1, preview.y2 - preview.y1))} ${UNITS.m}`, area.scale),
       ],
       rulers(area),
     ].flat(3).filter(Boolean),

@@ -1,4 +1,5 @@
 import { api, getSession, safeNext, supabase } from "../api.js";
+import { AUTH } from "../strings.js";
 import { KEYS, load, save } from "../store.js";
 import { $, action, run, toast } from "../ui.js";
 
@@ -14,19 +15,34 @@ const passwordField = $("#password-field");
 const confirmField = $("#confirm-field");
 confirmField.remove();
 
-const TITLES = { signin: "Sign in", signup: "Create your account", forgot: "Reset your password", reset: "Choose a new password" };
-const BUTTONS = { signin: "Sign in", signup: "Create account", forgot: "Send reset link", reset: "Update password" };
-const FORGOT_NOTICE = "If an account exists for this email, a reset link is on its way. Check your inbox.";
+const TITLES = AUTH.titles;
+const BUTTONS = AUTH.buttons;
+const FORGOT_NOTICE = AUTH.forgotNotice;
+
+// Supabase's English error text is never shown: it is mapped to Hebrew by status, code and message.
+function authError(error) {
+  const text = `${error.code ?? ""} ${error.message ?? ""}`.toLowerCase();
+  const { errors } = AUTH;
+  let message = errors.generic;
+  if (error.status === 429 || /rate.?limit|too many|security purposes/.test(text)) message = errors.rateLimit;
+  else if (/invalid.?login|invalid_credentials/.test(text)) message = errors.invalidLogin;
+  else if (/already.*regist|user_already_exists|email_exists/.test(text)) message = errors.alreadyRegistered;
+  else if (/weak_password|password should be|at least \d+ char|too short|should contain/.test(text)) message = errors.weakPassword;
+  else if (/email_not_confirmed|not confirmed/.test(text)) message = errors.emailNotConfirmed;
+  else if (/same_password|different from the old/.test(text)) message = errors.samePassword;
+  else if (/validate.?email|email_address_invalid|invalid.*email/.test(text)) message = errors.invalidEmail;
+  return new Error(message);
+}
 
 function render() {
   const signup = mode === "signup";
   const forgot = mode === "forgot";
   const reset = mode === "reset";
-  $("#title").textContent = signup && asStudio ? "Create your studio" : TITLES[mode];
+  $("#title").textContent = signup && asStudio ? AUTH.studioTitle : TITLES[mode];
   $("#subtitle").textContent =
-    mode !== "reset" && mode !== "forgot" && load(KEYS.draft) && !asStudio ? "Sign in or create an account to save your plan." : "";
+    mode !== "reset" && mode !== "forgot" && load(KEYS.draft) && !asStudio ? AUTH.draftSubtitle : "";
   $("#submit").textContent = BUTTONS[mode];
-  $("#switch").textContent = forgot || reset ? "Back to sign in" : signup ? "I already have an account" : "Create an account";
+  $("#switch").textContent = forgot || reset ? AUTH.backToSignin : signup ? AUTH.haveAccount : AUTH.createAccount;
   $("#switch").hidden = reset;
   $("#forgot").hidden = mode !== "signin";
   $("#studio-field").hidden = !(signup && asStudio);
@@ -36,7 +52,7 @@ function render() {
   passwordField.hidden = forgot;
   form.elements.password.required = !forgot;
   form.elements.password.autocomplete = signup || reset ? "new-password" : "current-password";
-  $("#password-label").textContent = reset ? "New password" : "Password";
+  $("#password-label").textContent = reset ? AUTH.newPassword : AUTH.password;
   if (reset) passwordField.after(confirmField);
   else confirmField.remove();
   // A reset link that did not produce a recovery session leaves nothing to submit.
@@ -75,21 +91,21 @@ form.addEventListener(
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${location.origin}${location.pathname}?mode=reset`,
       });
-      if (error) throw new Error(error.message);
+      if (error) throw authError(error);
       // The same answer whether or not the address has an account.
       toast(FORGOT_NOTICE);
       return;
     }
     if (mode === "reset") {
-      if (password !== confirm) throw new Error("Passwords do not match.");
+      if (password !== confirm) throw new Error(AUTH.mismatch);
       const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw new Error(error.message);
-      toast("Password updated");
+      if (error) throw authError(error);
+      toast(AUTH.passwordUpdated);
       return afterSignIn();
     }
     if (mode === "signin") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(error.message);
+      if (error) throw authError(error);
       return afterSignIn();
     }
     const { data, error } = await supabase.auth.signUp({
@@ -97,10 +113,10 @@ form.addEventListener(
       password,
       options: { emailRedirectTo: location.href },
     });
-    if (error) throw new Error(error.message);
+    if (error) throw authError(error);
     if (asStudio) save(KEYS.pendingStudio, studio.trim());
     if (data.session) return afterSignIn();
-    toast("Check your email for a confirmation link, then come back and sign in.");
+    toast(AUTH.confirmEmail);
     mode = "signin";
     render();
   }),

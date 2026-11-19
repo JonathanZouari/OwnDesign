@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
-  <title>Start designing · Atelier</title>
+  <title>התחילו לעצב · ATELIER</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -15,15 +15,15 @@
   <main class="page">
     <section class="hero" id="welcome" hidden>
       <h1 id="headline"></h1>
-      <p class="muted">Sketch your floor plan, arrange rooms and furniture, and share it with your designer. You can try it now and create an account only when you want to save.</p>
+      <p class="muted">שרטטו את תוכנית הקומה, סדרו חדרים ורהיטים ושתפו אותה עם המעצב שלכם. אפשר לנסות כבר עכשיו וליצור חשבון רק כשרוצים לשמור.</p>
       <div class="row">
-        <a class="button primary" href="wizard.html?via=studio">Start designing</a>
-        <a class="button" href="auth.html">I already have an account</a>
+        <a class="button primary" href="wizard.html?via=studio">התחילו לעצב</a>
+        <a class="button" href="auth.html">כבר יש לי חשבון</a>
       </div>
     </section>
     <section class="card" id="missing" hidden>
-      <h2>This link is not valid</h2>
-      <p class="muted">Ask your designer to send you their studio link again.</p>
+      <h2>הקישור אינו תקף</h2>
+      <p class="muted">בקשו מהמעצב שלכם לשלוח לכם שוב את קישור הסטודיו.</p>
     </section>
   </main>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>

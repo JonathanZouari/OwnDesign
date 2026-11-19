@@ -66,12 +66,12 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
 
     # Guest arrives through the studio link and sees the studio's name.
     page.goto(f"{SITE}/entry.html?studio={studio['slug']}")
-    page.get_by_role("heading", name="Plan your home with E2E Studio.").wait_for()
-    page.get_by_role("link", name="Start designing").click()
+    page.get_by_role("heading", name="תכננו את הבית שלכם עם E2E Studio.").wait_for()
+    page.get_by_role("link", name="התחילו לעצב").click()
 
     # Wizard: two default rooms -> eight walls on the canvas.
-    page.get_by_label("Project name").fill("E2E Flat")
-    page.get_by_role("button", name="Generate 2D canvas").click()
+    page.get_by_label("שם הפרויקט").fill("E2E Flat")
+    page.get_by_role("button", name="יצירת קנבס דו־ממדי").click()
     page.wait_for_url("**/editor.html")
     walls.first.wait_for(state="attached")
     assert walls.count() == 8
@@ -90,36 +90,36 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
 
     # Scenario 1: a guest cannot persist; saving asks for an account.
     page.locator("#save").click()
-    page.get_by_role("heading", name="Create an account to save your plan").wait_for()
-    page.get_by_role("link", name="Create account").click()
-    page.get_by_label("Email").fill(client_email)
-    page.get_by_label("Password").fill("e2e-Password-123")
-    page.get_by_role("button", name="Create account").click()
+    page.get_by_role("heading", name="יצירת חשבון כדי לשמור את התוכנית").wait_for()
+    page.get_by_role("link", name="יצירת חשבון").click()
+    page.get_by_label("אימייל").fill(client_email)
+    page.get_by_label("סיסמה").fill("e2e-Password-123")
+    page.get_by_role("button", name="יצירת חשבון").click()
 
     # Back in the editor with the draft intact; the save dialog opens by itself.
-    page.get_by_label("Version note (optional)").fill("first draft")
+    page.get_by_label("הערת גרסה (לא חובה)").fill("first draft")
     page.keyboard.press("Enter")  # Enter in the note field saves (it must not act as Cancel)
     page.wait_for_url("**/editor.html?project=*")
     walls.first.wait_for(state="attached")
-    page.get_by_text("Saved · v1").wait_for()
+    page.get_by_text("נשמר · גרסה 1").wait_for()
     assert (walls.count(), furniture.count()) == (8, 2)
 
     # Scenario 2: move the sofa, save again, reload -> geometry and history are preserved.
     furniture.first.focus()
     page.keyboard.press("ArrowRight")
-    page.get_by_text("Unsaved changes").wait_for()
+    page.get_by_text("שינויים שלא נשמרו").wait_for()
     page.locator("#save").click()
-    page.get_by_role("button", name="Save version").click()
-    page.get_by_text("Saved · v2").wait_for()
+    page.get_by_role("button", name="שמירת גרסה").click()
+    page.get_by_text("נשמר · גרסה 2").wait_for()
     # Dismissing the dialog with Escape must not save again.
     page.keyboard.press("Control+s")
-    page.get_by_role("heading", name="Save a new version").wait_for()
+    page.get_by_role("heading", name="שמירת גרסה חדשה").wait_for()
     page.keyboard.press("Escape")
-    page.get_by_role("heading", name="Save a new version").wait_for(state="hidden")
+    page.get_by_role("heading", name="שמירת גרסה חדשה").wait_for(state="hidden")
     # Selecting something without moving it is not a change.
     furniture.first.focus()
     page.wait_for_timeout(500)
-    assert page.locator("#status-save").inner_text() == "Saved · v2"
+    assert page.locator("#status-save").inner_text() == "נשמר · גרסה 2"
     page.reload()
     walls.first.wait_for(state="attached")
     assert (walls.count(), furniture.count()) == (8, 2)
@@ -142,21 +142,21 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
 
     # A new designer signs up through the UI and gets a studio with its own link.
     page.goto(f"{SITE}/auth.html?mode=signup&role=studio")
-    page.get_by_label("Studio name").fill("Atelier E2E")
-    page.get_by_label("Email").fill(unique_email("e2e-owner"))
-    page.get_by_label("Password").fill("e2e-Password-123")
-    page.get_by_role("button", name="Create account").click()
+    page.get_by_label("שם הסטודיו").fill("Atelier E2E")
+    page.get_by_label("אימייל").fill(unique_email("e2e-owner"))
+    page.get_by_label("סיסמה").fill("e2e-Password-123")
+    page.get_by_role("button", name="יצירת חשבון").click()
     page.wait_for_url("**/studio.html")
     page.get_by_role("heading", name="Atelier E2E").wait_for()
-    studio_url = page.get_by_label("Studio link").input_value()
+    studio_url = page.get_by_label("קישור הסטודיו").input_value()
     slug = studio_url.split("studio=")[1]
     assert studio_url.startswith(f"{SITE}/entry.html?studio=atelier-e2e-")
 
     # Personal invite: appears as pending, and its link resolves publicly to this studio.
-    page.get_by_label("Client name").fill("Dana Client")
-    page.get_by_label("Client email").fill("dana@example.com")
-    page.get_by_role("button", name="Create invite link").click()
-    page.get_by_role("cell", name="Pending").wait_for()
+    page.get_by_label("שם הלקוח").fill("Dana Client")
+    page.get_by_label("אימייל הלקוח").fill("dana@example.com")
+    page.get_by_role("button", name="יצירת קישור הזמנה").click()
+    page.get_by_role("cell", name="ממתין").wait_for()
 
     # A client of this studio saves a plan (through the API, as the editor would).
     client = make_user("e2e-invited")
@@ -170,15 +170,15 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
     page.reload()
     row = page.get_by_role("row", name="Dana's flat")
     row.get_by_text(client.email).wait_for()
-    row.get_by_role("link", name="Open").click()
-    page.get_by_text("Editing as designer").wait_for()
+    row.get_by_role("link", name="פתיחה").click()
+    page.get_by_text("עריכה כמעצב").wait_for()
     page.locator("#canvas [data-kind=furniture]").first.focus()
     page.keyboard.press("r")
     page.locator("#save").click()
-    page.get_by_label("Version note (optional)").fill("rotated the sofa")
-    page.get_by_role("button", name="Save version").click()
-    page.get_by_text("Saved · v2").wait_for()
-    page.get_by_text("v2 · designer").wait_for()
+    page.get_by_label("הערת גרסה (לא חובה)").fill("rotated the sofa")
+    page.get_by_role("button", name="שמירת גרסה").click()
+    page.get_by_text("נשמר · גרסה 2").wait_for()
+    page.get_by_text("גרסה 2 · מעצב").wait_for()
 
     # The client sees the designer's revision, labelled as such, and the original is untouched.
     versions = api.get(f"/v1/projects/{project['id']}/versions", headers=client.headers).json()["data"]
@@ -189,9 +189,9 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
 
 def _sign_in(page, user):
     page.goto(f"{SITE}/auth.html")
-    page.get_by_label("Email").fill(user.email)
-    page.get_by_label("Password").fill(user.password)
-    page.get_by_role("button", name="Sign in").click()
+    page.get_by_label("אימייל").fill(user.email)
+    page.get_by_label("סיסמה").fill(user.password)
+    page.get_by_role("button", name="התחברות").click()
 
 
 def _place_sofa(page):
@@ -205,35 +205,35 @@ def test_homeowner_designs_without_a_studio_and_saves(servers, page):
     walls = page.locator("#canvas [data-kind=walls]")
     furniture = page.locator("#canvas [data-kind=furniture]")
     page.goto(f"{SITE}/index.html")
-    assert page.get_by_text("an interior designer").count() == 0
-    page.get_by_role("link", name="Start designing").click()
+    assert page.get_by_text("מעצב פנים").count() == 0
+    page.get_by_role("link", name="התחילו לעצב").click()
     page.wait_for_url("**/wizard.html")
-    page.get_by_label("Project name").fill("Home Flat")
-    page.get_by_role("button", name="Generate 2D canvas").click()
+    page.get_by_label("שם הפרויקט").fill("Home Flat")
+    page.get_by_role("button", name="יצירת קנבס דו־ממדי").click()
     page.wait_for_url("**/editor.html")
     walls.first.wait_for(state="attached")
     _place_sofa(page)
     assert furniture.count() == 1
 
     page.locator("#save").click()
-    page.get_by_role("heading", name="Create an account to save your plan").wait_for()
-    page.get_by_role("link", name="Create account").click()
-    page.get_by_label("Email").fill(unique_email("e2e-home"))
-    page.get_by_label("Password").fill("e2e-Password-123")
-    page.get_by_role("button", name="Create account").click()
-    page.get_by_label("Version note (optional)").fill("first")
+    page.get_by_role("heading", name="יצירת חשבון כדי לשמור את התוכנית").wait_for()
+    page.get_by_role("link", name="יצירת חשבון").click()
+    page.get_by_label("אימייל").fill(unique_email("e2e-home"))
+    page.get_by_label("סיסמה").fill("e2e-Password-123")
+    page.get_by_role("button", name="יצירת חשבון").click()
+    page.get_by_label("הערת גרסה (לא חובה)").fill("first")
     page.keyboard.press("Enter")
     page.wait_for_url("**/editor.html?project=*")
-    page.get_by_text("Saved · v1").wait_for()
+    page.get_by_text("נשמר · גרסה 1").wait_for()
     project_id = page.url.split("project=")[1]
 
     page.goto(f"{SITE}/projects.html")
     row = page.get_by_role("row", name="Home Flat")
     row.wait_for()
-    assert page.locator("#studio-link").count() == 0 and page.get_by_text("Open your studio").count() == 0
-    row.get_by_role("link", name="Open").click()
+    assert page.locator("#studio-link").count() == 0 and page.get_by_text("הסטודיו שלי").count() == 0
+    row.get_by_role("link", name="פתיחה").click()
     page.wait_for_url(f"**/editor.html?project={project_id}")
-    page.get_by_text("Editing as client").wait_for()
+    page.get_by_text("עריכה כלקוח").wait_for()
     page.goto(f"{SITE}/projects.html")
     page.get_by_role("row", name="Home Flat").wait_for()  # the page's script has run and bound the button
     page.locator("#new-project").click()
@@ -247,8 +247,8 @@ def test_wizard_draft_in_the_old_format_with_a_studio_still_saves(servers, page,
     _sign_in(page, user)
     page.wait_for_url("**/projects.html")
     page.goto(f"{SITE}/wizard.html")
-    page.get_by_label("Project name").fill("Old Draft Flat")
-    page.get_by_role("button", name="Generate 2D canvas").click()
+    page.get_by_label("שם הפרויקט").fill("Old Draft Flat")
+    page.get_by_role("button", name="יצירת קנבס דו־ממדי").click()
     page.wait_for_url("**/editor.html")
     # Rewrite the draft the way the previous version stored it: with the studio inside.
     page.evaluate(
@@ -258,8 +258,8 @@ def test_wizard_draft_in_the_old_format_with_a_studio_still_saves(servers, page,
     page.goto(f"{SITE}/editor.html")
     page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
     page.locator("#save").click()
-    page.get_by_role("button", name="Save version").click()
-    page.get_by_text("Saved · v1").wait_for()
+    page.get_by_role("button", name="שמירת גרסה").click()
+    page.get_by_text("נשמר · גרסה 1").wait_for()
     project_id = page.url.split("project=")[1]
     assert api.get(f"/v1/projects/{project_id}", headers=user.headers).json()["data"]["studio"]["name"] == "Old Draft Studio"
 
@@ -270,27 +270,27 @@ def test_studio_remembered_from_an_old_link_is_not_attached_to_a_new_project(ser
     user = make_user("e2e-stale")
     # This browser once opened the studio's link, which remembered the studio.
     page.goto(f"{SITE}/entry.html?studio={studio['slug']}")
-    page.get_by_role("link", name="Start designing").wait_for()
+    page.get_by_role("link", name="התחילו לעצב").wait_for()
     # Later the homeowner starts from the home page: the remembered studio must not be used.
     page.goto(f"{SITE}/index.html")
-    page.get_by_role("link", name="Start designing").click()
-    page.get_by_label("Project name").fill("My Own Flat")
-    page.get_by_role("button", name="Generate 2D canvas").click()
+    page.get_by_role("link", name="התחילו לעצב").click()
+    page.get_by_label("שם הפרויקט").fill("My Own Flat")
+    page.get_by_role("button", name="יצירת קנבס דו־ממדי").click()
     page.wait_for_url("**/editor.html")
     assert page.evaluate("JSON.parse(localStorage.getItem('od.draft')).studio") is None
     _sign_in(page, user)
     page.wait_for_url("**/editor.html")  # signing in with a draft returns to it
     page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
     page.locator("#save").click()
-    page.get_by_role("button", name="Save version").click()
-    page.get_by_text("Saved · v1").wait_for()
+    page.get_by_role("button", name="שמירת גרסה").click()
+    page.get_by_text("נשמר · גרסה 1").wait_for()
     project_id = page.url.split("project=")[1]
     assert api.get(f"/v1/projects/{project_id}", headers=user.headers).json()["data"]["studio"] is None
     # The designer of that studio cannot see the homeowner's project.
     assert api.get(f"/v1/projects/{project_id}", headers=designer.headers).status_code == 404
 
 
-FORGOT_MESSAGE = "If an account exists for this email, a reset link is on its way. Check your inbox."
+FORGOT_MESSAGE = "אם קיים חשבון עבור האימייל הזה, קישור לאיפוס סיסמה בדרך אליכם. בדקו את תיבת הדואר."
 
 
 def test_forgot_password_message_is_the_same_for_known_and_unknown_emails(servers, page, make_user):
@@ -298,17 +298,17 @@ def test_forgot_password_message_is_the_same_for_known_and_unknown_emails(server
     # The built-in mailer is rate limited; the request itself is stubbed so it is never hammered.
     page.route("**/auth/v1/recover**", lambda route: route.fulfill(status=200, content_type="application/json", body="{}"))
     page.goto(f"{SITE}/auth.html")
-    page.get_by_role("button", name="Forgot password?").click()
-    page.get_by_role("heading", name="Reset your password").wait_for()
-    assert not page.get_by_label("Password").is_visible()
+    page.get_by_role("button", name="שכחתי סיסמה").click()
+    page.get_by_role("heading", name="איפוס סיסמה").wait_for()
+    assert not page.get_by_label("סיסמה").is_visible()
     for email in (known.email, unique_email("e2e-unknown")):
-        page.get_by_label("Email").fill(email)
-        page.get_by_role("button", name="Send reset link").click()
+        page.get_by_label("אימייל").fill(email)
+        page.get_by_role("button", name="שליחת קישור לאיפוס").click()
         page.get_by_text(FORGOT_MESSAGE).wait_for()
         page.get_by_text(FORGOT_MESSAGE).wait_for(state="hidden", timeout=15000)
-    page.get_by_role("button", name="Back to sign in").click()
-    page.get_by_role("heading", name="Sign in").wait_for()
-    assert page.get_by_label("Password").is_visible()
+    page.get_by_role("button", name="חזרה להתחברות").click()
+    page.get_by_role("heading", name="התחברות").wait_for()
+    assert page.get_by_label("סיסמה").is_visible()
 
 
 def _recovery_link(admin, email):
@@ -324,18 +324,18 @@ def test_reset_password_with_a_recovery_link(servers, page, admin, make_user):
 
     user = make_user("e2e-reset")
     page.goto(_recovery_link(admin, user.email))
-    page.get_by_role("heading", name="Choose a new password").wait_for()
-    assert not page.get_by_label("Email").is_visible()
+    page.get_by_role("heading", name="בחירת סיסמה חדשה").wait_for()
+    assert not page.get_by_label("אימייל").is_visible()
 
     new_password = "e2e-New-Password-456"
-    page.get_by_label("New password").fill(new_password)
-    page.get_by_label("Confirm password").fill(new_password + "x")
-    page.get_by_role("button", name="Update password").click()
-    page.get_by_text("Passwords do not match").wait_for()
+    page.get_by_label("סיסמה חדשה").fill(new_password)
+    page.get_by_label("אישור סיסמה").fill(new_password + "x")
+    page.get_by_role("button", name="עדכון סיסמה").click()
+    page.get_by_text("הסיסמאות אינן תואמות").wait_for()
     assert "mode=reset" in page.url
 
-    page.get_by_label("Confirm password").fill(new_password)
-    page.get_by_role("button", name="Update password").click()
+    page.get_by_label("אישור סיסמה").fill(new_password)
+    page.get_by_role("button", name="עדכון סיסמה").click()
     page.wait_for_url("**/projects.html")
 
     fresh = create_client(settings().supabase_url, settings().supabase_publishable_key)
@@ -346,19 +346,170 @@ def test_reset_password_with_a_recovery_link(servers, page, admin, make_user):
 
 def test_reset_page_without_a_recovery_session_is_refused(servers, page):
     page.goto(f"{SITE}/auth.html?mode=reset")
-    page.get_by_text("This link is invalid or expired. Request a new one.").wait_for()
+    page.get_by_text("הקישור אינו תקף או שפג תוקפו. בקשו קישור חדש.").wait_for()
     assert not page.locator("#auth-form").is_visible()
-    page.get_by_role("button", name="Request a new link").click()
-    page.get_by_role("heading", name="Reset your password").wait_for()
+    page.get_by_role("button", name="בקשת קישור חדש").click()
+    page.get_by_role("heading", name="איפוס סיסמה").wait_for()
 
 
 def test_reset_password_rejects_a_short_password(servers, page, admin, make_user):
     user = make_user("e2e-short")
     page.goto(_recovery_link(admin, user.email))
-    page.get_by_role("heading", name="Choose a new password").wait_for()
-    page.get_by_label("New password").fill("short")
-    page.get_by_label("Confirm password").fill("short")
-    page.get_by_role("button", name="Update password").click()
+    page.get_by_role("heading", name="בחירת סיסמה חדשה").wait_for()
+    page.get_by_label("סיסמה חדשה").fill("short")
+    page.get_by_label("אישור סיסמה").fill("short")
+    page.get_by_role("button", name="עדכון סיסמה").click()
     page.wait_for_timeout(500)
     assert "mode=reset" in page.url
-    assert page.get_by_label("New password").evaluate("el => el.validity.tooShort")
+    assert page.get_by_label("סיסמה חדשה").evaluate("el => el.validity.tooShort")
+
+
+# ---- Hebrew / right-to-left UI ----
+
+# Product and keyboard-key names that stay in Latin letters on purpose.
+LATIN_ALLOWED = {"ATELIER", "ESC", "Ctrl", "Tab", "Enter", "Delete"}
+
+LATIN_WORDS_JS = r"""
+() => {
+  const out = [];
+  const skip = (el) => !el || el.closest('.icon, script, style, [hidden]') || !el.checkVisibility();
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!skip(node.parentElement)) out.push(node.nodeValue);
+  }
+  for (const el of document.querySelectorAll('[placeholder], [aria-label], [title]')) {
+    if (el.closest('[hidden]')) continue;
+    for (const attr of ['placeholder', 'aria-label', 'title']) if (el.hasAttribute(attr)) out.push(el.getAttribute(attr));
+  }
+  return out.join('\n');
+}
+"""
+
+
+def _english_words(page):
+    import re
+
+    text = page.evaluate(LATIN_WORDS_JS)
+    text = re.sub(r"\S+@\S+", " ", text)  # email addresses
+    return sorted({w for w in re.findall(r"[A-Za-z]{3,}", text) if w not in LATIN_ALLOWED})
+
+
+def _is_hebrew_rtl(page):
+    return page.evaluate("document.documentElement.lang === 'he' && document.documentElement.dir === 'rtl'")
+
+
+def test_every_page_is_hebrew_rtl_with_no_leftover_english(servers, page, api, make_user):
+    problems = {}
+
+    def check(name):
+        if not _is_hebrew_rtl(page):
+            problems[f"{name}:direction"] = ["html is not lang=he dir=rtl"]
+        words = _english_words(page)
+        if words:
+            problems[name] = words
+
+    page.goto(f"{SITE}/index.html")
+    page.get_by_role("link", name="התחילו לעצב").wait_for()
+    check("index")
+
+    for mode in ("", "?mode=forgot", "?mode=signup", "?mode=signup&role=studio"):
+        page.goto(f"{SITE}/auth.html{mode}")
+        page.locator("#title").wait_for()
+        page.wait_for_timeout(200)
+        check(f"auth{mode}")
+
+    page.goto(f"{SITE}/wizard.html")
+    page.get_by_label("שם הפרויקט").wait_for()
+    check("wizard")
+
+    page.get_by_label("שם הפרויקט").fill("דירה לבדיקה")
+    page.get_by_role("button", name="יצירת קנבס דו־ממדי").click()
+    page.wait_for_url("**/editor.html")
+    page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
+    _place_sofa(page)  # puts the furniture inspector, catalog button state and selection actions on screen
+    check("editor(draft)")
+    page.keyboard.press("f")
+    page.locator("#catalog button[data-type=sofa]").wait_for()
+    check("editor(draft, catalog open)")
+    page.keyboard.press("Escape")
+    assert page.locator("#canvas").evaluate("el => getComputedStyle(el).direction") == "ltr"
+
+    user = make_user("e2e-he-scan")
+    project = api.post("/v1/projects", json={"name": "פרויקט לבדיקה", "property_type": "existing"}, headers=user.headers).json()["data"]
+    _sign_in(page, user)
+    page.wait_for_url("**/editor.html")  # a draft is in this browser, so sign-in returns to it
+    page.goto(f"{SITE}/projects.html")
+    page.get_by_role("row", name="פרויקט לבדיקה").wait_for()
+    check("projects")
+    page.goto(f"{SITE}/editor.html?project={project['id']}")
+    page.get_by_text("עריכה כלקוח").wait_for()
+    check("editor(saved project)")
+
+    assert not problems, f"Leftover English or non-RTL pages: {problems}"
+
+
+def test_canvas_and_rulers_stay_left_to_right_in_an_rtl_page(servers, page):
+    page.goto(f"{SITE}/wizard.html")
+    page.get_by_label("שם הפרויקט").fill("דירה")
+    page.get_by_role("button", name="יצירת קנבס דו־ממדי").click()
+    page.wait_for_url("**/editor.html")
+    page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
+    assert page.evaluate("getComputedStyle(document.documentElement).direction") == "rtl"
+    assert page.locator("#canvas").evaluate("el => getComputedStyle(el).direction") == "ltr"
+    ruler = page.locator("#canvas .ruler-text").first
+    assert ruler.evaluate("el => getComputedStyle(el).direction") == "ltr"
+    assert "מ׳" in ruler.text_content()
+    # Hebrew room names are drawn inside the plan and fit inside their hit area (not clipped to nothing).
+    names = page.locator("#canvas .room-name")
+    assert names.count() == 2 and names.first.text_content() == "סלון"
+    assert names.first.bounding_box()["width"] > 20
+
+
+def test_api_error_is_shown_in_hebrew_not_the_servers_english(servers, page, make_user):
+    import uuid
+
+    user = make_user("e2e-he-error")
+    _sign_in(page, user)
+    page.wait_for_url("**/projects.html")
+    page.goto(f"{SITE}/editor.html?project={uuid.uuid4()}")
+    toast = page.locator(".toast.error")
+    toast.wait_for()
+    assert toast.inner_text() == "הפריט המבוקש לא נמצא."
+    page.route("**/v1/projects", lambda route: route.fulfill(status=500, content_type="application/json", body='{"success": false, "error": "Boom internal"}'))
+    page.goto(f"{SITE}/projects.html")
+    page.locator(".toast.error").wait_for()
+    shown = page.locator(".toast.error").inner_text()
+    assert "Boom" not in shown and "internal" not in shown
+    assert "אירעה תקלה" in shown
+
+
+def test_wrong_password_shows_a_hebrew_message(servers, page, make_user):
+    user = make_user("e2e-he-wrongpw")
+    page.goto(f"{SITE}/auth.html")
+    page.get_by_label("אימייל").fill(user.email)
+    page.get_by_label("סיסמה").fill("definitely-Wrong-1")
+    page.get_by_role("button", name="התחברות").click()
+    toast = page.locator(".toast.error")
+    toast.wait_for()
+    assert toast.inner_text() == "האימייל או הסיסמה שגויים."
+
+
+def test_long_mixed_hebrew_project_name_saves_and_is_listed(servers, page, make_user):
+    name = "דירת גן מרווחת ברחוב Herzl 12 קומה 3 - Penthouse 4B עם נוף לים"
+    assert len(name) <= 80
+    user = make_user("e2e-he-name")
+    _sign_in(page, user)
+    page.wait_for_url("**/projects.html")
+    page.goto(f"{SITE}/wizard.html")
+    page.get_by_label("שם הפרויקט").fill(name)
+    page.get_by_role("button", name="יצירת קנבס דו־ממדי").click()
+    page.wait_for_url("**/editor.html")
+    page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
+    page.locator("#save").click()
+    page.get_by_role("button", name="שמירת גרסה").click()
+    page.wait_for_url("**/editor.html?project=*")
+    page.get_by_text("נשמר · גרסה 1").wait_for()
+    assert page.locator("#crumb-name").inner_text() == name
+    page.goto(f"{SITE}/projects.html")
+    page.get_by_role("row", name=name).wait_for()
+    assert page.locator("#projects td").first.inner_text() == name

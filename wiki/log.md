@@ -86,3 +86,12 @@ removed from the UI (code kept). The wizard only uses a remembered studio when r
 Planned on Opus, implemented by a Sonnet subagent, stale-studio fix and its test by the main session.
 Tests: backend 52 passed, frontend 13 passed. Security review: no findings.
 Pages: [overview](overview.md), [decisions](decisions.md), [architecture](architecture.md).
+
+## [2026-11-19] build | Hebrew right-to-left interface
+User decision: Hebrew only. All pages `lang="he" dir="rtl"`, JS strings in `frontend/js/strings.js`, Hebrew
+API and auth error messages chosen by status/code (server English text never shown), Heebo font, logical CSS
+properties, canvas kept LTR, editor shortcuts by physical key so they work on a Hebrew layout. "Studio
+palette" label renamed "Tools". `CLAUDE.md` updated. Planned on Opus, implemented by a Sonnet subagent.
+Tests: backend 57 passed (new: lang/dir, leftover-English scan, canvas LTR, Hebrew errors, mixed names),
+frontend 16 passed. Security review: no findings.
+Pages: [design](design.md), [decisions](decisions.md).

@@ -1,8 +1,7 @@
 import { api, requireSession, signOut } from "../api.js";
+import { COMMON, PROJECT_TYPES } from "../strings.js";
 import { KEYS, load } from "../store.js";
 import { $, formatDate, h, run } from "../ui.js";
-
-const TYPE_LABEL = { existing: "Existing home", new_build: "New build" };
 
 run(async () => {
   await requireSession();
@@ -17,9 +16,9 @@ run(async () => {
         "tr",
         {},
         h("td", {}, project.name),
-        h("td", {}, TYPE_LABEL[project.property_type]),
+        h("td", {}, PROJECT_TYPES[project.property_type]),
         h("td", {}, formatDate(project.created_at)),
-        h("td", {}, h("a", { class: "button", href: `editor.html?project=${project.id}` }, "Open")),
+        h("td", {}, h("a", { class: "button", href: `editor.html?project=${project.id}` }, COMMON.open)),
       ),
     ),
   );

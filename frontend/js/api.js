@@ -1,4 +1,5 @@
 import { config } from "./config.js";
+import { API_ERRORS } from "./strings.js";
 
 // supabase-js is served from frontend/vendor (loaded by a <script> tag before this module), so no
 // third-party script runs on the page. It is used for sign-in and session refresh only; all data
@@ -26,6 +27,9 @@ export async function signOut() {
   location.replace("index.html");
 }
 
+// The user always sees Hebrew text chosen by status; the server's English `error` text is never shown.
+export const apiMessage = (status) => API_ERRORS[status] ?? API_ERRORS.generic;
+
 export async function api(path, { method = "GET", body } = {}) {
   const session = await getSession();
   const headers = {
@@ -36,11 +40,11 @@ export async function api(path, { method = "GET", body } = {}) {
   try {
     response = await fetch(config.apiUrl + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
   } catch {
-    throw new Error("Cannot reach the server. Check your connection and try again.");
+    throw new Error(API_ERRORS.network);
   }
   const payload = await response.json().catch(() => null);
   if (!response.ok || !payload?.success) {
-    const error = new Error(payload?.error ?? `Request failed (${response.status})`);
+    const error = new Error(apiMessage(response.status));
     error.status = response.status;
     throw error;
   }

@@ -1,4 +1,5 @@
 import { api } from "../api.js";
+import { ENTRY } from "../strings.js";
 import { KEYS, save } from "../store.js";
 import { $, run, showStudio } from "../ui.js";
 
@@ -8,12 +9,12 @@ run(async () => {
   const invite = params.get("invite");
   const slug = params.get("studio");
   let studio = null;
-  let greeting = "";
+  let clientName = "";
   try {
     if (invite) {
       const found = await api(`/v1/invites/${encodeURIComponent(invite)}`);
       studio = found.studio;
-      greeting = `Hi ${found.client_name}, `;
+      clientName = found.client_name;
       save(KEYS.invite, invite);
     } else if (slug) {
       studio = await api(`/v1/studios/by-slug/${encodeURIComponent(slug)}`);
@@ -27,7 +28,7 @@ run(async () => {
   }
   save(KEYS.studio, studio);
   showStudio(studio.name);
-  document.title = `Start designing · ${studio.name}`;
-  $("#headline").textContent = `${greeting}${greeting ? "plan" : "Plan"} your home with ${studio.name}.`;
+  document.title = `${ENTRY.title} · ${studio.name}`;
+  $("#headline").textContent = ENTRY.headline(studio.name, clientName);
   $("#welcome").hidden = false;
 });

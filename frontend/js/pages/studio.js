@@ -1,8 +1,7 @@
 import { api, requireSession, signOut } from "../api.js";
+import { COMMON, PROJECT_TYPES, STUDIO } from "../strings.js";
 import { KEYS, save } from "../store.js";
 import { $, action, copyText, formatDate, h, pageUrl, run, showStudio } from "../ui.js";
-
-const TYPE_LABEL = { existing: "Existing home", new_build: "New build" };
 
 function showInvites(invites) {
   $("#invites").replaceChildren(
@@ -12,11 +11,11 @@ function showInvites(invites) {
         {},
         h("td", {}, invite.client_name),
         h("td", {}, invite.client_email),
-        h("td", {}, h("span", { class: `chip ${invite.accepted_at ? "ok" : ""}` }, invite.accepted_at ? "Accepted" : "Pending")),
+        h("td", {}, h("span", { class: `chip ${invite.accepted_at ? "ok" : ""}` }, invite.accepted_at ? STUDIO.accepted : STUDIO.pending)),
         h(
           "td",
           {},
-          h("button", { type: "button", onclick: () => copyText(pageUrl(`entry.html?invite=${invite.token}`)) }, "Copy link"),
+          h("button", { type: "button", onclick: () => copyText(pageUrl(`entry.html?invite=${invite.token}`)) }, COMMON.copyLink),
         ),
       ),
     ),
@@ -27,7 +26,7 @@ async function showDashboard(studio) {
   save(KEYS.studio, studio); // "New project" from here starts a project in the designer's own studio
   showStudio(studio.name);
   $("#studio-name").textContent = studio.name;
-  document.title = `${studio.name} · Studio`;
+  document.title = STUDIO.title(studio.name);
   $("#studio-url").value = pageUrl(`entry.html?studio=${studio.slug}`);
   $("#copy-studio-url").addEventListener("click", () => copyText($("#studio-url").value));
 
@@ -44,9 +43,9 @@ async function showDashboard(studio) {
         {},
         h("td", {}, project.name),
         h("td", {}, project.client_email ?? ""),
-        h("td", {}, TYPE_LABEL[project.property_type]),
+        h("td", {}, PROJECT_TYPES[project.property_type]),
         h("td", {}, formatDate(project.created_at)),
-        h("td", {}, h("a", { class: "button", href: `editor.html?project=${project.id}` }, "Open")),
+        h("td", {}, h("a", { class: "button", href: `editor.html?project=${project.id}` }, COMMON.open)),
       ),
     ),
   );

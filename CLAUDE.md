@@ -4,7 +4,8 @@ Atelier: an AI-assisted interior design platform (FastAPI backend, static HTML/E
 Supabase). Product spec: `Interior_Design_AI_PRD_EN.md`. How to run and test: `README.md`.
 Project memory: `wiki/` (start at `wiki/index.md`).
 
-Talk to the user in Hebrew. Code, UI text, docs and commit messages are in English.
+Talk to the user in Hebrew. UI text is in Hebrew, right to left (strings set from JS live in
+`frontend/js/strings.js`; the plan canvas stays left to right). Code, docs and commit messages are in English.
 
 ## Workflow: every task, in this order
 
