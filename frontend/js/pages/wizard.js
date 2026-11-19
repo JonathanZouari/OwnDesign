@@ -154,6 +154,7 @@ function start() {
         throw new Error("Give every room a name before generating the canvas.");
       }
       const data = new FormData(form);
+      if (!data.get("name").trim()) throw new Error("Give your project a name.");
       const draft = { name: data.get("name").trim(), property_type: data.get("property_type"), studio, plan: blank ? emptyPlan() : fromRooms(named) };
       if (!save(KEYS.draft, draft)) throw new Error("Your browser blocked local storage, so the plan cannot be kept. Allow site data and try again.");
       location.assign("editor.html");

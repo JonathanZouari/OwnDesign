@@ -2,6 +2,7 @@
 // furniture, pan and pinch/wheel zoom. Every edit goes through the pure functions in plan.js.
 import { FURNITURE_BY_TYPE } from "../catalog.js";
 import * as P from "../plan.js";
+import { visibleArea } from "./render.js";
 
 const AXIS_LOCK = 15; // cm: a nearly straight wall snaps to exactly horizontal or vertical
 const WALL_REACH_PX = 24; // how close a click must be to a wall to drop a door or window on it
@@ -27,12 +28,11 @@ export function attachPointer(canvas, editor) {
   const toPlan = (event, inverse = canvas.getScreenCTM().inverse()) =>
     new DOMPoint(event.clientX, event.clientY).matrixTransform(inverse);
   const snapped = (point) => ({ x: P.snap(point.x), y: P.snap(point.y) });
-  const cmPerPx = () => editor.view.w / canvas.getBoundingClientRect().width;
 
   function place(point) {
     const { tool, plan } = editor;
     if (tool === "door" || tool === "window") {
-      const hit = P.nearestWall(plan, point, WALL_REACH_PX * cmPerPx());
+      const hit = P.nearestWall(plan, point, WALL_REACH_PX * visibleArea(canvas).scale);
       if (!hit) return editor.toast("Click on a wall to place it there.");
       const next = P.addOpening(plan, hit.wall.id, tool, hit.along);
       editor.commit(next, { kind: "openings", id: next.openings.at(-1).id });
@@ -50,6 +50,7 @@ export function attachPointer(canvas, editor) {
     canvas.focus({ preventScroll: true });
     canvas.setPointerCapture(event.pointerId);
     pointers.set(event.pointerId, event);
+    if (pointers.size > 2) return; // extra fingers during a pinch are ignored
     if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       const centre = toPlan({ clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2 });
@@ -140,6 +141,7 @@ export function attachPointer(canvas, editor) {
     "wheel",
     (event) => {
       event.preventDefault();
+      if (event.deltaY === 0) return; // sideways trackpad swipe
       editor.setView(zoomAt(editor.view, toPlan(event), event.deltaY > 0 ? 1.12 : 1 / 1.12));
     },
     { passive: false },

@@ -23,12 +23,35 @@ app.include_router(studios.router)
 app.include_router(projects.router)
 
 
-@app.middleware("http")
-async def limit_body_size(request: Request, call_next):
-    # shortcut: trusts Content-Length, so chunked uploads are not capped; enforce at the proxy when deployed.
-    if int(request.headers.get("content-length") or 0) > MAX_BODY_BYTES:
-        return JSONResponse(fail("Request too large"), status_code=413)
-    return await call_next(request)
+class BodyLimit:
+    """Stops reading a request body once it passes MAX_BODY_BYTES.
+
+    Counts the bytes that actually arrive, so a chunked upload without Content-Length is capped too.
+    Bodies are read before authentication runs, which makes this the only guard against an
+    anonymous caller streaming an enormous payload.
+    """
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.inner(scope, receive, send)
+        received = 0
+
+        async def capped_receive():
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > MAX_BODY_BYTES:
+                    raise HTTPException(413, "Request too large")
+            return message
+
+        await self.inner(scope, capped_receive, send)
+
+
+app.add_middleware(BodyLimit)
 
 
 @app.exception_handler(HTTPException)

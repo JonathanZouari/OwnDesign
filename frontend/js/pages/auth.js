@@ -51,13 +51,13 @@ form.addEventListener(
       if (error) throw new Error(error.message);
       return afterSignIn();
     }
-    if (asStudio) save(KEYS.pendingStudio, studio.trim());
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: location.href },
     });
     if (error) throw new Error(error.message);
+    if (asStudio) save(KEYS.pendingStudio, studio.trim());
     if (data.session) return afterSignIn();
     toast("Check your email for a confirmation link, then come back and sign in.");
     mode = "signin";

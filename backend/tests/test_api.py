@@ -177,3 +177,40 @@ def test_changes_are_audited(world):
 
     actions = {row["action"] for row in user_client(world.designer_a.token).table("audit_events").select("action").execute().data}
     assert {"studio.created", "project.created", "plan_version.created"} <= actions
+
+
+def test_oversized_body_is_refused_even_without_content_length(api):
+    def chunks():
+        for _ in range(40):
+            yield b"x" * 100_000  # 4 MB sent with Transfer-Encoding: chunked
+
+    response = api.post("/v1/studios", content=chunks(), headers={"Content-Type": "application/json"})
+    assert response.status_code == 413
+
+
+def test_quotas_bound_what_one_account_can_store(api, world, monkeypatch):
+    from app.routes import projects
+
+    monkeypatch.setattr(projects, "MAX_PROJECTS_PER_CLIENT", 1)  # client_b already has one project in studio B
+    blocked = api.post(
+        "/v1/projects", json={"studio_id": world.studio_b["id"], "name": "One too many", "property_type": "existing"}, headers=world.client_b.headers
+    )
+    assert blocked.status_code == 409
+
+    monkeypatch.setattr(projects, "MAX_VERSIONS_PER_PROJECT", 1)
+    base = f"/v1/projects/{world.project_b['id']}/versions"
+    assert api.post(base, json={"geometry": VALID}, headers=world.client_b.headers).status_code == 201
+    assert api.post(base, json={"geometry": VALID}, headers=world.client_b.headers).status_code == 409
+
+
+def test_database_refuses_a_second_owned_studio(world):
+    """The API check can be raced; the unique index is what guarantees one owned studio per user."""
+    from postgrest.exceptions import APIError
+
+    from app.db import service
+
+    with pytest.raises(APIError) as error:
+        service().table("studio_memberships").insert(
+            {"studio_id": world.studio_b["id"], "user_id": world.designer_a.id, "role": "owner"}
+        ).execute()
+    assert error.value.code == "23505"

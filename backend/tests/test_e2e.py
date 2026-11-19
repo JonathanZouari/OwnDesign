@@ -82,6 +82,11 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     page.locator("#catalog button[data-type=sofa]").click()
     page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
     assert furniture.count() == 1
+    # The same can be done without a pointer: choose from the catalog and press Enter to place it.
+    page.keyboard.press("f")
+    page.locator("#catalog button[data-type=chair]").press("Enter")
+    page.keyboard.press("Enter")
+    assert furniture.count() == 2
 
     # Scenario 1: a guest cannot persist; saving asks for an account.
     page.locator("#save").click()
@@ -93,11 +98,11 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
 
     # Back in the editor with the draft intact; the save dialog opens by itself.
     page.get_by_label("Version note (optional)").fill("first draft")
-    page.get_by_role("button", name="Save version").click()
+    page.keyboard.press("Enter")  # Enter in the note field saves (it must not act as Cancel)
     page.wait_for_url("**/editor.html?project=*")
     walls.first.wait_for(state="attached")
     page.get_by_text("Saved · v1").wait_for()
-    assert (walls.count(), furniture.count()) == (8, 1)
+    assert (walls.count(), furniture.count()) == (8, 2)
 
     # Scenario 2: move the sofa, save again, reload -> geometry and history are preserved.
     furniture.first.focus()
@@ -106,9 +111,18 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     page.locator("#save").click()
     page.get_by_role("button", name="Save version").click()
     page.get_by_text("Saved · v2").wait_for()
+    # Dismissing the dialog with Escape must not save again.
+    page.keyboard.press("Control+s")
+    page.get_by_role("heading", name="Save a new version").wait_for()
+    page.keyboard.press("Escape")
+    page.get_by_role("heading", name="Save a new version").wait_for(state="hidden")
+    # Selecting something without moving it is not a change.
+    furniture.first.focus()
+    page.wait_for_timeout(500)
+    assert page.locator("#status-save").inner_text() == "Saved · v2"
     page.reload()
     walls.first.wait_for(state="attached")
-    assert (walls.count(), furniture.count()) == (8, 1)
+    assert (walls.count(), furniture.count()) == (8, 2)
     assert page.locator(".version").count() == 2
 
     # Scenario 6: the studio's designer sees the client's project and its latest plan.

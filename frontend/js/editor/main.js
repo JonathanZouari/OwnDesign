@@ -1,7 +1,7 @@
 // Editor controller: owns the state, wires tools, keyboard, zoom, save and versions.
 // Two modes: a saved project (?project=<id>, needs sign-in) or a local draft (guest or not yet saved).
 import { api, getSession, requireSession, signOut } from "../api.js";
-import { FURNITURE } from "../catalog.js";
+import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
 import * as P from "../plan.js";
 import { KEYS, load, save as store } from "../store.js";
 import { $, action, h, run, showStudio, toast } from "../ui.js";
@@ -17,6 +17,7 @@ const TOOLS = [
   { id: "window", icon: "window", key: "N", label: "Place window" },
   { id: "furniture", icon: "chair", key: "F", label: "Furniture catalog" },
 ];
+const VIEW_LIMIT = 99_000; // cm
 const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 
 const params = new URLSearchParams(location.search);
@@ -60,7 +61,8 @@ const editor = {
   },
   commit(plan, selection = state.selection) {
     state.live = null;
-    state.history = P.history.push(state.history, plan);
+    // A click without movement, or re-entering the same value, must not add an undo step or mark the plan unsaved.
+    if (JSON.stringify(plan) !== JSON.stringify(state.history.present)) state.history = P.history.push(state.history, plan);
     state.selection = selection;
     keepDraft();
     render();
@@ -76,7 +78,9 @@ const editor = {
     render();
   },
   setView(view) {
-    state.view = view;
+    // Keeps the view inside the area the backend accepts (plus/minus 1 km), so nothing can be drawn out of range.
+    const clamp = (value, size) => Math.min(Math.max(value, -VIEW_LIMIT), VIEW_LIMIT - size);
+    state.view = { ...view, x: clamp(view.x, view.w), y: clamp(view.y, view.h) };
     render();
   },
   setPreviewLine(line) {
@@ -177,8 +181,33 @@ function nudge([dx, dy]) {
   editor.commit(P.translate(plan, selection.kind, selection.id, dx * P.GRID, dy * P.GRID));
 }
 
+// Keyboard alternative to clicking on the canvas: puts the active tool's element at the centre of the view.
+function placeAtCentre() {
+  const area = visibleArea(canvas);
+  const centre = { x: P.snap(area.x + area.w / 2), y: P.snap(area.y + area.h / 2) };
+  const { tool } = state;
+  const plan = editor.plan;
+  let next;
+  let kind;
+  if (tool === "exterior" || tool === "partition") {
+    next = P.addWall(plan, { x: centre.x - 150, y: centre.y }, { x: centre.x + 150, y: centre.y }, tool);
+    kind = "walls";
+  } else if (tool === "door" || tool === "window") {
+    const wall = state.selection?.kind === "walls" && plan.walls.find((candidate) => candidate.id === state.selection.id);
+    if (!wall) return toast("Select a wall first, then choose the door or window tool and press Enter.");
+    next = P.addOpening(plan, wall.id, tool, P.wallLength(wall) / 2);
+    kind = "openings";
+  } else {
+    next = P.addFurniture(plan, FURNITURE_BY_TYPE.get(tool.slice("furniture:".length)), centre.x, centre.y);
+    kind = "furniture";
+  }
+  editor.commit(next, { kind, id: next[kind].at(-1).id });
+  editor.setTool("select");
+}
+
 function onKey(event) {
   if (event.target.closest("input, select, textarea, dialog")) return;
+  if (state.live || state.previewLine) return; // mid-drag: the drag would overwrite a keyboard edit
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
   const mod = event.ctrlKey || event.metaKey;
   if (mod && key === "z") event.shiftKey ? redo() : undo();
@@ -189,6 +218,9 @@ function onKey(event) {
   else if (key === "Escape") {
     state.selection = null;
     editor.setTool("select");
+  } else if (key === "Enter" && state.tool !== "select") {
+    if (event.target.closest("button, a")) return; // Enter on a focused control activates that control
+    placeAtCentre();
   } else if (ARROWS[key] && state.selection) nudge(ARROWS[key]);
   else if (key === "r" && state.selection?.kind === "furniture") rotateSelection();
   else {
@@ -204,6 +236,13 @@ function pickTool(id) {
   state.catalogOpen = !state.catalogOpen;
   if (state.tool.startsWith("furniture:")) state.tool = "select";
   render();
+  if (state.catalogOpen) $("#catalog button").focus(); // keyboard users land in the catalog, not behind the whole plan
+}
+
+// From a button: focus moves to the canvas, so Enter then places the element instead of pressing the button again.
+function chooseTool(id) {
+  pickTool(id);
+  if (id !== "furniture") canvas.focus({ preventScroll: true });
 }
 
 async function loadVersion(summary) {
@@ -218,6 +257,7 @@ function openSave() {
   if (!state.project && !state.signedIn) return $("#signup-dialog").showModal();
   const dialog = $("#save-dialog");
   dialog.querySelector("form").reset();
+  dialog.returnValue = ""; // otherwise Escape would repeat the previous "save"
   dialog.showModal();
 }
 
@@ -226,10 +266,19 @@ async function savePlan(label) {
   if (!state.project) {
     // First save of a draft: create the project, then store the plan as version 1.
     const { name, property_type: propertyType, studio } = state.draft;
-    const id = state.draft.projectId ?? (await api("/v1/projects", { method: "POST", body: { studio_id: studio.id, name, property_type: propertyType } })).id;
+    const remembered = state.draft.projectId;
+    const id = remembered ?? (await api("/v1/projects", { method: "POST", body: { studio_id: studio.id, name, property_type: propertyType } })).id;
     state.draft = { ...state.draft, projectId: id }; // if the next call fails, a retry reuses this project
     store(KEYS.draft, state.draft);
-    await api(`/v1/projects/${id}/versions`, { method: "POST", body: { label, geometry: plan } });
+    try {
+      await api(`/v1/projects/${id}/versions`, { method: "POST", body: { label, geometry: plan } });
+    } catch (error) {
+      if (error.status !== 404 || !remembered) throw error;
+      // The remembered project belongs to another account that used this browser: forget it and start clean.
+      state.draft = { ...state.draft, projectId: undefined };
+      store(KEYS.draft, state.draft);
+      return savePlan(label);
+    }
     store(KEYS.draft, null);
     return location.replace(`editor.html?project=${id}`);
   }
@@ -243,7 +292,7 @@ async function savePlan(label) {
 function buildChrome(name, role) {
   $("#tools").replaceChildren(
     ...TOOLS.map((tool) =>
-      h("button", { type: "button", title: `${tool.label} (${tool.key})`, "aria-label": tool.label, "data-tool": tool.id, onclick: () => pickTool(tool.id) },
+      h("button", { type: "button", title: `${tool.label} (${tool.key})`, "aria-label": tool.label, "data-tool": tool.id, onclick: () => chooseTool(tool.id) },
         h("span", { class: "icon", "aria-hidden": "true" }, tool.icon),
         h("span", { class: "key", "aria-hidden": "true" }, tool.key),
       ),
@@ -255,7 +304,7 @@ function buildChrome(name, role) {
       h("span", { class: "label" }, group),
       h("div", { class: "items" },
         FURNITURE.filter((item) => item.group === group).map((item) =>
-          h("button", { type: "button", "data-type": item.type, onclick: () => editor.setTool(`furniture:${item.type}`) },
+          h("button", { type: "button", "data-type": item.type, onclick: () => chooseTool(`furniture:${item.type}`) },
             item.label,
             h("span", { class: "code" }, `${item.w}×${item.d}`),
           ),
@@ -284,6 +333,7 @@ function buildChrome(name, role) {
   $("#zoom-out").addEventListener("click", () => zoomBy(1.25));
   $("#zoom-fit").addEventListener("click", fit);
   $("#save").addEventListener("click", openSave);
+  $("#save-cancel").addEventListener("click", () => $("#save-dialog").close("cancel"));
   $("#save-dialog").addEventListener("close", action(async (event) => {
     const dialog = event.currentTarget;
     if (dialog.returnValue === "save") await savePlan(dialog.querySelector("input").value.trim());

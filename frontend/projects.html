@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
   <title>My projects · Atelier</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,6 +34,7 @@
       <p class="muted" id="empty" hidden>No projects yet. Use your designer's link, or "New project", to start one.</p>
     </section>
   </main>
+  <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/projects.js"></script>
 </body>
 </html>

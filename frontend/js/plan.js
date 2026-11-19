@@ -13,7 +13,8 @@ const POSITIVE = new Set(["w", "d", "width", "thickness"]);
 export const snap = (value, grid = GRID) => Math.round(value / grid) * grid;
 export const wallLength = (wall) => Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-const uid = (prefix) => `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 10)}`;
+// getRandomValues works on plain HTTP too (randomUUID needs a secure context), e.g. when testing from a phone on the LAN.
+const uid = (prefix) => `${prefix}_${Array.from(crypto.getRandomValues(new Uint8Array(5)), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 
 export const emptyPlan = () => ({ schema: 1, units: "cm", rooms: [], walls: [], openings: [], furniture: [] });
 
@@ -88,12 +89,17 @@ export function patch(plan, kind, id, changes) {
 
 export function remove(plan, kind, id) {
   const without = { ...plan, [kind]: plan[kind].filter((item) => item.id !== id) };
-  return normalize(kind === "rooms" ? { ...without, walls: without.walls.filter((wall) => wall.roomId !== id) } : without);
+  if (kind === "rooms") return normalize({ ...without, walls: without.walls.filter((wall) => wall.roomId !== id) });
+  if (kind !== "walls") return without;
+  // A room only exists as its walls: once the last one is gone it could no longer be seen, selected or deleted.
+  const walled = new Set(without.walls.map((wall) => wall.roomId));
+  return normalize({ ...without, rooms: without.rooms.filter((room) => walled.has(room.id)) });
 }
 
 const shiftWall = (wall, dx, dy) => ({ ...wall, x1: wall.x1 + dx, y1: wall.y1 + dy, x2: wall.x2 + dx, y2: wall.y2 + dy });
 
 export function translate(plan, kind, id, dx, dy) {
+  if (!dx && !dy) return plan;
   if (kind === "rooms") return { ...plan, walls: plan.walls.map((wall) => (wall.roomId === id ? shiftWall(wall, dx, dy) : wall)) };
   if (kind === "walls") return { ...plan, walls: plan.walls.map((wall) => (wall.id === id ? shiftWall(wall, dx, dy) : wall)) };
   if (kind === "furniture") {

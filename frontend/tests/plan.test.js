@@ -135,3 +135,12 @@ test("areas are reported in square metres and stored plans are recognised", () =
   assert.ok(!P.isPlan({ schema: 1, rooms: [] }));
   assert.ok(!P.isPlan(null));
 });
+
+test("a room disappears with its last wall, and a zero move changes nothing", () => {
+  const start = twoRooms();
+  const room = start.rooms[0];
+  const stripped = start.walls.filter((wall) => wall.roomId === room.id).reduce((plan, wall) => P.remove(plan, "walls", wall.id), start);
+  assert.deepEqual(stripped.rooms.map((r) => r.id), [start.rooms[1].id]);
+  assert.equal(P.remove(start, "walls", start.walls[0].id).rooms.length, 2, "a room with walls left stays");
+  assert.equal(P.translate(start, "rooms", room.id, 0, 0), start);
+});

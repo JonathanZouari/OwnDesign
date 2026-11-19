@@ -1,9 +1,9 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.1/+esm";
-
 import { config } from "./config.js";
 
-// Used for sign-in and session refresh only. All data goes through the backend API.
-export const supabase = createClient(config.supabaseUrl, config.supabasePublishableKey);
+// supabase-js is served from frontend/vendor (loaded by a <script> tag before this module), so no
+// third-party script runs on the page. It is used for sign-in and session refresh only; all data
+// goes through the backend API.
+export const supabase = globalThis.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey);
 
 export async function getSession() {
   const { data } = await supabase.auth.getSession();

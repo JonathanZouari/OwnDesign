@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
   <title>2D Canvas · Atelier</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,7 +72,7 @@
       </div>
 
       <div class="stage">
-        <svg id="canvas" tabindex="0" role="application" aria-label="Floor plan canvas. Tab to move between elements, arrow keys to nudge, Delete to remove." preserveAspectRatio="xMidYMid meet"></svg>
+        <svg id="canvas" tabindex="0" role="application" aria-label="Floor plan canvas. Tab to move between elements, arrow keys to nudge, Delete to remove. With a drawing tool active, Enter places it at the centre of the view." preserveAspectRatio="xMidYMid meet"></svg>
         <div class="floating" id="catalog" hidden aria-label="Furniture catalog"></div>
         <div class="floating" id="actions" hidden role="toolbar" aria-label="Selection actions">
           <button type="button" id="rotate"><span class="icon" aria-hidden="true">rotate_90_degrees_cw</span>Rotate 90°</button>
@@ -103,7 +104,7 @@
         <input name="label" maxlength="80" placeholder="e.g. Moved the kitchen partition">
       </label>
       <div class="dialog-actions">
-        <button value="cancel" formnovalidate>Cancel</button>
+        <button type="button" id="save-cancel">Cancel</button>
         <button class="primary" value="save">Save version</button>
       </div>
     </form>
@@ -121,6 +122,7 @@
     </div>
   </dialog>
 
+  <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/editor/main.js"></script>
 </body>
 </html>

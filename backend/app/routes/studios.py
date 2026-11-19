@@ -22,8 +22,10 @@ def _slug(name: str) -> str:
 
 
 def _require_member(user: CurrentUser, studio_id: UUID) -> None:
-    if user.role_in(str(studio_id)) is None:
-        raise HTTPException(403, "You are not a member of this studio")
+    # RLS-scoped: only a member can see the studio row at all, and a suspended studio is treated the same.
+    rows = user.db.table("studio_memberships").select("role, studio:studios(status)").eq("studio_id", str(studio_id)).execute().data
+    if not rows or rows[0]["studio"]["status"] != "active":
+        raise HTTPException(403, "You are not a member of an active studio with this id")
 
 
 @router.get("/me")
