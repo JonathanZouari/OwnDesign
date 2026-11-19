@@ -86,3 +86,7 @@ Pages: [security](security.md), [open-items](open-items.md).
 ## [2026-11-19] docs | Workflow order corrected in CLAUDE.md
 The `security-review` skill reviews local commits against `origin/main`, so the rule is now: commit,
 review, then push. Pages: [security](security.md).
+
+## [2026-11-19] docs | Model split: Opus 5.5 plans, Sonnet 5.5 executes
+Replaced Fable 5.2 with `opusplan` in `.claude/settings.json`; CLAUDE.md subagent rule updated to match.
+Pages: [decisions](decisions.md).
