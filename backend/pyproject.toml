@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.165.0",
+    "httpx>=0.28.1",
     "pydantic-settings>=2.16.3",
     "pydantic[email]>=2.14.3",
     "supabase>=2.34.1",
@@ -12,7 +13,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28.1",
     "pytest>=9.2.0",
     "pytest-playwright>=0.10.0",
 ]
@@ -20,3 +20,8 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+filterwarnings = [
+    # Raised inside third-party test tooling, not by this project's code.
+    "ignore::pytest.PytestRemovedIn10Warning",
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]

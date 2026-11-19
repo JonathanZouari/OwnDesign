@@ -31,7 +31,7 @@ def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bear
     except Exception as error:
         log.info("Rejected access token: %s", type(error).__name__)
         raise HTTPException(401, "Invalid or expired session") from None
-    claims = response.claims if response else {}
+    claims = response["claims"] if response else {}
     if not claims.get("sub") or claims.get("role") != "authenticated" or claims.get("is_anonymous"):
         raise HTTPException(401, "Invalid or expired session")
     return CurrentUser(id=claims["sub"], email=claims.get("email"), db=user_client(credentials.credentials))

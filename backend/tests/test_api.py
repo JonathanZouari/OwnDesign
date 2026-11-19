@@ -6,55 +6,14 @@ client's plan) and 7 (Studio A cannot read or mutate Studio B's records, through
 the API or directly against the Data API).
 """
 
-import os
-import uuid
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+from tests.conftest import needs_supabase
 from tests.test_geometry import VALID
 
-pytestmark = pytest.mark.skipif(
-    not (os.getenv("SUPABASE_URL") or Path(".env").exists()),
-    reason="Supabase is not configured (backend/.env missing)",
-)
-
-
-@pytest.fixture(scope="module")
-def api():
-    from fastapi.testclient import TestClient
-
-    from app.main import app
-
-    return TestClient(app)
-
-
-@pytest.fixture(scope="module")
-def make_user():
-    from supabase import create_client
-
-    from app.db import settings
-
-    url, publishable, secret = settings().supabase_url, settings().supabase_publishable_key, settings().supabase_secret_key
-    admin = create_client(url, secret)
-    user_ids = []
-
-    def make(prefix: str) -> SimpleNamespace:
-        email = f"{prefix}-{uuid.uuid4().hex[:10]}@owndesign-test.example.com"
-        password = uuid.uuid4().hex + "Aa1!"
-        user = admin.auth.admin.create_user({"email": email, "password": password, "email_confirm": True}).user
-        user_ids.append(user.id)
-        session = create_client(url, publishable).auth.sign_in_with_password({"email": email, "password": password}).session
-        return SimpleNamespace(id=user.id, email=email, headers={"Authorization": f"Bearer {session.access_token}"}, token=session.access_token)
-
-    yield make
-
-    owned = admin.table("studio_memberships").select("studio_id").in_("user_id", user_ids).execute().data
-    if owned:
-        admin.table("studios").delete().in_("id", [row["studio_id"] for row in owned]).execute()
-    for user_id in user_ids:
-        admin.auth.admin.delete_user(user_id)
+pytestmark = needs_supabase
 
 
 @pytest.fixture(scope="module")

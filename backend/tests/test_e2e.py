@@ -1,0 +1,173 @@
+"""Browser test of the critical journey (PRD acceptance scenarios 1, 2 and 6):
+
+a guest follows a studio link, builds a plan, is asked to register before it can be
+saved, registers, and the saved geometry survives a reload and is visible to the designer.
+
+Starts the backend and the static frontend itself unless they are already running.
+"""
+
+import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+import pytest
+
+from tests.conftest import needs_supabase, unique_email
+
+BACKEND = Path(__file__).resolve().parents[1]
+FRONTEND = BACKEND.parent / "frontend"
+SITE = "http://127.0.0.1:5500"
+
+pytestmark = [
+    needs_supabase,
+    pytest.mark.skipif(not (FRONTEND / "js" / "config.js").exists(), reason="frontend/js/config.js missing"),
+]
+
+
+def _listening(port: int) -> bool:
+    with socket.socket() as probe:
+        probe.settimeout(0.3)
+        return probe.connect_ex(("127.0.0.1", port)) == 0
+
+
+def _serve(port: int, command: list[str], cwd: Path):
+    if _listening(port):
+        return None
+    process = subprocess.Popen(command, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    deadline = time.monotonic() + 30
+    while not _listening(port):
+        if process.poll() is not None or time.monotonic() > deadline:
+            process.kill()
+            raise RuntimeError(f"Could not start server on port {port}")
+        time.sleep(0.2)
+    return process
+
+
+@pytest.fixture(scope="module")
+def servers():
+    started = [
+        _serve(8000, [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000"], BACKEND),
+        _serve(5500, [sys.executable, "-m", "http.server", "5500", "--bind", "127.0.0.1"], FRONTEND),
+    ]
+    yield
+    for process in started:
+        if process:
+            process.terminate()
+
+
+def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
+    designer = make_user("e2e-designer")
+    studio = api.post("/v1/studios", json={"name": "E2E Studio"}, headers=designer.headers).json()["data"]
+    client_email = unique_email("e2e-client")
+    walls = page.locator("#canvas [data-kind=walls]")
+    furniture = page.locator("#canvas [data-kind=furniture]")
+
+    # Guest arrives through the studio link and sees the studio's name.
+    page.goto(f"{SITE}/entry.html?studio={studio['slug']}")
+    page.get_by_role("heading", name="Plan your home with E2E Studio.").wait_for()
+    page.get_by_role("link", name="Start designing").click()
+
+    # Wizard: two default rooms -> eight walls on the canvas.
+    page.get_by_label("Project name").fill("E2E Flat")
+    page.get_by_role("button", name="Generate 2D canvas").click()
+    page.wait_for_url("**/editor.html")
+    walls.first.wait_for(state="attached")
+    assert walls.count() == 8
+
+    # Place a sofa in the middle of the canvas.
+    box = page.locator("#canvas").bounding_box()
+    page.keyboard.press("f")
+    page.locator("#catalog button[data-type=sofa]").click()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    assert furniture.count() == 1
+
+    # Scenario 1: a guest cannot persist; saving asks for an account.
+    page.locator("#save").click()
+    page.get_by_role("heading", name="Create an account to save your plan").wait_for()
+    page.get_by_role("link", name="Create account").click()
+    page.get_by_label("Email").fill(client_email)
+    page.get_by_label("Password").fill("e2e-Password-123")
+    page.get_by_role("button", name="Create account").click()
+
+    # Back in the editor with the draft intact; the save dialog opens by itself.
+    page.get_by_label("Version note (optional)").fill("first draft")
+    page.get_by_role("button", name="Save version").click()
+    page.wait_for_url("**/editor.html?project=*")
+    walls.first.wait_for(state="attached")
+    page.get_by_text("Saved · v1").wait_for()
+    assert (walls.count(), furniture.count()) == (8, 1)
+
+    # Scenario 2: move the sofa, save again, reload -> geometry and history are preserved.
+    furniture.first.focus()
+    page.keyboard.press("ArrowRight")
+    page.get_by_text("Unsaved changes").wait_for()
+    page.locator("#save").click()
+    page.get_by_role("button", name="Save version").click()
+    page.get_by_text("Saved · v2").wait_for()
+    page.reload()
+    walls.first.wait_for(state="attached")
+    assert (walls.count(), furniture.count()) == (8, 1)
+    assert page.locator(".version").count() == 2
+
+    # Scenario 6: the studio's designer sees the client's project and its latest plan.
+    project_id = page.url.split("project=")[1]
+    seen = api.get(f"/v1/projects/{project_id}", headers=designer.headers).json()["data"]
+    assert (seen["name"], seen["client_email"], seen["my_role"]) == ("E2E Flat", client_email, "designer")
+    versions = api.get(f"/v1/projects/{project_id}/versions", headers=designer.headers).json()["data"]
+    assert [(v["version_no"], v["author_role"], v["label"]) for v in versions] == [(2, "client", ""), (1, "client", "first draft")]
+    first = api.get(f"/v1/projects/{project_id}/versions/{versions[1]['id']}", headers=designer.headers).json()["data"]["geometry"]
+    latest = api.get(f"/v1/projects/{project_id}/versions/latest", headers=designer.headers).json()["data"]["geometry"]
+    assert latest["furniture"][0]["x"] == first["furniture"][0]["x"] + 10
+    assert latest["walls"] == first["walls"]
+
+
+def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, api, make_user):
+    from tests.test_geometry import VALID
+
+    # A new designer signs up through the UI and gets a studio with its own link.
+    page.goto(f"{SITE}/auth.html?mode=signup&role=studio")
+    page.get_by_label("Studio name").fill("Atelier E2E")
+    page.get_by_label("Email").fill(unique_email("e2e-owner"))
+    page.get_by_label("Password").fill("e2e-Password-123")
+    page.get_by_role("button", name="Create account").click()
+    page.wait_for_url("**/studio.html")
+    page.get_by_role("heading", name="Atelier E2E").wait_for()
+    studio_url = page.get_by_label("Studio link").input_value()
+    slug = studio_url.split("studio=")[1]
+    assert studio_url.startswith(f"{SITE}/entry.html?studio=atelier-e2e-")
+
+    # Personal invite: appears as pending, and its link resolves publicly to this studio.
+    page.get_by_label("Client name").fill("Dana Client")
+    page.get_by_label("Client email").fill("dana@example.com")
+    page.get_by_role("button", name="Create invite link").click()
+    page.get_by_role("cell", name="Pending").wait_for()
+
+    # A client of this studio saves a plan (through the API, as the editor would).
+    client = make_user("e2e-invited")
+    studio = api.get(f"/v1/studios/by-slug/{slug}").json()["data"]
+    project = api.post(
+        "/v1/projects", json={"studio_id": studio["id"], "name": "Dana's flat", "property_type": "new_build"}, headers=client.headers
+    ).json()["data"]
+    assert api.post(f"/v1/projects/{project['id']}/versions", json={"geometry": VALID}, headers=client.headers).status_code == 201
+
+    # The designer finds it on the dashboard, opens it, revises it and saves a designer version.
+    page.reload()
+    row = page.get_by_role("row", name="Dana's flat")
+    row.get_by_text(client.email).wait_for()
+    row.get_by_role("link", name="Open").click()
+    page.get_by_text("Editing as designer").wait_for()
+    page.locator("#canvas [data-kind=furniture]").first.focus()
+    page.keyboard.press("r")
+    page.locator("#save").click()
+    page.get_by_label("Version note (optional)").fill("rotated the sofa")
+    page.get_by_role("button", name="Save version").click()
+    page.get_by_text("Saved · v2").wait_for()
+    page.get_by_text("v2 · designer").wait_for()
+
+    # The client sees the designer's revision, labelled as such, and the original is untouched.
+    versions = api.get(f"/v1/projects/{project['id']}/versions", headers=client.headers).json()["data"]
+    assert [(v["version_no"], v["author_role"]) for v in versions] == [(2, "designer"), (1, "client")]
+    latest = api.get(f"/v1/projects/{project['id']}/versions/latest", headers=client.headers).json()["data"]["geometry"]
+    assert latest["furniture"][0]["rotation"] == 90
