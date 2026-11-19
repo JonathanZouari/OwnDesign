@@ -61,3 +61,9 @@ Pages: this log.
 User decision: the main session plans on Opus 5.5 (pinned in `.claude/settings.json`); subagents run on
 Sonnet 5.5 (`model: "sonnet"`) and do the implementation. Replaces "everything on Fable 5.2".
 Pages: [decisions](decisions.md); `CLAUDE.md` Model section.
+
+## [2026-11-19] design | Stitch connection checked, design system name updated
+Stitch MCP server connected (user scope, key outside the repo). The project lists 9 screens and one
+design system, now named "Architectural Drafting & Spatial Intelligence"; README, the `app.css` header
+comment and the design page renamed from "Architectural Atelier". UI brand "ATELIER" unchanged.
+Pages: [design](design.md).
