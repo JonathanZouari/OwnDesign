@@ -95,3 +95,13 @@ palette" label renamed "Tools". `CLAUDE.md` updated. Planned on Opus, implemente
 Tests: backend 57 passed (new: lang/dir, leftover-English scan, canvas LTR, Hebrew errors, mixed names),
 frontend 16 passed. Security review: no findings.
 Pages: [design](design.md), [decisions](decisions.md).
+
+## [2026-11-19] build | PDF import, step 1: vendored pdf.js and wall detection
+Vendored `pdfjs-dist@5.7.284` (`frontend/vendor/pdfjs-5.7.284/`, files byte-identical to the npm tarball,
+whose sha512 matched the registry). `frontend/js/import/pdf.js` reads a local PDF in the browser
+(`isEvalSupported: false`, `enableXfa: false`, no URL fetch, 20 MB and `%PDF-` checks) and
+`frontend/js/import/walls.js` detects the scale (1:10–1:500, prefers the one near "קנ״מ", lists all
+candidates) and walls in cm from dark fills and parallel line pairs. Not wired to a page yet.
+Planned on Opus, implemented by a Sonnet subagent. Tests: frontend 40 passed, 1 skipped (pdf.js needs a
+browser; step 2 E2E covers it). Security review: no findings.
+Pages: this log.
