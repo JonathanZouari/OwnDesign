@@ -33,11 +33,12 @@ Talk to the user in Hebrew. Code, UI text, docs and commit messages are in Engli
 
 ## Model
 
-Everything runs on **Fable 5.2** (`claude-fable-5-2`).
+**Plan with Opus 5.5, execute with Sonnet 5.5.**
 
-- Main session: pinned in `.claude/settings.json`.
-- Subagents: always pass `model: "fable"` when spawning, even when the agent's own definition names
-  another model.
+- Main session: **Opus 5.5** (`claude-opus-5-5`), pinned in `.claude/settings.json`. It plans,
+  coordinates, integrates and verifies.
+- Subagents: always pass `model: "sonnet"` (Sonnet 5.5) when spawning, even when the agent's own
+  definition names another model. Implementation is done by these subagents.
 
 ## Subagents
 

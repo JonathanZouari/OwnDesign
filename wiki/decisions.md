@@ -10,7 +10,7 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Cloud Supabase**, in a new organisation created for this product.
 - **UI follows the Stitch project** "AI Interior Design Platform" ([design.md](design.md)).
 - **GitHub repository is public.** The user chose to publish with the existing commit author address.
-- **Working rules** in `CLAUDE.md`: plan first, Fable 5.2, three kinds of tests, security review at every stage, commit per finished piece of code, subagents for specialist work, memory in `wiki/`.
+- **Working rules** in `CLAUDE.md`: plan first, plan on Opus 5.5 and execute with Sonnet 5.5 subagents (replaced Fable 5.2 on 2026-11-19), three kinds of tests, security review at every stage, commit per finished piece of code, subagents for specialist work, memory in `wiki/`.
 
 ## By Claude (open to change)
 

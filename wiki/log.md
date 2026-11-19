@@ -46,3 +46,18 @@ Working rules (plan first, Fable 5.2, E2E + regression + edge tests, security re
 commit per finished piece of code, subagents for specialist work) and the wiki seeded from Phase 1.
 Model pinned in `.claude/settings.json`.
 Pages: all.
+
+## [2026-11-19] infra | Local connection to the dev Supabase project, database migrated
+Linked the CLI to the dev project and wrote `backend/.env` and `frontend/js/config.js` (git-ignored)
+from the project's publishable and secret keys. The remote database had no tables: applied both
+migrations with `supabase db push` and the declared auth settings with `supabase config push` (user
+approved). Verified: all six tables reachable with the secret key; the publishable key alone gets
+`42501` on every table. E2E failed at first because `ALLOWED_ORIGINS` listed only `localhost:5500`
+while the tests use `127.0.0.1:5500`; `backend/.env.example` now lists both.
+Tests: backend 41 passed, frontend 13 passed.
+Pages: this log.
+
+## [2026-11-19] decision | Plan on Opus 5.5, execute on Sonnet 5.5
+User decision: the main session plans on Opus 5.5 (pinned in `.claude/settings.json`); subagents run on
+Sonnet 5.5 (`model: "sonnet"`) and do the implementation. Replaces "everything on Fable 5.2".
+Pages: [decisions](decisions.md); `CLAUDE.md` Model section.
