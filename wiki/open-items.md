@@ -16,6 +16,8 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - `connect-src` in the content security policy, per environment.
 - Railway deployment files and environments.
 - Sign-out does not invalidate an already issued token before it expires.
+- A signed-in user can set a new password (`auth.html?mode=reset`) without entering the current one. Consider Supabase's "secure password change" (reauthentication) before production.
+- Production `site_url` and redirect allowlist (`auth.html`, `auth.html?mode=reset` on the real https origin) in `supabase/config.toml`.
 
 ## Smaller
 

@@ -10,7 +10,11 @@ supabase/   migrations and managed auth settings
 
 ## Request path
 
-1. The browser signs in with supabase-js (`frontend/js/api.js`). That is its only direct use of Supabase.
+1. The browser signs in with supabase-js (`frontend/js/api.js`). That is its only direct use of Supabase:
+   sign-in, sign-up, and password recovery (`auth.html?mode=forgot` sends the reset email with
+   `resetPasswordForEmail`; the link returns to `auth.html?mode=reset`, which must be in the auth redirect
+   allowlist in `supabase/config.toml`, and sets the new password with `updateUser`). The forgot page shows
+   the same message whether or not the address has an account.
 2. Every data call goes to the backend at `/v1/...` with `Authorization: Bearer <JWT>`.
 3. `backend/app/auth.py` verifies the token and builds a per-request Supabase client carrying it.
 4. Responses use the envelope `{success, data, error}` (`backend/app/responses.py`).

@@ -185,3 +185,133 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
     assert [(v["version_no"], v["author_role"]) for v in versions] == [(2, "designer"), (1, "client")]
     latest = api.get(f"/v1/projects/{project['id']}/versions/latest", headers=client.headers).json()["data"]["geometry"]
     assert latest["furniture"][0]["rotation"] == 90
+
+
+def _sign_in(page, user):
+    page.goto(f"{SITE}/auth.html")
+    page.get_by_label("Email").fill(user.email)
+    page.get_by_label("Password").fill(user.password)
+    page.get_by_role("button", name="Sign in").click()
+
+
+def test_client_account_opens_a_studio_from_projects(servers, page, api, make_user):
+    client = make_user("e2e-opener")
+    _sign_in(page, client)
+    page.wait_for_url("**/projects.html")
+    page.get_by_role("heading", name="Are you a designer? Open your studio").wait_for()
+
+    # Without a studio the new-project toast points at the card.
+    page.locator("#new-project").click()
+    page.get_by_text("To start a project, open your designer's link, or open your own studio below.").wait_for()
+
+    page.get_by_label("Studio name").fill("Opened Later Studio")
+    page.get_by_role("button", name="Open studio").click()
+    page.wait_for_url("**/studio.html")
+    page.get_by_role("heading", name="Opened Later Studio").wait_for()
+    assert page.get_by_label("Studio link").input_value().startswith(f"{SITE}/entry.html?studio=")
+
+    me = api.get("/v1/me", headers=client.headers).json()["data"]
+    assert [m["role"] for m in me["memberships"]] == ["owner"]
+    # A second studio is refused by the API.
+    assert api.post("/v1/studios", json={"name": "Second"}, headers=client.headers).status_code == 409
+
+    # Back on the projects page the card is gone.
+    page.goto(f"{SITE}/projects.html")
+    page.locator("#studio-link").wait_for(state="visible")
+    assert not page.get_by_role("heading", name="Are you a designer? Open your studio").is_visible()
+
+
+def test_open_studio_conflict_still_lands_on_studio_page(servers, page, api, make_user):
+    client = make_user("e2e-race")
+    _sign_in(page, client)
+    page.wait_for_url("**/projects.html")
+    page.get_by_role("heading", name="Are you a designer? Open your studio").wait_for()
+    # The studio is created elsewhere after the page loaded.
+    assert api.post("/v1/studios", json={"name": "Raced Studio"}, headers=client.headers).status_code == 201
+    page.get_by_label("Studio name").fill("Raced Again")
+    page.get_by_role("button", name="Open studio").click()
+    page.wait_for_url("**/studio.html")
+    page.get_by_role("heading", name="Raced Studio").wait_for()
+
+
+def test_open_studio_requires_a_name(servers, page, make_user):
+    client = make_user("e2e-noname")
+    _sign_in(page, client)
+    page.wait_for_url("**/projects.html")
+    page.get_by_role("button", name="Open studio").click()
+    page.wait_for_timeout(500)
+    assert page.url.endswith("projects.html")
+
+
+FORGOT_MESSAGE = "If an account exists for this email, a reset link is on its way. Check your inbox."
+
+
+def test_forgot_password_message_is_the_same_for_known_and_unknown_emails(servers, page, make_user):
+    known = make_user("e2e-forgot")
+    # The built-in mailer is rate limited; the request itself is stubbed so it is never hammered.
+    page.route("**/auth/v1/recover**", lambda route: route.fulfill(status=200, content_type="application/json", body="{}"))
+    page.goto(f"{SITE}/auth.html")
+    page.get_by_role("button", name="Forgot password?").click()
+    page.get_by_role("heading", name="Reset your password").wait_for()
+    assert not page.get_by_label("Password").is_visible()
+    for email in (known.email, unique_email("e2e-unknown")):
+        page.get_by_label("Email").fill(email)
+        page.get_by_role("button", name="Send reset link").click()
+        page.get_by_text(FORGOT_MESSAGE).wait_for()
+        page.get_by_text(FORGOT_MESSAGE).wait_for(state="hidden", timeout=15000)
+    page.get_by_role("button", name="Back to sign in").click()
+    page.get_by_role("heading", name="Sign in").wait_for()
+    assert page.get_by_label("Password").is_visible()
+
+
+def _recovery_link(admin, email):
+    return admin.auth.admin.generate_link(
+        {"type": "recovery", "email": email, "options": {"redirect_to": f"{SITE}/auth.html?mode=reset"}}
+    ).properties.action_link
+
+
+def test_reset_password_with_a_recovery_link(servers, page, admin, make_user):
+    from supabase import create_client
+
+    from app.db import settings
+
+    user = make_user("e2e-reset")
+    page.goto(_recovery_link(admin, user.email))
+    page.get_by_role("heading", name="Choose a new password").wait_for()
+    assert not page.get_by_label("Email").is_visible()
+
+    new_password = "e2e-New-Password-456"
+    page.get_by_label("New password").fill(new_password)
+    page.get_by_label("Confirm password").fill(new_password + "x")
+    page.get_by_role("button", name="Update password").click()
+    page.get_by_text("Passwords do not match").wait_for()
+    assert "mode=reset" in page.url
+
+    page.get_by_label("Confirm password").fill(new_password)
+    page.get_by_role("button", name="Update password").click()
+    page.wait_for_url("**/projects.html")
+
+    fresh = create_client(settings().supabase_url, settings().supabase_publishable_key)
+    with pytest.raises(Exception):
+        fresh.auth.sign_in_with_password({"email": user.email, "password": user.password})
+    assert fresh.auth.sign_in_with_password({"email": user.email, "password": new_password}).session
+
+
+def test_reset_page_without_a_recovery_session_is_refused(servers, page):
+    page.goto(f"{SITE}/auth.html?mode=reset")
+    page.get_by_text("This link is invalid or expired. Request a new one.").wait_for()
+    assert not page.locator("#auth-form").is_visible()
+    page.get_by_role("button", name="Request a new link").click()
+    page.get_by_role("heading", name="Reset your password").wait_for()
+
+
+def test_reset_password_rejects_a_short_password(servers, page, admin, make_user):
+    user = make_user("e2e-short")
+    page.goto(_recovery_link(admin, user.email))
+    page.get_by_role("heading", name="Choose a new password").wait_for()
+    page.get_by_label("New password").fill("short")
+    page.get_by_label("Confirm password").fill("short")
+    page.get_by_role("button", name="Update password").click()
+    page.wait_for_timeout(500)
+    assert "mode=reset" in page.url
+    assert page.get_by_label("New password").evaluate("el => el.validity.tooShort")

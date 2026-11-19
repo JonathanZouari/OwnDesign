@@ -67,3 +67,12 @@ Stitch MCP server connected (user scope, key outside the repo). The project list
 design system, now named "Architectural Drafting & Spatial Intelligence"; README, the `app.css` header
 comment and the design page renamed from "Architectural Atelier". UI brand "ATELIER" unchanged.
 Pages: [design](design.md).
+
+## [2026-11-19] build | Forgot password, and opening a studio from an existing account
+A user who signed up as a client had no way to open a studio, so "New project" led nowhere. `projects.html`
+now offers "Open your studio" to accounts with no membership (`POST /v1/studios`, 409 goes to the studio
+page). `auth.html` gained forgot (`resetPasswordForEmail`, same message for any address) and reset
+(`updateUser`) modes; reset URLs added to the auth redirect allowlist and pushed. Planned on Opus,
+implemented by a Sonnet subagent. Tests: backend 48 passed (7 new E2E/edge), frontend 13 passed.
+Security review: no findings; two items recorded in open-items.
+Pages: [architecture](architecture.md), [open-items](open-items.md).

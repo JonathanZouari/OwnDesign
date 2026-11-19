@@ -15,6 +15,10 @@
   <main class="page narrow">
     <h1 id="title">Sign in</h1>
     <p class="muted" id="subtitle"></p>
+    <p class="card stack" id="reset-invalid" hidden>
+      <span>This link is invalid or expired. Request a new one.</span>
+      <button class="primary" id="request-new" type="button">Request a new link</button>
+    </p>
     <form id="auth-form" class="card stack">
       <label id="studio-field" hidden>Studio name
         <input name="studio" maxlength="80" autocomplete="organization">
@@ -22,12 +26,18 @@
       <label>Email
         <input name="email" type="email" required autocomplete="email">
       </label>
-      <label>Password
+      <label id="password-field"><span id="password-label">Password</span>
         <input name="password" type="password" required minlength="8" autocomplete="current-password">
+      </label>
+      <label id="confirm-field"><span>Confirm password</span>
+        <input name="confirm" type="password" required minlength="8" autocomplete="new-password">
       </label>
       <button class="primary" id="submit">Sign in</button>
     </form>
-    <p><button class="link" id="switch" type="button"></button></p>
+    <p class="row between">
+      <button class="link" id="switch" type="button"></button>
+      <button class="link" id="forgot" type="button">Forgot password?</button>
+    </p>
   </main>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/auth.js"></script>

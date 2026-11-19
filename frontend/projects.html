@@ -33,6 +33,15 @@
       </div>
       <p class="muted" id="empty" hidden>No projects yet. Use your designer's link, or "New project", to start one.</p>
     </section>
+    <section class="card stack" id="open-studio" hidden>
+      <h2>Are you a designer? Open your studio</h2>
+      <form id="studio-form" class="stack">
+        <label>Studio name
+          <input name="studio" required maxlength="80" autocomplete="organization">
+        </label>
+        <button class="primary" type="submit">Open studio</button>
+      </form>
+    </section>
   </main>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/projects.js"></script>
