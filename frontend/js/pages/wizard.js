@@ -3,6 +3,7 @@ import { emptyPlan, fromRooms, metres, planBox, roomBox } from "../plan.js";
 import { svg } from "../editor/render.js";
 import { UNITS, WIZARD, ltr } from "../strings.js";
 import { KEYS, load, save } from "../store.js";
+import { deleteImage } from "../import/underlay.js";
 import { $, action, h, showStudio } from "../ui.js";
 
 const MAX_ROOMS = 30;
@@ -119,6 +120,11 @@ function start() {
   if (studio) showStudio(studio.name);
   $("#draft-notice").hidden = !load(KEYS.draft);
   form.hidden = false;
+  if (studio) $("#import-link").href = "import.html?via=studio";
+  // Buying from a contractor usually means a drawing exists, so the import button stands out then.
+  const syncImport = () => $("#import-link").classList.toggle("accent", form.elements.property_type.value === "new_build");
+  for (const radio of form.querySelectorAll("input[name=property_type]")) radio.addEventListener("change", syncImport);
+  syncImport();
 
   $("#room-type").replaceChildren(...ROOM_TYPES.map(([value, label]) => h("option", { value }, label)));
   $("#presets").replaceChildren(
@@ -159,7 +165,9 @@ function start() {
       const data = new FormData(form);
       if (!data.get("name").trim()) throw new Error(WIZARD.nameProject);
       const draft = { name: data.get("name").trim(), property_type: data.get("property_type"), ...(studio ? { studio } : {}), plan: blank ? emptyPlan() : fromRooms(named) };
+      const replaced = load(KEYS.draft)?.underlay?.key;
       if (!save(KEYS.draft, draft)) throw new Error(WIZARD.storageBlocked);
+      if (replaced) await deleteImage(replaced); // the replaced draft's background drawing is no longer needed
       location.assign("editor.html");
     }),
   );

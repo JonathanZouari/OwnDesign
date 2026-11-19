@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from tests.conftest import needs_supabase, unique_email
+from tests.fixtures import make_plans
 
 BACKEND = Path(__file__).resolve().parents[1]
 FRONTEND = BACKEND.parent / "frontend"
@@ -367,7 +368,7 @@ def test_reset_password_rejects_a_short_password(servers, page, admin, make_user
 # ---- Hebrew / right-to-left UI ----
 
 # Product and keyboard-key names that stay in Latin letters on purpose.
-LATIN_ALLOWED = {"ATELIER", "ESC", "Ctrl", "Tab", "Enter", "Delete"}
+LATIN_ALLOWED = {"ATELIER", "PDF", "ESC", "Ctrl", "Tab", "Enter", "Delete"}
 
 LATIN_WORDS_JS = r"""
 () => {
@@ -398,7 +399,7 @@ def _is_hebrew_rtl(page):
     return page.evaluate("document.documentElement.lang === 'he' && document.documentElement.dir === 'rtl'")
 
 
-def test_every_page_is_hebrew_rtl_with_no_leftover_english(servers, page, api, make_user):
+def test_every_page_is_hebrew_rtl_with_no_leftover_english(servers, page, api, make_user, tmp_path):
     problems = {}
 
     def check(name):
@@ -422,6 +423,21 @@ def test_every_page_is_hebrew_rtl_with_no_leftover_english(servers, page, api, m
     page.get_by_label("שם הפרויקט").wait_for()
     check("wizard")
 
+    page.goto(f"{SITE}/import.html")
+    page.locator("#project-name").wait_for()
+    check("import(file step)")
+    make_plans.both_scales(tmp_path / "both.pdf")
+    page.set_input_files("#pdf-file", str(tmp_path / "both.pdf"))
+    page.locator("#step-review").wait_for(state="visible", timeout=30000)
+    check("import(review)")
+    page.locator("#calibrate").click()
+    check("import(calibration panel)")
+    make_plans.not_a_pdf(tmp_path / "bad.pdf")
+    page.set_input_files("#pdf-file", str(tmp_path / "bad.pdf"))
+    page.locator("#file-error").wait_for(state="visible")
+    check("import(error)")
+
+    page.goto(f"{SITE}/wizard.html")
     page.get_by_label("שם הפרויקט").fill("דירה לבדיקה")
     page.get_by_role("button", name="יצירת קנבס דו־ממדי").click()
     page.wait_for_url("**/editor.html")
@@ -513,3 +529,240 @@ def test_long_mixed_hebrew_project_name_saves_and_is_listed(servers, page, make_
     page.goto(f"{SITE}/projects.html")
     page.get_by_role("row", name=name).wait_for()
     assert page.locator("#projects td").first.inner_text() == name
+
+
+# ---------------------------------------------------------------- PDF import
+
+
+def _import(page, path, name="Imported flat", wait=True):
+    page.goto(f"{SITE}/import.html")
+    page.locator("#project-name").fill(name)
+    page.set_input_files("#pdf-file", str(path))
+    if wait:
+        page.locator("#step-review").wait_for(state="visible", timeout=30000)
+
+
+def _screen(page, x, y):
+    """Plan cm in the review viewer -> screen pixels."""
+    return page.evaluate(
+        """([x, y]) => { const c = document.querySelector('#import-canvas'); const p = new DOMPoint(x, y).matrixTransform(c.getScreenCTM()); return [p.x, p.y]; }""",
+        [x, y],
+    )
+
+
+def _review_walls(page):
+    return page.evaluate(
+        """() => [...document.querySelectorAll('#import-canvas .iw')].map(g => {
+            const l = g.querySelector('.body'); const n = (a) => Number(l.getAttribute(a));
+            return { x1: n('x1'), y1: n('y1'), x2: n('x2'), y2: n('y2'), t: n('stroke-width'), len: Number(g.dataset.length), on: g.getAttribute('aria-pressed') === 'true' } })"""
+    )
+
+
+def _assert_matches_truth(walls, tol=2.0):
+    expected = make_plans.truth()
+    assert len(walls) == len(expected), walls
+    left = list(walls)
+    for ex1, ey1, ex2, ey2, et in expected:
+        for i, w in enumerate(left):
+            got = (w["x1"], w["y1"], w["x2"], w["y2"])
+            thick = abs(w["thickness"] - et) <= tol
+            same = all(abs(a - b) <= tol for a, b in zip(got, (ex1, ey1, ex2, ey2)))
+            flip = all(abs(a - b) <= tol for a, b in zip(got, (ex2, ey2, ex1, ey1)))
+            if thick and (same or flip):
+                left.pop(i)
+                break
+        else:
+            raise AssertionError(f"wall {(ex1, ey1, ex2, ey2, et)} not found in {left}")
+
+
+def _draft(page):
+    return page.evaluate("JSON.parse(localStorage.getItem('od.draft'))")
+
+
+def _to_editor(page):
+    page.locator("#continue").click()
+    page.wait_for_url("**/editor.html")
+    page.locator("#canvas").wait_for()
+
+
+def test_import_apartment_1_50_matches_ground_truth_and_shows_underlay(servers, page, tmp_path):
+    _import(page, make_plans.apartment(tmp_path / "a.pdf"))
+    assert page.locator("#import-canvas .iw").count() == 7
+    assert "1:50" in page.locator("#scale-text").inner_text()
+    _to_editor(page)
+    page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
+    assert page.locator("#canvas [data-kind=walls]").count() == 7
+    page.locator("#canvas image").wait_for(state="attached")
+    draft = _draft(page)
+    _assert_matches_truth(draft["plan"]["walls"])
+    assert draft["underlay"]["key"].startswith("draft:") and draft["underlay"]["width"] > 1000
+    # The background can be hidden and shown again; the control states that it stays in this browser.
+    page.get_by_text("השרטוט נשמר בדפדפן הזה בלבד.").wait_for()
+    page.locator("#underlay-toggle").click()
+    assert page.locator("#canvas image").count() == 0
+    page.locator("#underlay-toggle").click()
+    assert page.locator("#canvas image").count() == 1
+
+
+def test_import_toggling_a_wall_off_leaves_it_out_of_the_plan(servers, page, tmp_path):
+    _import(page, make_plans.apartment(tmp_path / "a.pdf"))
+    page.locator("#import-canvas .iw").first.focus()
+    page.keyboard.press("Enter")  # keyboard toggle
+    assert page.locator("#import-canvas .iw[aria-pressed=false]").count() == 1
+    # Mouse toggle on the shortest wall, clicked at its middle.
+    shortest = min(_review_walls(page), key=lambda w: w["len"])
+    x, y = _screen(page, (shortest["x1"] + shortest["x2"]) / 2, (shortest["y1"] + shortest["y2"]) / 2)
+    page.mouse.click(x, y)
+    assert page.locator("#import-canvas .iw[aria-pressed=false]").count() == 2
+    page.get_by_text("5 מתוך 7 קירות נבחרו").wait_for()
+    _to_editor(page)
+    page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
+    assert page.locator("#canvas [data-kind=walls]").count() == 5
+
+
+def test_import_1_20_gives_the_same_walls_as_1_50(servers, page, tmp_path):
+    _import(page, make_plans.apartment(tmp_path / "a20.pdf", ratio=20))
+    assert "1:20" in page.locator("#scale-text").inner_text()
+    assert page.locator("#import-canvas .iw").count() == 7
+    _to_editor(page)
+    _assert_matches_truth(_draft(page)["plan"]["walls"])
+
+
+def test_import_parallel_line_walls(servers, page, tmp_path):
+    _import(page, make_plans.apartment(tmp_path / "l.pdf", style="lines"))
+    assert page.locator("#import-canvas .iw").count() == 7
+    _to_editor(page)
+    _assert_matches_truth(_draft(page)["plan"]["walls"])
+
+
+def test_import_scale_candidates_can_be_switched(servers, page, tmp_path):
+    _import(page, make_plans.both_scales(tmp_path / "both.pdf"))
+    assert page.locator("input[name=scale-candidate]").count() == 2
+    assert page.locator("input[name=scale-candidate][value='50']").is_checked()
+    before = max(w["len"] for w in _review_walls(page))
+    page.locator("input[name=scale-candidate][value='20']").check()
+    page.wait_for_function("document.querySelector('#scale-text').textContent.includes('1:20')")
+    after = max(w["len"] for w in _review_walls(page))
+    assert abs(after / before - 0.4) < 0.03, (before, after)
+
+
+def test_import_calibration_by_two_clicks_rescales(servers, page, tmp_path):
+    _import(page, make_plans.apartment(tmp_path / "a.pdf"))
+    longest = max(_review_walls(page), key=lambda w: w["len"])
+    before = longest["len"]
+    page.locator("#calibrate").click()
+    page.mouse.click(*_screen(page, longest["x1"], longest["y1"]))
+    page.mouse.click(*_screen(page, longest["x2"], longest["y2"]))
+    page.get_by_text("המרחק שסימנתם כרגע").wait_for()
+    # The real wall is declared twice as long: everything doubles.
+    page.locator("#real-length").fill(str(round(before * 2 / 100, 2)).replace(".", ","))
+    page.locator("#calibrate-apply").click()
+    page.get_by_text("כויל ידנית").wait_for()
+    after = max(w["len"] for w in _review_walls(page))
+    assert abs(after / before - 2) < 0.03, (before, after)
+    # A garbage length is refused with a Hebrew message.
+    page.locator("#calibrate").click()
+    box = page.locator("#import-canvas").bounding_box()
+    page.mouse.click(box["x"] + 100, box["y"] + 100)
+    page.mouse.click(box["x"] + 300, box["y"] + 100)
+    page.locator("#real-length").fill("abc")
+    page.locator("#calibrate-apply").click()
+    page.locator("#calibrate-error").wait_for(state="visible")
+    assert "אורך חיובי" in page.locator("#calibrate-error").inner_text()
+
+
+def test_import_without_scale_text_requires_calibration(servers, page, tmp_path):
+    _import(page, make_plans.apartment(tmp_path / "ns.pdf", scale_texts=[]))
+    assert page.locator("#continue").is_disabled()
+    page.get_by_text("כיול חובה לפני ההמשך").first.wait_for()
+    longest = max(_review_walls(page), key=lambda w: w["len"])
+    page.locator("#calibrate").click()
+    page.mouse.click(*_screen(page, longest["x1"], longest["y1"]))
+    page.mouse.click(*_screen(page, longest["x2"], longest["y2"]))
+    page.locator("#real-length").fill("800")
+    page.locator("#real-unit").select_option("cm")
+    page.locator("#calibrate-apply").click()
+    page.wait_for_function("!document.querySelector('#continue').disabled")
+    _to_editor(page)
+    walls = _draft(page)["plan"]["walls"]
+    assert len(walls) == 7
+    assert max(((w["x2"] - w["x1"]) ** 2 + (w["y2"] - w["y1"]) ** 2) ** 0.5 for w in walls) == pytest.approx(800, rel=0.03)
+
+
+def test_import_image_only_pdf_explains_and_still_works_as_a_background(servers, page, tmp_path):
+    _import(page, make_plans.image_only(tmp_path / "scan.pdf"))
+    page.get_by_text("תמונה סרוקה").wait_for()
+    assert page.locator("#import-canvas .iw").count() == 0
+    assert page.locator("#continue").is_disabled()
+    page.locator("#calibrate").click()
+    box = page.locator("#import-canvas").bounding_box()
+    page.mouse.click(box["x"] + 100, box["y"] + 200)
+    page.mouse.click(box["x"] + 300, box["y"] + 200)
+    page.locator("#real-length").fill("4")
+    page.locator("#calibrate-apply").click()
+    page.wait_for_function("!document.querySelector('#continue').disabled")
+    _to_editor(page)
+    page.locator("#canvas image").wait_for(state="attached")
+    assert page.locator("#canvas [data-kind=walls]").count() == 0
+    assert _draft(page)["plan"]["walls"] == []
+
+
+def test_import_multi_page_pdf_lets_you_pick_page_two(servers, page, tmp_path):
+    _import(page, make_plans.two_pages(tmp_path / "two.pdf"), wait=False)
+    page.locator("#step-pages").wait_for(state="visible", timeout=30000)
+    assert page.locator("#step-review").is_hidden()
+    page.locator("#page-select").select_option("2")
+    page.locator("#page-go").click()
+    page.locator("#step-review").wait_for(state="visible", timeout=30000)
+    assert page.locator("#import-canvas .iw").count() == 7
+
+
+def test_import_bad_files_show_hebrew_errors(servers, page, tmp_path):
+    for builder, message in (
+        (make_plans.corrupt, "לא הצלחנו לקרוא את הקובץ"),
+        (make_plans.not_a_pdf, "אינו קובץ PDF"),
+        (make_plans.too_large, "גדול מדי"),
+    ):
+        _import(page, builder(tmp_path / f"{builder.__name__}.pdf"), wait=False)
+        page.locator("#file-error").wait_for(state="visible", timeout=30000)
+        assert message in page.locator("#file-error").inner_text()
+        assert page.locator("#step-review").is_hidden()
+
+
+def test_import_requires_a_project_name(servers, page, tmp_path):
+    _import(page, make_plans.apartment(tmp_path / "a.pdf"), name="")
+    page.locator("#continue").click()
+    page.get_by_text("תנו שם לפרויקט.").wait_for()
+    assert "import.html" in page.url
+
+
+def test_import_guest_saves_registers_and_background_survives_reload(servers, page, admin, tmp_path):
+    _import(page, make_plans.apartment(tmp_path / "a.pdf"), name="Imported Flat")
+    _to_editor(page)
+    page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
+    page.locator("#save").click()
+    page.get_by_role("heading", name="יצירת חשבון כדי לשמור את התוכנית").wait_for()
+    page.get_by_role("link", name="יצירת חשבון").click()
+    page.get_by_label("אימייל").fill(unique_email("e2e-import"))
+    page.get_by_label("סיסמה").fill("e2e-Password-123")
+    page.get_by_role("button", name="יצירת חשבון").click()
+    page.get_by_label("הערת גרסה (לא חובה)").fill("imported")
+    page.keyboard.press("Enter")
+    page.wait_for_url("**/editor.html?project=*")
+    page.get_by_text("נשמר · גרסה 1").wait_for()
+    page.locator("#canvas image").wait_for(state="attached")
+    assert page.locator("#canvas [data-kind=walls]").count() == 7
+    project_id = page.url.split("project=")[1]
+
+    page.reload()
+    page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
+    page.locator("#canvas image").wait_for(state="attached")
+    assert page.evaluate("localStorage.getItem('od.underlay.' + new URLSearchParams(location.search).get('project')) !== null")
+
+    # The server only ever sees plain geometry: no underlay anywhere in what was saved.
+    rows = admin.table("plan_versions").select("geometry").eq("project_id", project_id).execute().data
+    assert len(rows) == 1
+    geometry = rows[0]["geometry"]
+    assert set(geometry) == {"schema", "units", "rooms", "walls", "openings", "furniture"}
+    assert "underlay" not in str(rows).lower()
+    assert len(geometry["walls"]) == 7

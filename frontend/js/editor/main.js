@@ -3,9 +3,10 @@
 import { api, getSession, requireSession, signOut } from "../api.js";
 import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
 import * as P from "../plan.js";
-import { EDITOR, UNITS, ltr } from "../strings.js";
+import { EDITOR, EDITOR_UNDERLAY, UNITS, ltr } from "../strings.js";
 import { KEYS, load, save as store } from "../store.js";
 import { $, action, h, run, showStudio, toast } from "../ui.js";
+import { getImage, loadPlacement, projectKey, renameImage, savePlacement } from "../import/underlay.js";
 import { renderInspector } from "./panel.js";
 import { attachPointer, zoomAt } from "./pointer.js";
 import { draw, visibleArea } from "./render.js";
@@ -38,6 +39,7 @@ const state = {
   draft: null,
   versions: null,
   signedIn: false,
+  underlay: null, // { href (object URL), key, x, y, width, height, opacity, visible } or null
 };
 
 const editor = {
@@ -110,7 +112,14 @@ function render() {
   canvas.setAttribute("viewBox", `${x} ${y} ${w} ${height}`);
   canvas.dataset.tool = state.tool;
   const hadFocus = canvas.contains(document.activeElement);
-  draw(canvas, { plan, selection: state.selection, preview: state.previewLine });
+  draw(canvas, { plan, selection: state.selection, preview: state.previewLine, underlay: state.underlay });
+  $("#underlay-control").hidden = !state.underlay;
+  if (state.underlay) {
+    const shown = state.underlay.visible !== false;
+    $("#underlay-toggle").textContent = shown ? EDITOR_UNDERLAY.hide : EDITOR_UNDERLAY.show;
+    $("#underlay-toggle").setAttribute("aria-pressed", String(shown));
+    $("#underlay-opacity").value = state.underlay.opacity;
+  }
   if (hadFocus) {
     const node = state.selection && canvas.querySelector(`[data-kind="${state.selection.kind}"][data-id="${state.selection.id}"]`);
     (node ?? canvas).focus({ preventScroll: true });
@@ -146,7 +155,10 @@ function render() {
 }
 
 function fit() {
-  const box = P.planBox(editor.plan);
+  const plan = editor.plan;
+  const empty = !plan.walls.length && !plan.furniture.length;
+  const u = state.underlay;
+  const box = empty && u ? { x: u.x, y: u.y, w: u.width, h: u.height } : P.planBox(plan);
   const pad = 180;
   editor.setView({ x: box.x - pad, y: box.y - pad, w: box.w + 2 * pad, h: box.h + 2 * pad });
 }
@@ -155,6 +167,25 @@ const zoomBy = (factor) => {
   const area = visibleArea(canvas);
   editor.setView(zoomAt(state.view, { x: area.x + area.w / 2, y: area.y + area.h / 2 }, factor));
 };
+
+// Placement and opacity of the background drawing live with the draft, or per project once saved.
+function keepUnderlay() {
+  const u = state.underlay;
+  if (!u) return;
+  const { href, key, ...meta } = u;
+  if (state.project) savePlacement(state.project.id, meta);
+  else if (state.draft) {
+    state.draft = { ...state.draft, underlay: { key, ...meta } };
+    store(KEYS.draft, state.draft);
+  }
+  render();
+}
+
+async function loadUnderlay(meta, key) {
+  const blob = await getImage(key);
+  if (!blob) return toast(EDITOR_UNDERLAY.missing, "error");
+  state.underlay = { ...meta, key, href: URL.createObjectURL(blob) };
+}
 
 const undo = () => {
   state.history = P.history.undo(state.history);
@@ -284,6 +315,12 @@ async function savePlan(label) {
       store(KEYS.draft, state.draft);
       return savePlan(label);
     }
+    const u = state.draft.underlay;
+    if (u) {
+      // The drawing follows the project: re-key the image and keep its placement under the project id.
+      const { key, ...meta } = u;
+      if (await renameImage(key, projectKey(id))) savePlacement(id, meta);
+    }
     store(KEYS.draft, null);
     return location.replace(`editor.html?project=${id}`);
   }
@@ -334,6 +371,14 @@ function buildChrome(name, role) {
     const next = P.duplicateFurniture(editor.plan, state.selection.id);
     editor.commit(next, { kind: "furniture", id: next.furniture.at(-1).id });
   });
+  $("#underlay-toggle").addEventListener("click", () => {
+    state.underlay = { ...state.underlay, visible: state.underlay.visible === false };
+    keepUnderlay();
+  });
+  $("#underlay-opacity").addEventListener("input", (event) => {
+    state.underlay = { ...state.underlay, opacity: Number(event.target.value) };
+    keepUnderlay();
+  });
   $("#zoom-in").addEventListener("click", () => zoomBy(1 / 1.25));
   $("#zoom-out").addEventListener("click", () => zoomBy(1.25));
   $("#zoom-fit").addEventListener("click", fit);
@@ -367,6 +412,8 @@ run(async () => {
     [state.project, state.versions] = await Promise.all([api(base), api(`${base}/versions`)]);
     plan = state.versions.length ? (await api(`${base}/versions/latest`)).geometry : P.emptyPlan();
     name = state.project.name;
+    const meta = loadPlacement(projectId);
+    if (meta) await loadUnderlay(meta, projectKey(projectId));
     role = EDITOR.editingAs(state.project.my_role);
     if (state.project.studio) showStudio(state.project.studio.name);
     // Starting over from the wizard would discard this saved plan's context, so those links go to the project list.
@@ -379,6 +426,10 @@ run(async () => {
     state.signedIn = Boolean(await getSession());
     plan = state.draft.plan;
     name = state.draft.name;
+    if (state.draft.underlay) {
+      const { key, ...meta } = state.draft.underlay;
+      await loadUnderlay({ visible: true, ...meta }, key);
+    }
     role = EDITOR.draftRole;
     if (state.draft.studio) showStudio(state.draft.studio.name);
   }

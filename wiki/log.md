@@ -105,3 +105,13 @@ candidates) and walls in cm from dark fills and parallel line pairs. Not wired t
 Planned on Opus, implemented by a Sonnet subagent. Tests: frontend 40 passed, 1 skipped (pdf.js needs a
 browser; step 2 E2E covers it). Security review: no findings.
 Pages: this log.
+
+## [2026-11-19] build | PDF import, step 2: review page, background drawing in the editor
+`import.html`: file → page → review on the drawing (switch walls off, scale candidates, two-click
+calibration that re-runs detection), then a draft with walls and an underlay placement. The page image is
+kept in IndexedDB and drawn in the editor ("שרטוט רקע": show/hide, opacity), re-keyed to the project on
+first save. Entry points in the wizard and on the home page. Synthetic PDFs (reportlab, dev dependency)
+drive 12 import E2E tests. Real drawing (local only): full apartment at 1:20 with outlined scale text;
+about 40–50 % of walls found and much noise from the title block and legend table → step 2b.
+Planned on Opus, implemented by a Sonnet subagent; a test bug in the Hebrew scan fixed by the main session.
+Security review: no findings. Pages: [architecture](architecture.md), [open-items](open-items.md).

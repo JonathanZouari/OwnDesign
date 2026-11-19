@@ -282,3 +282,31 @@ input[type="email"], input[type="password"] { direction: ltr; text-align: end; }
   .inspector { order: 3; width: 100%; max-height: 34vh; }
   #catalog { width: auto; inset-inline-end: 8px; bottom: auto; max-height: 60%; }
 }
+
+/* PDF import */
+.page.wide { max-width: 1280px; }
+.import-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.import-viewer { position: relative; height: min(72vh, 760px); min-height: 320px; background: var(--surface-low); border: 1px solid var(--hairline); border-radius: 8px; overflow: hidden; }
+#import-canvas { direction: ltr; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#import-canvas.picking { cursor: crosshair; }
+#import-canvas .iw { cursor: pointer; outline: none; }
+#import-canvas .iw .hit { stroke: transparent; stroke-width: 24; pointer-events: stroke; stroke-linecap: butt; }
+#import-canvas .iw .body { stroke: var(--primary-bright); stroke-opacity: 0.85; stroke-linecap: butt; }
+#import-canvas .iw[aria-pressed="false"] .body { stroke: var(--outline); stroke-opacity: 0.55; stroke-dasharray: 10 8; stroke-width: 4; }
+#import-canvas .iw:focus-visible .body { stroke: var(--ink); stroke-opacity: 1; }
+#import-canvas.picking .iw { pointer-events: none; }
+#import-canvas .cal-line { stroke: var(--secondary); stroke-width: 3; vector-effect: non-scaling-stroke; }
+#import-canvas .cal-dot { fill: var(--secondary); stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.import-viewer .zoombar { position: absolute; inset-inline-end: 10px; bottom: 10px; display: flex; gap: 2px; padding: 2px; }
+.import-viewer .zoombar button { min-height: 32px; width: 36px; padding: 0; border: 0; }
+.import-side { display: grid; gap: 0; }
+.import-side .card { margin-bottom: 12px; }
+.import-side input[type="range"] { height: auto; padding: 0; accent-color: var(--primary); }
+.field-error { color: var(--error); margin: 0; }
+button.accent, .button.accent { border-color: var(--primary); color: var(--primary); background: var(--primary-tint); }
+@media (max-width: 899px) { .import-grid { grid-template-columns: 1fr; } }
+
+/* Editor background drawing control */
+#underlay-control { inset-inline-end: 12px; top: 34px; width: 210px; padding: 10px; display: grid; gap: 6px; }
+#underlay-control .row { align-items: center; justify-content: space-between; }
+#underlay-control input[type="range"] { height: auto; padding: 0; accent-color: var(--primary); }

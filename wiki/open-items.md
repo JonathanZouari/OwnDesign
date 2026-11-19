@@ -26,3 +26,10 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - The coordinate limit is enforced in the editor only by clamping the view.
 - Two adjacent rooms from the wizard produce two overlapping walls.
 - Commit author address in the published history is the user's personal one (published by the user's choice).
+
+## PDF import
+
+- The drawing stays in this browser only (IndexedDB). Server storage (private Supabase Storage) so it follows the account across devices.
+- Imported drawings are not removed from IndexedDB on sign-out or project deletion (shared-computer privacy).
+- Detection on real drawings: title blocks and legend tables produce false walls; hatched double-line walls are often missed; scale text drawn as outlines is not read. Being addressed in step 2b.
+- Curved walls, doors and windows are not detected.

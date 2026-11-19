@@ -167,13 +167,23 @@ function selectionOverlay(plan, selection, scale) {
   return [];
 }
 
-export function draw(canvas, { plan, selection, preview }) {
+// One persistent <image> node: re-inserting the same node keeps the decoded bitmap, so dragging never flickers.
+let underlayNode = null;
+function underlayLayer(underlay) {
+  if (!underlay?.href || underlay.visible === false) return null;
+  underlayNode ??= svg("image", { "pointer-events": "none", preserveAspectRatio: "none" });
+  for (const [key, value] of Object.entries({ href: underlay.href, x: underlay.x, y: underlay.y, width: underlay.width, height: underlay.height, opacity: underlay.opacity ?? 0.5 })) underlayNode.setAttribute(key, value);
+  return underlayNode;
+}
+
+export function draw(canvas, { plan, selection, preview, underlay }) {
   const area = visibleArea(canvas);
   const walls = new Map(plan.walls.map((wall) => [wall.id, wall]));
   const is = (kind, id) => selection?.kind === kind && selection.id === id;
   canvas.replaceChildren(
     ...[
       grid(area),
+      underlayLayer(underlay),
       plan.furniture.map((item) => furnitureNode(item, is("furniture", item.id))),
       plan.walls.map((wall) => wallNode(wall, is("walls", wall.id))),
       plan.openings.map((opening) => openingNode(opening, walls.get(opening.wallId), is("openings", opening.id))),

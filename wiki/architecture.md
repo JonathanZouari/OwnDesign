@@ -59,3 +59,14 @@ each change; the plan object is never mutated.
 
 Studios, invites: `backend/app/routes/studios.py`. Projects, versions: `backend/app/routes/projects.py`.
 Quotas: 20 projects per client per studio, 500 versions per project.
+
+## PDF import (browser only)
+
+`import.html` reads a local PDF with vendored pdf.js (`frontend/js/import/pdf.js`), detects the scale and walls
+(`walls.js`), and lets the user review on top of the drawing: switch walls off, pick a scale candidate, or
+calibrate by clicking two points and typing the real length (detection re-runs at the new scale). It then
+writes a normal draft (`plan.walls`) plus `underlay` placement in cm. The page image is kept in IndexedDB
+(`underlay.js`, key `draft:<random>`, re-keyed to `project:<id>` on first save; placement in
+`od.underlay.<projectId>`), and the editor draws it as an `<image>` above the grid. Nothing is uploaded: the
+geometry sent to the server never contains the underlay. Guests can import. The user's real PDF is used only
+locally for tuning and is never committed; tests generate synthetic PDFs with reportlab (dev dependency).

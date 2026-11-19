@@ -16,7 +16,7 @@ test("every exported string is non-empty", () => {
 });
 
 test("user-facing strings are Hebrew, not leftover English", () => {
-  for (const group of [strings.AUTH, strings.API_ERRORS, strings.EDITOR, strings.PANEL, strings.WIZARD]) {
+  for (const group of [strings.AUTH, strings.API_ERRORS, strings.EDITOR, strings.PANEL, strings.WIZARD, strings.IMPORT, strings.EDITOR_UNDERLAY, strings.WIZARD_IMPORT]) {
     const leaves = [];
     (function walk(v) {
       if (typeof v === "string") leaves.push(v);

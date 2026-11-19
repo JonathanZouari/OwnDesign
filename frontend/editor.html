@@ -79,6 +79,11 @@
           <button type="button" id="duplicate"><span class="icon" aria-hidden="true">content_copy</span>שכפול</button>
           <button type="button" id="delete" aria-label="מחיקת הבחירה"><span class="icon" aria-hidden="true">delete</span></button>
         </div>
+        <div class="floating" id="underlay-control" hidden role="group" aria-label="שרטוט רקע">
+          <div class="row"><span class="label">שרטוט רקע</span><button type="button" id="underlay-toggle" aria-pressed="true">הסתרה</button></div>
+          <label>שקיפות <input id="underlay-opacity" type="range" min="0.1" max="1" step="0.05" value="0.5"></label>
+          <span class="muted small">השרטוט נשמר בדפדפן הזה בלבד.</span>
+        </div>
         <div class="floating" id="zoom">
           <button type="button" id="zoom-in" aria-label="הגדלה"><span class="icon" aria-hidden="true">add</span></button>
           <span class="code" id="zoom-level"></span>
