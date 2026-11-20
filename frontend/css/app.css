@@ -341,3 +341,10 @@ button.accent, .button.accent { border-color: var(--primary); color: var(--prima
 #underlay-control { inset-inline-end: 12px; top: 34px; width: 210px; padding: 10px; display: grid; gap: 6px; }
 #underlay-control .row { align-items: center; justify-content: space-between; }
 #underlay-control input[type="range"] { height: auto; padding: 0; accent-color: var(--primary); }
+
+/* One-click room kinds (import review card and editor inspector) */
+.kind-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+.kind-grid .kind { min-height: 36px; padding: 0 8px; font-size: 13px; }
+.kind-grid .kind:focus-visible, .room-card button:focus-visible, .room-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.room-card { border-inline-start: 2px solid var(--primary); }
+#import-canvas .ir.selected polygon { fill-opacity: 0.32; stroke: var(--primary); stroke-width: 2px; vector-effect: non-scaling-stroke; }

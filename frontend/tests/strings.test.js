@@ -30,3 +30,17 @@ test("user-facing strings are Hebrew, not leftover English", () => {
 test("API errors cover the statuses the plan names", () => {
   for (const status of [401, 403, 404, 409, 413, 422]) assert.ok(strings.API_ERRORS[status]);
 });
+
+test("room kinds: unique names, known types, and the detection words agree with them", () => {
+  const types = new Set(Object.keys(strings.ROOM_TYPE_LABELS));
+  const names = strings.ROOM_KINDS.map((k) => k.name);
+  assert.equal(new Set(names).size, names.length);
+  assert.equal(names.length, 16);
+  for (const k of strings.ROOM_KINDS) assert.ok(types.has(k.type), `${k.name} has unknown type ${k.type}`);
+  for (const t of types) assert.ok(strings.ROOM_KINDS.some((k) => k.type === t), `no kind for type ${t}`);
+  for (const w of strings.ROOM_WORDS) {
+    assert.ok(types.has(w.type), `${w.name} has unknown type ${w.type}`);
+    const kind = strings.ROOM_KINDS.find((k) => k.name === w.name);
+    if (kind) assert.equal(w.type, kind.type, `${w.name} type differs from its kind`);
+  }
+});

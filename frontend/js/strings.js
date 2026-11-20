@@ -106,28 +106,50 @@ export const ROOM_TYPE_LABELS = {
 };
 export const ROOM_TYPES = Object.entries(ROOM_TYPE_LABELS);
 
+// One-click room kinds, in the order they are offered: choosing one sets both the name and the type.
+export const ROOM_KINDS = [
+  { name: "סלון", type: "living" },
+  { name: "פינת אוכל", type: "living" },
+  { name: "מטבח", type: "kitchen" },
+  { name: "חדר שינה", type: "bedroom" },
+  { name: "חדר הורים", type: "bedroom" },
+  { name: "חדר ילדים", type: "bedroom" },
+  { name: "ממ״ד", type: "other" },
+  { name: "חדר עבודה", type: "other" },
+  { name: "חדר רחצה", type: "bathroom" },
+  { name: "שירותים", type: "bathroom" },
+  { name: "חדר כביסה", type: "other" },
+  { name: "מסדרון", type: "hallway" },
+  { name: "מבואה", type: "hallway" },
+  { name: "מרפסת", type: "balcony" },
+  { name: "מחסן", type: "other" },
+  { name: "אחר", type: "other" },
+];
+const kind = (name) => ROOM_KINDS.find((k) => k.name === name);
+
 // Hebrew words that name a room in a drawing, first match wins (specific before general). `words` are compared
-// without quotes and spaces, so ממ"ד, ממ״ד and ממד all match. `name` is what the room is called afterwards.
+// without quotes and spaces, so ממ"ד, ממ״ד and ממד all match. `name` is what the room is called afterwards;
+// names that are also a room kind take their type from it.
 export const ROOM_WORDS = [
-  { words: ["חדרשינה"], name: "חדר שינה", type: "bedroom" },
-  { words: ["חדרהורים", "הורים"], name: "חדר הורים", type: "bedroom" },
-  { words: ["חדרילדים", "ילדים"], name: "חדר ילדים", type: "bedroom" },
-  { words: ["חדרעבודה", "משרד"], name: "חדר עבודה", type: "other" },
-  { words: ["פינתאוכל"], name: "פינת אוכל", type: "living" },
-  { words: ["סלון"], name: "סלון", type: "living" },
-  { words: ["מטבח"], name: "מטבח", type: "kitchen" },
-  { words: ["ממד", "מרחבמוגן"], name: "ממ״ד", type: "other" },
-  { words: ["שירותים", "שרותים", "אסלה"], name: "שירותים", type: "bathroom" },
+  { words: ["חדרשינה"], ...kind("חדר שינה") },
+  { words: ["חדרהורים", "הורים"], ...kind("חדר הורים") },
+  { words: ["חדרילדים", "ילדים"], ...kind("חדר ילדים") },
+  { words: ["חדרעבודה", "משרד"], ...kind("חדר עבודה") },
+  { words: ["פינתאוכל"], ...kind("פינת אוכל") },
+  { words: ["סלון"], ...kind("סלון") },
+  { words: ["מטבח"], ...kind("מטבח") },
+  { words: ["ממד", "מרחבמוגן"], ...kind("ממ״ד") },
+  { words: ["שירותים", "שרותים", "אסלה"], ...kind("שירותים") },
   { words: ["מקלחת"], name: "מקלחת", type: "bathroom" },
   { words: ["אמבטיה"], name: "אמבטיה", type: "bathroom" },
-  { words: ["רחצה", "אמבט"], name: "חדר רחצה", type: "bathroom" },
-  { words: ["כביסה"], name: "חדר כביסה", type: "other" },
+  { words: ["רחצה", "אמבט"], ...kind("חדר רחצה") },
+  { words: ["כביסה"], ...kind("חדר כביסה") },
   { words: ["שירות"], name: "חדר שירות", type: "other" },
-  { words: ["מרפסת"], name: "מרפסת", type: "balcony" },
-  { words: ["מסדרון"], name: "מסדרון", type: "hallway" },
-  { words: ["מבואה"], name: "מבואה", type: "hallway" },
+  { words: ["מרפסת"], ...kind("מרפסת") },
+  { words: ["מסדרון"], ...kind("מסדרון") },
+  { words: ["מבואה"], ...kind("מבואה") },
   { words: ["כניסה"], name: "כניסה", type: "hallway" },
-  { words: ["מחסן"], name: "מחסן", type: "other" },
+  { words: ["מחסן"], ...kind("מחסן") },
 ];
 // Names for rooms recognised from their furniture or shape.
 export const ROOM_GUESS = {
@@ -226,6 +248,7 @@ export const PANEL = {
     name: "שם",
     roomType: "סוג החדר",
   },
+  roomKinds: "סוג החדר בלחיצה אחת",
   exteriorOption: "חיצוני",
   partitionOption: "מחיצה",
   doorOption: "דלת",
@@ -318,6 +341,13 @@ export const IMPORT = {
   roomImport: "ייבוא",
   roomName: "שם החדר",
   roomType: "סוג החדר",
+  roomKind: "תפקיד החדר",
+  roomKindCustom: "שם מותאם",
+  roomKindsLabel: "בחירת סוג החדר",
+  roomCardTitle: (name, area) => `${name} · ${area} ${UNITS.m2}`,
+  roomSkip: "לא לייבא",
+  roomKeep: "לייבא",
+  roomClose: "סגירה",
   roomLabel: (name, area, on) => `${name}, ${area} ${UNITS.m2}, ${on ? "נבחר" : "לא נבחר"}`,
   zoomIn: "הגדלה",
   zoomOut: "הקטנה",

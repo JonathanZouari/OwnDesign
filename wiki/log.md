@@ -150,3 +150,11 @@ Real drawing (local only, numbers only, 1:50): 4 rooms, 40 m² of about 136 m²,
 wall detection missing exterior walls and the open living area, so those regions leak outside.
 Planned on Opus, implemented by a Sonnet subagent. Tests: backend 93 passed, frontend 143 passed + 1 skipped.
 Security and privacy review: no findings.
+
+## [2026-11-20] build | One-click room kinds
+`ROOM_KINDS` (16 kinds, each a name and one of the 7 room types) in `strings.js`; choosing a kind sets name and
+type together (`applyKind`/`setRoomKind` in `plan.js`). Import review: clicking a room selects it and opens a card
+with kind buttons and an import/skip toggle (no longer click-to-skip); list rows use a kind select. Editor: kind
+buttons in the room inspector, one undoable edit. Asked for by the user after detection mislabelled rooms.
+Planned on Opus, implemented by a Sonnet subagent. Tests: backend 94 passed, frontend 145 passed + 1 skipped.
+Security review: no findings (kinds are static strings, set with text nodes; no backend change).

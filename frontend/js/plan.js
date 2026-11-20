@@ -78,6 +78,13 @@ export function addFurniture(plan, { type, w, d }, x, y) {
 }
 
 // kind is the collection name: "rooms" | "walls" | "openings" | "furniture".
+// A room with the name and type of a room kind ({ name, type }); the outline and id stay.
+export const applyKind = (room, kind) => ({ ...room, name: kind.name, type: kind.type });
+
+export function setRoomKind(plan, id, kind) {
+  return normalize({ ...plan, rooms: plan.rooms.map((room) => (room.id === id ? applyKind(room, kind) : room)) });
+}
+
 export function patch(plan, kind, id, changes) {
   const valid = Object.entries(changes).filter(
     ([key, value]) => typeof value !== "number" || (Number.isFinite(value) && (!POSITIVE.has(key) || value > 0)),

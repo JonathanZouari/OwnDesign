@@ -193,3 +193,18 @@ test("roomBox of an outlined room is the outline's box", () => {
   const plan = withOutline(L_SHAPE);
   assert.deepEqual(P.roomBox(plan, "r1"), { x: 0, y: 0, w: 600, h: 400 });
 });
+
+test("applyKind and setRoomKind set name and type together and keep the rest", async () => {
+  const { ROOM_KINDS } = await import("../js/strings.js");
+  const living = ROOM_KINDS.find((k) => k.name === "סלון");
+  const room = { id: "r1", name: "מרפסת", type: "balcony", outline: [[0, 0], [100, 0], [100, 100], [0, 100]] };
+  const next = P.applyKind(room, living);
+  assert.deepEqual(next, { ...room, name: "סלון", type: "living" });
+  assert.equal(room.name, "מרפסת"); // input untouched
+  const plan = { ...P.emptyPlan(), rooms: [room, { ...room, id: "r2" }] };
+  const out = P.setRoomKind(plan, "r1", living);
+  assert.equal(out.rooms[0].name, "סלון");
+  assert.equal(out.rooms[0].type, "living");
+  assert.equal(out.rooms[1].name, "מרפסת");
+  assert.equal(P.setRoomKind(plan, "missing", living).rooms[0].name, "מרפסת");
+});

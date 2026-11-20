@@ -3,7 +3,7 @@
 // so tabbing between fields never loses focus.
 import { FURNITURE_BY_TYPE, REVIEW_NOTE, ROOM_TYPES } from "../catalog.js";
 import * as P from "../plan.js";
-import { PANEL, ROLES, UNITS } from "../strings.js";
+import { PANEL, ROLES, ROOM_KINDS, UNITS } from "../strings.js";
 import { formatDate, h } from "../ui.js";
 
 const number = (label, unit, read, write, { min = 1, max = 3000, step = 1 } = {}) => ({ label, unit, read, write, min, max, step });
@@ -71,6 +71,22 @@ function fieldNode(spec, editor) {
   return h("div", { class: "field" }, h("span", {}, spec.label), h("div", { class: "value" }, control, spec.unit && h("span", { class: "unit" }, spec.unit)));
 }
 
+// One button per room kind: a click sets name and type together as a single undoable edit.
+function kindsNode(editor) {
+  const buttons = ROOM_KINDS.map((k) => {
+    const button = h("button", { type: "button", class: "kind", "aria-pressed": "false", "data-kind-name": k.name }, k.name);
+    button.addEventListener("click", () => {
+      const { selection, plan } = editor;
+      if (selection?.kind === "rooms") editor.commit(P.setRoomKind(plan, selection.id, k));
+    });
+    return button;
+  });
+  syncers.push((room) => {
+    ROOM_KINDS.forEach((k, i) => buttons[i].setAttribute("aria-pressed", String(room.name === k.name && room.type === k.type)));
+  });
+  return h("div", { class: "stack" }, h("span", { class: "label" }, PANEL.roomKinds), h("div", { class: "kind-grid", role: "group", "aria-label": PANEL.roomKinds }, buttons));
+}
+
 function summaryNode() {
   const line = (label) => {
     const value = h("span", { class: "mono" });
@@ -121,6 +137,7 @@ export function renderInspector(root, editor, { versions, onLoadVersion }) {
         spec
           ? [
               h("div", { class: "selection" }, h("span", { class: "label" }, PANEL.activeSelection), title),
+              selection.kind === "rooms" && kindsNode(editor),
               h("div", { class: "stack" }, h("span", { class: "label" }, PANEL.dimensions), h("div", { class: "fields" }, spec.fields.map((field) => fieldNode(field, editor)))),
               spec.review(item) && h("p", { class: "note" }, REVIEW_NOTE),
             ]

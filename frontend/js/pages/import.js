@@ -1,7 +1,7 @@
 // Import a contractor's PDF floor plan: pick file/page, review detected walls on top of the drawing,
 // calibrate the scale, then hand a draft (plan + underlay) to the editor. Everything stays in the browser.
 // Text that comes from the PDF is never inserted as HTML.
-import { emptyPlan, labelPoint, metres } from "../plan.js";
+import { applyKind, emptyPlan, labelPoint, metres } from "../plan.js";
 import { areaToPage, carryOverDisabled, detectScale, detectWalls, suggestScale, wallLength } from "../import/walls.js";
 import { carryOverChoices, detectFurniture, fitToType, toPlanFurniture } from "../import/furniture.js";
 import { carryOverRoomChoices, detectRooms, toPlanRooms } from "../import/rooms.js";
@@ -10,7 +10,7 @@ import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
 import { deleteImage, draftKey, putImage } from "../import/underlay.js";
 import { svg, visibleArea } from "../editor/render.js";
 import { zoomAt } from "../editor/pointer.js";
-import { IMPORT, ROOM_TYPES, UNITS, ltr } from "../strings.js";
+import { IMPORT, ROOM_KINDS, UNITS, ltr } from "../strings.js";
 import { KEYS, load, save } from "../store.js";
 import { $, h, showStudio, toast } from "../ui.js";
 
@@ -45,6 +45,7 @@ const state = {
   roomsSig: "",
   roomChoice: new Map(), // room id -> { on?, name?, type? }
   roomTimer: 0,
+  selectedRoom: null, // id of the room whose kind card is open
   layer: "all",
   opacity: 0.55,
   picking: false,
@@ -282,7 +283,12 @@ function drawRooms() {
     ...state.rooms.map((r) => {
       const box = h("input", { type: "checkbox", "aria-label": IMPORT.roomImport, onchange: () => toggleRoom(r.id) });
       const name = h("input", { maxlength: 80, "aria-label": IMPORT.roomName, oninput: () => onRoomName(r.id, name.value) });
-      const select = h("select", { "aria-label": IMPORT.roomType, onchange: () => setRoomChoice(r.id, { type: select.value }) }, ...ROOM_TYPES.map(([value, label]) => h("option", { value }, label)));
+      const select = h(
+        "select",
+        { "aria-label": IMPORT.roomKind, onchange: () => select.value && setRoomKind(r.id, ROOM_KINDS[Number(select.value)]) },
+        h("option", { value: "" }, IMPORT.roomKindCustom),
+        ...ROOM_KINDS.map((k, i) => h("option", { value: String(i) }, k.name)),
+      );
       const row = h("li", { "data-room-row": r.id }, h("label", {}, box, " ", IMPORT.roomImport), h("span", { class: "dims" }, ltr(r.area.toFixed(1))), name, select);
       row.addEventListener("focusin", () => roomNodes.get(r.id)?.classList.add("current"));
       row.addEventListener("focusout", () => roomNodes.get(r.id)?.classList.remove("current"));
@@ -294,6 +300,49 @@ function drawRooms() {
 
 function setRoomChoice(id, change) {
   state.roomChoice.set(id, { ...state.roomChoice.get(id), ...change });
+}
+
+// A room kind sets name and type at once, overwriting a typed name.
+function setRoomKind(id, kind) {
+  const r = state.rooms.find((room) => room.id === id);
+  if (!r) return;
+  const { name, type } = applyKind(r, kind);
+  setRoomChoice(id, { name, type });
+  syncRooms();
+  const field = roomRows.get(id)?.querySelector("input:not([type=checkbox])");
+  if (field) field.value = name; // also when the name field has focus
+}
+
+const kindIndex = (r) => ROOM_KINDS.findIndex((k) => k.name === roomName(r).trim() && k.type === roomType(r));
+
+function selectRoom(id) {
+  state.selectedRoom = id;
+  syncRooms();
+  const card = $("#room-card");
+  if (id && !card.hidden) {
+    card.focus();
+    card.scrollIntoView?.({ block: "nearest" });
+  }
+}
+
+function closeRoomCard() {
+  const id = state.selectedRoom;
+  if (!id) return;
+  selectRoom(null);
+  roomNodes.get(id)?.focus();
+}
+
+function syncRoomCard() {
+  const card = $("#room-card");
+  const r = state.rooms.find((room) => room.id === state.selectedRoom);
+  if (!r) state.selectedRoom = null;
+  card.hidden = !r;
+  if (!r) return;
+  const on = roomOn(r);
+  $("#room-card-title").textContent = IMPORT.roomCardTitle(roomName(r).trim() || r.name, r.area.toFixed(1));
+  const current = kindIndex(r);
+  card.querySelectorAll("[data-kind-index]").forEach((button) => button.setAttribute("aria-pressed", String(Number(button.dataset.kindIndex) === current)));
+  $("#room-card-toggle").textContent = on ? IMPORT.roomSkip : IMPORT.roomKeep;
 }
 
 function toggleRoom(id) {
@@ -321,8 +370,11 @@ function syncRooms() {
     row.querySelector("input[type=checkbox]").checked = on;
     const name = row.querySelector("input:not([type=checkbox])");
     if (document.activeElement !== name) name.value = roomName(r);
-    row.querySelector("select").value = roomType(r);
+    const index = kindIndex(r);
+    row.querySelector("select").value = index < 0 ? "" : String(index);
+    node.classList.toggle("selected", r.id === state.selectedRoom);
   }
+  syncRoomCard();
   const kept = state.rooms.filter(roomOn);
   $("#rooms-card").hidden = !state.base;
   $("#rooms-count").textContent = state.rooms.length ? IMPORT.roomsSummary(kept.length, state.rooms.length, kept.reduce((sum, r) => sum + r.area, 0).toFixed(1)) : IMPORT.roomsNone;
@@ -411,7 +463,7 @@ function attachViewer() {
     drag = null;
     if (current.moved || event.type === "pointercancel") return;
     if (state.picking) pickPoint(current.start);
-    else if (current.target?.dataset.room) toggleRoom(current.target.dataset.room);
+    else if (current.target?.dataset.room) selectRoom(current.target.dataset.room);
     else if (current.target?.dataset.furn) toggleFurniture(current.target.dataset.furn);
     else if (current.target) toggleWall(current.target.dataset.wall);
   };
@@ -421,7 +473,7 @@ function attachViewer() {
     const node = event.target.closest?.("[data-wall], [data-furn], [data-room]");
     if (!node || state.picking || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
-    if (node.dataset.room) toggleRoom(node.dataset.room);
+    if (node.dataset.room) selectRoom(node.dataset.room);
     else if (node.dataset.furn) toggleFurniture(node.dataset.furn);
     else toggleWall(node.dataset.wall);
   });
@@ -770,6 +822,18 @@ async function proceed() {
 // ---------------------------------------------------------------- wiring
 
 attachViewer();
+
+$("#room-card-kinds").replaceChildren(
+  ...ROOM_KINDS.map((k, i) => h("button", { type: "button", class: "kind", "data-kind-index": String(i), "aria-pressed": "false", onclick: () => state.selectedRoom && setRoomKind(state.selectedRoom, k) }, k.name)),
+);
+$("#room-card-toggle").addEventListener("click", () => state.selectedRoom && toggleRoom(state.selectedRoom));
+$("#room-card-close").addEventListener("click", closeRoomCard);
+$("#room-card").addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeRoomCard();
+});
+canvas.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeRoomCard();
+});
 $("#pdf-file").addEventListener("change", onFile);
 $("#page-go").addEventListener("click", () => analyze(Number($("#page-select").value)));
 $("#calibrate").addEventListener("click", () => setPicking(true));

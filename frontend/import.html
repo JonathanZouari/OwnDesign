@@ -65,6 +65,15 @@
         </div>
 
         <div class="import-side">
+          <section class="card stack room-card" id="room-card" tabindex="-1" hidden aria-labelledby="room-card-title">
+            <div class="row between">
+              <span class="label" id="room-card-title"></span>
+              <button type="button" id="room-card-close" class="ghost" aria-label="סגירה"><span class="icon" aria-hidden="true">close</span></button>
+            </div>
+            <div id="room-card-kinds" class="kind-grid" role="group" aria-label="בחירת סוג החדר"></div>
+            <button type="button" id="room-card-toggle"></button>
+          </section>
+
           <section class="card stack">
             <span class="label">הזיהוי</span>
             <p id="confidence" style="margin: 0"></p>
@@ -129,7 +138,7 @@
           <section class="card stack" id="rooms-card" hidden>
             <span class="label">חדרים</span>
             <p id="rooms-count" style="margin: 0"></p>
-            <p class="small muted" style="margin: 0">החדרים מסומנים בצבע על השרטוט. לחצו על חדר כדי לייבא או לדלג עליו, ותקנו שם וסוג ברשימה.</p>
+            <p class="small muted" style="margin: 0">החדרים מסומנים בצבע על השרטוט. לחצו על חדר כדי לבחור לו סוג בלחיצה אחת (סלון, מטבח ועוד) או לדלג עליו. אפשר גם לתקן שם וסוג ברשימה.</p>
             <ul id="room-list" class="furn-list"></ul>
           </section>
 
