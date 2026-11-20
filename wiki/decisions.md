@@ -21,3 +21,4 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **supabase-js is vendored**, not loaded from a CDN, with a `script-src 'self'` policy. Came out of the security review.
 - **Product name "ATELIER"** in the UI, taken from Stitch. The PRD leaves the name undecided.
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.
+- **No automatic room detection from PDF plans** (2026-11-20). It did not work well enough on real drawings; the user cancelled it. Walls and furniture import stay; the room outline schema and editor kind buttons are kept.

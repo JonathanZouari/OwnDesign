@@ -125,41 +125,6 @@ export const ROOM_KINDS = [
   { name: "מחסן", type: "other" },
   { name: "אחר", type: "other" },
 ];
-const kind = (name) => ROOM_KINDS.find((k) => k.name === name);
-
-// Hebrew words that name a room in a drawing, first match wins (specific before general). `words` are compared
-// without quotes and spaces, so ממ"ד, ממ״ד and ממד all match. `name` is what the room is called afterwards;
-// names that are also a room kind take their type from it.
-export const ROOM_WORDS = [
-  { words: ["חדרשינה"], ...kind("חדר שינה") },
-  { words: ["חדרהורים", "הורים"], ...kind("חדר הורים") },
-  { words: ["חדרילדים", "ילדים"], ...kind("חדר ילדים") },
-  { words: ["חדרעבודה", "משרד"], ...kind("חדר עבודה") },
-  { words: ["פינתאוכל"], ...kind("פינת אוכל") },
-  { words: ["סלון"], ...kind("סלון") },
-  { words: ["מטבח"], ...kind("מטבח") },
-  { words: ["ממד", "מרחבמוגן"], ...kind("ממ״ד") },
-  { words: ["שירותים", "שרותים", "אסלה"], ...kind("שירותים") },
-  { words: ["מקלחת"], name: "מקלחת", type: "bathroom" },
-  { words: ["אמבטיה"], name: "אמבטיה", type: "bathroom" },
-  { words: ["רחצה", "אמבט"], ...kind("חדר רחצה") },
-  { words: ["כביסה"], ...kind("חדר כביסה") },
-  { words: ["שירות"], name: "חדר שירות", type: "other" },
-  { words: ["מרפסת"], ...kind("מרפסת") },
-  { words: ["מסדרון"], ...kind("מסדרון") },
-  { words: ["מבואה"], ...kind("מבואה") },
-  { words: ["כניסה"], name: "כניסה", type: "hallway" },
-  { words: ["מחסן"], ...kind("מחסן") },
-];
-// Names for rooms recognised from their furniture or shape.
-export const ROOM_GUESS = {
-  bedroom: "חדר שינה",
-  bathroom: "חדר רחצה",
-  kitchen: "מטבח",
-  living: "סלון",
-  corridor: "מסדרון",
-  numbered: (n) => `חדר ${n}`,
-};
 
 export const REVIEW_NOTE = "שינויים בקירות, בפתחים, במטבחים ובחדרי רחצה הם עקרוניים עד שיבדוק אותם איש מקצוע מוסמך.";
 
@@ -336,19 +301,6 @@ export const IMPORT = {
   layerWalls: "רק קירות",
   layerFurniture: "רק ריהוט",
   wallsAsFurniture: (n) => `${n} קירות עבים במיוחד זוהו כריהוט ולכן לא נספרו כקירות.`,
-  roomsNone: "לא זוהו חדרים. אפשר להוסיף אותם בעורך.",
-  roomsSummary: (on, total, area) => `${on} מתוך ${total} חדרים ייובאו, ${area} ${UNITS.m2} בסך הכול.`,
-  roomImport: "ייבוא",
-  roomName: "שם החדר",
-  roomType: "סוג החדר",
-  roomKind: "תפקיד החדר",
-  roomKindCustom: "שם מותאם",
-  roomKindsLabel: "בחירת סוג החדר",
-  roomCardTitle: (name, area) => `${name} · ${area} ${UNITS.m2}`,
-  roomSkip: "לא לייבא",
-  roomKeep: "לייבא",
-  roomClose: "סגירה",
-  roomLabel: (name, area, on) => `${name}, ${area} ${UNITS.m2}, ${on ? "נבחר" : "לא נבחר"}`,
   zoomIn: "הגדלה",
   zoomOut: "הקטנה",
   zoomFit: "התאמה למסך",

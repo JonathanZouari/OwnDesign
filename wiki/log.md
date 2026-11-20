@@ -158,3 +158,10 @@ with kind buttons and an import/skip toggle (no longer click-to-skip); list rows
 buttons in the room inspector, one undoable edit. Asked for by the user after detection mislabelled rooms.
 Planned on Opus, implemented by a Sonnet subagent. Tests: backend 94 passed, frontend 145 passed + 1 skipped.
 Security review: no findings (kinds are static strings, set with text nodes; no backend change).
+
+## [2026-11-20] decision | Room detection from PDF removed
+The user decided that automatic room detection from PDF floor plans did not work well enough, and asked to cancel it.
+Removed `rooms.js`, its tests and all room UI on the import review; import again produces walls, furniture and the
+underlay only. Kept: the `Room.outline` schema and plan support (saved data may contain outlines), editor rendering of
+outline rooms, `ROOM_KINDS` and the editor kind buttons. The one-click-kind E2E now uses a wizard-created room.
+Pages: [decisions](decisions.md), [open-items](open-items.md).

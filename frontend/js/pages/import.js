@@ -1,16 +1,15 @@
 // Import a contractor's PDF floor plan: pick file/page, review detected walls on top of the drawing,
 // calibrate the scale, then hand a draft (plan + underlay) to the editor. Everything stays in the browser.
 // Text that comes from the PDF is never inserted as HTML.
-import { applyKind, emptyPlan, labelPoint, metres } from "../plan.js";
+import { emptyPlan, metres } from "../plan.js";
 import { areaToPage, carryOverDisabled, detectScale, detectWalls, suggestScale, wallLength } from "../import/walls.js";
 import { carryOverChoices, detectFurniture, fitToType, toPlanFurniture } from "../import/furniture.js";
-import { carryOverRoomChoices, detectRooms, toPlanRooms } from "../import/rooms.js";
 import { calibrationFactor, imagePlacement, parseLength } from "../import/placement.js";
 import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
 import { deleteImage, draftKey, putImage } from "../import/underlay.js";
 import { svg, visibleArea } from "../editor/render.js";
 import { zoomAt } from "../editor/pointer.js";
-import { IMPORT, ROOM_KINDS, UNITS, ltr } from "../strings.js";
+import { IMPORT, UNITS, ltr } from "../strings.js";
 import { KEYS, load, save } from "../store.js";
 import { $, h, showStudio, toast } from "../ui.js";
 
@@ -40,12 +39,6 @@ const state = {
   drawingArea: false,
   disabled: new Set(), // ids of walls the user switched off
   choice: new Map(), // furniture id -> { on?, type? }: what the user changed; everything else follows the detection
-  rooms: [], // detectRooms() result for the enabled walls
-  roomsCtx: null, // { cmPerUnit, originCm } the rooms were detected at
-  roomsSig: "",
-  roomChoice: new Map(), // room id -> { on?, name?, type? }
-  roomTimer: 0,
-  selectedRoom: null, // id of the room whose kind card is open
   layer: "all",
   opacity: 0.55,
   picking: false,
@@ -54,12 +47,10 @@ const state = {
   token: 0, // guards against a slow analysis finishing after a newer one started
 };
 
-const nodes = { image: null, rooms: null, outside: null, walls: null, furn: null, area: null, cal: null };
+const nodes = { image: null, outside: null, walls: null, furn: null, area: null, cal: null };
 const wallNodes = new Map();
 const furnNodes = new Map();
 const furnRows = new Map();
-const roomNodes = new Map();
-const roomRows = new Map();
 
 // ---------------------------------------------------------------- derived data
 
@@ -74,9 +65,6 @@ const fittedOf = (f) => {
 };
 const labelOf = (type) => FURNITURE_BY_TYPE.get(type)?.label ?? type;
 const enabledFurniture = () => toPlanFurniture(furniture(), (f) => (isOn(f) ? typeOf(f) : null));
-const roomOn = (r) => state.roomChoice.get(r.id)?.on ?? true;
-const roomName = (r) => state.roomChoice.get(r.id)?.name ?? r.name;
-const roomType = (r) => state.roomChoice.get(r.id)?.type ?? r.type;
 const needsCalibration = () => state.ratio === null && !state.calibrated && !state.confirmed;
 const placement = () => imagePlacement(state.page, state.base.cmPerUnit, state.base.originCm);
 const lengthText = (cm) => ltr(metres(cm));
@@ -106,7 +94,6 @@ function toggleWall(id) {
   else state.disabled.add(id);
   syncWallNodes();
   renderSummary();
-  scheduleRooms();
 }
 
 function syncWallNodes() {
@@ -149,7 +136,6 @@ function toggleFurniture(id) {
   if (!typeOf(f)) return furnRows.get(id)?.querySelector("select")?.focus(); // nothing to switch on until a type is chosen
   setChoice(id, { on: !isOn(f) });
   syncFurniture();
-  scheduleRooms();
 }
 
 function syncFurniture() {
@@ -223,161 +209,6 @@ function onType(id, type) {
   if (!type && !f.type) state.choice.delete(id);
   else setChoice(id, { type: type || f.type });
   syncFurniture();
-  scheduleRooms();
-}
-
-// ---------------------------------------------------------------- rooms
-
-// Walls, text and furniture the user kept, in plan cm: the input of the room detector.
-function roomInput() {
-  const { cmPerUnit, originCm } = state.base;
-  const texts = state.page.texts.map((t) => ({
-    str: t.str,
-    x: t.x * cmPerUnit - originCm.x,
-    y: t.y * cmPerUnit - originCm.y,
-    cx: (t.cx ?? t.x) * cmPerUnit - originCm.x,
-    cy: (t.cy ?? t.y) * cmPerUnit - originCm.y,
-  }));
-  return { walls: enabledWalls(), texts, furniture: enabledFurniture() };
-}
-
-function scheduleRooms() {
-  clearTimeout(state.roomTimer);
-  state.roomTimer = setTimeout(runRooms, 250);
-}
-
-function runRooms() {
-  clearTimeout(state.roomTimer);
-  if (!state.base || !state.page) return;
-  const ctx = { cmPerUnit: state.base.cmPerUnit, originCm: state.base.originCm };
-  const next = detectRooms(roomInput());
-  // The user's choices follow a room to its new detection by position on the page.
-  state.roomChoice = state.roomsCtx ? carryOverRoomChoices(state.rooms, state.roomsCtx, state.roomChoice, next, ctx) : new Map();
-  state.rooms = next;
-  state.roomsCtx = ctx;
-  const sig = next.map((r) => `${r.id}:${r.name}:${r.outline.join(";")}`).join("|");
-  if (sig !== state.roomsSig) drawRooms(); // an identical result keeps the rows, so typing in a name field is not interrupted
-  state.roomsSig = sig;
-  syncRooms();
-}
-
-function drawRooms() {
-  roomNodes.clear();
-  roomRows.clear();
-  nodes.rooms.replaceChildren(
-    ...state.rooms.map((r) => {
-      const at = labelPoint(r.outline);
-      const size = Math.max(18, Math.min(Math.sqrt(r.area) * 7, 34));
-      const node = svg(
-        "g",
-        { class: "ir", role: "button", tabindex: 0, "data-room": r.id, "aria-pressed": "true" },
-        svg("polygon", { points: r.outline.map((p) => p.join(",")).join(" ") }),
-        svg("text", { x: at.x, y: at.y, "font-size": size, "text-anchor": "middle", class: "name" }),
-        svg("text", { x: at.x, y: at.y + size * 1.2, "font-size": size * 0.75, "text-anchor": "middle", class: "meta" }, `${r.area.toFixed(1)} ${UNITS.m2}`),
-      );
-      roomNodes.set(r.id, node);
-      return node;
-    }),
-  );
-  $("#room-list").replaceChildren(
-    ...state.rooms.map((r) => {
-      const box = h("input", { type: "checkbox", "aria-label": IMPORT.roomImport, onchange: () => toggleRoom(r.id) });
-      const name = h("input", { maxlength: 80, "aria-label": IMPORT.roomName, oninput: () => onRoomName(r.id, name.value) });
-      const select = h(
-        "select",
-        { "aria-label": IMPORT.roomKind, onchange: () => select.value && setRoomKind(r.id, ROOM_KINDS[Number(select.value)]) },
-        h("option", { value: "" }, IMPORT.roomKindCustom),
-        ...ROOM_KINDS.map((k, i) => h("option", { value: String(i) }, k.name)),
-      );
-      const row = h("li", { "data-room-row": r.id }, h("label", {}, box, " ", IMPORT.roomImport), h("span", { class: "dims" }, ltr(r.area.toFixed(1))), name, select);
-      row.addEventListener("focusin", () => roomNodes.get(r.id)?.classList.add("current"));
-      row.addEventListener("focusout", () => roomNodes.get(r.id)?.classList.remove("current"));
-      roomRows.set(r.id, row);
-      return row;
-    }),
-  );
-}
-
-function setRoomChoice(id, change) {
-  state.roomChoice.set(id, { ...state.roomChoice.get(id), ...change });
-}
-
-// A room kind sets name and type at once, overwriting a typed name.
-function setRoomKind(id, kind) {
-  const r = state.rooms.find((room) => room.id === id);
-  if (!r) return;
-  const { name, type } = applyKind(r, kind);
-  setRoomChoice(id, { name, type });
-  syncRooms();
-  const field = roomRows.get(id)?.querySelector("input:not([type=checkbox])");
-  if (field) field.value = name; // also when the name field has focus
-}
-
-const kindIndex = (r) => ROOM_KINDS.findIndex((k) => k.name === roomName(r).trim() && k.type === roomType(r));
-
-function selectRoom(id) {
-  state.selectedRoom = id;
-  syncRooms();
-  const card = $("#room-card");
-  if (id && !card.hidden) {
-    card.focus();
-    card.scrollIntoView?.({ block: "nearest" });
-  }
-}
-
-function closeRoomCard() {
-  const id = state.selectedRoom;
-  if (!id) return;
-  selectRoom(null);
-  roomNodes.get(id)?.focus();
-}
-
-function syncRoomCard() {
-  const card = $("#room-card");
-  const r = state.rooms.find((room) => room.id === state.selectedRoom);
-  if (!r) state.selectedRoom = null;
-  card.hidden = !r;
-  if (!r) return;
-  const on = roomOn(r);
-  $("#room-card-title").textContent = IMPORT.roomCardTitle(roomName(r).trim() || r.name, r.area.toFixed(1));
-  const current = kindIndex(r);
-  card.querySelectorAll("[data-kind-index]").forEach((button) => button.setAttribute("aria-pressed", String(Number(button.dataset.kindIndex) === current)));
-  $("#room-card-toggle").textContent = on ? IMPORT.roomSkip : IMPORT.roomKeep;
-}
-
-function toggleRoom(id) {
-  const r = state.rooms.find((room) => room.id === id);
-  if (!r) return;
-  setRoomChoice(id, { on: !roomOn(r) });
-  syncRooms();
-}
-
-function onRoomName(id, value) {
-  setRoomChoice(id, { name: value });
-  const r = state.rooms.find((room) => room.id === id);
-  const node = roomNodes.get(id);
-  if (r && node) node.querySelector(".name").textContent = value.trim() || r.name;
-}
-
-function syncRooms() {
-  for (const r of state.rooms) {
-    const on = roomOn(r);
-    const node = roomNodes.get(r.id);
-    node.setAttribute("aria-pressed", String(on));
-    node.setAttribute("aria-label", IMPORT.roomLabel(roomName(r), r.area.toFixed(1), on));
-    node.querySelector(".name").textContent = roomName(r).trim() || r.name;
-    const row = roomRows.get(r.id);
-    row.querySelector("input[type=checkbox]").checked = on;
-    const name = row.querySelector("input:not([type=checkbox])");
-    if (document.activeElement !== name) name.value = roomName(r);
-    const index = kindIndex(r);
-    row.querySelector("select").value = index < 0 ? "" : String(index);
-    node.classList.toggle("selected", r.id === state.selectedRoom);
-  }
-  syncRoomCard();
-  const kept = state.rooms.filter(roomOn);
-  $("#rooms-card").hidden = !state.base;
-  $("#rooms-count").textContent = state.rooms.length ? IMPORT.roomsSummary(kept.length, state.rooms.length, kept.reduce((sum, r) => sum + r.area, 0).toFixed(1)) : IMPORT.roomsNone;
 }
 
 function drawArea() {
@@ -409,13 +240,12 @@ const toPlan = (event) => {
 
 function attachViewer() {
   nodes.image = svg("image", { preserveAspectRatio: "none", "pointer-events": "none" });
-  nodes.rooms = svg("g");
   nodes.outside = svg("g");
   nodes.walls = svg("g");
   nodes.furn = svg("g");
   nodes.area = svg("g", { "pointer-events": "none" });
   nodes.cal = svg("g", { "pointer-events": "none" });
-  canvas.replaceChildren(nodes.image, nodes.rooms, nodes.outside, nodes.walls, nodes.furn, nodes.area, nodes.cal);
+  canvas.replaceChildren(nodes.image, nodes.outside, nodes.walls, nodes.furn, nodes.area, nodes.cal);
 
   let drag = null;
   let box = null; // plan-area rectangle being drawn: { id, from, rect }
@@ -428,7 +258,7 @@ function attachViewer() {
       canvas.setPointerCapture?.(event.pointerId);
       return;
     }
-    drag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, view: state.view, inverse: canvas.getScreenCTM().inverse(), moved: false, target: event.target.closest?.("[data-wall], [data-furn], [data-room]") };
+    drag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, view: state.view, inverse: canvas.getScreenCTM().inverse(), moved: false, target: event.target.closest?.("[data-wall], [data-furn]") };
     drag.start = new DOMPoint(event.clientX, event.clientY).matrixTransform(drag.inverse);
     canvas.setPointerCapture?.(event.pointerId);
   });
@@ -463,18 +293,16 @@ function attachViewer() {
     drag = null;
     if (current.moved || event.type === "pointercancel") return;
     if (state.picking) pickPoint(current.start);
-    else if (current.target?.dataset.room) selectRoom(current.target.dataset.room);
     else if (current.target?.dataset.furn) toggleFurniture(current.target.dataset.furn);
     else if (current.target) toggleWall(current.target.dataset.wall);
   };
   canvas.addEventListener("pointerup", finish);
   canvas.addEventListener("pointercancel", finish);
   canvas.addEventListener("keydown", (event) => {
-    const node = event.target.closest?.("[data-wall], [data-furn], [data-room]");
+    const node = event.target.closest?.("[data-wall], [data-furn]");
     if (!node || state.picking || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
-    if (node.dataset.room) selectRoom(node.dataset.room);
-    else if (node.dataset.furn) toggleFurniture(node.dataset.furn);
+    if (node.dataset.furn) toggleFurniture(node.dataset.furn);
     else toggleWall(node.dataset.wall);
   });
   canvas.addEventListener(
@@ -673,7 +501,6 @@ function refresh() {
   drawArea();
   drawImage();
   renderAll();
-  runRooms();
 }
 
 function chooseRatio(ratio) {
@@ -733,10 +560,6 @@ async function analyze(pageNumber) {
     state.base = null;
     state.disabled = new Set();
     state.choice = new Map();
-    state.rooms = [];
-    state.roomsCtx = null;
-    state.roomsSig = "";
-    state.roomChoice = new Map();
     state.suggested = scale.ratio === null && page.hasVector ? suggestScale(page).ratio : null;
     redetect(scale.cmPerUnit ?? (state.suggested ? (2.54 / 72) * state.suggested : undefined));
     setPicking(false);
@@ -793,7 +616,6 @@ async function proceed() {
   const button = $("#continue");
   button.disabled = true;
   try {
-    runRooms(); // flush a pending detection so the plan matches what the user sees
     const p = placement();
     const key = draftKey();
     const stored = await putImage(key, state.blob);
@@ -803,7 +625,7 @@ async function proceed() {
       name,
       property_type: document.querySelector("input[name=property_type]:checked").value,
       ...(studio ? { studio } : {}),
-      plan: { ...emptyPlan(), rooms: toPlanRooms(state.rooms, (r) => (roomOn(r) ? { name: roomName(r), type: roomType(r) } : null)), walls: enabledWalls(), furniture: enabledFurniture() },
+      plan: { ...emptyPlan(), rooms: [], walls: enabledWalls(), furniture: enabledFurniture() },
       ...(stored ? { underlay: { key, x: p.x, y: p.y, width: p.width, height: p.height, opacity: state.opacity } } : {}),
     };
     if (!save(KEYS.draft, draft)) {
@@ -823,17 +645,6 @@ async function proceed() {
 
 attachViewer();
 
-$("#room-card-kinds").replaceChildren(
-  ...ROOM_KINDS.map((k, i) => h("button", { type: "button", class: "kind", "data-kind-index": String(i), "aria-pressed": "false", onclick: () => state.selectedRoom && setRoomKind(state.selectedRoom, k) }, k.name)),
-);
-$("#room-card-toggle").addEventListener("click", () => state.selectedRoom && toggleRoom(state.selectedRoom));
-$("#room-card-close").addEventListener("click", closeRoomCard);
-$("#room-card").addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeRoomCard();
-});
-canvas.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeRoomCard();
-});
 $("#pdf-file").addEventListener("change", onFile);
 $("#page-go").addEventListener("click", () => analyze(Number($("#page-select").value)));
 $("#calibrate").addEventListener("click", () => setPicking(true));

@@ -145,14 +145,7 @@ export async function readPage(doc, pageNumber) {
   for (const item of content.items) {
     if (typeof item.str !== "string" || !item.str.trim() || !Array.isArray(item.transform)) continue;
     const [x, y] = apply(base, item.transform[4], item.transform[5]);
-    // Centre of the text (the origin is the baseline start), so a label can be placed inside a room.
-    const [a, b, c, d] = item.transform;
-    const along = Math.hypot(a, b) || 1;
-    const up = Math.hypot(c, d) || 1;
-    const half = (Number(item.width) || 0) / 2;
-    const rise = (Number(item.height) || up) / 2;
-    const [cx, cy] = apply(base, item.transform[4] + (a / along) * half + (c / up) * rise, item.transform[5] + (b / along) * half + (d / up) * rise);
-    texts.push({ str: item.str, x, y, cx, cy });
+    texts.push({ str: item.str, x, y });
   }
   return { width: viewport.width, height: viewport.height, paths, texts, hasVector: paths.length >= MIN_VECTOR_PATHS };
 }

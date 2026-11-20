@@ -34,7 +34,4 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - Detection on real drawings: about 80 % of walls found; the scale suggestion proposed 1:20 for a sheet that is
   really 1:50 (scale from dimension labels is not built); furniture identification is weak (about a quarter to a
   third correct); a title block with no frame or table needs the manual plan area.
-- Room detection depends on closed walls: on the real drawing only about 30 % of the area became rooms because
-  exterior walls and the open living area were missed; gaps over about 125 cm leak outside; door arcs unused;
-  pillars (holes) ignored; areas are net of wall thickness.
 - Curved walls, doors and windows are not detected.

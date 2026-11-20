@@ -48,7 +48,7 @@ One JSON document per version, validated in `backend/app/schemas.py` and edited 
 - An opening is positioned by `offset` along its wall, so it moves with the wall.
 - Furniture `x`/`y` is the centre.
 - A room may carry an `outline` (3–200 points, cm); its area and label then come from the outline, and it
-  needs no walls. Imported rooms are detected from the walls in `frontend/js/import/rooms.js`.
+  needs no walls.
 - Limits: 100 rooms, 1000 of each other kind, coordinates within 100,000 cm, body under 2 MB.
 
 ## Editor

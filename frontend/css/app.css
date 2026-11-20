@@ -315,13 +315,6 @@ input[type="email"], input[type="password"] { direction: ltr; text-align: end; }
 .furn-list input:not([type="checkbox"]) { grid-column: 1 / -1; min-height: 32px; }
 .furn-list select { grid-column: 1 / -1; min-height: 32px; }
 .furn-list .dims { font: 400 11px/14px var(--font-mono); color: var(--ink-soft); }
-#import-canvas .ir { cursor: pointer; outline: none; }
-#import-canvas .ir polygon { pointer-events: all; fill: var(--secondary); fill-opacity: 0.16; stroke: none; }
-#import-canvas .ir text { fill: var(--ink); stroke: #fff; stroke-width: 3px; paint-order: stroke; font-family: var(--font-body); pointer-events: none; }
-#import-canvas .ir[aria-pressed="false"] polygon { fill: none; }
-#import-canvas .ir[aria-pressed="false"] text { fill: var(--outline); }
-#import-canvas .ir.current polygon, #import-canvas .ir:focus-visible polygon { fill-opacity: 0.32; }
-#import-canvas.picking .ir, #import-canvas.drawing .ir { pointer-events: none; }
 #import-canvas .ow { stroke: var(--outline); stroke-opacity: 0.45; stroke-linecap: butt; pointer-events: none; }
 #import-canvas .area-rect { fill: none; stroke: var(--secondary); stroke-width: 3; stroke-dasharray: 14 8; vector-effect: non-scaling-stroke; pointer-events: none; }
 #import-canvas .area-draft { fill: var(--secondary); fill-opacity: 0.12; stroke: var(--secondary); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
@@ -342,9 +335,7 @@ button.accent, .button.accent { border-color: var(--primary); color: var(--prima
 #underlay-control .row { align-items: center; justify-content: space-between; }
 #underlay-control input[type="range"] { height: auto; padding: 0; accent-color: var(--primary); }
 
-/* One-click room kinds (import review card and editor inspector) */
+/* One-click room kinds (editor inspector) */
 .kind-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
 .kind-grid .kind { min-height: 36px; padding: 0 8px; font-size: 13px; }
-.kind-grid .kind:focus-visible, .room-card button:focus-visible, .room-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.room-card { border-inline-start: 2px solid var(--primary); }
-#import-canvas .ir.selected polygon { fill-opacity: 0.32; stroke: var(--primary); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.kind-grid .kind:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

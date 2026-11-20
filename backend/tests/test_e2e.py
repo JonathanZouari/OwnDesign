@@ -1019,144 +1019,23 @@ def test_import_furnished_sheet_saves_with_furniture_as_guest_then_registered(se
     assert _match_furnished(geometry["furniture"], truth) == []
 
 
-# ---------------------------------------------------------------- rooms from the drawing
+# ---------------------------------------------------------------- room kinds in the editor
 
 
-def _review_rooms(page):
-    return page.evaluate(
-        """() => [...document.querySelectorAll('#import-canvas .ir')].map(g => ({
-            id: g.dataset.room, name: g.querySelector('.name').textContent, on: g.getAttribute('aria-pressed') === 'true',
-            area: parseFloat(g.querySelector('.meta').textContent) }))"""
-    )
-
-
-def _import_rooms(page, tmp_path):
-    _import(page, make_plans.rooms_apartment(tmp_path / "rooms.pdf"))
-    page.locator("#import-canvas .ir").first.wait_for(timeout=30000)
-
-
-def test_import_rooms_are_found_reviewed_and_shown_in_the_editor(servers, page, tmp_path):
-    _import_rooms(page, tmp_path)
-    assert page.locator("#import-canvas .iw").count() == 8
-    rooms = _review_rooms(page)
-    assert len(rooms) == 3, rooms  # the doorways are bridged, so nothing leaks into one big room
-    assert sorted(round(r["area"]) for r in rooms) == [9, 9, 18], rooms  # net interiors of 4 x 2.5 and 4 x 5 m rooms
-    assert "3 מתוך 3 חדרים ייובאו" in page.locator("#rooms-count").inner_text()
-    assert _english_words(page) == [], _english_words(page)
-    if make_plans.has_hebrew_font():
-        assert {r["name"] for r in rooms} == {"חדר שינה", "מטבח", "סלון"}, rooms
-
-    # a click on a room opens its card; the card switches it off and on; a wall toggle re-detects without losing that choice
-    first = page.locator("#import-canvas .ir").first
-    first.focus()
-    page.keyboard.press("Enter")
-    assert first.get_attribute("aria-pressed") == "true"  # selecting does not change import state
-    page.locator("#room-card-toggle").click()
-    assert first.get_attribute("aria-pressed") == "false"
-    assert "2 מתוך 3 חדרים ייובאו" in page.locator("#rooms-count").inner_text()
-    page.locator("#import-canvas .iw").first.focus()
-    page.keyboard.press("Enter")
-    page.keyboard.press("Enter")  # off, then on again
-    page.wait_for_timeout(600)  # debounced re-detection
-    assert [r["on"] for r in _review_rooms(page)].count(False) == 1
-    assert page.locator("#room-card").is_visible()  # the selection survives the re-detection
-    page.locator("#room-card-toggle").click()
-    assert all(r["on"] for r in _review_rooms(page))
-
-    # a name and a type typed into the list reach the plan
-    row = page.locator("#room-list li").first
-    row.locator("input:not([type=checkbox])").fill("חדר ילדים")
-    row.locator("select").select_option(label="חדר שינה")
-    assert row.locator("input:not([type=checkbox])").input_value() == "חדר שינה"
-    row.locator("input:not([type=checkbox])").fill("חדר ילדים")
-
-    _to_editor(page)
-    rooms_plan = _draft(page)["plan"]["rooms"]
-    assert len(rooms_plan) == 3
-    assert all(len(r["outline"]) >= 4 and set(r) == {"id", "name", "type", "outline"} for r in rooms_plan)
-    assert rooms_plan[0]["name"] == "חדר ילדים" and rooms_plan[0]["type"] == "bedroom"
-    page.locator("#canvas [data-kind=rooms]").first.wait_for(state="attached")
-    assert page.locator("#canvas [data-kind=rooms]").count() == 3
-    assert page.locator("#canvas .room-fill").count() == 3
-    area = float(page.locator("#context-area").inner_text().split()[0])
-    assert 35 < area < 40, area  # 9 + 9 + 18 m2 of net floor
-
-
-def test_room_kind_is_one_click_on_review_and_in_the_editor(servers, page, tmp_path):
-    _import_rooms(page, tmp_path)
-    first = page.locator("#import-canvas .ir").first
-    page.locator("#room-card").wait_for(state="hidden")
-    first.click()
-    card = page.locator("#room-card")
-    card.wait_for(state="visible")
-    card.get_by_role("button", name="סלון", exact=True).click()
-    assert card.get_by_role("button", name="סלון", exact=True).get_attribute("aria-pressed") == "true"
-    assert first.locator(".name").text_content() == "סלון"
-    row = page.locator("#room-list li").first
-    assert row.locator("input:not([type=checkbox])").input_value() == "סלון"
-    assert row.locator("select option:checked").text_content() == "סלון"
-    # a re-detection keeps the choice
-    page.locator("#import-canvas .iw").first.focus()
-    page.keyboard.press("Enter")
-    page.keyboard.press("Enter")
-    page.wait_for_timeout(600)
-    assert page.locator("#import-canvas .ir").first.locator(".name").text_content() == "סלון"
-    # Escape closes the card
-    page.locator("#import-canvas .ir").first.focus()
-    page.keyboard.press("Enter")
-    page.keyboard.press("Escape")
-    card.wait_for(state="hidden")
-
-    _to_editor(page)
-    page.locator("#canvas [data-kind=rooms]").first.wait_for(state="attached")
-    plan_rooms = _draft(page)["plan"]["rooms"]
-    assert plan_rooms[0]["name"] == "סלון" and plan_rooms[0]["type"] == "living"
-    assert page.locator("#canvas .room-name", has_text="סלון").count() >= 1
-
-    # editor: select a room, one click on a kind renames it; undo restores it
-    target = page.locator("#canvas [data-kind=rooms]").nth(1)
+def test_room_kind_is_one_click_in_the_editor(servers, page):
+    page.goto(f"{SITE}/wizard.html")
+    page.get_by_label("שם הפרויקט").fill("דירה")
+    page.get_by_role("button", name="יצירת קנבס דו־ממדי").click()
+    page.wait_for_url("**/editor.html")
+    rooms = page.locator("#canvas [data-kind=rooms]")
+    rooms.first.wait_for(state="attached")
+    # select a room, one click on a kind renames it; undo restores it
+    target = rooms.nth(1)
     before = target.locator(".room-name").text_content()
     target.locator(".room-hit").click()
-    kind = "מחסן" if before == "מטבח" else "מטבח"  # detection may already have named this room
+    kind = "מחסן" if before == "מטבח" else "מטבח"
     page.get_by_role("button", name=kind, exact=True).click()
     assert page.get_by_role("button", name=kind, exact=True).get_attribute("aria-pressed") == "true"
     assert target.locator(".room-name").text_content() == kind
     page.locator("#undo").click()
-    assert page.locator("#canvas [data-kind=rooms]").nth(1).locator(".room-name").text_content() == before
-
-
-def test_import_rooms_saved_as_guest_then_registered_keep_their_outlines(servers, page, admin, tmp_path):
-    _import_rooms(page, tmp_path)
-    _to_editor(page)
-    page.locator("#canvas [data-kind=rooms]").first.wait_for(state="attached")
-    page.locator("#save").click()
-    page.get_by_role("heading", name="יצירת חשבון כדי לשמור את התוכנית").wait_for()
-    page.get_by_role("link", name="יצירת חשבון").click()
-    page.get_by_label("אימייל").fill(unique_email("e2e-rooms"))
-    page.get_by_label("סיסמה").fill("e2e-Password-123")
-    page.get_by_role("button", name="יצירת חשבון").click()
-    page.get_by_label("הערת גרסה (לא חובה)").fill("rooms")
-    page.keyboard.press("Enter")
-    page.wait_for_url("**/editor.html?project=*")
-    page.get_by_text("נשמר · גרסה 1").wait_for()
-    project_id = page.url.split("project=")[1]
-    rows = admin.table("plan_versions").select("geometry").eq("project_id", project_id).execute().data
-    saved = rows[0]["geometry"]["rooms"]
-    assert len(saved) == 3 and all(len(r["outline"]) >= 4 for r in saved)
-    page.reload()
-    page.locator("#canvas [data-kind=rooms]").first.wait_for(state="attached")
-    assert page.locator("#canvas [data-kind=rooms]").count() == 3
-    assert page.locator("#canvas .room-fill").count() == 3
-    # deleting an imported room removes only the room, not the walls
-    walls = page.locator("#canvas [data-kind=walls]").count()
-    page.locator("#canvas [data-kind=rooms]").first.focus()
-    page.keyboard.press("Delete")
-    assert page.locator("#canvas [data-kind=rooms]").count() == 2
-    assert page.locator("#canvas [data-kind=walls]").count() == walls
-
-
-def test_import_without_rooms_still_reaches_the_editor(servers, page, tmp_path):
-    # the older single-room fixture has no doorways drawn: whatever is found, the guest flow must work
-    _import(page, make_plans.apartment(tmp_path / "a.pdf"))
-    _to_editor(page)
-    assert page.locator("#canvas [data-kind=walls]").count() == 7
+    assert rooms.nth(1).locator(".room-name").text_content() == before
