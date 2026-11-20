@@ -425,3 +425,34 @@ def too_large(path: Path) -> Path:
         f.write(b"%PDF-1.7\n")
         f.truncate(21 * 1024 * 1024)
     return path
+
+
+# ---------------------------------------------------------------- three rooms with doorways (1:50)
+
+# Filled wall rectangles (x, y, w, h) of an 8 x 5 m flat: one 90 cm doorway in the partition at x=400 and one in the
+# partition at y=250. Three rooms: left (4 x 5 m), top right (4 x 2.5 m), bottom right (4 x 2.5 m).
+ROOMS_FILLED = [
+    (-10, -10, 820, 20), (-10, 490, 820, 20), (-10, 10, 20, 480), (790, 10, 20, 480),
+    (395, 10, 10, 140), (395, 240, 10, 250),  # partition with the doorway at y 150..240
+    (405, 245, 195, 10), (690, 245, 100, 10),  # partition with the doorway at x 600..690
+]
+ROOMS_LABELS = [("חדר שינה", 120, 250), ("מטבח", 520, 120), ("סלון", 520, 380)]
+
+
+def rooms_apartment(path: Path, ratio: int = 50, hebrew_labels: bool = True) -> Path:
+    """Three rooms joined by 90 cm doorways. Room labels are Hebrew when a Hebrew-capable system font is found."""
+    sheet = _Sheet(path, ratio)
+    for x, y, w, h in ROOMS_FILLED:
+        sheet.fill_rect(x + OX, y + OY, w, h)
+    _noise(sheet)
+    font = _hebrew_font() if hebrew_labels else None
+    if font:
+        for label, x, y in ROOMS_LABELS:
+            sheet.text(OX + x, OY + y, label, 12, font)
+    sheet.text(OX, OY + 660, f"SCALE 1:{ratio}")
+    sheet.pdf.save()
+    return path
+
+
+def has_hebrew_font() -> bool:
+    return _hebrew_font() is not None

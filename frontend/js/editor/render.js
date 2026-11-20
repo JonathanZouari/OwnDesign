@@ -3,7 +3,7 @@
 // User text (room names) only ever enters as text nodes.
 import { FURNITURE_BY_TYPE } from "../catalog.js";
 import { RENDER, UNITS } from "../strings.js";
-import { metres, openingSegment, roomBox, squareMetres, wallLength } from "../plan.js";
+import { metres, openingSegment, roomArea, roomLabelPoint, wallLength } from "../plan.js";
 
 const NS = "http://www.w3.org/2000/svg";
 const RULER_PX = 22;
@@ -117,18 +117,24 @@ function furnitureNode(item, selected) {
   );
 }
 
+// Rooms with an outline are drawn as a light filled polygon below the walls; the label sits at an interior point.
+function roomFill(room, selected) {
+  if (!room.outline) return null;
+  return svg("polygon", { points: room.outline.map((p) => p.join(",")).join(" "), class: `room-fill${selected ? " selected" : ""}`, "pointer-events": "none" });
+}
+
 function roomNode(plan, room, selected, scale) {
-  const b = roomBox(plan, room.id);
-  if (!b) return null;
-  const cx = b.x + b.w / 2;
-  const cy = b.y + Math.min(b.h / 2, 60);
+  const at = roomLabelPoint(plan, room);
+  if (!at) return null;
+  const area = roomArea(plan, room).toFixed(1);
+  const { x: cx, y: cy } = at;
   const nameSize = Math.max(22, 13 * scale); // never smaller than 13 px on screen
   const metaSize = Math.max(13, 10 * scale);
   const width = Math.max(room.name.length * nameSize * 0.7, nameSize * 5);
-  return svg("g", focusable("rooms", room.id, RENDER.roomLabel(room.name, squareMetres(b).toFixed(1)), selected ? "selected" : ""),
+  return svg("g", focusable("rooms", room.id, RENDER.roomLabel(room.name, area), selected ? "selected" : ""),
     svg("rect", { x: cx - width / 2, y: cy - nameSize * 1.3, width, height: nameSize * 2.8, class: "room-hit" }),
     svg("text", { x: cx, y: cy, "text-anchor": "middle", "font-size": nameSize, class: "room-name" }, room.name),
-    svg("text", { x: cx, y: cy + metaSize * 1.6, "text-anchor": "middle", "font-size": metaSize, class: "room-meta" }, `${squareMetres(b).toFixed(1)} ${UNITS.m2}`),
+    svg("text", { x: cx, y: cy + metaSize * 1.6, "text-anchor": "middle", "font-size": metaSize, class: "room-meta" }, `${area} ${UNITS.m2}`),
   );
 }
 
@@ -184,6 +190,7 @@ export function draw(canvas, { plan, selection, preview, underlay }) {
     ...[
       grid(area),
       underlayLayer(underlay),
+      plan.rooms.map((room) => roomFill(room, is("rooms", room.id))),
       plan.furniture.map((item) => furnitureNode(item, is("furniture", item.id))),
       plan.walls.map((wall) => wallNode(wall, is("walls", wall.id))),
       plan.openings.map((opening) => openingNode(opening, walls.get(opening.wallId), is("openings", opening.id))),

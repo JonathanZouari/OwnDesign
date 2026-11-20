@@ -253,6 +253,8 @@ input[type="email"], input[type="password"] { direction: ltr; text-align: end; }
 #canvas [data-kind]:focus-visible .wall, #canvas [data-kind]:focus-visible .symbol, #canvas [data-kind]:focus-visible rect { stroke: var(--primary-bright); }
 #canvas .room-name { font-family: var(--font-head); font-weight: 500; fill: var(--ink); }
 #canvas .room-meta, #canvas .dim { font-family: var(--font-mono); fill: var(--outline); }
+#canvas .room-fill { fill: #f2ddd6; fill-opacity: 0.45; stroke: none; }
+#canvas .room-fill.selected { fill-opacity: 0.75; }
 #canvas .room-hit { fill: transparent; pointer-events: all; cursor: move; }
 #canvas .selected .room-name { fill: var(--primary); }
 #canvas .chip-bg { fill: #242523; }
@@ -310,8 +312,16 @@ input[type="email"], input[type="password"] { direction: ltr; text-align: end; }
 .furn-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 320px; overflow-y: auto; }
 .furn-list li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 8px; align-items: center; padding: 6px 8px; border-radius: 4px; background: var(--surface-low); }
 .furn-list li.current { outline: 2px solid var(--secondary); }
+.furn-list input:not([type="checkbox"]) { grid-column: 1 / -1; min-height: 32px; }
 .furn-list select { grid-column: 1 / -1; min-height: 32px; }
 .furn-list .dims { font: 400 11px/14px var(--font-mono); color: var(--ink-soft); }
+#import-canvas .ir { cursor: pointer; outline: none; }
+#import-canvas .ir polygon { pointer-events: all; fill: var(--secondary); fill-opacity: 0.16; stroke: none; }
+#import-canvas .ir text { fill: var(--ink); stroke: #fff; stroke-width: 3px; paint-order: stroke; font-family: var(--font-body); pointer-events: none; }
+#import-canvas .ir[aria-pressed="false"] polygon { fill: none; }
+#import-canvas .ir[aria-pressed="false"] text { fill: var(--outline); }
+#import-canvas .ir.current polygon, #import-canvas .ir:focus-visible polygon { fill-opacity: 0.32; }
+#import-canvas.picking .ir, #import-canvas.drawing .ir { pointer-events: none; }
 #import-canvas .ow { stroke: var(--outline); stroke-opacity: 0.45; stroke-linecap: butt; pointer-events: none; }
 #import-canvas .area-rect { fill: none; stroke: var(--secondary); stroke-width: 3; stroke-dasharray: 14 8; vector-effect: non-scaling-stroke; pointer-events: none; }
 #import-canvas .area-draft { fill: var(--secondary); fill-opacity: 0.12; stroke: var(--secondary); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }

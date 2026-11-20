@@ -23,6 +23,8 @@ class Room(Strict):
     id: Id
     name: Name
     type: Annotated[str, StringConstraints(max_length=30)]
+    # Optional floor polygon in plan cm (imported rooms). Without it the room's area comes from its walls.
+    outline: Annotated[list[Annotated[list[Cm], Field(min_length=2, max_length=2)]], Field(min_length=3, max_length=200)] | None = None
 
 
 class Wall(Strict):

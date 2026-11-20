@@ -106,6 +106,39 @@ export const ROOM_TYPE_LABELS = {
 };
 export const ROOM_TYPES = Object.entries(ROOM_TYPE_LABELS);
 
+// Hebrew words that name a room in a drawing, first match wins (specific before general). `words` are compared
+// without quotes and spaces, so ממ"ד, ממ״ד and ממד all match. `name` is what the room is called afterwards.
+export const ROOM_WORDS = [
+  { words: ["חדרשינה"], name: "חדר שינה", type: "bedroom" },
+  { words: ["חדרהורים", "הורים"], name: "חדר הורים", type: "bedroom" },
+  { words: ["חדרילדים", "ילדים"], name: "חדר ילדים", type: "bedroom" },
+  { words: ["חדרעבודה", "משרד"], name: "חדר עבודה", type: "other" },
+  { words: ["פינתאוכל"], name: "פינת אוכל", type: "living" },
+  { words: ["סלון"], name: "סלון", type: "living" },
+  { words: ["מטבח"], name: "מטבח", type: "kitchen" },
+  { words: ["ממד", "מרחבמוגן"], name: "ממ״ד", type: "other" },
+  { words: ["שירותים", "שרותים", "אסלה"], name: "שירותים", type: "bathroom" },
+  { words: ["מקלחת"], name: "מקלחת", type: "bathroom" },
+  { words: ["אמבטיה"], name: "אמבטיה", type: "bathroom" },
+  { words: ["רחצה", "אמבט"], name: "חדר רחצה", type: "bathroom" },
+  { words: ["כביסה"], name: "חדר כביסה", type: "other" },
+  { words: ["שירות"], name: "חדר שירות", type: "other" },
+  { words: ["מרפסת"], name: "מרפסת", type: "balcony" },
+  { words: ["מסדרון"], name: "מסדרון", type: "hallway" },
+  { words: ["מבואה"], name: "מבואה", type: "hallway" },
+  { words: ["כניסה"], name: "כניסה", type: "hallway" },
+  { words: ["מחסן"], name: "מחסן", type: "other" },
+];
+// Names for rooms recognised from their furniture or shape.
+export const ROOM_GUESS = {
+  bedroom: "חדר שינה",
+  bathroom: "חדר רחצה",
+  kitchen: "מטבח",
+  living: "סלון",
+  corridor: "מסדרון",
+  numbered: (n) => `חדר ${n}`,
+};
+
 export const REVIEW_NOTE = "שינויים בקירות, בפתחים, במטבחים ובחדרי רחצה הם עקרוניים עד שיבדוק אותם איש מקצוע מוסמך.";
 
 export const WIZARD = {
@@ -280,6 +313,12 @@ export const IMPORT = {
   layerWalls: "רק קירות",
   layerFurniture: "רק ריהוט",
   wallsAsFurniture: (n) => `${n} קירות עבים במיוחד זוהו כריהוט ולכן לא נספרו כקירות.`,
+  roomsNone: "לא זוהו חדרים. אפשר להוסיף אותם בעורך.",
+  roomsSummary: (on, total, area) => `${on} מתוך ${total} חדרים ייובאו, ${area} ${UNITS.m2} בסך הכול.`,
+  roomImport: "ייבוא",
+  roomName: "שם החדר",
+  roomType: "סוג החדר",
+  roomLabel: (name, area, on) => `${name}, ${area} ${UNITS.m2}, ${on ? "נבחר" : "לא נבחר"}`,
   zoomIn: "הגדלה",
   zoomOut: "הקטנה",
   zoomFit: "התאמה למסך",

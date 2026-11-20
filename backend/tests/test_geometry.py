@@ -63,3 +63,43 @@ def test_empty_plan_is_valid():
 def test_invalid_plans_are_rejected(mutate):
     with pytest.raises(ValidationError):
         Geometry.model_validate(variant(mutate))
+
+
+SQUARE = [[0, 0], [300, 0], [300, 300], [0, 300]]
+
+
+def test_room_outline_is_accepted_and_round_trips():
+    plan = variant(lambda p: p["rooms"][0].update(outline=SQUARE))
+    out = Geometry.model_validate(plan).model_dump(by_alias=True, exclude_none=True)
+    assert out["rooms"][0]["outline"] == [[float(x), float(y)] for x, y in SQUARE]
+
+
+def test_room_without_outline_still_valid_and_omits_the_key():
+    out = Geometry.model_validate(VALID).model_dump(by_alias=True, exclude_none=True)
+    assert "outline" not in out["rooms"][0]
+
+
+def test_room_outline_with_the_maximum_200_points_is_accepted():
+    ring = [[i, (i * 7) % 50] for i in range(200)]
+    Geometry.model_validate(variant(lambda p: p["rooms"][0].update(outline=ring)))
+
+
+@pytest.mark.parametrize(
+    "outline",
+    [
+        [],
+        [[0, 0], [10, 10]],  # fewer than 3 points
+        [[i, i % 5] for i in range(201)],  # more than 200 points
+        [[0, 0], [float("nan"), 5], [5, 5]],
+        [[0, 0], [float("inf"), 5], [5, 5]],
+        [[0, 0], [10_000_000, 5], [5, 5]],  # beyond the coordinate limit
+        [[0, 0], [10], [5, 5]],  # not an [x, y] pair
+        [[0, 0], [1, 2, 3], [5, 5]],
+        [[0, 0], ["a", 5], [5, 5]],
+        [0, 1, 2],
+        "square",
+    ],
+)
+def test_invalid_room_outlines_are_rejected(outline):
+    with pytest.raises(ValidationError):
+        Geometry.model_validate(variant(lambda p: p["rooms"][0].update(outline=outline)))

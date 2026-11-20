@@ -138,3 +138,15 @@ third correct; 3 of about 5 furniture-as-walls fixed. The sheet is really 1:50 (
 scale suggestion proposes 1:20. Rooms are not detected yet (the editor shows 0 rooms after import).
 Planned on Opus, implemented by a Sonnet subagent. Tests: backend 72 passed, frontend 63 passed + 1 skipped.
 Security and privacy review: no findings. Pages: [open-items](open-items.md).
+
+## [2026-11-20] build | PDF import, step 4: rooms from the drawing
+Rooms get an optional `outline` (3–200 points in cm, validated in `backend/app/schemas.py`); area comes from the
+outline (shoelace) and the label sits at an interior point; rooms with an outline live without walls.
+`frontend/js/import/rooms.js` rasterizes the reviewed walls on a 5 cm grid, bridges doorways from free wall
+ends (virtual, never saved as walls), flood-fills the outside and keeps enclosed regions (≥ 1 m², ≥ 60 cm
+wide), traced and simplified. Names from room words on the drawing, then furniture inside, then corridor by
+shape, then "חדר N". Review shows rooms as tinted areas (toggle, name, type); the editor draws them filled.
+Real drawing (local only, numbers only, 1:50): 4 rooms, 40 m² of about 136 m², 3 of 4 right; the shortfall is
+wall detection missing exterior walls and the open living area, so those regions leak outside.
+Planned on Opus, implemented by a Sonnet subagent. Tests: backend 93 passed, frontend 143 passed + 1 skipped.
+Security and privacy review: no findings.
