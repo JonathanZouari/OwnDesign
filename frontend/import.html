@@ -126,6 +126,22 @@
             </label>
           </section>
 
+          <section class="card stack" id="furniture-card">
+            <span class="label">ריהוט</span>
+            <p id="furniture-count" style="margin: 0"></p>
+            <p id="furniture-kinds" class="small muted" style="margin: 0"></p>
+            <p id="furniture-selected" class="small muted" style="margin: 0"></p>
+            <fieldset id="layer-filter">
+              <legend>מה להציג על השרטוט</legend>
+              <div class="choice">
+                <label><input type="radio" name="layer" value="all" checked> הכל</label>
+                <label><input type="radio" name="layer" value="walls"> רק קירות</label>
+                <label><input type="radio" name="layer" value="furniture"> רק ריהוט</label>
+              </div>
+            </fieldset>
+            <ul id="furniture-list" class="furn-list"></ul>
+          </section>
+
           <div class="stack">
             <button type="button" class="primary" id="continue">המשך לעורך<span class="icon mirror" aria-hidden="true">arrow_forward</span></button>
             <p class="field-error small" id="continue-error" role="alert" hidden></p>

@@ -876,3 +876,144 @@ def test_import_guest_saves_registers_and_background_survives_reload(servers, pa
     assert set(geometry) == {"schema", "units", "rooms", "walls", "openings", "furniture"}
     assert "underlay" not in str(rows).lower()
     assert len(geometry["walls"]) == 7
+
+
+# ---------------------------------------------------------------- PDF import: furniture
+
+
+def _review_furniture(page):
+    return page.evaluate(
+        """() => [...document.querySelectorAll('#import-canvas .if')].map(g => ({
+            id: g.dataset.furn, type: g.dataset.type, on: g.getAttribute('aria-pressed') === 'true' }))"""
+    )
+
+
+def _match_furnished(furniture, truth, tol=2.0):
+    """Every ground-truth item has one drawn match of its type, position, size and rotation; returns what is left."""
+    left = list(furniture)
+    for kind, x, y, w, d, rot in truth:
+        for i, f in enumerate(left):
+            same = f["type"] == kind and abs(f["x"] - x) <= tol and abs(f["y"] - y) <= tol
+            sized = abs(f["w"] - w) <= tol and abs(f["d"] - d) <= tol
+            if same and sized and (abs(w - d) <= 4 or round(f["rotation"]) % 180 == rot):
+                left.pop(i)
+                break
+        else:
+            raise AssertionError(f"{(kind, x, y, w, d, rot)} not found in {left}")
+    return left
+
+
+def _import_furnished(page, tmp_path):
+    _import(page, make_plans.furnished(tmp_path / "furnished.pdf"))
+    page.wait_for_function("document.querySelectorAll('#import-canvas .if').length > 0")
+
+
+def test_import_furnished_sheet_review_choose_type_and_continue(servers, page, tmp_path):
+    truth = make_plans.furnished_truth()
+    _import_furnished(page, tmp_path)
+    assert page.locator("#import-canvas .iw").count() == 7
+    assert page.locator("#furniture-count").inner_text() == f"ריהוט: {len(truth)} זוהו, 1 לא זוהו"
+    items = _review_furniture(page)
+    assert len(items) == len(truth) + 1 and all(i["on"] for i in items if i["type"])
+    unknown = [i for i in items if not i["type"]]
+    assert len(unknown) == 1 and not unknown[0]["on"]
+    assert page.locator("#import-canvas .if[data-type='']").text_content() == "בחרו סוג"
+    assert "מיטה זוגית" in page.locator("#furniture-kinds").inner_text()
+    assert _english_words(page) == [], _english_words(page)
+
+    sofa = page.locator("#import-canvas .if[data-type=sofa]")
+    sofa.focus()
+    page.keyboard.press("Enter")
+    assert sofa.get_attribute("aria-pressed") == "false"
+    fridge = page.locator("#import-canvas .if[data-type=fridge]")
+    box = fridge.locator("rect").bounding_box()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    assert fridge.get_attribute("aria-pressed") == "false"
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    assert fridge.get_attribute("aria-pressed") == "true"
+    odd = page.locator("#import-canvas .if[data-type='']")
+    odd.focus()
+    page.keyboard.press("Enter")  # nothing to switch on until a type is chosen
+    assert odd.get_attribute("aria-pressed") == "false"
+
+    page.locator(f"[data-furn-row='{unknown[0]['id']}'] select").select_option("armchair")
+    armchair = page.locator("#import-canvas .if[data-type=armchair]")
+    assert armchair.get_attribute("aria-pressed") == "true"
+    assert armchair.text_content() == "כורסה"
+    assert _english_words(page) == [], _english_words(page)
+
+    shown = "(sel) => getComputedStyle(document.querySelector(sel)).display !== 'none'"
+    page.get_by_label("רק קירות").check()
+    assert not page.evaluate(shown, "#import-canvas .if") and page.evaluate(shown, "#import-canvas .iw")
+    page.get_by_label("רק ריהוט").check()
+    assert page.evaluate(shown, "#import-canvas .if") and not page.evaluate(shown, "#import-canvas .iw")
+    page.get_by_label("הכל").check()
+    assert page.evaluate(shown, "#import-canvas .if") and page.evaluate(shown, "#import-canvas .iw")
+
+    _to_editor(page)
+    page.locator("#canvas [data-kind=furniture]").first.wait_for(state="attached")
+    furniture = _draft(page)["plan"]["furniture"]
+    left = _match_furnished(furniture, [t for t in truth if t[0] != "sofa"])
+    assert len(left) == 1 and left[0]["type"] == "armchair", left
+    assert abs(max(left[0]["w"], left[0]["d"]) - 120) <= 3 and abs(min(left[0]["w"], left[0]["d"]) - 90) <= 3
+    assert page.locator("#canvas [data-kind=furniture]").count() == len(furniture)
+    assert len({f["id"] for f in furniture}) == len(furniture)
+    assert all(set(f) == {"id", "type", "x", "y", "w", "d", "rotation"} for f in furniture)
+    page.locator("#canvas image").wait_for(state="attached")
+
+
+def test_import_unidentified_furniture_is_left_out_until_a_type_is_chosen(servers, page, tmp_path):
+    truth = make_plans.furnished_truth()
+    _import_furnished(page, tmp_path)
+    assert [i["on"] for i in _review_furniture(page) if not i["type"]] == [False]
+    _to_editor(page)
+    page.locator("#canvas [data-kind=furniture]").first.wait_for(state="attached")
+    furniture = _draft(page)["plan"]["furniture"]
+    assert _match_furnished(furniture, truth) == []
+    assert len(furniture) == len(truth)
+
+
+def test_import_furniture_choices_survive_recalibration(servers, page, tmp_path):
+    _import_furnished(page, tmp_path)
+    page.locator("#import-canvas .if[data-type=sofa]").focus()
+    page.keyboard.press("Enter")
+    unknown = [i for i in _review_furniture(page) if not i["type"]][0]
+    page.locator(f"[data-furn-row='{unknown['id']}'] select").select_option("desk")
+    before = len(_review_furniture(page))
+    longest = max(_review_walls(page), key=lambda w: w["len"])
+    page.locator("#calibrate").click()
+    page.evaluate("window.scrollTo(0, 0)")  # the type list scrolled the page: bring the drawing back under the pointer
+    page.mouse.click(*_screen(page, longest["x1"], longest["y1"]))
+    page.mouse.click(*_screen(page, longest["x2"], longest["y2"]))
+    page.locator("#real-length").fill(str(round(longest["len"] * 1.05)))
+    page.locator("#real-unit").select_option("cm")
+    page.locator("#calibrate-apply").click()
+    page.get_by_text("כויל ידנית").wait_for()
+    after = _review_furniture(page)
+    assert len(after) == before
+    assert [i["on"] for i in after if i["type"] == "sofa"] == [False]
+    assert len([i for i in after if i["type"] == "desk" and i["on"]]) == 2
+
+
+def test_import_furnished_sheet_saves_with_furniture_as_guest_then_registered(servers, page, admin, tmp_path):
+    truth = make_plans.furnished_truth()
+    _import_furnished(page, tmp_path)
+    _to_editor(page)
+    page.locator("#canvas [data-kind=furniture]").first.wait_for(state="attached")
+    page.locator("#save").click()
+    page.get_by_role("heading", name="יצירת חשבון כדי לשמור את התוכנית").wait_for()
+    page.get_by_role("link", name="יצירת חשבון").click()
+    page.get_by_label("אימייל").fill(unique_email("e2e-furn"))
+    page.get_by_label("סיסמה").fill("e2e-Password-123")
+    page.get_by_role("button", name="יצירת חשבון").click()
+    page.get_by_label("הערת גרסה (לא חובה)").fill("furnished")
+    page.keyboard.press("Enter")
+    page.wait_for_url("**/editor.html?project=*")
+    page.get_by_text("נשמר · גרסה 1").wait_for()
+    assert page.locator("#canvas [data-kind=furniture]").count() == len(truth)
+    project_id = page.url.split("project=")[1]
+    rows = admin.table("plan_versions").select("geometry").eq("project_id", project_id).execute().data
+    assert len(rows) == 1
+    geometry = rows[0]["geometry"]
+    assert len(geometry["walls"]) == 7
+    assert _match_furnished(geometry["furniture"], truth) == []

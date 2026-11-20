@@ -127,3 +127,14 @@ about 40–50 % to about 80 %, scale suggestion 1:20 correct, confidence "poor" 
 Planned on Opus, implemented by a Sonnet subagent. Tests: backend 72 passed, frontend 63 passed + 1 skipped.
 Security and privacy review: no findings, nothing from the real drawing in the repo.
 Pages: [open-items](open-items.md).
+
+## [2026-11-20] build | PDF import, step 3: furniture from the drawing
+`frontend/js/import/furniture.js` finds closed thin-stroke shapes inside the plan area (nested shapes merged),
+scores them against the catalog by size and shape cues, and fits the item to the measured size and rotation.
+Review: furniture in a second colour, click to switch off, type list per item; unidentified shapes show
+"בחרו סוג" and are added only once a type is chosen. Shapes that step 2b took as thick walls are handed back.
+Real drawing (local only, numbers only): 24 candidates, 16 identified, 8 unidentified, roughly a quarter to a
+third correct; 3 of about 5 furniture-as-walls fixed. The sheet is really 1:50 (dimension labels), while the
+scale suggestion proposes 1:20. Rooms are not detected yet (the editor shows 0 rooms after import).
+Planned on Opus, implemented by a Sonnet subagent. Tests: backend 72 passed, frontend 63 passed + 1 skipped.
+Security and privacy review: no findings. Pages: [open-items](open-items.md).

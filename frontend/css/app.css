@@ -297,6 +297,21 @@ input[type="email"], input[type="password"] { direction: ltr; text-align: end; }
 #import-canvas.picking .iw { pointer-events: none; }
 #import-canvas.drawing { cursor: crosshair; }
 #import-canvas.drawing .iw { pointer-events: none; }
+#import-canvas .if { cursor: pointer; outline: none; }
+#import-canvas .if rect { pointer-events: all; fill: var(--secondary); fill-opacity: 0.22; stroke: var(--secondary); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+#import-canvas .if text { fill: var(--on-secondary-tint); stroke: #fff; stroke-width: 3px; paint-order: stroke; font-family: var(--font-body); pointer-events: none; text-anchor: middle; }
+#import-canvas .if[data-type=""] rect { fill: var(--caution-tint); fill-opacity: 0.45; stroke: var(--on-caution-tint); stroke-dasharray: 6 4; }
+#import-canvas .if[aria-pressed="false"] rect { fill: none; stroke: var(--outline); stroke-opacity: 0.6; stroke-dasharray: 6 4; }
+#import-canvas .if[aria-pressed="false"] text { fill: var(--outline); }
+#import-canvas .if:focus-visible rect { stroke: var(--ink); stroke-width: 3.5; }
+#import-canvas.picking .if, #import-canvas.drawing .if, #import-canvas.picking .if rect, #import-canvas.drawing .if rect { pointer-events: none; }
+#import-canvas[data-layer="furniture"] .iw, #import-canvas[data-layer="furniture"] .ow { display: none; }
+#import-canvas[data-layer="walls"] .if { display: none; }
+.furn-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 320px; overflow-y: auto; }
+.furn-list li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 8px; align-items: center; padding: 6px 8px; border-radius: 4px; background: var(--surface-low); }
+.furn-list li.current { outline: 2px solid var(--secondary); }
+.furn-list select { grid-column: 1 / -1; min-height: 32px; }
+.furn-list .dims { font: 400 11px/14px var(--font-mono); color: var(--ink-soft); }
 #import-canvas .ow { stroke: var(--outline); stroke-opacity: 0.45; stroke-linecap: butt; pointer-events: none; }
 #import-canvas .area-rect { fill: none; stroke: var(--secondary); stroke-width: 3; stroke-dasharray: 14 8; vector-effect: non-scaling-stroke; pointer-events: none; }
 #import-canvas .area-draft { fill: var(--secondary); fill-opacity: 0.12; stroke: var(--secondary); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }

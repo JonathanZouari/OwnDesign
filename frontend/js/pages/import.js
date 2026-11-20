@@ -3,7 +3,9 @@
 // Text that comes from the PDF is never inserted as HTML.
 import { emptyPlan, metres } from "../plan.js";
 import { areaToPage, carryOverDisabled, detectScale, detectWalls, suggestScale, wallLength } from "../import/walls.js";
+import { carryOverChoices, detectFurniture, fitToType, toPlanFurniture } from "../import/furniture.js";
 import { calibrationFactor, imagePlacement, parseLength } from "../import/placement.js";
+import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
 import { deleteImage, draftKey, putImage } from "../import/underlay.js";
 import { svg, visibleArea } from "../editor/render.js";
 import { zoomAt } from "../editor/pointer.js";
@@ -36,6 +38,8 @@ const state = {
   areaPage: null, // plan area the user chose, PDF units { x0, y0, x1, y1 }; null = automatic guess
   drawingArea: false,
   disabled: new Set(), // ids of walls the user switched off
+  choice: new Map(), // furniture id -> { on?, type? }: what the user changed; everything else follows the detection
+  layer: "all",
   opacity: 0.55,
   picking: false,
   points: [], // calibration clicks, plan cm
@@ -43,13 +47,24 @@ const state = {
   token: 0, // guards against a slow analysis finishing after a newer one started
 };
 
-const nodes = { image: null, outside: null, walls: null, area: null, cal: null };
+const nodes = { image: null, outside: null, walls: null, furn: null, area: null, cal: null };
 const wallNodes = new Map();
+const furnNodes = new Map();
+const furnRows = new Map();
 
 // ---------------------------------------------------------------- derived data
 
 const walls = () => state.base?.walls ?? [];
 const enabledWalls = () => walls().filter((w) => !state.disabled.has(w.id));
+const furniture = () => state.base?.furniture ?? [];
+const typeOf = (f) => state.choice.get(f.id)?.type ?? f.type;
+const isOn = (f) => Boolean(typeOf(f)) && (state.choice.get(f.id)?.on ?? true);
+const fittedOf = (f) => {
+  const type = typeOf(f);
+  return type && type !== f.type ? { ...f, ...fitToType(f, type) } : f;
+};
+const labelOf = (type) => FURNITURE_BY_TYPE.get(type)?.label ?? type;
+const enabledFurniture = () => toPlanFurniture(furniture(), (f) => (isOn(f) ? typeOf(f) : null));
 const needsCalibration = () => state.ratio === null && !state.calibrated && !state.confirmed;
 const placement = () => imagePlacement(state.page, state.base.cmPerUnit, state.base.originCm);
 const lengthText = (cm) => ltr(metres(cm));
@@ -111,6 +126,91 @@ function drawWalls() {
   syncWallNodes();
 }
 
+function setChoice(id, change) {
+  state.choice.set(id, { ...state.choice.get(id), ...change });
+}
+
+function toggleFurniture(id) {
+  const f = furniture().find((item) => item.id === id);
+  if (!f) return;
+  if (!typeOf(f)) return furnRows.get(id)?.querySelector("select")?.focus(); // nothing to switch on until a type is chosen
+  setChoice(id, { on: !isOn(f) });
+  syncFurniture();
+}
+
+function syncFurniture() {
+  for (const f of furniture()) {
+    const g = fittedOf(f);
+    const type = typeOf(f);
+    const on = isOn(f);
+    const node = furnNodes.get(f.id);
+    node.setAttribute("transform", `translate(${g.x} ${g.y}) rotate(${g.rotation})`);
+    node.setAttribute("aria-pressed", String(on));
+    node.dataset.type = type ?? "";
+    node.setAttribute("aria-label", type ? IMPORT.furnitureLabel(labelOf(type), Math.round(g.w), Math.round(g.d), on) : IMPORT.furnitureLabelUnknown(Math.round(g.w), Math.round(g.d)));
+    const [rect, text] = node.children;
+    rect.setAttribute("x", -g.w / 2);
+    rect.setAttribute("y", -g.d / 2);
+    rect.setAttribute("width", g.w);
+    rect.setAttribute("height", g.d);
+    text.textContent = type ? labelOf(type) : IMPORT.chooseType;
+    const row = furnRows.get(f.id);
+    row.querySelector("select").value = type ?? "";
+    const box = row.querySelector("input");
+    box.checked = on;
+    box.disabled = !type;
+    row.querySelector(".dims").textContent = ltr(`${Math.round(g.w)} × ${Math.round(g.d)}`);
+  }
+  renderSummary();
+}
+
+function drawFurniture() {
+  furnNodes.clear();
+  furnRows.clear();
+  const list = furniture();
+  nodes.furn.replaceChildren(
+    ...list.map((f) => {
+      const font = Math.min(Math.max(Math.min(f.w, f.d) * 0.22, 10), 22);
+      const node = svg(
+        "g",
+        { class: "if", role: "button", tabindex: 0, "data-furn": f.id, "data-type": f.type ?? "", "aria-pressed": "false" },
+        svg("rect", {}),
+        svg("text", { y: font * 0.35, "font-size": font }),
+      );
+      furnNodes.set(f.id, node);
+      return node;
+    }),
+  );
+  const groups = [...new Set(FURNITURE.map((spec) => spec.group))];
+  $("#furniture-list").replaceChildren(
+    ...list.map((f) => {
+      const select = h(
+        "select",
+        { "aria-label": IMPORT.typeFor(f.type ? labelOf(f.type) : IMPORT.chooseType), onchange: () => onType(f.id, select.value) },
+        h("option", { value: "" }, IMPORT.chooseType),
+        ...groups.map((group) =>
+          h("optgroup", { label: group }, ...FURNITURE.filter((spec) => spec.group === group).map((spec) => h("option", { value: spec.type }, spec.label))),
+        ),
+      );
+      const box = h("input", { type: "checkbox", "aria-label": IMPORT.furnitureImport, onchange: () => toggleFurniture(f.id) });
+      const row = h("li", { "data-furn-row": f.id }, h("label", {}, box, " ", IMPORT.furnitureImport), h("span", { class: "dims" }), select);
+      row.addEventListener("focusin", () => furnNodes.get(f.id)?.classList.add("current"));
+      row.addEventListener("focusout", () => furnNodes.get(f.id)?.classList.remove("current"));
+      furnRows.set(f.id, row);
+      return row;
+    }),
+  );
+  syncFurniture();
+}
+
+function onType(id, type) {
+  const f = furniture().find((item) => item.id === id);
+  if (!f) return;
+  if (!type && !f.type) state.choice.delete(id);
+  else setChoice(id, { type: type || f.type });
+  syncFurniture();
+}
+
 function drawArea() {
   const a = state.base?.areaCm;
   nodes.outside.replaceChildren(
@@ -142,9 +242,10 @@ function attachViewer() {
   nodes.image = svg("image", { preserveAspectRatio: "none", "pointer-events": "none" });
   nodes.outside = svg("g");
   nodes.walls = svg("g");
+  nodes.furn = svg("g");
   nodes.area = svg("g", { "pointer-events": "none" });
   nodes.cal = svg("g", { "pointer-events": "none" });
-  canvas.replaceChildren(nodes.image, nodes.outside, nodes.walls, nodes.area, nodes.cal);
+  canvas.replaceChildren(nodes.image, nodes.outside, nodes.walls, nodes.furn, nodes.area, nodes.cal);
 
   let drag = null;
   let box = null; // plan-area rectangle being drawn: { id, from, rect }
@@ -157,7 +258,7 @@ function attachViewer() {
       canvas.setPointerCapture?.(event.pointerId);
       return;
     }
-    drag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, view: state.view, inverse: canvas.getScreenCTM().inverse(), moved: false, target: event.target.closest?.("[data-wall]") };
+    drag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, view: state.view, inverse: canvas.getScreenCTM().inverse(), moved: false, target: event.target.closest?.("[data-wall], [data-furn]") };
     drag.start = new DOMPoint(event.clientX, event.clientY).matrixTransform(drag.inverse);
     canvas.setPointerCapture?.(event.pointerId);
   });
@@ -192,15 +293,17 @@ function attachViewer() {
     drag = null;
     if (current.moved || event.type === "pointercancel") return;
     if (state.picking) pickPoint(current.start);
+    else if (current.target?.dataset.furn) toggleFurniture(current.target.dataset.furn);
     else if (current.target) toggleWall(current.target.dataset.wall);
   };
   canvas.addEventListener("pointerup", finish);
   canvas.addEventListener("pointercancel", finish);
   canvas.addEventListener("keydown", (event) => {
-    const node = event.target.closest?.("[data-wall]");
+    const node = event.target.closest?.("[data-wall], [data-furn]");
     if (!node || state.picking || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
-    toggleWall(node.dataset.wall);
+    if (node.dataset.furn) toggleFurniture(node.dataset.furn);
+    else toggleWall(node.dataset.wall);
   });
   canvas.addEventListener(
     "wheel",
@@ -301,6 +404,14 @@ function applyCalibration() {
 // ---------------------------------------------------------------- side panel
 
 function renderSummary() {
+  const items = furniture();
+  const known = items.filter((f) => f.type).length;
+  $("#furniture-card").hidden = items.length === 0;
+  $("#furniture-count").textContent = items.length ? IMPORT.furnitureSummary(known, items.length - known) : IMPORT.furnitureNone;
+  const kinds = new Map();
+  for (const f of items) if (typeOf(f)) kinds.set(typeOf(f), (kinds.get(typeOf(f)) ?? 0) + 1);
+  $("#furniture-kinds").textContent = [...kinds].map(([type, n]) => `${labelOf(type)} ${n}`).join(" · ");
+  $("#furniture-selected").textContent = items.length ? `${IMPORT.furnitureSelected(items.filter(isOn).length, items.length)} ${items.length > known ? IMPORT.furnitureUnidentifiedHint : ""}`.trim() : "";
   const total = walls().length;
   $("#walls-count").textContent = total ? IMPORT.wallsSelected(enabledWalls().length, total) : "";
   const blocked = needsCalibration();
@@ -313,7 +424,10 @@ function renderAll() {
   const { base } = state;
   const total = walls().length;
   $("#confidence").textContent = total === 0 ? IMPORT.confidence.none : base.confidence >= 0.75 ? IMPORT.confidence.good : base.confidence >= 0.4 ? IMPORT.confidence.partial : IMPORT.confidence.weak;
-  $("#warnings").replaceChildren(...base.warnings.filter((code) => IMPORT.warnings[code]).map((code) => h("li", {}, IMPORT.warnings[code])));
+  $("#warnings").replaceChildren(
+    ...base.warnings.filter((code) => IMPORT.warnings[code]).map((code) => h("li", {}, IMPORT.warnings[code])),
+    ...(base.wallsAsFurniture ? [h("li", {}, IMPORT.wallsAsFurniture(base.wallsAsFurniture))] : []),
+  );
 
   const suggesting = state.ratio === null && !state.calibrated && state.suggested !== null;
   $("#scale-text").textContent = state.calibrated
@@ -362,6 +476,13 @@ function detect(cmPerUnit) {
   const result = detectWalls(page, { cmPerUnit, area: state.areaPage ?? undefined });
   if (!state.page.hasVector && !result.warnings.includes("no_vector")) result.warnings.push("no_vector");
   if (state.ratio === null && !state.calibrated && state.suggested !== null && !result.warnings.includes("no_scale")) result.warnings.push("no_scale");
+  // Furniture next: counters and sofas that were read as thick walls become furniture and leave the wall list.
+  const found = detectFurniture(page, { cmPerUnit: result.cmPerUnit, areaPage: state.areaPage ?? undefined, walls: result });
+  const explained = new Set(found.wallsExplained);
+  result.walls = result.walls.filter((w) => !explained.has(w.id));
+  result.wallsAsFurniture = explained.size;
+  result.furniture = found.items;
+  for (const code of found.warnings) if (!result.warnings.includes(code) && code !== "no_scale" && code !== "no_area") result.warnings.push(code);
   return result;
 }
 
@@ -370,11 +491,13 @@ function redetect(cmPerUnit) {
   const previous = state.base;
   const next = detect(cmPerUnit);
   state.disabled = previous ? carryOverDisabled(previous, state.disabled, next) : new Set();
+  state.choice = previous ? carryOverChoices(previous.furniture, previous, state.choice, next.furniture, next) : new Map();
   state.base = next;
 }
 
 function refresh() {
   drawWalls();
+  drawFurniture();
   drawArea();
   drawImage();
   renderAll();
@@ -436,6 +559,7 @@ async function analyze(pageNumber) {
     state.areaPage = null;
     state.base = null;
     state.disabled = new Set();
+    state.choice = new Map();
     state.suggested = scale.ratio === null && page.hasVector ? suggestScale(page).ratio : null;
     redetect(scale.cmPerUnit ?? (state.suggested ? (2.54 / 72) * state.suggested : undefined));
     setPicking(false);
@@ -501,7 +625,7 @@ async function proceed() {
       name,
       property_type: document.querySelector("input[name=property_type]:checked").value,
       ...(studio ? { studio } : {}),
-      plan: { ...emptyPlan(), walls: enabledWalls() },
+      plan: { ...emptyPlan(), walls: enabledWalls(), furniture: enabledFurniture() },
       ...(stored ? { underlay: { key, x: p.x, y: p.y, width: p.width, height: p.height, opacity: state.opacity } } : {}),
     };
     if (!save(KEYS.draft, draft)) {
@@ -550,4 +674,10 @@ $("#opacity").addEventListener("input", (event) => {
   if (state.base) nodes.image.setAttribute("opacity", state.opacity);
 });
 $("#continue").addEventListener("click", proceed);
+for (const radio of document.querySelectorAll("input[name=layer]")) {
+  radio.addEventListener("change", () => {
+    state.layer = radio.value;
+    canvas.dataset.layer = radio.value;
+  });
+}
 window.addEventListener("pagehide", () => state.imageUrl && URL.revokeObjectURL(state.imageUrl));

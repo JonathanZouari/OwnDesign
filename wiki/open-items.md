@@ -31,5 +31,8 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 
 - The drawing stays in this browser only (IndexedDB). Server storage (private Supabase Storage) so it follows the account across devices.
 - Imported drawings are not removed from IndexedDB on sign-out or project deletion (shared-computer privacy).
-- Detection on real drawings (after step 2b): about 80 % of walls found on a real 1:20 sheet; furniture drawn as long double lines can still read as thick walls (step 3); the scale suggestion is a heuristic the user confirms; a title block with no frame or table needs the manual plan area.
+- Detection on real drawings: about 80 % of walls found; the scale suggestion proposed 1:20 for a sheet that is
+  really 1:50 (scale from dimension labels is not built); furniture identification is weak (about a quarter to a
+  third correct); a title block with no frame or table needs the manual plan area.
+- Rooms are not detected from the drawing: an imported plan has walls and furniture but 0 rooms and 0 m².
 - Curved walls, doors and windows are not detected.

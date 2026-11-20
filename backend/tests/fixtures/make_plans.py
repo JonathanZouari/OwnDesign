@@ -266,6 +266,114 @@ def realistic(path: Path, with_stray: bool = True) -> Path:
     return path
 
 
+# ---------------------------------------------------------------- furnished apartment (1:50)
+
+# Furniture on the 8 x 5 m two-room apartment, as (type, cx, cy, w, d, rotation) in footprint cm. w, d follow the
+# catalog (w along the item's own x axis); rotation 90 means it is drawn turned. Importer coordinates are these + 10.
+FURNISHED = [
+    ("double-bed", 150, 200, 160, 200, 0),
+    ("wardrobe", 290, 40, 180, 60, 0),
+    ("desk", 40, 390, 120, 60, 90),
+    ("toilet", 350, 450, 40, 65, 0),
+    ("shower", 230, 440, 90, 90, 0),
+    ("vanity", 120, 460, 80, 50, 0),
+    ("kitchen-counter", 570, 40, 240, 60, 0),
+    ("stove", 740, 40, 60, 60, 0),
+    ("kitchen-island", 580, 150, 180, 90, 0),
+    ("fridge", 745, 150, 70, 70, 0),
+    ("sofa", 515, 445, 200, 90, 0),
+    ("coffee-table", 515, 340, 110, 60, 0),
+    ("dining-table", 700, 370, 160, 90, 0),
+]
+FURNISHED_CHAIRS = [(655, 293), (745, 293), (655, 447), (745, 447)]  # 45 x 45, around the dining table
+FURNISHED_ODD = (345, 210, 90, 120)  # an odd triangle that cannot be identified: cx, cy, w, d
+FURNISHED_LABELS = [("Bedroom", 300, 150), ("Study", 60, 330), ("Bathroom", 250, 430), ("Kitchen", 560, 100), ("Living", 560, 300)]
+
+
+def furnished_truth() -> list[tuple[str, float, float, float, float, float]]:
+    """Expected furniture in importer coordinates: (type, x, y, w, d, rotation mod 180), chairs included."""
+    items = [(t, cx + 10, cy + 10, w, d, rot) for t, cx, cy, w, d, rot in FURNISHED]
+    items += [("chair", cx + 10, cy + 10, 45, 45, 0) for cx, cy in FURNISHED_CHAIRS]
+    return items
+
+
+def _ellipse(sheet: _Sheet, cx, cy, rx, ry, width_pt=0.4):
+    sheet.pdf.setLineWidth(width_pt)
+    sheet.pdf.setStrokeGray(0)
+    sheet.pdf.ellipse(sheet.x(cx - rx), sheet.y(cy - ry), sheet.x(cx + rx), sheet.y(cy + ry), stroke=1, fill=0)
+
+
+def _item(sheet: _Sheet, kind: str, cx, cy, w, d, rot):
+    """One furniture outline plus the details a drawing normally has. (cx, cy) is on the sheet, in cm."""
+    dw, dd = (d, w) if rot == 90 else (w, d)  # extents on the sheet
+    x0, y0 = cx - dw / 2, cy - dd / 2
+
+    def inner_rect(ix, iy, iw, ih):  # authored for rotation 0, turned with the item
+        if rot == 90:
+            ix, iy, iw, ih = -(iy - cy) + cx - ih, (ix - cx) + cy, ih, iw
+        sheet.stroke_rect(ix, iy, iw, ih, 0.4)
+
+    if kind == "toilet":
+        _ellipse(sheet, cx, cy, w / 2, d / 2)
+        return
+    sheet.stroke_rect(x0, y0, dw, dd, 0.4)
+    if kind == "bathtub":
+        _ellipse(sheet, cx, cy, w / 2 - 12, d / 2 - 10)
+    elif kind == "shower":
+        sheet.line(x0, y0, x0 + dw, y0 + dd, 0.4)
+    elif kind == "stove":
+        for ox, oy in ((-14, -14), (14, -14), (-14, 14), (14, 14)):
+            _ellipse(sheet, cx + ox, cy + oy, 7, 7)
+    elif kind == "sofa":
+        inner_rect(cx - w / 4 - (w / 2 - 20) / 2, cy + 8 - (d - 30) / 2, w / 2 - 20, d - 30)
+        inner_rect(cx + w / 4 - (w / 2 - 20) / 2, cy + 8 - (d - 30) / 2, w / 2 - 20, d - 30)
+    elif kind == "double-bed":
+        inner_rect(cx - w / 4 - 25, cy - d / 2 + 30 - 17.5, 50, 35)
+        inner_rect(cx + w / 4 - 25, cy - d / 2 + 30 - 17.5, 50, 35)
+    elif kind == "vanity":
+        _ellipse(sheet, cx, cy, w / 2 - 15, d / 2 - 10)
+
+
+def furnished(path: Path) -> Path:
+    """The 8 x 5 m apartment (1:50, filled walls, "1:50" printed) with furniture outlines for several catalog types,
+    chairs around the dining table, light fixture symbols, one odd shape that cannot be identified and room labels.
+    Ground truth: furnished_truth(). Walls are the same seven as apartment()."""
+    sheet = _Sheet(path, 50)
+    _walls(sheet, "filled")
+    ox, oy = OX, OY
+    for kind, cx, cy, w, d, rot in FURNISHED:
+        _item(sheet, kind, ox + cx, oy + cy, w, d, rot)
+    for cx, cy in FURNISHED_CHAIRS:
+        sheet.stroke_rect(ox + cx - 22.5, oy + cy - 22.5, 45, 45, 0.4)
+    # light fixtures: small circles with a cross, and a larger hatched disc
+    for cx, cy in ((250, 260), (550, 260)):
+        _ellipse(sheet, ox + cx, oy + cy, 12, 12)
+        sheet.line(ox + cx - 12, oy + cy, ox + cx + 12, oy + cy, 0.3)
+        sheet.line(ox + cx, oy + cy - 12, ox + cx, oy + cy + 12, 0.3)
+    _ellipse(sheet, ox + 300, oy + 330, 22, 22, 0.5)
+    for i in range(12):
+        sheet.line(ox + 278, oy + 308 + i * 4, ox + 322, oy + 310 + i * 4, 0.3)
+    # the odd shape: a triangle
+    cx, cy, w, d = FURNISHED_ODD
+    sheet.pdf.setLineWidth(0.4)
+    sheet.pdf.setStrokeGray(0)
+    p = sheet.pdf.beginPath()
+    p.moveTo(sheet.x(ox + cx - w / 2), sheet.y(oy + cy - d / 2))
+    p.lineTo(sheet.x(ox + cx + w / 2), sheet.y(oy + cy + d / 2))
+    p.lineTo(sheet.x(ox + cx - w / 2), sheet.y(oy + cy + d / 2))
+    p.close()
+    sheet.pdf.drawPath(p, stroke=1, fill=0)
+    # dimension line and room labels
+    sheet.line(OX, OY - 80, OX + 800, OY - 80, 0.4)
+    sheet.line(OX, OY - 90, OX, OY - 70, 0.4)
+    sheet.line(OX + 800, OY - 90, OX + 800, OY - 70, 0.4)
+    for label, lx, ly in FURNISHED_LABELS:
+        sheet.text(ox + lx, oy + ly, label, 8)
+    _scale_texts(sheet, ["1:50"])
+    sheet.pdf.save()
+    return path
+
+
 def both_scales(path: Path) -> Path:
     """A 1:50 plan with a second, 1:20 detail label on the sheet."""
     return apartment(path, 50, scale_texts=["1:50", "1:20"])
