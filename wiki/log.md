@@ -165,3 +165,5 @@ Removed `rooms.js`, its tests and all room UI on the import review; import again
 underlay only. Kept: the `Room.outline` schema and plan support (saved data may contain outlines), editor rendering of
 outline rooms, `ROOM_KINDS` and the editor kind buttons. The one-click-kind E2E now uses a wizard-created room.
 Pages: [decisions](decisions.md), [open-items](open-items.md).
+
+E2E after the removal: 34 passed (including the editor kind test).
