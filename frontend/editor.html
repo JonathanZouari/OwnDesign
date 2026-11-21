@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/app.css?v=client-plan">
 </head>
 <body class="app">
   <header class="appbar">
@@ -55,6 +55,7 @@
         <strong id="context-name"></strong><span class="muted" aria-hidden="true">/</span><span id="context-area"></span>
         <span class="chip ok" id="context-role"></span>
       </div>
+      <span id="status-save" class="save-indicator" role="status" aria-live="polite"></span>
       <div class="group">
         <span class="chip"><span class="icon" aria-hidden="true" style="font-size: 14px">grid_4x4</span>Grid: 0.1m snap</span>
         <span class="chip"><span class="icon" aria-hidden="true" style="font-size: 14px">straighten</span>Auto-dim: on</span>
@@ -93,7 +94,6 @@
 
   <footer class="statusbar">
     <span><span id="status-zoom"></span><span class="sep">|</span><span class="wide">Grid Snap: 0.1m active<span class="sep">|</span>Units: Metres / cm</span></span>
-    <span id="status-save"></span>
   </footer>
 
   <dialog id="save-dialog">
@@ -123,6 +123,6 @@
   </dialog>
 
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
-  <script type="module" src="js/editor/main.js"></script>
+  <script type="module" src="js/editor/main.js?v=isolated-room"></script>
 </body>
 </html>

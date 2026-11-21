@@ -21,12 +21,12 @@ const SPEC = {
     ],
   },
   openings: {
-    title: (opening) => (opening.type === "door" ? "Door" : "Window"),
+    title: (opening) => ({door:"Door",window:"Window",sliding:"Sliding door",passage:"Open passage"})[opening.type],
     review: () => true,
     fields: [
       number("Width", "cm", (opening) => Math.round(opening.width), set("openings", "width"), { min: 30 }),
       number("From wall start", "cm", (opening) => Math.round(opening.offset), set("openings", "offset"), { min: 0, max: 100_000 }),
-      choice("Type", [["door", "Door"], ["window", "Window"]], (opening) => opening.type, set("openings", "type")),
+      choice("Type", [["door", "Door"], ["window", "Window"], ["sliding", "Sliding door"], ["passage", "Open passage"]], (opening) => opening.type, set("openings", "type")),
     ],
   },
   furniture: {

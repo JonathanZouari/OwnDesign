@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from postgrest.exceptions import APIError
+from pydantic import BaseModel
 
 from app.auth import CurrentUser, current_user
 from app.db import audit, service
@@ -30,8 +31,44 @@ def _project_or_404(user: CurrentUser, project_id: UUID) -> dict:
 @router.get("")
 def list_projects(studio_id: UUID | None = None, user: CurrentUser = Depends(current_user)):
     query = user.db.table("projects").select(PROJECT_COLUMNS).order("created_at", desc=True)
-    query = query.eq("studio_id", str(studio_id)) if studio_id else query.eq("client_user_id", user.id)
-    return ok(query.execute().data)
+    if studio_id:
+        return ok(query.eq("studio_id", str(studio_id)).execute().data)
+    shares = {r["project_id"]: r["permission"] for r in user.db.table("project_shares").select("project_id,permission").execute().data}
+    if shares:
+        query = query.or_(f"client_user_id.eq.{user.id},id.in.({','.join(shares)})")
+    else:
+        query = query.eq("client_user_id", user.id)
+    return ok([{**r, "shared_access": shares.get(r["id"])} for r in query.execute().data])
+
+
+class ShareChoice(BaseModel):
+    client_id: UUID
+    permission: Literal["view", "save", "remove"]
+
+
+def project_access(user, project):
+    if user.role_in(project["studio_id"]) or project["client_user_id"] == user.id:
+        return "save"
+    rows = user.db.table("project_shares").select("permission").eq("project_id", project["id"]).eq("user_id", user.id).execute().data
+    return rows[0]["permission"] if rows else "view"
+
+
+@router.put("/{project_id}/share")
+def share_project(project_id: UUID, body: ShareChoice, user: CurrentUser = Depends(current_user)):
+    project = _project_or_404(user, project_id)
+    if not user.role_in(project["studio_id"]) or project["studio"]["status"] != "active":
+        raise HTTPException(403, "Active studio membership required")
+    uid = str(body.client_id)
+    clients = user.db.table("projects").select("id").eq("studio_id", project["studio_id"]).eq("client_user_id", uid).limit(1).execute().data
+    if not clients or uid == project["client_user_id"] or uid == user.id:
+        raise HTTPException(422, "Choose another registered client of this studio")
+    row = {"project_id": str(project_id), "user_id": uid}
+    table = service().table("project_shares")
+    if body.permission == "remove":
+        table.delete().eq("project_id", str(project_id)).eq("user_id", uid).execute()
+    else:
+        table.upsert({**row, "permission": body.permission}).execute()
+    return ok({"permission": body.permission})
 
 
 @router.post("", status_code=201)
@@ -66,7 +103,7 @@ def create_project(body: ProjectCreate, user: CurrentUser = Depends(current_user
 def get_project(project_id: UUID, user: CurrentUser = Depends(current_user)):
     project = _project_or_404(user, project_id)
     role = "designer" if user.role_in(project["studio_id"]) else "client"
-    return ok({**project, "my_role": role})
+    return ok({**project, "my_role": role, "access": project_access(user, project)})
 
 
 @router.get("/{project_id}/versions")
@@ -96,6 +133,8 @@ def get_version(project_id: UUID, version: UUID | Literal["latest"], user: Curre
 @router.post("/{project_id}/versions", status_code=201)
 def create_version(project_id: UUID, body: VersionCreate, user: CurrentUser = Depends(current_user)):
     project = _project_or_404(user, project_id)
+    if project_access(user, project) != "save":
+        raise HTTPException(403, "This project is shared for viewing only")
     if project["studio"]["status"] != "active":
         raise HTTPException(403, "This studio is not active")
     author_role = "designer" if user.role_in(project["studio_id"]) else "client"
