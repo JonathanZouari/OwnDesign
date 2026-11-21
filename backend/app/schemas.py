@@ -49,7 +49,7 @@ class Wall(Strict):
 class Opening(Strict):
     id: Id
     wallId: Id
-    type: Literal["door", "window"]
+    type: Literal["door", "window", "sliding", "passage"]
     offset: Annotated[float, Field(ge=0, le=MAX_COORD_CM, allow_inf_nan=False)]  # from wall start to opening start
     width: Size
 

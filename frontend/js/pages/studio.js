@@ -40,7 +40,21 @@ const thumbPlaceholder = (state, text) => h("div", { class: `thumb ${state}` }, 
 
 const fact = (label, cls) => h("div", {}, h("dt", {}, label), h("dd", { class: cls }, UNKNOWN));
 
-function projectCard(project) {
+function sharePanel(project, clients) {
+  const recipients = clients.filter(([id]) => id !== project.client_user_id);
+  if (!recipients.length) return null;
+  const client = h("select", {"aria-label":"Client account"}, ...recipients.map(([id,email]) => h("option",{value:id},email)));
+  const access = h("select", {"aria-label":"Project permission"},
+    h("option",{value:"view"},"View only"), h("option",{value:"save"},"Can save versions"), h("option",{value:"remove"},"Remove access"));
+  const result = h("p",{role:"status"});
+  const form = h("form",{class:"share-form",onsubmit:action(async () => {
+    await api(`/v1/projects/${project.id}/share`,{method:"PUT",body:{client_id:client.value,permission:access.value}});
+    result.textContent = client.selectedOptions[0].textContent + " · " + access.selectedOptions[0].textContent;
+  })},h("label",{},"Client",client),h("label",{},"Permission",access),h("button",{type:"submit"},"Apply access"),result);
+  return h("details",{class:"share-panel"},h("summary",{},"Share project"),form);
+}
+
+function projectCard(project, clients) {
   const titleId = `project-${project.id}`;
   return h(
     "article",
@@ -59,6 +73,7 @@ function projectCard(project) {
       h("p", { class: "client" }, icon("person"), h("span", {}, project.client_email ?? "No client email")),
       h("dl", { class: "facts" }, fact("Floor area", "fact-area"), fact("Latest version", "fact-version")),
       h("div", {}, h("a", { class: "button primary", href: `editor.html?project=${project.id}` }, icon("architecture"), "Launch 2D canvas")),
+      sharePanel(project, clients),
     ),
   );
 }
@@ -89,8 +104,9 @@ function applyFilter(projects, cards, query) {
   $("#no-match").hidden = projects.length === 0 || shown.some(Boolean);
 }
 
-function showProjects(projects) {
-  const cards = projects.map(projectCard);
+function showProjects(projects, email) {
+  const clients = [...new Map(projects.filter(p => p.client_email && p.client_email !== email).map(p => [p.client_user_id,p.client_email]))];
+  const cards = projects.map(project => projectCard(project, clients));
   $("#empty").hidden = projects.length > 0;
   $("#project-list").replaceChildren(...cards);
   $("#project-filter").addEventListener("input", (event) => applyFilter(projects, cards, event.target.value));
@@ -162,7 +178,7 @@ async function showDashboard(studio, email, role) {
   ]);
   showInvites(invites);
   showMetrics(projects, invites);
-  showProjects(projects);
+  showProjects(projects, email);
   wireInvites(studio, projects, invites);
   $("#dashboard").hidden = false;
   run(() => loadActivity(studio)); // its own error path: the dashboard stays usable without the activity list

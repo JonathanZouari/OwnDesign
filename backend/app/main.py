@@ -16,7 +16,7 @@ app = FastAPI(title="OwnDesign API", version="1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in settings().allowed_origins.split(",") if origin.strip()],
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT"],
     allow_headers=["Authorization", "Content-Type"],
 )
 app.include_router(studios.router)

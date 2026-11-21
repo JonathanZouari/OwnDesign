@@ -42,6 +42,27 @@ def test_health(api):
     assert api.get("/health").json() == {"success": True, "data": {"status": "ok"}, "error": None}
 
 
+def test_project_share_lifecycle(api, world, make_user):
+    guest = make_user("sharing")
+    studio_id = world.studio_a["id"]
+    api.post("/v1/projects", headers=guest.headers, json={"studio_id": studio_id, "name": "Guest plan", "property_type": "existing"}).raise_for_status()
+    target = api.post("/v1/projects", headers=world.designer_a.headers, json={"studio_id": studio_id, "name":"Sharing fixture", "property_type":"existing"}).json()["data"]
+    path = f"/v1/projects/{target['id']}"
+    api.post(path + "/versions", headers=world.designer_a.headers, json={"geometry":VALID}).raise_for_status()
+    choice = {"client_id": guest.id, "permission": "view"}
+    assert api.get(path, headers=guest.headers).status_code == 404
+    assert api.put(path + "/share", headers=world.designer_b.headers, json=choice).status_code == 404
+    api.put(path + "/share", headers=world.designer_a.headers, json=choice).raise_for_status()
+    assert api.get(path, headers=guest.headers).json()["data"]["access"] == "view"
+    assert api.get(path + "/versions/latest", headers=guest.headers).status_code == 200
+    assert api.post(path + "/versions", headers=guest.headers, json={"geometry": VALID}).status_code == 403
+    assert api.put(path + "/share", headers=guest.headers, json={**choice, "permission": "save"}).status_code == 403
+    api.put(path + "/share", headers=world.designer_a.headers, json={**choice,"permission":"save"}).raise_for_status()
+    assert api.post(path + "/versions", headers=guest.headers, json={"geometry":VALID}).json()["data"]["author_role"] == "client"
+    api.put(path + "/share", headers=world.designer_a.headers, json={**choice,"permission":"remove"}).raise_for_status()
+    assert api.get(path + "/versions/latest", headers=guest.headers).status_code == 404
+
+
 @pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer not-a-token"}])
 def test_requires_valid_session(api, headers):
     for path in ("/v1/me", "/v1/projects"):
