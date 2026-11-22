@@ -128,6 +128,45 @@ Planned on Opus, implemented by a Sonnet subagent. Tests: backend 72 passed, fro
 Security and privacy review: no findings, nothing from the real drawing in the repo.
 Pages: [open-items](open-items.md).
 
+## [2026-11-19] design | All Stitch screens pulled and compared with the app
+The Stitch project had grown to eight screens; only two had been pulled. All eight (HTML and a
+preview each) and two generated images are now in `design/stitch/`. Wizard and canvas were unchanged
+in Stitch. The Stitch PRD document is a shortened copy of the repository PRD with nothing new.
+Commit `c01e476`. Pages: [design](design.md).
+
+## [2026-11-19] plan | Integrate the two Phase 1 screens, keep four as reference
+Approved by the user: build the client portal and the studio dashboard now with real data only; keep
+branding, dossier, AI consultant and renderings as design references until their phases.
+Pages: [decisions](decisions.md), [open-items](open-items.md).
+
+## [2026-11-19] build | Studio activity endpoint
+`GET /v1/studios/{id}/audit`: latest 10 audit events, members only, read under RLS, metadata limited
+to `version_no` and `author_role`. Test written first. Commit `faec162`.
+Pages: [architecture](architecture.md).
+
+## [2026-11-19] build | Client portal and studio dashboard rebuilt from Stitch
+Built by the `ux-ui-designer` subagent. Portal: guest or account access, wizard or blank canvas,
+invite greeting. Dashboard: metrics, project cards with plan thumbnails, search, invites, recent
+activity. Code review (no critical or high) led to: a confirmation before a blank canvas replaces a
+draft, previews loaded as cards come into view instead of for the first 12 only, invites shown from
+the create response, and a fix for sidebar icons clipped by a descendant selector (wizard and editor
+were affected too). Commit `173e359`. Pages: [design](design.md), [overview](overview.md).
+
+## [2026-11-19] test | Portal and dashboard verified
+Backend 43 passed, including 3 browser journeys; frontend 17 passed. New edge tests found a real
+bug before commit: a long unbroken studio name widened the portal on a phone. Fixed in CSS.
+Pages: [testing](testing.md).
+
+## [2026-11-19] security | Review of the portal, dashboard and activity endpoint
+`security-review` run on the three local commits before pushing. No finding. Checked: endpoint
+authorization and RLS, response contents, plan geometry drawn as SVG in another user's browser,
+text-only DOM building, the blank-canvas flow, the content security policy on both pages.
+Noted, not fixed: audit event ids are sequential across studios.
+Pages: [security](security.md), [open-items](open-items.md).
+
+## [2026-11-19] docs | Workflow order corrected in CLAUDE.md
+The `security-review` skill reviews local commits against `origin/main`, so the rule is now: commit,
+review, then push. Pages: [security](security.md).
 ## [2026-11-20] build | PDF import, step 3: furniture from the drawing
 `frontend/js/import/furniture.js` finds closed thin-stroke shapes inside the plan area (nested shapes merged),
 scores them against the catalog by size and shape cues, and fits the item to the measured size and rotation.
@@ -167,3 +206,6 @@ outline rooms, `ROOM_KINDS` and the editor kind buttons. The one-click-kind E2E 
 Pages: [decisions](decisions.md), [open-items](open-items.md).
 
 E2E after the removal: 34 passed (including the editor kind test).
+
+## [2026-11-22] merge | Upstream Stitch screens merged into the homeowner/Hebrew branch
+Merged `upstream/main` (Stitch design sources, studio activity endpoint, client portal and studio dashboard rebuilt from Stitch screens, wiki) into `dev` with a normal merge commit. Both sides kept: the new portal (`entry.html`) and dashboard (`studio.html`) with metrics, project cards with plan previews, search and activity feed, and the `GET /v1/studios/{id}/audit` endpoint, together with the Hebrew right-to-left UI, projects without a studio, forgot password and PDF import. Our decisions won where they met: all text from the Stitch screens is Hebrew (static text in the HTML, text set from JS in `frontend/js/strings.js`: `ENTRY`, `STUDIO`, activity sentences in `studio-data.js`), the portal's start links carry `?via=studio` so a studio is attached only through a studio link, and the studio pages stay out of the homeowner navigation. His new tests were kept with their expected text in Hebrew; our E2E tests are unchanged. Wiki pages `decisions.md`, `design.md` and this log merged.

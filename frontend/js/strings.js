@@ -55,6 +55,11 @@ export const AUTH = {
 export const ENTRY = {
   title: "התחילו לעצב",
   headline: (studio, clientName) => `${clientName ? `היי ${clientName}, ` : ""}תכננו את הבית שלכם עם ${studio}.`,
+  kindInvite: "הזמנה אישית",
+  kindStudio: "קישור סטודיו",
+  privacy: (studio) => `התוכניות שלכם גלויות רק לכם ול${studio}.`,
+  replaceDraft: "להחליף את התוכנית שלא נשמרה בקנבס ריק?",
+  storageBlocked: "הדפדפן חסם אחסון מקומי, ולכן אי אפשר לשמור את התוכנית. אפשרו נתוני אתר ונסו שוב.",
 };
 
 export const PROJECT_TYPES = { existing: "בית קיים", new_build: "בנייה חדשה" };
@@ -66,6 +71,27 @@ export const STUDIO = {
   pending: "ממתין",
   copyLink: COMMON.copyLink,
   title: (name) => `${name} · סטודיו`,
+  copyLinkShort: "העתקת קישור",
+  created: (date) => `נוצר ${date}`,
+  noClientEmail: "אין אימייל ללקוח",
+  floorArea: "שטח רצפה",
+  latestVersion: "גרסה אחרונה",
+  none: "אין עדיין",
+  launchCanvas: "פתיחה בקנבס הדו־ממדי",
+  floorPlanOf: (name) => `תוכנית קומה של ${name}`,
+  noPlanYet: "עדיין לא נשמרה תוכנית",
+  blankCanvas: "קנבס ריק",
+  signedInAs: (email) => `מחובר בתור ${email}`,
+  areaValue: (value) => `${value} מ״ר`,
+  versionFact: (no, role) => `גרסה ${no} · ${role}`,
+  activity: {
+    roles: { client: "הלקוח", designer: "המעצב", other: "חבר סטודיו" },
+    studioCreated: "הסטודיו נוצר",
+    inviteCreated: "נוצר קישור הזמנה",
+    inviteAccepted: "ההזמנה אושרה על ידי הלקוח",
+    projectCreated: "הפרויקט נוצר",
+    versionSaved: (no, who) => `גרסה ${no} נשמרה על ידי ${who}`,
+  },
 };
 
 export const ROLES = { designer: "מעצב", client: "לקוח" };

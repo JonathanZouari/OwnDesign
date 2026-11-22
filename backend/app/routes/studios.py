@@ -14,6 +14,7 @@ router = APIRouter(prefix="/v1")
 
 Slug = Path(pattern=r"^[a-z0-9-]{3,60}$")
 Token = Path(pattern=r"^[A-Za-z0-9_-]{20,64}$")
+ACTIVITY_METADATA = ("version_no", "author_role")  # the only audit metadata the dashboard is given
 
 
 def _slug(name: str) -> str:
@@ -94,6 +95,22 @@ def list_invites(studio_id: UUID, user: CurrentUser = Depends(current_user)):
         .data
     )
     return ok(rows)
+
+
+@router.get("/studios/{studio_id}/audit")
+def list_activity(studio_id: UUID, user: CurrentUser = Depends(current_user)):
+    """The studio's latest audit events. Read with the caller's JWT, so RLS limits it to their studio."""
+    _require_member(user, studio_id)
+    rows = (
+        user.db.table("audit_events")
+        .select("id, action, metadata, created_at, project:projects(name)")
+        .eq("studio_id", str(studio_id))
+        .order("created_at", desc=True)
+        .limit(10)
+        .execute()
+        .data
+    )
+    return ok([{**row, "metadata": {key: row["metadata"][key] for key in ACTIVITY_METADATA if key in row["metadata"]}} for row in rows])
 
 
 @router.get("/invites/{token}")

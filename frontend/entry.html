@@ -12,15 +12,114 @@
 </head>
 <body>
   <header class="appbar"><div class="group"><span class="brand">ATELIER</span><span class="chip studio" id="studio-brand" hidden></span></div></header>
-  <main class="page">
-    <section class="hero" id="welcome" hidden>
-      <h1 id="headline"></h1>
-      <p class="muted">שרטטו את תוכנית הקומה, סדרו חדרים ורהיטים ושתפו אותה עם המעצב שלכם. אפשר לנסות כבר עכשיו וליצור חשבון רק כשרוצים לשמור.</p>
-      <div class="row">
-        <a class="button primary" href="wizard.html?via=studio">התחילו לעצב</a>
-        <a class="button" href="auth.html">כבר יש לי חשבון</a>
+  <main class="page portal">
+    <div id="welcome" class="portal-flow" hidden>
+      <div class="portal-strip">
+        <span class="portal-studio" id="portal-studio"></span>
+        <span class="dot" aria-hidden="true">•</span>
+        <span class="label">פורטל לקוחות</span>
+        <span class="chip ok" id="entry-kind"></span>
       </div>
-    </section>
+
+      <section class="portal-hero">
+        <div class="hero-card">
+          <span class="label accent">ברוכים הבאים</span>
+          <h1 id="headline"></h1>
+          <p class="muted">שרטטו את תוכנית הקומה, סדרו חדרים ורהיטים ושתפו אותה עם המעצב שלכם. אפשר לנסות כבר עכשיו וליצור חשבון רק כשרוצים לשמור.</p>
+        </div>
+        <figure class="hero-figure">
+          <img src="img/interior-concept.jpg" width="1376" height="768" alt="סלון עם קיר מחופה עץ, ספה נמוכה מבד פשתן ושולחן אוכל באור שקיעה חם.">
+          <figcaption><span class="chip">המחשה</span><span>דוגמה לעיצוב פנים להשראה. זו אינה הדמיה של הבית שלכם.</span></figcaption>
+        </figure>
+      </section>
+
+      <section class="portal-section" aria-labelledby="mode-title">
+        <div>
+          <span class="label accent">הגישה שלכם</span>
+          <h2 id="mode-title">בחרו מצב עבודה</h2>
+        </div>
+        <div class="option-grid">
+          <article class="card option" aria-labelledby="guest-title">
+            <div class="row between">
+              <span class="tile"><span class="icon" aria-hidden="true">explore</span></span>
+              <span class="chip">ללא חשבון</span>
+            </div>
+            <h3 id="guest-title">נסו כאורחים</h3>
+            <p class="muted">התחילו לתכנן מיד. אין צורך בהרשמה.</p>
+            <ul class="checks">
+              <li><span class="icon" aria-hidden="true">check_circle</span>אשף מודרך שבונה חדרים ממידות משוערות</li>
+              <li><span class="icon" aria-hidden="true">check_circle</span>קנבס דו־ממדי לקירות, דלתות, חלונות ורהיטים</li>
+              <li><span class="icon" aria-hidden="true">check_circle</span>ביטול ושחזור וחישוב אוטומטי של שטח הרצפה</li>
+            </ul>
+            <p class="aside"><span class="icon" aria-hidden="true">info</span><span>התוכנית נשמרת בדפדפן הזה עד שתיצרו חשבון חינם.</span></p>
+            <div class="option-actions">
+              <a class="button primary wide-button" href="wizard.html?via=studio">התחילו לעצב<span class="icon" aria-hidden="true">arrow_back</span></a>
+            </div>
+          </article>
+
+          <article class="card option" aria-labelledby="account-title">
+            <div class="row between">
+              <span class="tile accent"><span class="icon" aria-hidden="true">key</span></span>
+              <span class="chip accent">חשבון חינם</span>
+            </div>
+            <h3 id="account-title">השתמשו בחשבון לקוח</h3>
+            <p class="muted">שמרו את התוכנית ועבדו עליה יחד עם המעצב שלכם.</p>
+            <ul class="checks">
+              <li><span class="icon" aria-hidden="true">history</span>כל שמירה נשמרת כגרסה שאפשר לחזור אליה</li>
+              <li><span class="icon" aria-hidden="true">forum</span>התוכנית משותפת עם המעצב שלכם, והוא יכול לשנות אותה</li>
+              <li><span class="icon" aria-hidden="true">devices</span>הפרויקטים שלכם זמינים בכל מכשיר</li>
+            </ul>
+            <div class="option-actions">
+              <a class="button wide-button" href="auth.html?mode=signup">יצירת חשבון</a>
+              <a class="quiet-link" href="auth.html">כבר יש לי חשבון</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="portal-section portal-panel" aria-labelledby="start-title">
+        <div>
+          <span class="label accent">נקודת התחלה</span>
+          <h2 id="start-title">איך תרצו להתחיל את התוכנית?</h2>
+        </div>
+        <p class="aside" id="draft-notice" hidden><span class="icon" aria-hidden="true">info</span><span>יש לכם תוכנית שלא נשמרה בדפדפן הזה. <a href="editor.html">המשיכו לערוך אותה</a>. קנבס ריק יחליף אותה.</span></p>
+        <div class="option-grid">
+          <article class="card option" aria-labelledby="wizard-title">
+            <div class="row between">
+              <span class="tile"><span class="icon" aria-hidden="true">straighten</span></span>
+              <span class="chip accent">מומלץ</span>
+            </div>
+            <h3 id="wizard-title">אשף מידות מודרך</h3>
+            <p class="muted">רשמו את החדרים עם רוחב ואורך משוערים. הקנבס הדו־ממדי נוצר מהם, מוכן להתאמה.</p>
+            <div class="option-actions">
+              <a class="button wide-button" href="wizard.html?via=studio">פתיחת האשף<span class="icon" aria-hidden="true">chevron_left</span></a>
+            </div>
+          </article>
+
+          <article class="card option" aria-labelledby="canvas-title">
+            <div class="row between">
+              <span class="tile"><span class="icon" aria-hidden="true">grid_4x4</span></span>
+              <span class="chip">ציור חופשי</span>
+            </div>
+            <h3 id="canvas-title">קנבס דו־ממדי אינטראקטיבי</h3>
+            <p class="muted">התחילו מרשת ריקה. שרטטו קירות בעצמכם, ואז הוסיפו דלתות, חלונות ורהיטים.</p>
+            <div class="option-actions">
+              <button type="button" class="wide-button" id="blank-canvas">פתיחת קנבס ריק<span class="icon" aria-hidden="true">chevron_left</span></button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <aside class="disclaimer" aria-labelledby="disclaimer-title">
+        <span class="tile"><span class="icon" aria-hidden="true">architecture</span></span>
+        <div>
+          <h2 class="label" id="disclaimer-title">תכנון רעיוני</h2>
+          <p>התוכניות כאן הן הצעות עיצוב עם מידות משוערות. הן אינן מדידה מקצועית או שרטוטי ביצוע, ואינן מחליפות בדיקה קונסטרוקטיבית או הנדסית.</p>
+        </div>
+      </aside>
+      <p class="code privacy"><span class="icon" aria-hidden="true">lock</span><span id="privacy"></span></p>
+    </div>
+
     <section class="card" id="missing" hidden>
       <h2>הקישור אינו תקף</h2>
       <p class="muted">בקשו מהמעצב שלכם לשלוח לכם שוב את קישור הסטודיו.</p>

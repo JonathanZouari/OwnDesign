@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;family=Plus+Jakarta+Sans:wght@500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "primary-fixed-dim": "#ffb59c", "background": "#fbf9f6", "surface-container-low": "#f5f3f0", "tertiary": "#7f5214", "inverse-primary": "#ffb59c", "on-surface-variant": "#57423b", "outline": "#8a726a", "inverse-on-surface": "#f2f1ed", "on-primary-fixed": "#390c00", "on-background": "#1b1c1a", "primary-fixed": "#ffdbcf", "surface-bright": "#fbf9f6", "surface-dim": "#dbdad6", "tertiary-fixed-dim": "#f8bb73", "outline-variant": "#dec0b7", "tertiary-container": "#9b6a2b", "primary": "#9f3c16", "tertiary-fixed": "#ffddb9", "on-secondary-fixed": "#03210f", "on-secondary-fixed-variant": "#304d38", "surface-container-lowest": "#ffffff", "secondary": "#47654f", "primary-container": "#bf542c", "error-container": "#ffdad6", "on-tertiary": "#ffffff", "error": "#ba1a1a", "on-error-container": "#93000a", "on-tertiary-container": "#fffbff", "surface-container": "#efeeea", "on-primary": "#ffffff", "on-secondary": "#ffffff", "on-surface": "#1b1c1a", "surface-variant": "#e4e2df", "surface-container-high": "#e9e8e4", "inverse-surface": "#30312f", "secondary-container": "#c6e8cc", "on-secondary-container": "#4b6a53", "secondary-fixed-dim": "#adcfb3", "surface-container-highest": "#e4e2df", "on-error": "#ffffff", "secondary-fixed": "#c9ebce", "on-tertiary-fixed-variant": "#663e00", "on-primary-container": "#fffbff", "on-tertiary-fixed": "#2b1700", "surface": "#fbf9f6", "surface-tint": "#a23e18", "on-primary-fixed-variant": "#822801" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "margin-tablet": "1.5rem", "gutter-desktop": "1.5rem", "space-sm": "0.5rem", "margin": "1rem", "space-md": "0.75rem", "space-xs": "0.25rem", "margin-desktop": "2rem", "space-lg": "1.25rem", "gutter": "1rem", "space-xl": "2rem" }, "fontFamily": { "headline-lg": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"], "body-md": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "label-code-md": ["JetBrains Mono"], "headline-xl-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-code-lg": ["JetBrains Mono"], "label-ui": ["Inter"], "body-sm": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-code-sm": ["JetBrains Mono"], "body-lg": ["Inter"] }, "fontSize": { "headline-lg": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-md": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.015em", "fontWeight": "500" }], "label-code-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "headline-xl-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-sm": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "label-code-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "label-ui": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "18px", "letterSpacing": "0.005em", "fontWeight": "400" }], "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-code-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }] } } } };</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between select-none"><div class="flex flex-col"><div class="h-16 px-space-lg flex items-center justify-between bg-surface-container-lowest/60 backdrop-blur-md"><div class="flex items-center gap-space-sm"><div class="w-7 h-7 rounded bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">architecture</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface leading-none">KÖSEN</span><span class="font-label-code-sm text-label-code-sm uppercase tracking-wider text-primary font-medium mt-0.5">Studio Atelier</span></div></div><button class="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">unfold_more</span></button></div><div class="px-space-md py-space-sm"><div class="px-space-sm py-space-xs rounded bg-surface-container flex items-center justify-between"><span class="font-label-code-sm text-label-code-sm text-on-surface-variant truncate">kosen-arch.atelier.so</span><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span></div></div><nav class="px-space-md py-space-sm space-y-space-lg overflow-y-auto" data-active-classes="bg-primary-container text-on-primary-container font-medium shadow-[0_1px_4px_rgba(0,0,0,0.05)]"><div class="space-y-space-xs"><div class="px-space-sm font-label-ui text-label-ui uppercase tracking-wider text-outline">Workspace</div><div class="space-y-0.5"><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="studio-overview-and-project-directory" href="#"><span class="font-body-sm text-body-sm">Studio Overview</span></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="projects-and-portfolios" href="#"><span class="font-body-sm text-body-sm">Projects &amp; Portfolios</span><span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-medium">8</span></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="review-queue-and-dossiers" href="#"><span class="font-body-sm text-body-sm">Review Queue &amp; Dossiers</span><span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-medium">3</span></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="client-directory" href="#"><span class="font-body-sm text-body-sm">Client Directory</span></a></div></div><div class="space-y-space-xs"><div class="px-space-sm font-label-ui text-label-ui uppercase tracking-wider text-outline">Collaboration &amp; CAD</div><div class="space-y-0.5"><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="2d-space-planner" href="#"><span class="font-body-sm text-body-sm">2D Space Planner</span></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="3d-render-queue" href="#"><span class="font-body-sm text-body-sm">3D Render Queue</span><span class="font-label-code-sm text-label-code-sm text-secondary font-medium flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>Live</span></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="material-and-ffe-catalogs" href="#"><span class="font-body-sm text-body-sm">Material &amp; FF&amp;E Catalogs</span></a></div></div><div class="space-y-space-xs"><div class="px-space-sm font-label-ui text-label-ui uppercase tracking-wider text-outline">Tenant Settings</div><div class="space-y-0.5"><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="studio-white-label-branding-and-atelier-settings" href="#"><span class="font-body-sm text-body-sm">White-Label Branding</span></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="team-and-rbac-roles" href="#"><span class="font-body-sm text-body-sm">Team &amp; RBAC Roles</span></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="billing-and-credits" href="#"><span class="font-body-sm text-body-sm">Billing &amp; Credits</span></a></div></div></nav></div><div class="p-space-md space-y-space-sm bg-surface-container/60"><div class="p-space-sm rounded bg-surface-container-lowest shadow-[0_1px_4px_rgba(0,0,0,0.02)] space-y-1.5"><div class="flex items-center justify-between"><span class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Tenant Security</span><span class="font-label-code-sm text-label-code-sm text-secondary font-medium flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>RLS Active</span></div><div class="font-label-code-sm text-label-code-sm text-on-surface-variant">v4.18.2 • Supabase Synced</div></div><button class="w-full flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="font-body-sm text-body-sm flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">vertical_align_bottom</span>Collapse Sidebar</span><span class="font-label-code-sm text-label-code-sm text-outline">[</span></button></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-headline-sm text-headline-sm tracking-tight text-on-surface"><span class="font-semibold">ATELIER</span><span class="text-outline text-body-sm">/</span><span class="font-body-sm text-body-sm text-on-surface font-medium">Studio Kösen</span></div><span class="hidden lg:inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high font-label-code-sm text-label-code-sm text-on-surface-variant">Workspace Alpha</span></div><div class="flex items-center gap-space-md"><button class="hidden xl:flex items-center gap-space-sm px-space-md py-1.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.02)]" type="button"><span class="material-symbols-outlined text-[16px]">search</span><span class="font-body-sm text-body-sm">Search Projects &amp; Dossiers</span><kbd class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">⌘K</kbd></button><div class="hidden md:flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-high font-label-code-sm text-label-code-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[14px]">bolt</span><span class="font-medium text-on-surface">214 AI Credits</span><span class="text-outline">•</span><span class="text-primary font-medium">Pro</span></div><div class="hidden 2xl:flex items-center gap-1.5 px-space-sm py-1 rounded bg-secondary-container/40 font-label-code-sm text-label-code-sm text-on-secondary-container"><span class="material-symbols-outlined text-secondary text-[14px]">lock</span><span>RLS Enforced</span></div><button aria-label="Notifications" class="relative w-8 h-8 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary"></span></button><div class="flex items-center gap-space-sm pl-space-xs"><div class="hidden sm:flex flex-col text-right"><span class="font-body-sm text-body-sm font-medium text-on-surface leading-tight">Sofia Lindqvist</span><span class="font-label-code-sm text-label-code-sm text-on-surface-variant leading-tight">Principal</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.06)]"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-16 w-full min-h-screen bg-surface"><div class="flex flex-col w-full">
+<!-- Top Metabar & Control Deck -->
+<section class="w-full bg-surface-container-lowest px-space-xl py-space-lg shadow-sm">
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md">
+<div>
+<div class="flex items-center gap-space-xs font-label-code-sm text-label-code-sm text-outline uppercase tracking-wider mb-1">
+<span>Tenant Workspace</span>
+<span>/</span>
+<span>Configuration</span>
+<span>/</span>
+<span class="text-primary font-medium">FR-15 &amp; FR-16 White-Label System</span>
+</div>
+<div class="flex flex-wrap items-center gap-3">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">White-Label Branding &amp; Atelier Customization</h1>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-secondary-container/40 text-on-secondary-container font-label-code-sm text-label-code-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            Enterprise White-Label Active • SSL Verified
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+          Deploy your studio's custom apex domain, typographic hierarchy, bespoke client portal UI, and titleblock export stamps.
+        </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm pt-2 xl:pt-0">
+<a class="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-body-sm text-body-sm" href="#portal-live-preview">
+<span>Preview Client Portal</span>
+<span class="material-symbols-outlined text-[16px]">north_east</span>
+</a>
+<button class="px-3 py-2 rounded bg-surface-container-high text-on-surface hover:bg-surface-dim transition-colors font-body-sm text-body-sm" id="reset-button" type="button">
+          Reset to Defaults
+        </button>
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary hover:bg-primary-container transition-all font-body-sm text-body-sm shadow-sm cursor-pointer" id="save-button" type="button">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span>Save Changes</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 2-Column Master Layout: Configurator (65%) vs Dynamic Preview (35%) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg p-space-lg xl:p-space-xl">
+<!-- LEFT CONFIGURATOR STREAM (Cols 1-8 / ~65%) -->
+<div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-space-lg min-w-0">
+<!-- SECTION 1: DOMAIN & ROUTING -->
+<section class="p-space-lg rounded bg-surface-container-lowest shadow-sm space-y-space-md">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">dns</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Domain Routing &amp; Host Identity</h2>
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-medium">FR-15 / FR-17</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Configure custom apex CNAME resolution and tenant domain binding.</p>
+</div>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-secondary flex items-center gap-1 font-medium">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>Edge Synced
+          </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-2">
+<div class="space-y-1">
+<label class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Default Atelier Vanity URL</label>
+<div class="flex items-center h-10 px-3 rounded bg-surface-container text-on-surface-variant font-label-code-md text-label-code-md justify-between">
+<span class="truncate">kosen-arch.atelier.so</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary bg-secondary-container/50 px-1.5 py-0.5 rounded">Active</span>
+</div>
+<p class="font-label-code-sm text-label-code-sm text-on-surface-variant">Immutable fallback tenant route.</p>
+</div>
+<div class="space-y-1">
+<label class="font-label-ui text-label-ui uppercase tracking-wider text-outline" for="custom-domain-input">Custom Studio Apex Hostname</label>
+<div class="relative flex items-center h-10 rounded bg-surface-container-low focus-within:bg-surface-container-lowest focus-within:shadow-sm">
+<input class="w-full h-full bg-transparent px-3 text-on-surface font-label-code-md text-label-code-md outline-none" id="custom-domain-input" placeholder="client.yourstudio.com" type="text" value="client.kosenarchitects.com"/>
+<span class="material-symbols-outlined text-[18px] text-secondary absolute right-3">verified</span>
+</div>
+<p class="font-label-code-sm text-label-code-sm text-on-surface-variant">Cloudflare Enterprise Edge SSL • Auto Renew 2026-03</p>
+</div>
+</div>
+<!-- Collapsible DNS Ledger -->
+<details class="group bg-surface-container-low rounded p-space-sm open:pb-space-md transition-all">
+<summary class="flex items-center justify-between cursor-pointer list-none select-none font-body-sm text-body-sm font-medium text-on-surface">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline group-open:rotate-90 transition-transform">chevron_right</span>
+<span>DNS Ingress Record Mapping (Required for custom apex)</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">3 Records Validated</span>
+</summary>
+<div class="mt-3 overflow-x-auto">
+<table class="w-full text-left font-label-code-sm text-label-code-sm">
+<thead>
+<tr class="bg-surface-container-high text-on-surface-variant">
+<th class="px-3 py-1.5 rounded-l">Type</th>
+<th class="px-3 py-1.5">Host Record</th>
+<th class="px-3 py-1.5">Target Value</th>
+<th class="px-3 py-1.5">TTL</th>
+<th class="px-3 py-1.5 rounded-r">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-on-surface">
+<tr class="bg-surface-container-lowest/60">
+<td class="px-3 py-2 font-semibold">CNAME</td>
+<td class="px-3 py-2 font-mono">client</td>
+<td class="px-3 py-2 font-mono text-primary truncate max-w-[200px]">cname.atelier.so</td>
+<td class="px-3 py-2">300s</td>
+<td class="px-3 py-2 text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Valid
+                  </td>
+</tr>
+<tr class="bg-surface-container-lowest">
+<td class="px-3 py-2 font-semibold">TXT</td>
+<td class="px-3 py-2 font-mono">_atelier-challenge</td>
+<td class="px-3 py-2 font-mono text-outline truncate max-w-[200px]">kosen-verify-88912c9bf10</td>
+<td class="px-3 py-2">Auto</td>
+<td class="px-3 py-2 text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Valid
+                  </td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+<div class="flex items-center justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Enforce Strict HTTPS (HSTS Preload)</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Force all incoming client and contractor traffic through TLS 1.3 cryptographic pipes</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-checked:bg-primary rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+</label>
+</div>
+</section>
+<!-- SECTION 2: BRAND IDENTITY & VISUAL ASSETS -->
+<section class="p-space-lg rounded bg-surface-container-lowest shadow-sm space-y-space-md">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">palette</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Studio Wordmark &amp; Visual Identity Assets</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Provide clean vector SVG or high-resolution iconography for client-facing UI and exports.</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Primary Logomark Card -->
+<div class="p-space-md rounded bg-surface-container-low flex flex-col justify-between gap-space-md md:col-span-2">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Primary Wordmark (Vector SVG)</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-medium">Rendered Vector</span>
+</div>
+<div class="h-24 rounded bg-surface-container-lowest flex items-center justify-between px-space-lg shadow-sm">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[24px]">architecture</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-on-surface tracking-tight font-semibold leading-tight">KÖSEN</div>
+<div class="font-label-code-sm text-label-code-sm text-primary tracking-widest uppercase">Studio Atelier</div>
+</div>
+</div>
+<div class="hidden sm:flex flex-col text-right font-label-code-sm text-label-code-sm text-outline">
+<span>Aspect: 3.4 : 1</span>
+<span>Size: 14.2 KB</span>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-2">
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Supports SVG, WebP, PNG (Transparent)</span>
+<div class="flex gap-2">
+<button class="px-2.5 py-1.5 rounded bg-surface-container-high hover:bg-surface-dim font-body-sm text-body-sm text-on-surface transition-colors" type="button">Replace SVG</button>
+<button class="px-2.5 py-1.5 rounded bg-surface-container-highest hover:bg-error-container hover:text-on-error-container font-body-sm text-body-sm text-on-surface transition-colors" type="button">Remove</button>
+</div>
+</div>
+</div>
+<!-- Favicon Zone -->
+<div class="p-space-md rounded bg-surface-container-low flex flex-col justify-between gap-space-md">
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block mb-2">Favicon Mark (32×32px)</span>
+<div class="h-24 rounded bg-surface-container-lowest flex items-center justify-center shadow-sm">
+<div class="w-10 h-10 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[20px]">architecture</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">.ico / 64×64 PNG</span>
+<button class="px-2.5 py-1.5 rounded bg-surface-container-high hover:bg-surface-dim font-body-sm text-body-sm text-on-surface transition-colors" type="button">Upload</button>
+</div>
+</div>
+</div>
+<!-- Email & Portal Banner Graphic -->
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<label class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Client Invitation &amp; Portal Hero Ambient Graphic</label>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">1440×360px recommended</span>
+</div>
+<div class="relative h-28 rounded bg-surface-container-low overflow-hidden group">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Architectural mood texture featuring tactile honed limestone, linen drapes, and warm terracotta light casting soft natural geometric shadows across a minimalist Scandinavian atelier drafting studio." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAAuKE6OI6VsInQ4yY5LfmZGjzFFFZqHwXZz4UrSFaXo55mHnzaOvzoFDKBnaPh-koLZlj4J1JS3MmKjM4qBP0DbJ7xrdNrdM6O-mv8krMaU1s31Ioqt5yCzNl_-FvwF5T6njeBTJPyFBbOBMcHUturkNHAl5u4Ynn8LNY99Xd-ftbScgnP_xLk7x2cISWfKniXM9XJPHzSIygDHkh4DQMKiPcOcXYo0wRd8-5GTw0')"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-on-surface/80 via-on-surface/40 to-transparent flex items-center px-space-lg">
+<div class="text-surface-container-lowest">
+<div class="font-label-code-sm text-label-code-sm uppercase tracking-wider opacity-80">Nordic Atelier Ambient Backdrop</div>
+<div class="font-headline-sm text-headline-sm font-medium">Honed Stone &amp; Sunlight Study</div>
+</div>
+</div>
+<button class="absolute top-3 right-3 px-3 py-1.5 rounded bg-surface-container-lowest/90 backdrop-blur-md text-on-surface font-body-sm text-body-sm shadow hover:bg-surface-container-lowest transition-colors" type="button">
+              Update Scrim
+            </button>
+</div>
+</div>
+</section>
+<!-- SECTION 3: PALETTE & ARCHITECTURAL PRESET SYSTEM -->
+<section class="p-space-lg rounded bg-surface-container-lowest shadow-sm space-y-space-md">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">architecture</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Architectural Palette &amp; Material Engine</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Tuned tactile hues engineered for CAD viewports and high-legibility client dossiers.</p>
+</div>
+</div>
+<span class="font-label-code-sm text-label-code-sm px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-medium">Dynamic Live Preview</span>
+</div>
+<!-- Curated Presets Grid -->
+<div class="space-y-2">
+<label class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Curated Atelier Themes</label>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-space-sm" id="preset-container">
+<!-- Preset 1: Nordic Warmth (Active) -->
+<button class="p-3 rounded text-left bg-surface-container-high shadow-sm flex flex-col justify-between gap-2 border-0 ring-2 ring-primary" type="button">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm font-semibold text-on-surface">Nordic Warmth</span>
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+</div>
+<div class="flex h-3 w-full rounded overflow-hidden">
+<span class="w-1/3 bg-primary"></span>
+<span class="w-1/3 bg-surface-container"></span>
+<span class="w-1/3 bg-tertiary"></span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Terracotta &amp; Oak</span>
+</button>
+<!-- Preset 2: Brutalist Mono -->
+<button class="p-3 rounded text-left bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col justify-between gap-2" type="button">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Brutalist Mono</span>
+</div>
+<div class="flex h-3 w-full rounded overflow-hidden">
+<span class="w-1/3 bg-inverse-surface"></span>
+<span class="w-1/3 bg-surface-dim"></span>
+<span class="w-1/3 bg-on-surface-variant"></span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Slate &amp; Concrete</span>
+</button>
+<!-- Preset 3: Kyoto Minimal -->
+<button class="p-3 rounded text-left bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col justify-between gap-2" type="button">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Kyoto Minimal</span>
+</div>
+<div class="flex h-3 w-full rounded overflow-hidden">
+<span class="w-1/3 bg-tertiary-container"></span>
+<span class="w-1/3 bg-tertiary-fixed"></span>
+<span class="w-1/3 bg-secondary"></span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Hinoki &amp; Washi</span>
+</button>
+<!-- Preset 4: Milano Heritage -->
+<button class="p-3 rounded text-left bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col justify-between gap-2" type="button">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Milano Heritage</span>
+</div>
+<div class="flex h-3 w-full rounded overflow-hidden">
+<span class="w-1/3 bg-primary-container"></span>
+<span class="w-1/3 bg-secondary"></span>
+<span class="w-1/3 bg-surface-container-highest"></span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Tuscan &amp; Green</span>
+</button>
+</div>
+</div>
+<!-- Custom Color Variables Swatches -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md pt-2">
+<div class="p-3 rounded bg-surface-container-low flex flex-col gap-2">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Accent CAD Highlight</span>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary shadow-sm cursor-pointer"></div>
+<div>
+<div class="font-label-code-md text-label-code-md text-on-surface font-semibold">#9F3C16</div>
+<div class="font-label-code-sm text-label-code-sm text-on-surface-variant">Nordic Terracotta</div>
+</div>
+</div>
+</div>
+<div class="p-3 rounded bg-surface-container-low flex flex-col gap-2">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Spatial Canvas Base</span>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface shadow-sm cursor-pointer"></div>
+<div>
+<div class="font-label-code-md text-label-code-md text-on-surface font-semibold">#FBF9F6</div>
+<div class="font-label-code-sm text-label-code-sm text-on-surface-variant">Honed Limestone</div>
+</div>
+</div>
+</div>
+<div class="p-3 rounded bg-surface-container-low flex flex-col gap-2">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Structural Ink / Vector</span>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-on-surface shadow-sm cursor-pointer"></div>
+<div>
+<div class="font-label-code-md text-label-code-md text-on-surface font-semibold">#1B1C1A</div>
+<div class="font-label-code-sm text-label-code-sm text-on-surface-variant">Off-Black Ink</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Typography Selection -->
+<div class="space-y-2 pt-2">
+<div class="flex items-center justify-between">
+<label class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Primary Architectural Typography Pairing</label>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-medium">Precision Kerning Active</span>
+</div>
+<div class="p-space-md rounded bg-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Plus Jakarta Sans &amp; JetBrains Mono</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Engineered for architectural readability, structural CAD legends, and editorial project pitch decks.</div>
+</div>
+<button class="px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-dim font-body-sm text-body-sm text-on-surface whitespace-nowrap transition-colors" type="button">
+              Change Font Stack
+            </button>
+</div>
+</div>
+</section>
+<!-- SECTION 4: CLIENT PORTAL & ONBOARDING CONTROLS -->
+<section class="p-space-lg rounded bg-surface-container-lowest shadow-sm space-y-space-md">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">door_open</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Client Portal Experience &amp; Onboarding Controls</h2>
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-medium">FR-16</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Configure frictionless client portal access, welcoming briefs, and platform masking.</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-2">
+<div class="space-y-1">
+<label class="font-label-ui text-label-ui uppercase tracking-wider text-outline" for="welcome-headline-input">Portal Hero Welcome Headline</label>
+<input class="w-full h-10 px-3 rounded bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md outline-none" id="welcome-headline-input" type="text" value="Penthouse Apt 4B Spatial Reconfiguration"/>
+<p class="font-label-code-sm text-label-code-sm text-on-surface-variant">Dynamic merge token available: <code class="text-primary">{{project.name}}</code></p>
+</div>
+<div class="space-y-1">
+<label class="font-label-ui text-label-ui uppercase tracking-wider text-outline" for="principal-byline-input">Principal Architect / Studio Byline</label>
+<input class="w-full h-10 px-3 rounded bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md outline-none" id="principal-byline-input" type="text" value="Sofia Lindqvist • Principal Architect"/>
+<p class="font-label-code-sm text-label-code-sm text-on-surface-variant">Displayed as sign-off beneath spatial blueprints.</p>
+</div>
+</div>
+<!-- Toggles Stack -->
+<div class="space-y-3 pt-2">
+<!-- Toggle 1: Guest Mode -->
+<div class="p-3 rounded bg-surface-container-low flex items-center justify-between">
+<div class="flex flex-col pr-space-md">
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Allow 'Guest Explorer' Mode (No Passwords)</span>
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.2 rounded bg-tertiary-fixed text-on-tertiary-fixed font-medium">FR-16</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Clients can review 2D space plans, toggle FF&amp;E options, and pin comments with 1-click tokenized magic links.</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-checked:bg-primary rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+</label>
+</div>
+<!-- Toggle 2: Hide Atelier Attribution -->
+<div class="p-3 rounded bg-surface-container-low flex items-center justify-between">
+<div class="flex flex-col pr-space-md">
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Pure White-Label: Mask Atelier Platform Attribution</span>
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.2 rounded bg-secondary-fixed text-on-secondary-fixed font-medium">Enterprise Active</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Removes all “Powered by Atelier CAD Engine” watermarks, meta tags, and footer credits across all client portals.</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-checked:bg-primary rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+</label>
+</div>
+<!-- Toggle 3: Non-Structural Advisory Lock -->
+<div class="p-3 rounded bg-surface-container-low flex items-center justify-between">
+<div class="flex flex-col pr-space-md">
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Mandatory Non-Structural Disclaimer Stamp</span>
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.2 rounded bg-error-container text-on-error-container font-medium">FR-19 Mandatory</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">“Conceptual interior space plan only. Not for structural load modifications or permit filings without structural engineer seal.”</span>
+</div>
+<div class="flex items-center gap-2 text-outline shrink-0">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+<span class="font-label-code-sm text-label-code-sm uppercase font-semibold">Enforced</span>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 5: WATERMARK & CAD DOSSIER EXPORT TITLEBLOCK -->
+<section class="p-space-lg rounded bg-surface-container-lowest shadow-sm space-y-space-md mb-8">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Watermark &amp; CAD Dossier Export Identity</h2>
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-medium">FR-14 / FR-15</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Architectural titleblock styling embedded on vector SVG and PDF construction dossiers.</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-sm pt-2">
+<!-- Stamp 1 -->
+<label class="p-3 rounded bg-surface-container-high ring-2 ring-primary cursor-pointer flex flex-col justify-between gap-3">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm font-semibold text-on-surface">Architectural Corner Stamp</span>
+<input checked="" class="accent-primary" name="titleblock-style" type="radio"/>
+</div>
+<div class="h-16 rounded bg-surface-container-lowest p-2 flex flex-col justify-end text-[9px] font-mono text-outline">
+<div class="border-t-2 border-primary pt-1 flex justify-between font-bold text-on-surface">
+<span>KÖSEN ATELIER</span>
+<span>REV 04</span>
+</div>
+<div class="flex justify-between">
+<span>SCALE 1:50</span>
+<span>DATE: 2025</span>
+</div>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Standard DIN A3 Lower-Right</span>
+</label>
+<!-- Stamp 2 -->
+<label class="p-3 rounded bg-surface-container-low hover:bg-surface-container cursor-pointer flex flex-col justify-between gap-3 transition-colors">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Top Header Strip</span>
+<input class="accent-primary" name="titleblock-style" type="radio"/>
+</div>
+<div class="h-16 rounded bg-surface-container-lowest p-2 flex flex-col justify-start text-[9px] font-mono text-outline">
+<div class="border-b-2 border-outline-variant pb-1 flex justify-between font-bold text-on-surface">
+<span>STUDIO KÖSEN</span>
+<span>PROJECT DOSSIER</span>
+</div>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Editorial Magazine Bar</span>
+</label>
+<!-- Stamp 3 -->
+<label class="p-3 rounded bg-surface-container-low hover:bg-surface-container cursor-pointer flex flex-col justify-between gap-3 transition-colors">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Minimalist Monomark</span>
+<input class="accent-primary" name="titleblock-style" type="radio"/>
+</div>
+<div class="h-16 rounded bg-surface-container-lowest p-2 flex items-center justify-center text-[10px] font-mono text-on-surface font-semibold">
+              KÖSEN • 2025
+            </div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Unobtrusive Fine Print</span>
+</label>
+</div>
+<div class="p-3 rounded bg-surface-container-low flex items-center justify-between pt-3">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Digital Signature Certification Watermark</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Embeds Sofia Lindqvist's cryptographic atelier seal on final exported design proposals</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-checked:bg-primary rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+</label>
+</div>
+</section>
+</div>
+<!-- RIGHT INTERACTIVE PREVIEW STREAM (Cols 9-12 / ~35%) -->
+<div class="lg:col-span-5 xl:col-span-4" id="portal-live-preview">
+<div class="sticky top-20 flex flex-col gap-space-md">
+<!-- Preview Wrapper Card -->
+<div class="p-space-md rounded bg-surface-container-lowest shadow-md space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">devices</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Live Client Experience</h3>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-secondary bg-secondary-container/40 px-2 py-0.5 rounded font-medium flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Real-Time
+            </span>
+</div>
+<!-- View Mode Tabs -->
+<div class="flex p-1 rounded bg-surface-container font-label-ui text-label-ui uppercase tracking-wider text-outline">
+<button class="flex-1 py-1.5 rounded bg-surface-container-lowest text-on-surface shadow-sm font-semibold transition-all" id="tab-onboarding" type="button">
+              Client Portal
+            </button>
+<button class="flex-1 py-1.5 rounded hover:text-on-surface transition-all" id="tab-floorplan" type="button">
+              2D CAD Canvas
+            </button>
+<button class="flex-1 py-1.5 rounded hover:text-on-surface transition-all" id="tab-titleblock" type="button">
+              PDF Stamp
+            </button>
+</div>
+<!-- Simulated Browser Chrome -->
+<div class="rounded overflow-hidden bg-surface-container-highest shadow-sm">
+<!-- Browser Address Pill -->
+<div class="px-3 py-2 bg-surface-container-high flex items-center gap-2">
+<div class="flex gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-outline-variant"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-outline-variant"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-outline-variant"></span>
+</div>
+<div class="flex-1 flex items-center justify-center px-2 py-0.5 rounded bg-surface-container-lowest text-on-surface font-label-code-sm text-label-code-sm truncate">
+<span class="material-symbols-outlined text-secondary text-[12px] mr-1">lock</span>
+<span id="preview-url-text">client.kosenarchitects.com</span>
+<span class="text-outline">/p/apt-4b</span>
+</div>
+</div>
+<!-- Client Onboarding Frame Canvas -->
+<div class="relative bg-surface p-space-md flex flex-col justify-between min-h-[420px]" id="canvas-onboarding-view">
+<!-- Subtle Background Mood study -->
+<div class="absolute inset-0 bg-cover bg-center opacity-15 pointer-events-none" data-alt="Subtle top-down architectural layout sketch of Scandinavian apartment penthouse with oak flooring and warm ambient daylight." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDAcmePpttC0IMnTBBPY0sRoaqBXqgDIpOGdR86HXo_QUap6h3-boa7OR9aGk099YF52YRHbSGAj-ACz79W9MBrQW1UmioBoLGNAuxPYzmiAfKeqP1vs5g66l-2Auk9cnmmtI0z14UtN_FpL4P78gQCzqAp_QCfhOB1KBHkMwe90XJjCFUkvsZZ939qcqwpVZyYtm7Kk5yfjYDHVBDfQCknyjs_mFK0RcCvVVo-zK0')"></div>
+<!-- Top Atelier Brand Bar -->
+<div class="relative z-10 flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[14px]">architecture</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-on-surface text-[14px] leading-none font-bold block">KÖSEN</span>
+<span class="font-label-code-sm text-label-code-sm text-primary text-[8px] uppercase tracking-wider block">Studio Atelier</span>
+</div>
+</div>
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface font-medium">Guest Mode</span>
+</div>
+<!-- Main Onboarding Body Card -->
+<div class="relative z-10 my-auto p-4 rounded bg-surface-container-lowest shadow-md space-y-3">
+<div class="space-y-1">
+<span class="font-label-code-sm text-label-code-sm text-primary font-medium uppercase tracking-wider">Project Dossier 04B</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold leading-tight" id="preview-welcome-text">
+                    Penthouse Apt 4B Spatial Reconfiguration
+                  </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant" id="preview-byline-text">
+                    Sofia Lindqvist • Principal Architect
+                  </p>
+</div>
+<div class="p-2.5 rounded bg-surface-container-low flex items-center justify-between text-on-surface">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">verified_user</span>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm font-medium">Encrypted Spatial Review</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">No login credentials required</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2.5 rounded bg-primary hover:bg-primary-container text-on-primary font-body-sm text-body-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2" type="button">
+<span>Enter Workspace as Guest</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<!-- Portal Legal Footer -->
+<div class="relative z-10 pt-3 text-center">
+<p class="font-label-code-sm text-label-code-sm text-outline text-[9px] leading-tight">
+                  FR-19 Non-Structural Advisory: All dimensions schematic. Verified on site by licensed contractor.
+                </p>
+</div>
+</div>
+<!-- Alternative 2D Floor Plan Canvas (Hidden by Default) -->
+<div class="hidden bg-surface-container-lowest p-space-md flex-col justify-between min-h-[420px]" id="canvas-floorplan-view">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-label-code-sm text-on-surface font-bold">2D Space Planner • Apt 4B</span>
+<span class="font-label-code-sm text-label-code-sm text-primary">Grid Snap: 50mm</span>
+</div>
+<div class="my-auto h-48 rounded bg-surface flex items-center justify-center relative overflow-hidden">
+<!-- Orthographic Vector Wireframe -->
+<svg class="w-full h-full text-on-surface-variant/40" fill="none" stroke="currentColor" viewbox="0 0 200 120">
+<rect height="80" stroke-width="2" width="160" x="20" y="20"></rect>
+<line stroke-dasharray="2,2" stroke-width="1.5" x1="80" x2="80" y1="20" y2="100"></line>
+<line stroke-width="1" x1="20" x2="80" y1="60" y2="60"></line>
+<rect fill="currentColor" fill-opacity="0.1" height="20" width="30" x="30" y="30"></rect>
+<circle cx="130" cy="60" fill="currentColor" fill-opacity="0.1" r="18"></circle>
+<text fill="#9f3c16" font-family="JetBrains Mono" font-size="6" font-weight="bold" x="95" y="55">Living Suite (24.8m²)</text>
+<text fill="#57423b" font-family="JetBrains Mono" font-size="5" x="32" y="42">Bath</text>
+</svg>
+<div class="absolute bottom-2 right-2 bg-on-surface text-surface-container-lowest px-2 py-0.5 rounded font-label-code-sm text-[9px]">
+                  Scale 1:50
+                </div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-code-sm text-label-code-sm">
+<span>Client Commenting Active</span>
+<span class="text-secondary font-medium">✓ Zero Platform Badging</span>
+</div>
+</div>
+<!-- Alternative PDF Titleblock View (Hidden by Default) -->
+<div class="hidden bg-surface-container-lowest p-space-md flex-col justify-between min-h-[420px]" id="canvas-titleblock-view">
+<div class="border-b border-surface-container-highest pb-2 flex justify-between items-center">
+<span class="font-label-code-sm text-label-code-sm text-outline">EXPORT DOSSIER SHEET A-102</span>
+<span class="font-label-code-sm text-label-code-sm text-primary">PDF/X-1a</span>
+</div>
+<div class="my-auto p-4 rounded bg-surface shadow-sm space-y-4">
+<div class="text-center font-headline-sm text-headline-sm text-on-surface font-semibold">
+                  Schematic Spatial Layout
+                </div>
+<div class="p-3 bg-surface-container-lowest rounded space-y-1">
+<div class="flex justify-between font-label-code-sm text-label-code-sm font-bold text-on-surface border-b pb-1">
+<span>STUDIO KÖSEN ARCHITECTS</span>
+<span class="text-primary">SEAL CERTIFIED</span>
+</div>
+<div class="flex justify-between font-label-code-sm text-label-code-sm text-on-surface-variant pt-1">
+<span>Project: Penthouse Apt 4B</span>
+<span>Lead: Sofia Lindqvist</span>
+</div>
+<div class="flex justify-between font-label-code-sm text-label-code-sm text-outline">
+<span>Timestamp: 2025-05-18 UTC</span>
+<span>Hash: SHA-256 Valid</span>
+</div>
+</div>
+</div>
+<div class="font-label-code-sm text-[8px] text-outline text-center">
+                Digital Vector Signature Registered to client.kosenarchitects.com
+              </div>
+</div>
+</div>
+<!-- Color Accessibility Compliance Bar -->
+<div class="p-3 rounded bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]">spellcheck</span>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Color Contrast Ratio</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">WCAG AAA Compliant (6.8:1)</span>
+</div>
+</div>
+<span class="font-label-code-sm text-label-code-sm font-bold text-secondary bg-secondary-container/60 px-2 py-0.5 rounded">
+              PASS
+            </span>
+</div>
+<!-- Direct Client Invite Trigger Bar -->
+<div class="space-y-1.5 pt-1">
+<label class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Instant Client Access Link</label>
+<div class="flex items-center gap-2">
+<div class="flex-1 h-9 px-3 rounded bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm flex items-center truncate">
+                https://client.kosenarchitects.com/invite?token=ksn_8a2d
+              </div>
+<button class="h-9 px-3 rounded bg-surface-container-high hover:bg-surface-dim text-on-surface font-body-sm text-body-sm transition-colors flex items-center gap-1.5 shrink-0" id="copy-invite-button" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span id="copy-invite-text">Copy</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Tenant Metadata Pod -->
+<div class="p-space-sm rounded bg-surface-container-low flex items-center justify-between font-label-code-sm text-label-code-sm text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">shield_locked</span>
+<span>Tenant DB: isolated-schema</span>
+</div>
+<span>Sync: 0.14s</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function initWhiteLabelStudio() {
+    // Interactive Elements
+    const domainInput = document.getElementById('custom-domain-input');
+    const welcomeInput = document.getElementById('welcome-headline-input');
+    const bylineInput = document.getElementById('principal-byline-input');
+    const previewUrl = document.getElementById('preview-url-text');
+    const previewWelcome = document.getElementById('preview-welcome-text');
+    const previewByline = document.getElementById('preview-byline-text');
+    const saveButton = document.getElementById('save-button');
+    const resetButton = document.getElementById('reset-button');
+    const copyButton = document.getElementById('copy-invite-button');
+    const copyText = document.getElementById('copy-invite-text');
+
+    // Live binding: Custom Domain
+    if (domainInput && previewUrl) {
+      domainInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        previewUrl.textContent = val.length > 0 ? val : 'client.kosenarchitects.com';
+        indicateUnsaved();
+      });
+    }
+
+    // Live binding: Welcome text
+    if (welcomeInput && previewWelcome) {
+      welcomeInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        previewWelcome.textContent = val.length > 0 ? val : 'Penthouse Apt 4B Spatial Reconfiguration';
+        indicateUnsaved();
+      });
+    }
+
+    // Live binding: Principal byline
+    if (bylineInput && previewByline) {
+      bylineInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        previewByline.textContent = val.length > 0 ? val : 'Sofia Lindqvist • Principal Architect';
+        indicateUnsaved();
+      });
+    }
+
+    function indicateUnsaved() {
+      if (saveButton) {
+        saveButton.classList.remove('bg-primary');
+        saveButton.classList.add('bg-primary-container', 'animate-pulse');
+      }
+    }
+
+    if (saveButton) {
+      saveButton.addEventListener('click', () => {
+        saveButton.classList.remove('animate-pulse', 'bg-primary-container');
+        saveButton.classList.add('bg-secondary');
+        const origText = saveButton.innerHTML;
+        saveButton.innerHTML = `<span class="material-symbols-outlined text-[16px]">check</span><span>Saved to Edge</span>`;
+        setTimeout(() => {
+          saveButton.innerHTML = origText;
+          saveButton.classList.remove('bg-secondary');
+          saveButton.classList.add('bg-primary');
+        }, 1800);
+      });
+    }
+
+    if (resetButton) {
+      resetButton.addEventListener('click', () => {
+        if (domainInput) domainInput.value = 'client.kosenarchitects.com';
+        if (welcomeInput) welcomeInput.value = 'Penthouse Apt 4B Spatial Reconfiguration';
+        if (bylineInput) bylineInput.value = 'Sofia Lindqvist • Principal Architect';
+        if (previewUrl) previewUrl.textContent = 'client.kosenarchitects.com';
+        if (previewWelcome) previewWelcome.textContent = 'Penthouse Apt 4B Spatial Reconfiguration';
+        if (previewByline) previewByline.textContent = 'Sofia Lindqvist • Principal Architect';
+        if (saveButton) {
+          saveButton.classList.remove('animate-pulse', 'bg-primary-container');
+          saveButton.classList.add('bg-primary');
+        }
+      });
+    }
+
+    // Copy Invite Link Interaction
+    if (copyButton && copyText) {
+      copyButton.addEventListener('click', () => {
+        const link = "https://client.kosenarchitects.com/invite?token=ksn_8a2d";
+        navigator.clipboard?.writeText(link).then(() => {
+          copyText.textContent = "Copied!";
+          setTimeout(() => {
+            copyText.textContent = "Copy";
+          }, 1500);
+        }).catch(() => {
+          copyText.textContent = "Copied!";
+          setTimeout(() => {
+            copyText.textContent = "Copy";
+          }, 1500);
+        });
+      });
+    }
+
+    // Preview Mode Tab Switchers
+    const tabOnboarding = document.getElementById('tab-onboarding');
+    const tabFloorplan = document.getElementById('tab-floorplan');
+    const tabTitleblock = document.getElementById('tab-titleblock');
+
+    const viewOnboarding = document.getElementById('canvas-onboarding-view');
+    const viewFloorplan = document.getElementById('canvas-floorplan-view');
+    const viewTitleblock = document.getElementById('canvas-titleblock-view');
+
+    function setActiveTab(activeBtn, activeView) {
+      [tabOnboarding, tabFloorplan, tabTitleblock].forEach(btn => {
+        if (btn) {
+          btn.classList.remove('bg-surface-container-lowest', 'text-on-surface', 'shadow-sm', 'font-semibold');
+          btn.classList.add('text-outline');
+        }
+      });
+      [viewOnboarding, viewFloorplan, viewTitleblock].forEach(view => {
+        if (view) {
+          view.classList.add('hidden');
+          view.classList.remove('flex');
+        }
+      });
+
+      if (activeBtn) {
+        activeBtn.classList.add('bg-surface-container-lowest', 'text-on-surface', 'shadow-sm', 'font-semibold');
+        activeBtn.classList.remove('text-outline');
+      }
+      if (activeView) {
+        activeView.classList.remove('hidden');
+        activeView.classList.add('flex');
+      }
+    }
+
+    if (tabOnboarding && viewOnboarding) {
+      tabOnboarding.addEventListener('click', () => setActiveTab(tabOnboarding, viewOnboarding));
+    }
+    if (tabFloorplan && viewFloorplan) {
+      tabFloorplan.addEventListener('click', () => setActiveTab(tabFloorplan, viewFloorplan));
+    }
+    if (tabTitleblock && viewTitleblock) {
+      tabTitleblock.addEventListener('click', () => setActiveTab(tabTitleblock, viewTitleblock));
+    }
+
+  })();
+</script></main></div></body></html>

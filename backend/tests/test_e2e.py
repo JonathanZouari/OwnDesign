@@ -58,6 +58,14 @@ def servers():
             process.terminate()
 
 
+def metric(page, name: str) -> str:
+    return page.locator(f"[data-metric={name}]").inner_text().strip()
+
+
+def overflows(page) -> bool:
+    return page.evaluate("document.documentElement.scrollWidth > window.innerWidth")
+
+
 def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     designer = make_user("e2e-designer")
     studio = api.post("/v1/studios", json={"name": "E2E Studio"}, headers=designer.headers).json()["data"]
@@ -68,6 +76,7 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     # Guest arrives through the studio link and sees the studio's name.
     page.goto(f"{SITE}/entry.html?studio={studio['slug']}")
     page.get_by_role("heading", name="תכננו את הבית שלכם עם E2E Studio.").wait_for()
+    assert page.locator("#entry-kind").inner_text() == "קישור סטודיו"
     page.get_by_role("link", name="התחילו לעצב").click()
 
     # Wizard: two default rooms -> eight walls on the canvas.
@@ -152,12 +161,16 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
     studio_url = page.get_by_label("קישור הסטודיו").input_value()
     slug = studio_url.split("studio=")[1]
     assert studio_url.startswith(f"{SITE}/entry.html?studio=atelier-e2e-")
+    # A new studio has nothing yet: every metric is zero and the directory shows its empty state.
+    assert [metric(page, name) for name in ("projects", "clients", "pending-invites", "new-this-month")] == ["0"] * 4
+    page.get_by_text("אין עדיין פרויקטים").wait_for()
 
     # Personal invite: appears as pending, and its link resolves publicly to this studio.
     page.get_by_label("שם הלקוח").fill("Dana Client")
     page.get_by_label("אימייל הלקוח").fill("dana@example.com")
     page.get_by_role("button", name="יצירת קישור הזמנה").click()
     page.get_by_role("cell", name="ממתין").wait_for()
+    assert metric(page, "pending-invites") == "1"
 
     # A client of this studio saves a plan (through the API, as the editor would).
     client = make_user("e2e-invited")
@@ -168,10 +181,35 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
     assert api.post(f"/v1/projects/{project['id']}/versions", json={"geometry": VALID}, headers=client.headers).status_code == 201
 
     # The designer finds it on the dashboard, opens it, revises it and saves a designer version.
+    # A second project that was created but never saved has no plan to draw.
+    unsaved = "Penthouse" + "W" * 50
+    api.post("/v1/projects", json={"studio_id": studio["id"], "name": unsaved, "property_type": "existing"}, headers=client.headers)
+
     page.reload()
-    row = page.get_by_role("row", name="Dana's flat")
-    row.get_by_text(client.email).wait_for()
-    row.get_by_role("link", name="פתיחה").click()
+    card = page.get_by_role("article", name="Dana's flat")
+    card.get_by_text(client.email).wait_for()
+    card.scroll_into_view_if_needed()  # a plan preview is fetched when its card comes into view
+    card.locator("svg.thumb").wait_for(state="attached")
+    page.get_by_role("article", name=unsaved).locator(".thumb.empty").wait_for(state="attached")
+    assert [metric(page, name) for name in ("projects", "clients", "new-this-month")] == ["2", "1", "2"]
+    page.locator("#activity li").filter(has_text="Dana's flat").first.wait_for()
+
+    # The search box narrows the directory in the browser.
+    search = page.get_by_label("חיפוש פרויקטים")
+    search.fill("no such project")
+    page.get_by_text("אף פרויקט אינו תואם").wait_for()
+    assert card.is_hidden()
+    search.fill("dana")
+    card.wait_for()
+    assert page.get_by_role("article", name=unsaved).is_hidden()
+    search.fill("")
+
+    # A long unbroken project name must not push the page sideways on a phone.
+    page.set_viewport_size({"width": 390, "height": 800})
+    assert not overflows(page)
+    page.set_viewport_size({"width": 1280, "height": 720})
+
+    card.get_by_role("link", name="פתיחה בקנבס הדו־ממדי").click()
     page.get_by_text("עריכה כמעצב").wait_for()
     page.locator("#canvas [data-kind=furniture]").first.focus()
     page.keyboard.press("r")
@@ -186,6 +224,10 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
     assert [(v["version_no"], v["author_role"]) for v in versions] == [(2, "designer"), (1, "client")]
     latest = api.get(f"/v1/projects/{project['id']}/versions/latest", headers=client.headers).json()["data"]["geometry"]
     assert latest["furniture"][0]["rotation"] == 90
+
+    # The dashboard's activity feed records the designer's save.
+    page.goto(f"{SITE}/studio.html")
+    page.locator("#activity li").filter(has_text="המעצב").first.wait_for()
 
 
 def _sign_in(page, user):
@@ -1039,3 +1081,46 @@ def test_room_kind_is_one_click_in_the_editor(servers, page):
     assert target.locator(".room-name").text_content() == kind
     page.locator("#undo").click()
     assert rooms.nth(1).locator(".room-name").text_content() == before
+
+
+def test_client_portal_entry_points(servers, page, api, make_user):
+    designer = make_user("e2e-portal")
+    # Markup in a studio name is shown as text, and a long unbroken word must not widen the page.
+    name = ("<i>Studio</i> " + "Supercalifragilistic" * 4)[:80]
+    studio = api.post("/v1/studios", json={"name": name}, headers=designer.headers).json()["data"]
+    invite = api.post(
+        f"/v1/studios/{studio['id']}/invites",
+        json={"client_name": "Noa Levi", "client_email": "noa@example.com"},
+        headers=designer.headers,
+    ).json()["data"]
+
+    # A personal invite greets the client by name.
+    page.goto(f"{SITE}/entry.html?invite={invite['token']}")
+    page.get_by_role("heading", name=f"היי Noa Levi, תכננו את הבית שלכם עם {name}.").wait_for()
+    assert page.locator("#entry-kind").inner_text() == "הזמנה אישית"
+    assert page.locator("h1 i").count() == 0
+    page.set_viewport_size({"width": 390, "height": 800})
+    assert not overflows(page)
+    page.set_viewport_size({"width": 1280, "height": 720})
+
+    # Skipping the wizard opens the editor on an empty plan.
+    page.get_by_role("button", name="פתיחת קנבס ריק").click()
+    page.wait_for_url("**/editor.html")
+    page.locator("#canvas").wait_for()
+    assert page.locator("#canvas [data-kind=walls]").count() == 0
+
+    # With a draft in the browser, a blank canvas asks before replacing it. Declining keeps the draft.
+    page.goto(f"{SITE}/entry.html?invite={invite['token']}")
+    page.get_by_text("יש לכם תוכנית שלא נשמרה בדפדפן הזה").wait_for()
+    page.get_by_role("button", name="פתיחת קנבס ריק").click()  # Playwright dismisses the confirm by default
+    page.wait_for_timeout(300)
+    assert "entry.html" in page.url
+    page.once("dialog", lambda dialog: dialog.accept())
+    page.get_by_role("button", name="פתיחת קנבס ריק").click()
+    page.wait_for_url("**/editor.html")
+
+    # Unknown, malformed and missing links all end on the same message, never on an error.
+    for query in ("?studio=no-such-studio-000000", "?invite=short", "?invite=" + "x" * 32, ""):
+        page.goto(f"{SITE}/entry.html{query}")
+        page.get_by_role("heading", name="הקישור אינו תקף").wait_for()
+        assert page.get_by_role("link", name="התחילו לעצב").count() == 0

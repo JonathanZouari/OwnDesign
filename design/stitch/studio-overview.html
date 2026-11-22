@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;family=Plus+Jakarta+Sans:wght@500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "primary-fixed-dim": "#ffb59c", "background": "#fbf9f6", "surface-container-low": "#f5f3f0", "tertiary": "#7f5214", "inverse-primary": "#ffb59c", "on-surface-variant": "#57423b", "outline": "#8a726a", "inverse-on-surface": "#f2f1ed", "on-primary-fixed": "#390c00", "on-background": "#1b1c1a", "primary-fixed": "#ffdbcf", "surface-bright": "#fbf9f6", "surface-dim": "#dbdad6", "tertiary-fixed-dim": "#f8bb73", "outline-variant": "#dec0b7", "tertiary-container": "#9b6a2b", "primary": "#9f3c16", "tertiary-fixed": "#ffddb9", "on-secondary-fixed": "#03210f", "on-secondary-fixed-variant": "#304d38", "surface-container-lowest": "#ffffff", "secondary": "#47654f", "primary-container": "#bf542c", "error-container": "#ffdad6", "on-tertiary": "#ffffff", "error": "#ba1a1a", "on-error-container": "#93000a", "on-tertiary-container": "#fffbff", "surface-container": "#efeeea", "on-primary": "#ffffff", "on-secondary": "#ffffff", "on-surface": "#1b1c1a", "surface-variant": "#e4e2df", "surface-container-high": "#e9e8e4", "inverse-surface": "#30312f", "secondary-container": "#c6e8cc", "on-secondary-container": "#4b6a53", "secondary-fixed-dim": "#adcfb3", "surface-container-highest": "#e4e2df", "on-error": "#ffffff", "secondary-fixed": "#c9ebce", "on-tertiary-fixed-variant": "#663e00", "on-primary-container": "#fffbff", "on-tertiary-fixed": "#2b1700", "surface": "#fbf9f6", "surface-tint": "#a23e18", "on-primary-fixed-variant": "#822801" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "margin-tablet": "1.5rem", "gutter-desktop": "1.5rem", "space-sm": "0.5rem", "margin": "1rem", "space-md": "0.75rem", "space-xs": "0.25rem", "margin-desktop": "2rem", "space-lg": "1.25rem", "gutter": "1rem", "space-xl": "2rem" }, "fontFamily": { "headline-lg": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"], "body-md": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "label-code-md": ["JetBrains Mono"], "headline-xl-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-code-lg": ["JetBrains Mono"], "label-ui": ["Inter"], "body-sm": ["Inter"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-code-sm": ["JetBrains Mono"], "body-lg": ["Inter"] }, "fontSize": { "headline-lg": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-md": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.015em", "fontWeight": "500" }], "label-code-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "headline-xl-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-sm": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "label-code-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "label-ui": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "18px", "letterSpacing": "0.005em", "fontWeight": "400" }], "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-code-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }] } } } };</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between select-none"><div class="flex flex-col"><div class="h-16 px-space-lg flex items-center justify-between bg-surface-container-lowest/60 backdrop-blur-md"><div class="flex items-center gap-space-sm"><div class="w-7 h-7 rounded bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">architecture</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface leading-none">KÖSEN</span><span class="font-label-code-sm text-label-code-sm uppercase tracking-wider text-primary font-medium mt-0.5">Studio Atelier</span></div></div><button class="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">unfold_more</span></button></div><div class="px-space-md py-space-sm"><div class="px-space-sm py-space-xs rounded bg-surface-container flex items-center justify-between"><span class="font-label-code-sm text-label-code-sm text-on-surface-variant truncate">kosen-arch.atelier.so</span><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span></div></div><nav class="px-space-md py-space-sm space-y-space-lg overflow-y-auto" data-active-classes="bg-primary-container text-on-primary-container font-medium shadow-[0_1px_4px_rgba(0,0,0,0.05)]"><div class="space-y-space-xs"><div class="px-space-sm font-label-ui text-label-ui uppercase tracking-wider text-outline">Workspace</div><div class="space-y-0.5"><a aria-current="page" class="flex items-center justify-between px-space-sm py-space-xs rounded transition-colors bg-primary-container text-on-primary-container font-medium shadow-[0_1px_4px_rgba(0,0,0,0.05)]" data-path="studio-overview" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">grid_view</span><span class="font-body-sm text-body-sm">Studio Overview</span></div></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="projects-and-portfolios" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">apartment</span><span class="font-body-sm text-body-sm">Projects &amp; Portfolios</span></div><span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-medium">8</span></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="review-queue-and-dossiers" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">fact_check</span><span class="font-body-sm text-body-sm">Review Queue &amp; Dossiers</span></div><span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-medium">3</span></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="client-directory" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">groups</span><span class="font-body-sm text-body-sm">Client Directory</span></div></a></div></div><div class="space-y-space-xs"><div class="px-space-sm font-label-ui text-label-ui uppercase tracking-wider text-outline">Collaboration &amp; CAD</div><div class="space-y-0.5"><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="2d-space-planner" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">square_foot</span><span class="font-body-sm text-body-sm">2D Space Planner</span></div></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="3d-render-queue" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">view_in_ar</span><span class="font-body-sm text-body-sm">3D Render Queue</span></div><span class="font-label-code-sm text-label-code-sm text-secondary font-medium flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>Live</span></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="material-and-ffe-catalogs" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">texture</span><span class="font-body-sm text-body-sm">Material &amp; FF&amp;E Catalogs</span></div></a></div></div><div class="space-y-space-xs"><div class="px-space-sm font-label-ui text-label-ui uppercase tracking-wider text-outline">Tenant Settings</div><div class="space-y-0.5"><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="white-label-branding" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">palette</span><span class="font-body-sm text-body-sm">White-Label Branding</span></div></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="team-and-rbac-roles" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">badge</span><span class="font-body-sm text-body-sm">Team &amp; RBAC Roles</span></div></a><a class="flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="billing-and-credits" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span class="font-body-sm text-body-sm">Billing &amp; Credits</span></div></a></div></div></nav></div><div class="p-space-md space-y-space-sm bg-surface-container/60"><div class="p-space-sm rounded bg-surface-container-lowest shadow-[0_1px_4px_rgba(0,0,0,0.02)] space-y-1.5"><div class="flex items-center justify-between"><span class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Tenant Security</span><span class="font-label-code-sm text-label-code-sm text-secondary font-medium flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>RLS Active</span></div><div class="font-label-code-sm text-label-code-sm text-on-surface-variant">v4.18.2 • Supabase Synced</div></div><button class="w-full flex items-center justify-between px-space-sm py-space-xs rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="font-body-sm text-body-sm flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">vertical_align_bottom</span>Collapse Sidebar</span><span class="font-label-code-sm text-label-code-sm text-outline">[</span></button></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-headline-sm text-headline-sm tracking-tight text-on-surface"><span class="font-semibold">ATELIER</span><span class="text-outline text-body-sm">/</span><span class="font-body-sm text-body-sm text-on-surface font-medium">Studio Kösen</span></div><span class="hidden lg:inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high font-label-code-sm text-label-code-sm text-on-surface-variant">Workspace Alpha</span></div><div class="flex items-center gap-space-md"><button class="hidden xl:flex items-center gap-space-sm px-space-md py-1.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.02)]" type="button"><span class="material-symbols-outlined text-[16px]">search</span><span class="font-body-sm text-body-sm">Search Projects &amp; Dossiers</span><kbd class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">⌘K</kbd></button><div class="hidden md:flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-high font-label-code-sm text-label-code-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[14px]">bolt</span><span class="font-medium text-on-surface">214 AI Credits</span><span class="text-outline">•</span><span class="text-primary font-medium">Pro</span></div><div class="hidden 2xl:flex items-center gap-1.5 px-space-sm py-1 rounded bg-secondary-container/40 font-label-code-sm text-label-code-sm text-on-secondary-container"><span class="material-symbols-outlined text-secondary text-[14px]">lock</span><span>RLS Enforced</span></div><button aria-label="Notifications" class="relative w-8 h-8 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary"></span></button><div class="flex items-center gap-space-sm pl-space-xs"><div class="hidden sm:flex flex-col text-right"><span class="font-body-sm text-body-sm font-medium text-on-surface leading-tight">Sofia Lindqvist</span><span class="font-label-code-sm text-label-code-sm text-on-surface-variant leading-tight">Principal</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.06)]"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-16 w-full min-h-screen bg-surface"><div class="flex flex-col w-full">
+<div class="px-space-md sm:px-space-lg lg:px-space-xl py-space-lg space-y-space-xl max-w-[1720px] mx-auto w-full">
+<!-- TOP DASHBOARD BANNER -->
+<header class="flex flex-col gap-space-lg">
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md pb-space-md">
+<div class="space-y-space-xs">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="font-label-ui text-label-ui uppercase tracking-wider px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-semibold">Studio Kösen</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">•</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant font-medium">Stockholm / London</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">•</span>
+<span class="inline-flex items-center gap-1 font-label-code-sm text-label-code-sm px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+              Enterprise White-Label
+            </span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight font-semibold">Good morning, Sofia</h1>
+<div class="flex flex-wrap items-center gap-2 text-on-surface-variant">
+<span class="font-label-code-sm text-label-code-sm bg-surface-container px-2 py-0.5 rounded text-outline font-medium">Tenant: tnt_kosen_9942a</span>
+<span class="font-label-code-sm text-label-code-sm bg-surface-container px-2 py-0.5 rounded text-secondary font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">verified_user</span> RLS Policy: STRICT_TENANT_ISOLATION (FR-17)
+            </span>
+<span class="font-body-sm text-body-sm text-outline hidden md:inline">Zero cross-studio telemetry leakage</span>
+</div>
+</div>
+<!-- Action Island -->
+<div class="flex flex-wrap items-center gap-space-sm pt-2 lg:pt-0">
+<button class="inline-flex items-center gap-space-xs px-3.5 py-2 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-sm text-body-sm font-medium transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-tertiary">share</span>
+<span>Invite Client via Link</span>
+</button>
+<button class="inline-flex items-center gap-space-xs px-3.5 py-2 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-sm text-body-sm font-medium transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-primary">view_in_ar</span>
+<span>Batch 3D Render</span>
+</button>
+<button class="inline-flex items-center gap-space-xs px-4 py-2 rounded bg-primary hover:bg-primary-container text-on-primary font-body-sm text-body-sm font-medium transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Create New Project</span>
+</button>
+</div>
+</div>
+<!-- 4 High-Level Metric Tiles (Tectonic Layering) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- Metric 1 -->
+<div class="relative p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] flex flex-col justify-between overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Active Spatial Portfolios</span>
+<div class="w-7 h-7 rounded bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">apartment</span>
+</div>
+</div>
+<div class="pt-space-md pb-space-xs">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-on-surface font-semibold tracking-tight">8</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-medium">+2 this month</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">6 in client review • 2 conceptual schematic</p>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden mt-space-sm">
+<div class="bg-primary h-full rounded-full" style="width: 75%"></div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="relative p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] flex flex-col justify-between overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Pending Dossiers (FR-13)</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-code-sm text-label-code-sm font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span>
+              Sign-Off Req.
+            </span>
+</div>
+<div class="pt-space-md pb-space-xs">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-on-surface font-semibold tracking-tight">3</span>
+<span class="font-label-code-sm text-label-code-sm text-primary font-medium">Action Pending</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Oldest waiting 2d 4h (Kensington Townhouse)</p>
+</div>
+<div class="flex items-center gap-1.5 mt-space-sm font-label-code-sm text-label-code-sm text-outline">
+<span class="material-symbols-outlined text-[14px] text-tertiary">warning</span>
+<span>2 unreviewed contractor queries</span>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="relative p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] flex flex-col justify-between overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline">AI Compute Allocation (FR-18)</span>
+<button class="font-label-code-sm text-label-code-sm text-primary font-medium hover:underline" type="button">Top Up</button>
+</div>
+<div class="pt-space-md pb-space-xs">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-on-surface font-semibold tracking-tight">214</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">/ 500 Credits</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Est. 18 days runway at active drafting rate</p>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden mt-space-sm flex">
+<div class="bg-secondary h-full" style="width: 42.8%"></div>
+<div class="bg-tertiary-fixed h-full" style="width: 15%"></div>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="relative p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] flex flex-col justify-between overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline">Pipeline Budget Scope (FR-10)</span>
+<div class="w-7 h-7 rounded bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">payments</span>
+</div>
+</div>
+<div class="pt-space-md pb-space-xs">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-xl text-headline-xl text-on-surface font-semibold tracking-tight">€482.5k</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-medium">Active</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">FF&amp;E procurement &amp; fit-out valuation</p>
+</div>
+<div class="flex items-center gap-1.5 mt-space-sm font-label-code-sm text-label-code-sm text-secondary">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+14.2% quarter-over-quarter</span>
+</div>
+</div>
+</div>
+</header>
+<!-- URGENT CLIENT REVIEW QUEUE (FR-12 & FR-13) -->
+<section class="space-y-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Priority Client Review Queue</h2>
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-code-sm text-label-code-sm font-medium">3 Dossiers Require Decision</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-outline">SLA standard: &lt; 24h turnaround time</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-md">
+<!-- Review Item 1 -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] hover:shadow-md transition-all flex flex-col justify-between gap-space-md">
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-primary-container text-on-primary-container font-label-code-sm text-label-code-sm font-medium">v2.4 Ready for Sign-Off</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">3h ago</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Penthouse Apt 4B</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Clients: Elena &amp; Marc Vance • Norrmalm, Stockholm</p>
+</div>
+<div class="p-space-sm rounded bg-surface-container-low text-body-sm font-body-sm text-on-surface space-y-1">
+<div class="flex items-center gap-1.5 font-label-code-sm text-label-code-sm text-primary font-medium">
+<span class="material-symbols-outlined text-[15px]">chat_bubble</span>
+<span>2 Annotations on Canvas</span>
+</div>
+<p class="text-on-surface-variant leading-snug">"Jura limestone alignment confirmed. Can we confirm centerline for the brushed bronze linear pendant?"</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-code-sm text-label-code-sm font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">check_circle</span> Clearance Pass (920mm)
+              </span>
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-code-sm text-label-code-sm text-on-surface-variant font-medium">3D Renders Queued</span>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-space-xs">
+<button class="flex-1 py-1.5 px-3 rounded bg-primary hover:bg-primary-container text-on-primary font-body-sm text-body-sm font-medium transition-colors text-center" type="button">Open Dossier &amp; CAD</button>
+<button class="p-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" title="Quick Approve" type="button">
+<span class="material-symbols-outlined text-[18px]">done</span>
+</button>
+</div>
+</article>
+<!-- Review Item 2 -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] hover:shadow-md transition-all flex flex-col justify-between gap-space-md">
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-label-code-sm text-label-code-sm font-medium">Initial 2D Footprint Wizard</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">1d ago</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Östermalm Duplex</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Clients: Henrik &amp; Astrid Lind • Strandvägen</p>
+</div>
+<div class="p-space-sm rounded bg-surface-container-low text-body-sm font-body-sm text-on-surface space-y-1">
+<div class="flex items-center gap-1.5 font-label-code-sm text-label-code-sm text-tertiary font-medium">
+<span class="material-symbols-outlined text-[15px]">straighten</span>
+<span>AI Kitchen Island Clearance</span>
+</div>
+<p class="text-on-surface-variant leading-snug">Client modified boundary polyline. Island-to-cabinet clearance is at 880mm (Swedish standard recommendation: 900mm+).</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-label-code-sm text-label-code-sm font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">info</span> Egress Check Flag
+              </span>
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-code-sm text-label-code-sm text-on-surface-variant font-medium">142.0 m² Total</span>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-space-xs">
+<button class="flex-1 py-1.5 px-3 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-sm text-body-sm font-medium transition-colors text-center" type="button">Review 2D Geometry</button>
+<button class="p-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" title="Contact Client" type="button">
+<span class="material-symbols-outlined text-[18px]">mail</span>
+</button>
+</div>
+</article>
+<!-- Review Item 3 -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] hover:shadow-md transition-all flex flex-col justify-between gap-space-md">
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-code-sm text-label-code-sm font-medium">Material Spec &amp; Moodboard</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">2d ago</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Kensington Townhouse Mews</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Client: Julian Thorne • London W8</p>
+</div>
+<div class="p-space-sm rounded bg-surface-container-low text-body-sm font-body-sm text-on-surface space-y-1">
+<div class="flex items-center gap-1.5 font-label-code-sm text-label-code-sm text-secondary font-medium">
+<span class="material-symbols-outlined text-[15px]">inventory_2</span>
+<span>5 Pending FF&amp;E Selections</span>
+</div>
+<p class="text-on-surface-variant leading-snug">Julian substituted walnut wall paneling for dark charcoal acoustic felt slats in the master suite. Needs spec validation.</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-code-sm text-label-code-sm font-medium">Within €85k Budget</span>
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-code-sm text-label-code-sm text-on-surface-variant font-medium">Supplier Confirmed</span>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-space-xs">
+<button class="flex-1 py-1.5 px-3 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-sm text-body-sm font-medium transition-colors text-center" type="button">Inspect Materials</button>
+<button class="p-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" title="Export Spec Sheet" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+</div>
+</article>
+</div>
+</section>
+<!-- MAIN TWO-COLUMN DASHBOARD SECTION -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-xl items-start">
+<!-- LEFT 8 COLS: PROJECT ROSTER & PORTFOLIO DIRECTORY (FR-12) -->
+<div class="xl:col-span-8 space-y-space-md">
+<!-- Directory Header & Filter Strip -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] space-y-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Active Spatial Projects</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Live CAD layouts, 3D render pipelines, and client-collaborative dossiers</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-[16px] text-outline">search</span>
+<input class="pl-8 pr-3 py-1.5 text-body-sm font-body-sm bg-surface-container-low rounded focus:outline-none focus:ring-1 focus:ring-primary w-52 sm:w-64 placeholder:text-outline" placeholder="Search project, address, client..." type="text"/>
+</div>
+<button class="p-1.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface-variant" title="Filter Settings" type="button">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+</div>
+<!-- Filter Pills -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-2">
+<div class="flex flex-wrap items-center gap-1.5">
+<button class="px-3 py-1 rounded bg-inverse-surface text-inverse-on-surface font-label-code-sm text-label-code-sm font-medium" type="button">All Projects (8)</button>
+<button class="px-3 py-1 rounded bg-surface-container-low hover:bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm font-medium flex items-center gap-1.5" type="button">
+<span>Awaiting Review</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>(3)</span>
+</button>
+<button class="px-3 py-1 rounded bg-surface-container-low hover:bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm font-medium" type="button">In Progress (4)</button>
+<button class="px-3 py-1 rounded bg-surface-container-low hover:bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm font-medium" type="button">Archived (12)</button>
+</div>
+<div class="flex items-center gap-1.5 font-label-code-sm text-label-code-sm text-outline">
+<span>Sort:</span>
+<span class="text-on-surface font-medium cursor-pointer flex items-center gap-0.5">Latest Activity <span class="material-symbols-outlined text-[14px]">expand_more</span></span>
+</div>
+</div>
+</div>
+<!-- Project Cards Grid -->
+<div class="space-y-space-md">
+<!-- PROJECT 1: Penthouse Apt 4B -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] hover:shadow-md transition-all flex flex-col md:flex-row gap-space-lg">
+<!-- Visual Preview & Thumbnail -->
+<div class="w-full md:w-64 h-48 md:h-auto rounded-lg overflow-hidden relative flex-shrink-0 bg-surface-container">
+<img alt="Penthouse Apt 4B Japandi interior visualization" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/ALJJyrAIEuDaZ1A_eVHhP8OyX8uV2GgZOmU16eUOMQHGMb5q0mPGxebXBOSq2ojBG3vNeh24EYF7ZCPmNKOEriYmbqnv1d7pCZslLhvNkaCtYHuaTXPWUBZkiIMdhoEOmIdaO2rVt3ecU97B4ssxmH9-hBajORsIHBPI_L-_fWtyUBideijipPdkW8nKUJ7lJZ96mebcSC_lKt331Mt33R7JFOndo3nsOiLWG23UXTAjdQJ15o9dTk67zEEL-Ag"/>
+<div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-inverse-surface/80 backdrop-blur-sm text-inverse-on-surface font-label-code-sm text-label-code-sm font-medium">
+                84.5 m² • 2 Bed
+              </div>
+<div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-primary text-on-primary font-label-code-sm text-label-code-sm font-medium">
+                Pending Sign-Off
+              </div>
+</div>
+<!-- Meta & Info -->
+<div class="flex-1 flex flex-col justify-between space-y-space-sm">
+<div>
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-2">
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-medium">#KOS-2024-04</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">•</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Stockholm, Norrmalm</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-medium flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Elena Vance (Active now)
+                  </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight mt-1">Penthouse Apt 4B — Full Spatial Reconfiguration</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mt-0.5">Custom white oak joinery, recessed pocket partitions, honed limestone flooring spec, and revised acoustic foyer ceiling detail.</p>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-3 gap-2 py-2 bg-surface-container-low rounded-lg px-space-md">
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">Est. Budget</span>
+<span class="font-label-code-lg text-label-code-lg text-on-surface font-semibold">€57,230</span>
+</div>
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">AI Renders</span>
+<span class="font-label-code-lg text-label-code-lg text-on-surface font-semibold">42 / 50</span>
+</div>
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">Lead Architect</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium truncate block">Sofia Lindqvist</span>
+</div>
+</div>
+<!-- CAD Action Strip -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-primary hover:bg-primary-container text-on-primary font-body-sm text-body-sm font-medium transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">square_foot</span>
+<span>Launch 2D Canvas</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm font-medium transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">fact_check</span>
+<span>Dossier v2.4</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm font-medium transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">photo_library</span>
+<span>3D Gallery</span>
+</button>
+</div>
+<button class="p-1.5 rounded hover:bg-surface-container text-on-surface-variant" title="More Options" type="button">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+</div>
+</article>
+<!-- PROJECT 2: Östermalm Villa Duplex -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] hover:shadow-md transition-all flex flex-col md:flex-row gap-space-lg">
+<!-- Visual Preview & Schematic Thumbnail -->
+<div class="w-full md:w-64 h-48 md:h-auto rounded-lg overflow-hidden relative flex-shrink-0 bg-surface-container flex items-center justify-center p-4">
+<!-- Architectural Wireframe Illustration -->
+<svg class="w-full h-full text-outline opacity-60" viewbox="0 0 200 140">
+<rect fill="none" height="100" stroke="currentColor" stroke-dasharray="4 2" stroke-width="1.5" width="160" x="20" y="20"></rect>
+<rect fill="none" height="70" stroke="currentColor" stroke-width="1.5" width="60" x="35" y="35"></rect>
+<rect fill="none" height="35" stroke="currentColor" stroke-width="1.5" width="60" x="110" y="35"></rect>
+<circle cx="65" cy="70" fill="none" r="12" stroke="#9f3c16" stroke-width="1.5"></circle>
+<path d="M110,95 L170,95" stroke="currentColor" stroke-width="1.5"></path>
+<text fill="currentColor" font-family="JetBrains Mono" font-size="8" x="35" y="30">LIVING / DINING</text>
+<text fill="currentColor" font-family="JetBrains Mono" font-size="8" x="110" y="30">KITCHEN</text>
+</svg>
+<div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-inverse-surface/80 backdrop-blur-sm text-inverse-on-surface font-label-code-sm text-label-code-sm font-medium">
+                142.0 m² • 3 Bed
+              </div>
+<div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-label-code-sm text-label-code-sm font-medium">
+                2D Layout Active
+              </div>
+</div>
+<!-- Meta & Info -->
+<div class="flex-1 flex flex-col justify-between space-y-space-sm">
+<div>
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-2">
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-medium">#KOS-2024-02</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">•</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Stockholm, Strandvägen</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant font-medium">
+                    Astrid Lind (Client)
+                  </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight mt-1">Östermalm Villa Duplex</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mt-0.5">Heritage plaster cornice restoration, bespoke master suite walk-in closet geometry, and automated AI spatial egress audit.</p>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-3 gap-2 py-2 bg-surface-container-low rounded-lg px-space-md">
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">Est. Budget</span>
+<span class="font-label-code-lg text-label-code-lg text-on-surface font-semibold">€118,000</span>
+</div>
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">AI Credits Used</span>
+<span class="font-label-code-lg text-label-code-lg text-on-surface font-semibold">18 Used</span>
+</div>
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">Lead Architect</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium truncate block">Marcus Berg</span>
+</div>
+</div>
+<!-- CAD Action Strip -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-sm text-body-sm font-medium transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">square_foot</span>
+<span>Launch 2D Canvas</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm font-medium transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">fact_check</span>
+<span>View Dossier</span>
+</button>
+</div>
+<button class="p-1.5 rounded hover:bg-surface-container text-on-surface-variant" title="More Options" type="button">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+</div>
+</article>
+<!-- PROJECT 3: Kensington Townhouse Mews -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] hover:shadow-md transition-all flex flex-col md:flex-row gap-space-lg">
+<!-- Visual Preview & Thumbnail -->
+<div class="w-full md:w-64 h-48 md:h-auto rounded-lg overflow-hidden relative flex-shrink-0 bg-surface-container">
+<img alt="Kensington Townhouse Mews Moody Minimalist interior visualization" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/ALJJyrC2iisEpmo88c0lpxOYK2Iv9F74MsfiwBm__tzwiWFAKCKqDd1fQoTcoN1C2OCDwS03GkUspA7KFbMOYrA0xeBjJPdWcHhNSLcB6buwaAqjbuwswlb4_dONIUefhnHNZfhurGghkoCHiN3t6agKJHtKWmA1_Sf5vuggyC6gORFYJtkAntzEglWmb8jA6SQlt6UJF-kH-XRe8_4pBnQ_nbHr0XWI3cx9uo-VL3f9TSq7DJ7-UMpqg7hqYL0"/>
+<div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-inverse-surface/80 backdrop-blur-sm text-inverse-on-surface font-label-code-sm text-label-code-sm font-medium">
+                95.0 m² • 2 Bed
+              </div>
+<div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-code-sm text-label-code-sm font-medium">
+                FF&amp;E Material Review
+              </div>
+</div>
+<!-- Meta & Info -->
+<div class="flex-1 flex flex-col justify-between space-y-space-sm">
+<div>
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-2">
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-medium">#KOS-2024-07</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">•</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">London, W8</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant font-medium">
+                    Julian Thorne (Client)
+                  </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight mt-1">Kensington Mews Loft</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mt-0.5">Walnut slat acoustics, brushed bronze linear lighting specification, custom fluted glass shower screen, and low-slung Italian bouclé seating.</p>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-3 gap-2 py-2 bg-surface-container-low rounded-lg px-space-md">
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">Est. Budget</span>
+<span class="font-label-code-lg text-label-code-lg text-on-surface font-semibold">£84,500</span>
+</div>
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">AI Credits Used</span>
+<span class="font-label-code-lg text-label-code-lg text-on-surface font-semibold">95 Used</span>
+</div>
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">Lead Architect</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium truncate block">Sofia Lindqvist</span>
+</div>
+</div>
+<!-- CAD Action Strip -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-sm text-body-sm font-medium transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">square_foot</span>
+<span>Launch 2D Canvas</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm font-medium transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">fact_check</span>
+<span>View Dossier</span>
+</button>
+</div>
+<button class="p-1.5 rounded hover:bg-surface-container text-on-surface-variant" title="More Options" type="button">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+</div>
+</article>
+<!-- PROJECT 4: Djurgården Garden Pavilion -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] hover:shadow-md transition-all flex flex-col md:flex-row gap-space-lg">
+<!-- Visual Preview & Thumbnail -->
+<div class="w-full md:w-64 h-48 md:h-auto rounded-lg overflow-hidden relative flex-shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Architectural photo of a contemporary Scandinavian timber pavilion in Djurgarden Stockholm, vertical pine battens, expansive floor-to-ceiling glass, serene Swedish forest backdrop, warm minimal interior with wood burning stove" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCn23tqXBpgDANQeRMVjHSOKTEvzAwKbKvn8kf9NF7tGPENl8LfLbjg4P3nby1s0pvaGcVuCgLVfaCmFOmv6X4w-GMqry899OyeDGZgZ4BPe_q3gTlMAWv2L90MMTrGvTFJKhR04jIu7_hTUHSGOWMDB7MFV0NbZSFXIEGDCXk-FgNagRa0JWLp6WcMXJjWYjXnRu7CTsVZ-ZehivIaX-aon1AU2rCu1LiaeuKUCPw"/>
+<div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-inverse-surface/80 backdrop-blur-sm text-inverse-on-surface font-label-code-sm text-label-code-sm font-medium">
+                52.0 m² • Studio
+              </div>
+<div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm font-medium">
+                Client Self-Drafting
+              </div>
+</div>
+<!-- Meta & Info -->
+<div class="flex-1 flex flex-col justify-between space-y-space-sm">
+<div>
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-2">
+<span class="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-medium">#KOS-2024-09</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">•</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Stockholm, Djurgården</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant font-medium">
+                    Freja Söderberg (Client)
+                  </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight mt-1">Djurgården Garden Pavilion</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mt-0.5">Detached garden creative atelier with micro sauna, radiant stone floor, integrated desk joinery, and biophilic glass clerestory.</p>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-3 gap-2 py-2 bg-surface-container-low rounded-lg px-space-md">
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">Est. Budget</span>
+<span class="font-label-code-lg text-label-code-lg text-on-surface font-semibold">€38,000</span>
+</div>
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">AI Credits Used</span>
+<span class="font-label-code-lg text-label-code-lg text-on-surface font-semibold">12 Used</span>
+</div>
+<div>
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">Lead Architect</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium truncate block">Sofia Lindqvist</span>
+</div>
+</div>
+<!-- CAD Action Strip -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-sm text-body-sm font-medium transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+<span>Inspect Draft</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm font-medium transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">chat</span>
+<span>Send Guidance Note</span>
+</button>
+</div>
+<button class="p-1.5 rounded hover:bg-surface-container text-on-surface-variant" title="More Options" type="button">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+</div>
+</article>
+</div>
+</div>
+<!-- RIGHT 4 COLS: STUDIO HEALTH, WHITE-LABEL, COMPLIANCE & COMPUTE -->
+<aside class="xl:col-span-4 space-y-space-md">
+<!-- White-Label & Client Invitation Hub (FR-15 & FR-16) -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">link</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Client Onboarding Portal</h3>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-medium">FR-16 Active</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">White-labeled client onboarding link with Studio Kösen identity injection:</p>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center justify-between gap-2">
+<span class="font-label-code-sm text-label-code-sm text-on-surface select-all truncate">https://kosen-arch.atelier.so/client-portal</span>
+<button class="p-1 rounded hover:bg-surface-container text-primary flex-shrink-0" onclick="navigator.clipboard.writeText('https://kosen-arch.atelier.so/client-portal')" title="Copy URL" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+</div>
+<!-- White-Label Swatch & Spec Summary -->
+<div class="space-y-space-xs pt-1">
+<span class="font-label-ui text-label-ui uppercase tracking-wider text-outline block">Active Studio Branding</span>
+<div class="p-space-sm rounded-lg bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-5 h-5 rounded bg-primary"></div>
+<div class="w-5 h-5 rounded bg-surface border border-outline/20"></div>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Nordic Ochre &amp; Limestone</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-outline">Plus Jakarta Sans</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<button class="py-1.5 px-2 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-sm text-body-sm font-medium text-center flex items-center justify-center gap-1" type="button">
+<span class="material-symbols-outlined text-[16px]">qr_code_2</span>
+<span>Client QR Pass</span>
+</button>
+<button class="py-1.5 px-2 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-body-sm text-body-sm font-medium text-center flex items-center justify-center gap-1" type="button">
+<span class="material-symbols-outlined text-[16px]">settings</span>
+<span>Brand Theme</span>
+</button>
+</div>
+</div>
+<!-- AI Compute & Render Node Status (FR-07 & FR-18) -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-tertiary">memory</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Render Nodes &amp; Queue</h3>
+</div>
+<span class="inline-flex items-center gap-1 font-label-code-sm text-label-code-sm text-secondary font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+              Online
+            </span>
+</div>
+<div class="space-y-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Cluster Engine</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface font-medium">Railway Dedicated Node (FR-07)</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Active Queue</span>
+<span class="font-label-code-sm text-label-code-sm text-primary font-medium">1 Rendering • 2 Pending</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Mean Synthesis Latency</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface font-medium">42.4s / 4K Pass</span>
+</div>
+</div>
+<!-- Active Render Job Mini-Widget -->
+<div class="p-space-sm rounded-lg bg-surface-container-low space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-primary animate-spin">progress_activity</span>
+<span class="font-label-code-sm text-label-code-sm font-medium text-on-surface">Apt 4B: Camera 02 — Living Room (Evening Pass)</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-outline">68%</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full transition-all duration-300" style="width: 68%"></div>
+</div>
+</div>
+</div>
+<!-- Security & Audit Telemetry Stream (FR-17) -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-[0_2px_12px_rgba(36,37,35,0.03)] space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-secondary">shield</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Tenant Audit Log</h3>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-outline font-medium">Immutable</span>
+</div>
+<div class="space-y-space-sm">
+<div class="flex items-start gap-2.5 pb-2">
+<span class="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0"></span>
+<div class="text-body-sm font-body-sm leading-snug">
+<span class="font-medium text-on-surface">Sofia L.</span> signed off Apt 4B geometry review <span class="font-label-code-sm text-label-code-sm text-primary font-medium">v2.4</span>
+<div class="font-label-code-sm text-label-code-sm text-outline mt-0.5">14:38 Today • SHA: 8f921a</div>
+</div>
+</div>
+<div class="flex items-start gap-2.5 pb-2">
+<span class="w-2 h-2 rounded-full bg-secondary mt-1.5 flex-shrink-0"></span>
+<div class="text-body-sm font-body-sm leading-snug">
+<span class="font-medium text-on-surface">Elena Vance</span> uploaded custom limestone inspiration swatch
+                <div class="font-label-code-sm text-label-code-sm text-outline mt-0.5">13:10 Today • Client Action</div>
+</div>
+</div>
+<div class="flex items-start gap-2.5">
+<span class="w-2 h-2 rounded-full bg-outline mt-1.5 flex-shrink-0"></span>
+<div class="text-body-sm font-body-sm leading-snug">
+<span class="font-medium text-on-surface">System daemon:</span> Supabase RLS policy check passed for <span class="font-label-code-sm text-label-code-sm text-outline">tnt_kosen_9942a</span>
+<div class="font-label-code-sm text-label-code-sm text-outline mt-0.5">09:00 Today • Automated Security Audit</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Mandatory Professional Safety Advisory (FR-19) -->
+<div class="p-space-lg rounded-xl bg-surface-container-high/60 shadow-[0_2px_8px_rgba(36,37,35,0.02)] space-y-space-xs">
+<div class="flex items-center gap-2 text-tertiary">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span class="font-label-ui text-label-ui uppercase tracking-wider font-semibold">Mandatory Advisory (FR-19)</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            All AI-generated floorplans, clearance checks, and parametric dossiers remain <strong class="text-on-surface font-medium">Conceptual Schematics</strong>. Studio Kösen policy requires licensed structural engineer sign-off prior to contractor wall demising or structural demolition.
+          </p>
+</div>
+</aside>
+</div>
+</div>
+</div></main></div></body></html>

@@ -9,6 +9,11 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Product name.** "ATELIER" comes from Stitch; the PRD says undecided.
 - **PRD text** still says "no paid API", which the OpenAI decision overrides.
 
+## Later phases with a Stitch screen waiting
+
+Studio branding, project dossier and export, AI consultant, 3D renderings: designs are in
+`design/stitch/` ([design.md](design.md)). Each is built as a real feature in its own phase.
+
 ## Before production
 
 - Turn email confirmation on and configure SMTP. While it is off, someone can register with another person's address and it is shown to the designer as the client's email.
@@ -21,6 +26,12 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 
 ## Smaller
 
+- Below 1200 px the sidebar is hidden, so the dashboard's in-page section links are not reachable there.
+- The wizard replaces an unsaved draft after a notice only; the portal's blank canvas asks first.
+- The dashboard lists every project of the studio on one page; there is no paging yet.
+- The dashboard's "no match" message is shown by un-hiding it, which some screen readers announce unreliably.
+- `.area`, `.version` and `.wide` are global classes in `app.css` and are easy to collide with.
+- Audit event ids are one sequence across all studios, so a member can infer overall event volume.
 - Fonts load from Google, which exposes the visitor's IP address to Google.
 - The editor's sign in/out button is hidden on phones.
 - The coordinate limit is enforced in the editor only by clamping the view.

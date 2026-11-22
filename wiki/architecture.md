@@ -59,7 +59,8 @@ each change; the plan object is never mutated.
 
 ## API
 
-Studios, invites: `backend/app/routes/studios.py`. Projects, versions: `backend/app/routes/projects.py`.
+Studios, invites, studio activity (`GET /v1/studios/{id}/audit`, the latest 10 audit events, members
+only): `backend/app/routes/studios.py`. Projects, versions: `backend/app/routes/projects.py`.
 Quotas: 20 projects per client per studio, 500 versions per project.
 
 ## PDF import (browser only)
