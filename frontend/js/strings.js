@@ -54,6 +54,7 @@ export const AUTH = {
 
 export const ENTRY = {
   title: "התחילו לעצב",
+  defaultProject: "הבית שלי",
   headline: (studio, clientName) => `${clientName ? `היי ${clientName}, ` : ""}תכננו את הבית שלכם עם ${studio}.`,
   kindInvite: "הזמנה אישית",
   kindStudio: "קישור סטודיו",

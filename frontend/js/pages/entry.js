@@ -24,7 +24,7 @@ async function resolveLink(invite, slug) {
 function startBlankCanvas(studio) {
   // Checked at click time: a draft may have been started in another tab since this page loaded.
   if (load(KEYS.draft) && !confirm(ENTRY.replaceDraft)) return;
-  const draft = { name: "My home", property_type: "existing", studio, plan: emptyPlan() };
+  const draft = { name: ENTRY.defaultProject, property_type: "existing", studio, plan: emptyPlan() };
   if (!save(KEYS.draft, draft)) throw new Error(ENTRY.storageBlocked);
   location.assign("editor.html");
 }
