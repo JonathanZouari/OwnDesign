@@ -272,3 +272,17 @@ def test_suspended_studio_blocks_every_write(api, world, admin):
         assert upload(api, world.client_a, pid, PNG).status_code == 403
     finally:
         admin.table("studios").update({"status": "active"}).eq("id", studio_id).execute()
+
+
+def test_parallel_uploads_cannot_exceed_the_quota(api, world, admin):
+    from concurrent.futures import ThreadPoolExecutor
+
+    studio_id = api.get(f"/v1/projects/{world.project['id']}", headers=world.client_a.headers).json()["data"]["studio_id"]
+    body = {"studio_id": studio_id, "name": "Race", "property_type": "existing"}
+    pid = api.post("/v1/projects", json=body, headers=world.client_a.headers).json()["data"]["id"]
+    for _ in range(27):
+        assert upload(api, world.client_a, pid, PNG).status_code == 201
+    with ThreadPoolExecutor(6) as pool:
+        codes = list(pool.map(lambda _: upload(api, world.client_a, pid, PNG).status_code, range(6)))
+    assert sorted(codes) == [201] * 3 + [409] * 3
+    assert len(admin.table("inspiration_assets").select("id").eq("project_id", pid).execute().data) == 30

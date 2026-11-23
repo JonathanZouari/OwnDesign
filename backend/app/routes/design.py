@@ -149,8 +149,10 @@ def add_asset(
             .execute()
             .data[0]
         )
-    except Exception:
+    except Exception as error:
         service().storage.from_(BUCKET).remove([path])
+        if getattr(error, "code", None) == "P0001":  # the database quota trigger: parallel uploads raced past the check above
+            raise HTTPException(409, "This project has reached its limit of images") from None
         raise
     audit("asset.added", user.id, studio_id=project["studio_id"], project_id=project["id"], asset_id=row["id"])
     return ok({key: row[key] for key in ASSET_COLUMNS.split(", ")})
