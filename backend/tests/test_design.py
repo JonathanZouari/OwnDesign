@@ -109,3 +109,166 @@ def test_users_cannot_write_or_read_briefs_through_the_data_api(world, admin):
     assert api.table("project_briefs").select("*").eq("project_id", world.project["id"]).execute().data == []
     with pytest.raises(Exception):
         api.table("project_briefs").insert({"project_id": world.other_project["id"], "brief": {}}).execute()
+
+
+# ---- finishes -------------------------------------------------------------------------------------------------
+
+from tests.test_geometry import VALID  # noqa: E402
+
+
+@pytest.fixture(scope="module")
+def planned(api, world):
+    api.post(f"/v1/projects/{world.project['id']}/versions", json={"label": "p", "geometry": VALID}, headers=world.client_a.headers)
+    return world.project["id"], VALID["rooms"][0]["id"]
+
+
+def test_finishes_save_replace_and_reload(api, world, planned):
+    project_id, room = planned
+    url = f"/v1/projects/{project_id}/finishes"
+    assert api.get(url, headers=world.client_a.headers).json()["data"] == []
+    one = {"selections": [{"room_id": room, "surface": "floor", "material_id": "oak-floor"}]}
+    assert api.put(url, json=one, headers=world.client_a.headers).status_code == 200
+    two = {"selections": [{"room_id": room, "surface": "walls", "material_id": "sage-paint"}]}
+    assert api.put(url, json=two, headers=world.client_a.headers).status_code == 200
+    rows = api.get(url, headers=world.designer_a.headers).json()["data"]
+    assert [(r["room_id"], r["surface"], r["material_id"]) for r in rows] == [(room, "walls", "sage-paint")]
+    assert api.put(url, json={"selections": []}, headers=world.client_a.headers).status_code == 200
+    assert api.get(url, headers=world.client_a.headers).json()["data"] == []
+
+
+@pytest.mark.parametrize(
+    "selection",
+    [
+        {"room_id": "ROOM", "surface": "floor", "material_id": "nope"},
+        {"room_id": "ROOM", "surface": "floor", "material_id": "sage-paint"},  # paint is not a floor
+        {"room_id": "ROOM", "surface": "roof", "material_id": "oak-floor"},
+        {"room_id": "no-such-room", "surface": "floor", "material_id": "oak-floor"},
+        {"room_id": "../x", "surface": "floor", "material_id": "oak-floor"},
+    ],
+)
+def test_invalid_finish_rejected(api, world, planned, selection):
+    project_id, room = planned
+    selection = {**selection, "room_id": room if selection["room_id"] == "ROOM" else selection["room_id"]}
+    url = f"/v1/projects/{project_id}/finishes"
+    assert api.put(url, json={"selections": [selection]}, headers=world.client_a.headers).status_code == 422
+
+
+def test_duplicate_finish_and_isolation(api, world, planned):
+    project_id, room = planned
+    url = f"/v1/projects/{project_id}/finishes"
+    row = {"room_id": room, "surface": "floor", "material_id": "oak-floor"}
+    assert api.put(url, json={"selections": [row, row]}, headers=world.client_a.headers).status_code == 422
+    assert api.put(url, json={"selections": [row] * 401}, headers=world.client_a.headers).status_code == 422
+    for stranger in (world.other_client_a, world.designer_b):
+        assert api.get(url, headers=stranger.headers).status_code == 404
+        assert api.put(url, json={"selections": [row]}, headers=stranger.headers).status_code == 404
+
+
+# ---- assets and moodboard -------------------------------------------------------------------------------------
+
+PNG = bytes.fromhex(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8ffff3f0005fe02fea7d6a3690000000049454e44ae426082"
+)
+JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 64
+WEBP = b"RIFF\x24\x00\x00\x00WEBPVP8 " + b"\x00" * 32
+
+
+def upload(api, user, project_id, data, name="x.png", mime="image/png", kind="inspiration"):
+    return api.post(
+        f"/v1/projects/{project_id}/assets",
+        files={"file": (name, data, mime)},
+        data={"kind": kind, "caption": "cap"},
+        headers=user.headers,
+    )
+
+
+def test_asset_upload_list_signed_url_delete(api, world):
+    pid = world.project["id"]
+    for data, mime in ((PNG, "image/png"), (JPEG, "image/jpeg"), (WEBP, "image/webp")):
+        assert upload(api, world.client_a, pid, data, mime=mime).status_code == 201
+    listed = api.get(f"/v1/projects/{pid}/assets", headers=world.designer_a.headers).json()["data"]
+    assert len(listed) == 3 and all(a["url"].startswith("http") and "storage_path" not in a for a in listed)
+    import httpx
+
+    assert httpx.get(next(a["url"] for a in listed if a["mime"] == "image/png")).status_code == 200
+    for asset in listed:
+        assert api.delete(f"/v1/projects/{pid}/assets/{asset['id']}", headers=world.client_a.headers).status_code == 200
+    assert api.get(f"/v1/projects/{pid}/assets", headers=world.client_a.headers).json()["data"] == []
+
+
+@pytest.mark.parametrize(
+    "data,name,mime,kind",
+    [
+        (b"GIF89a....", "a.png", "image/png", "inspiration"),  # wrong content behind a png name
+        (b"<svg onload=alert(1)>", "a.svg", "image/svg+xml", "inspiration"),
+        (PNG, "a.png", "image/png", "other"),  # unknown kind
+        (b"", "a.png", "image/png", "inspiration"),  # empty
+        (PNG + b"\x00" * (5 * 1024 * 1024), "big.png", "image/png", "inspiration"),  # over 5 MB
+    ],
+)
+def test_bad_uploads_rejected(api, world, data, name, mime, kind):
+    response = upload(api, world.client_a, world.project["id"], data, name, mime, kind)
+    assert response.status_code in (413, 415, 422)
+
+
+def test_asset_isolation_and_quota(api, world):
+    pid = world.project["id"]
+    created = upload(api, world.client_a, pid, PNG).json()["data"]
+    for stranger in (world.other_client_a, world.designer_b):
+        assert upload(api, stranger, pid, PNG).status_code == 404
+        assert api.get(f"/v1/projects/{pid}/assets", headers=stranger.headers).status_code == 404
+        assert api.delete(f"/v1/projects/{pid}/assets/{created['id']}", headers=stranger.headers).status_code == 404
+    # An asset id from another project cannot be deleted through this one.
+    other = upload(api, world.other_client_a, world.other_project["id"], PNG).json()["data"]
+    assert api.delete(f"/v1/projects/{pid}/assets/{other['id']}", headers=world.client_a.headers).status_code == 404
+    for _ in range(29):
+        assert upload(api, world.client_a, pid, PNG).status_code == 201
+    assert upload(api, world.client_a, pid, PNG).status_code == 409  # 30 per project
+
+
+def test_moodboard_roundtrip_and_validation(api, world):
+    pid = world.project["id"]
+    url = f"/v1/projects/{pid}/moodboard"
+    asset = api.get(f"/v1/projects/{pid}/assets", headers=world.client_a.headers).json()["data"][0]
+    items = [
+        {"kind": "style", "ref": "japandi", "note": "calm"},
+        {"kind": "material", "ref": "oak-floor"},
+        {"kind": "asset", "ref": asset["id"]},
+    ]
+    assert api.put(url, json={"items": items}, headers=world.client_a.headers).status_code == 200
+    got = api.get(url, headers=world.designer_a.headers).json()["data"]
+    assert [(i["kind"], i["ref"]) for i in got] == [(i["kind"], i["ref"]) for i in items]
+    assert got[2]["url"].startswith("http")
+    # Reordering and removing replace the board.
+    assert api.put(url, json={"items": items[::-1][:2]}, headers=world.client_a.headers).status_code == 200
+    assert [i["ref"] for i in api.get(url, headers=world.client_a.headers).json()["data"]] == [asset["id"], "oak-floor"]
+    bad = [
+        [{"kind": "style", "ref": "nope"}],
+        [{"kind": "material", "ref": "nope"}],
+        [{"kind": "asset", "ref": "00000000-0000-0000-0000-000000000000"}],
+        [{"kind": "style", "ref": "japandi"}] * 2,
+        [{"kind": "style", "ref": "japandi", "note": "x" * 201}],
+        [{"kind": "style", "ref": "japandi"}] * 41,
+    ]
+    for payload in bad:
+        assert api.put(url, json={"items": payload}, headers=world.client_a.headers).status_code == 422
+    for stranger in (world.other_client_a, world.designer_b):
+        assert api.get(url, headers=stranger.headers).status_code == 404
+        assert api.put(url, json={"items": []}, headers=stranger.headers).status_code == 404
+    other_asset = api.get(f"/v1/projects/{world.other_project['id']}/assets", headers=world.other_client_a.headers).json()["data"][0]
+    foreign = {"items": [{"kind": "asset", "ref": other_asset["id"]}]}
+    assert api.put(url, json=foreign, headers=world.client_a.headers).status_code == 422
+
+
+def test_suspended_studio_blocks_every_write(api, world, admin):
+    pid = world.project["id"]
+    studio_id = api.get(f"/v1/projects/{pid}", headers=world.client_a.headers).json()["data"]["studio_id"]
+    admin.table("studios").update({"status": "suspended"}).eq("id", studio_id).execute()
+    try:
+        h = world.client_a.headers
+        assert api.put(f"/v1/projects/{pid}/brief", json={}, headers=h).status_code == 403
+        assert api.put(f"/v1/projects/{pid}/finishes", json={"selections": []}, headers=h).status_code == 403
+        assert api.put(f"/v1/projects/{pid}/moodboard", json={"items": []}, headers=h).status_code == 403
+        assert upload(api, world.client_a, pid, PNG).status_code == 403
+    finally:
+        admin.table("studios").update({"status": "active"}).eq("id", studio_id).execute()
