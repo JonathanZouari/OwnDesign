@@ -103,7 +103,7 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     page.get_by_role("heading", name="יצירת חשבון כדי לשמור את התוכנית").wait_for()
     page.get_by_role("link", name="יצירת חשבון").click()
     page.get_by_label("אימייל").fill(client_email)
-    page.get_by_label("סיסמה").fill("e2e-Password-123")
+    page.get_by_label("סיסמה", exact=True).fill("e2e-Password-123")
     page.get_by_role("button", name="יצירת חשבון").click()
 
     # Back in the editor with the draft intact; the save dialog opens by itself.
@@ -154,7 +154,7 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
     page.goto(f"{SITE}/auth.html?mode=signup&role=studio")
     page.get_by_label("שם הסטודיו").fill("Atelier E2E")
     page.get_by_label("אימייל").fill(unique_email("e2e-owner"))
-    page.get_by_label("סיסמה").fill("e2e-Password-123")
+    page.get_by_label("סיסמה", exact=True).fill("e2e-Password-123")
     page.get_by_role("button", name="יצירת חשבון").click()
     page.wait_for_url("**/studio.html")
     page.get_by_role("heading", name="Atelier E2E").wait_for()
@@ -233,7 +233,7 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
 def _sign_in(page, user):
     page.goto(f"{SITE}/auth.html")
     page.get_by_label("אימייל").fill(user.email)
-    page.get_by_label("סיסמה").fill(user.password)
+    page.get_by_label("סיסמה", exact=True).fill(user.password)
     page.get_by_role("button", name="התחברות").click()
 
 
@@ -262,7 +262,7 @@ def test_homeowner_designs_without_a_studio_and_saves(servers, page):
     page.get_by_role("heading", name="יצירת חשבון כדי לשמור את התוכנית").wait_for()
     page.get_by_role("link", name="יצירת חשבון").click()
     page.get_by_label("אימייל").fill(unique_email("e2e-home"))
-    page.get_by_label("סיסמה").fill("e2e-Password-123")
+    page.get_by_label("סיסמה", exact=True).fill("e2e-Password-123")
     page.get_by_role("button", name="יצירת חשבון").click()
     page.get_by_label("הערת גרסה (לא חובה)").fill("first")
     page.keyboard.press("Enter")
@@ -343,7 +343,7 @@ def test_forgot_password_message_is_the_same_for_known_and_unknown_emails(server
     page.goto(f"{SITE}/auth.html")
     page.get_by_role("button", name="שכחתי סיסמה").click()
     page.get_by_role("heading", name="איפוס סיסמה").wait_for()
-    assert not page.get_by_label("סיסמה").is_visible()
+    assert not page.get_by_label("סיסמה", exact=True).is_visible()
     for email in (known.email, unique_email("e2e-unknown")):
         page.get_by_label("אימייל").fill(email)
         page.get_by_role("button", name="שליחת קישור לאיפוס").click()
@@ -351,7 +351,7 @@ def test_forgot_password_message_is_the_same_for_known_and_unknown_emails(server
         page.get_by_text(FORGOT_MESSAGE).wait_for(state="hidden", timeout=15000)
     page.get_by_role("button", name="חזרה להתחברות").click()
     page.get_by_role("heading", name="התחברות").wait_for()
-    assert page.get_by_label("סיסמה").is_visible()
+    assert page.get_by_label("סיסמה", exact=True).is_visible()
 
 
 def _recovery_link(admin, email):
@@ -545,7 +545,7 @@ def test_wrong_password_shows_a_hebrew_message(servers, page, make_user):
     user = make_user("e2e-he-wrongpw")
     page.goto(f"{SITE}/auth.html")
     page.get_by_label("אימייל").fill(user.email)
-    page.get_by_label("סיסמה").fill("definitely-Wrong-1")
+    page.get_by_label("סיסמה", exact=True).fill("definitely-Wrong-1")
     page.get_by_role("button", name="התחברות").click()
     toast = page.locator(".toast.error")
     toast.wait_for()
@@ -896,7 +896,7 @@ def test_import_guest_saves_registers_and_background_survives_reload(servers, pa
     page.get_by_role("heading", name="יצירת חשבון כדי לשמור את התוכנית").wait_for()
     page.get_by_role("link", name="יצירת חשבון").click()
     page.get_by_label("אימייל").fill(unique_email("e2e-import"))
-    page.get_by_label("סיסמה").fill("e2e-Password-123")
+    page.get_by_label("סיסמה", exact=True).fill("e2e-Password-123")
     page.get_by_role("button", name="יצירת חשבון").click()
     page.get_by_label("הערת גרסה (לא חובה)").fill("imported")
     page.keyboard.press("Enter")
@@ -1046,7 +1046,7 @@ def test_import_furnished_sheet_saves_with_furniture_as_guest_then_registered(se
     page.get_by_role("heading", name="יצירת חשבון כדי לשמור את התוכנית").wait_for()
     page.get_by_role("link", name="יצירת חשבון").click()
     page.get_by_label("אימייל").fill(unique_email("e2e-furn"))
-    page.get_by_label("סיסמה").fill("e2e-Password-123")
+    page.get_by_label("סיסמה", exact=True).fill("e2e-Password-123")
     page.get_by_role("button", name="יצירת חשבון").click()
     page.get_by_label("הערת גרסה (לא חובה)").fill("furnished")
     page.keyboard.press("Enter")
