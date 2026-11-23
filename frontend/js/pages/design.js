@@ -3,7 +3,9 @@ import { api, requireSession, signOut } from "../api.js";
 import * as L from "../design-logic.js";
 import { $, h, run, showStudio } from "../ui.js";
 
-const projectId = new URLSearchParams(location.search).get("project");
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const requested = new URLSearchParams(location.search).get("project");
+const projectId = UUID.test(requested ?? "") ? requested : null; // anything else (like "..") is not used in an API path
 const base = `/v1/projects/${encodeURIComponent(projectId)}`;
 const SURFACE_LABEL = { floor: "Floor", walls: "Walls", ceiling: "Ceiling", cabinets: "Cabinets" };
 const KIND_LABEL = { inspiration: "Inspiration", existing_item: "Item I own" };
@@ -62,6 +64,18 @@ function showTab(name, focus = false) {
     if (selected && focus) button.focus();
   }
   history.replaceState(null, "", `#${name}`);
+  if (name === "moodboard") refreshImageLinks();
+}
+
+// Signed image links expire after 10 minutes, so they are renewed whenever the Moodboard tab is shown.
+async function refreshImageLinks() {
+  try {
+    state.assets = await api(`${base}/assets`);
+    renderAssets();
+    renderBoard();
+  } catch {
+    /* the images already on screen stay as they are */
+  }
 }
 
 function initTabs() {
@@ -262,7 +276,7 @@ function boardView(item) {
     return { title: material?.label ?? item.ref, kind: "Material", preview };
   }
   const asset = assetById(item.ref);
-  const url = L.safeImageUrl(asset?.url || item.url);
+  const url = L.safeImageUrl(item.url || asset?.url);
   const title = asset?.caption || KIND_LABEL[asset?.kind] || "Image";
   return { title, kind: "Image", preview: url ? h("img", { class: "preview", src: url, alt: "", loading: "lazy" }) : h("div", { class: "preview" }, icon("image")) };
 }
@@ -410,8 +424,8 @@ function initMoodboard() {
       $("#upload-status"),
       async () => {
         await api(`${base}/assets`, { method: "POST", body });
+        form.reset(); // the upload worked; a failed list refresh below must not invite a duplicate upload
         state.assets = await api(`${base}/assets`); // the upload answer has no link; the list carries signed links
-        form.reset();
         renderAssets();
       },
       "Image uploaded. Use its Board button to add it to the moodboard.",

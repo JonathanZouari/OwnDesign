@@ -4,7 +4,9 @@ import { messageState } from "../design-logic.js";
 import { planThumbnail } from "../thumbnail.js";
 import { $, formatDate, h, run, showStudio } from "../ui.js";
 
-const projectId = new URLSearchParams(location.search).get("project");
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const requested = new URLSearchParams(location.search).get("project");
+const projectId = UUID.test(requested ?? "") ? requested : null; // anything else (like "..") is not used in an API path
 const base = `/v1/projects/${encodeURIComponent(projectId)}`;
 const WHO = { user: "You", assistant: "Design consultant" };
 
@@ -27,6 +29,12 @@ function append(messages) {
   $("#thread").lastElementChild?.scrollIntoView({ block: "nearest" });
 }
 
+async function reloadThread() {
+  const messages = await api(`${base}/consultant/messages`);
+  $("#thread").replaceChildren();
+  append(messages);
+}
+
 function refreshComposer() {
   const { counter, canSend } = messageState($("#message").value);
   $("#message-counter").textContent = counter;
@@ -46,8 +54,14 @@ async function send() {
     append(await api(`${base}/consultant/messages`, { method: "POST", body: { message: box.value.trim() } }));
     box.value = "";
   } catch (error) {
-    // 429 / 502 / 503 carry a friendly sentence; the typed message is kept so it can be sent again.
+    // 429 / 502 / 503 carry a friendly sentence. After a 429 nothing was stored, so the typed text stays.
+    // After any other server error the question is already stored (a failed answer may have been billed),
+    // so the thread is reloaded to show it and the box is cleared, instead of sending a duplicate.
     $("#chat-error").textContent = error.message || "Something went wrong.";
+    if (error.status === 502) {
+      await reloadThread().catch(() => {});
+      box.value = "";
+    }
   } finally {
     $("#chat-status").textContent = "";
     box.readOnly = false;
