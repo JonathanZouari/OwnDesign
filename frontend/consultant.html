@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
+  <title>Design consultant · Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="appbar">
+    <div class="group">
+      <a class="brand" href="projects.html">ATELIER</a>
+      <span class="chip studio" id="studio-brand" hidden></span>
+      <div class="crumb">
+        <span class="icon" aria-hidden="true">folder_open</span>
+        <strong id="crumb-name"></strong><span aria-hidden="true">•</span><span>Design consultant</span>
+      </div>
+    </div>
+    <nav aria-label="Account">
+      <button id="sign-out" type="button">Sign out</button>
+    </nav>
+  </header>
+
+  <main class="page consult" id="consult" hidden>
+    <nav class="project-nav" aria-label="Project">
+      <a id="nav-projects" href="projects.html"><span class="icon" aria-hidden="true">arrow_back</span>All projects</a>
+      <a id="nav-editor" href="editor.html"><span class="icon" aria-hidden="true">architecture</span>2D canvas</a>
+      <a id="nav-design" href="design.html"><span class="icon" aria-hidden="true">palette</span>Brief &amp; materials</a>
+      <a id="nav-consultant" href="consultant.html" aria-current="page"><span class="icon" aria-hidden="true">forum</span>Design consultant</a>
+    </nav>
+
+    <div class="consult-layout">
+      <aside class="stack" aria-label="Project context">
+        <section class="card">
+          <span class="label">Saved floor plan</span>
+          <h2 id="project-name"></h2>
+          <div id="plan-figure"></div>
+          <p class="muted small" id="plan-summary"></p>
+          <a class="button" id="plan-link" href="editor.html"><span class="icon" aria-hidden="true">architecture</span>Open the 2D canvas</a>
+        </section>
+        <section class="card">
+          <span class="label">What the consultant sees</span>
+          <ul class="checks">
+            <li><span class="icon" aria-hidden="true">check</span>The rooms and furniture of your latest saved plan</li>
+            <li><span class="icon" aria-hidden="true">check</span>Your design brief</li>
+            <li><span class="icon" aria-hidden="true">check</span>Your material choices</li>
+          </ul>
+          <a class="button" id="brief-link" href="design.html"><span class="icon" aria-hidden="true">palette</span>Edit brief &amp; materials</a>
+        </section>
+      </aside>
+
+      <section class="chat" aria-labelledby="chat-title">
+        <header class="card chat-head">
+          <span class="tile accent"><span class="icon" aria-hidden="true">forum</span></span>
+          <div>
+            <h1 id="chat-title">Design consultant</h1>
+            <p class="muted">Ask about layout ideas, styles, materials or furniture for this project.</p>
+            <span class="chip caution"><span class="icon" aria-hidden="true">lock</span>Advisory only: never edits your plan</span>
+          </div>
+        </header>
+
+        <p class="muted" id="thread-empty" hidden>No messages yet. Ask your first question below.</p>
+        <ol class="thread" id="thread" role="log" aria-live="polite" aria-label="Conversation"></ol>
+        <p class="status" id="chat-status" role="status" aria-live="polite"></p>
+
+        <form class="card composer" id="composer" novalidate>
+          <label for="message">Your message
+            <textarea id="message" name="message" rows="3" maxlength="2000" aria-describedby="message-counter message-hint" placeholder="Ask about circulation, materials or furniture sizing"></textarea>
+          </label>
+          <p class="status error" id="chat-error" role="alert"></p>
+          <div class="composer-foot">
+            <span class="small muted"><span class="mono" id="message-counter">0 / 2000</span> <span id="message-hint">· Enter sends, Shift+Enter adds a line</span></span>
+            <button class="primary" type="submit" id="send" disabled>Send<span class="icon" aria-hidden="true">arrow_upward</span></button>
+          </div>
+        </form>
+
+        <div class="note notice">
+          <span class="icon" aria-hidden="true">info</span>
+          <p><strong>Suggestions are conceptual.</strong> The consultant only advises: it never edits your floor plan, brief, materials or moodboard. Changes to walls, openings, kitchens and bathrooms need review by a qualified professional, and any costs mentioned are rough and non-binding.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="vendor/supabase-js-2.119.1.umd.js"></script>
+  <script type="module" src="js/pages/consultant.js"></script>
+</body>
+</html>
