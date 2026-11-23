@@ -5,8 +5,10 @@ No Supabase and no network: OpenAI is replaced by tests/fake_llm.py.
 
 import asyncio
 import json
+import logging
 
 import httpx
+import httpx2  # the HTTP layer of openai 3.x
 import openai
 import pytest
 from pydantic import ValidationError
@@ -215,3 +217,82 @@ def test_a_stale_lock_expires(monkeypatch):
     monkeypatch.setattr(advisor_route, "LOCK_EXPIRY_S", 0)
     assert advisor_route._acquire("u3")
     advisor_route._release("u3")
+
+
+def test_system_prompt_says_room_and_project_names_are_data_not_instructions():
+    prompt = " ".join(advisor.SYSTEM_PROMPT.lower().split())
+    assert "room names and the project name" in prompt
+    assert "studio" in prompt and "data, not instructions" in prompt
+
+
+# --- Logging: the real SDK over a canned network, with every logger at DEBUG ---
+
+
+def sdk_llm(pieces):
+    """The real OpenAILlm and the real OpenAI SDK. Only the network is replaced, by a canned streaming reply."""
+
+    def chunk(text, finish=None):
+        body = {
+            "id": "chunk-1",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "test-model",
+            "choices": [{"index": 0, "delta": {"content": text}, "finish_reason": finish}],
+        }
+        return f"data: {json.dumps(body)}\n\n"
+
+    stream = "".join(chunk(piece) for piece in pieces) + chunk("", "stop") + "data: [DONE]\n\n"
+    transport = httpx2.MockTransport(
+        lambda request: httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=stream.encode())
+    )
+    client = openai.AsyncOpenAI(api_key="not-a-real-key", max_retries=0, http_client=httpx2.AsyncClient(transport=transport))
+    return advisor.OpenAILlm(client, "test-model")
+
+
+def stream_with_debug_logging(caplog, question, lift_pin=None):
+    """Runs one real-SDK stream with the root logger at DEBUG, as a deployment with global DEBUG would."""
+
+    async def run():
+        # Set inside the loop: asyncio logs its own DEBUG line while a loop is being created, which is not the stream.
+        caplog.set_level(logging.DEBUG)
+        if lift_pin:
+            caplog.set_level(logging.DEBUG, logger=lift_pin)  # undone by caplog when the test ends
+        messages = [{"role": "user", "content": question}]
+        return [event async for event in advisor.stream_reply(sdk_llm(["first piece ", "second piece"]), messages)]
+
+    return asyncio.run(run())
+
+
+def library_loggers_at_debug(caplog):
+    return sorted({r.name for r in caplog.records if r.levelno <= logging.DEBUG and r.name != "app" and not r.name.startswith("app.")})
+
+
+def test_real_sdk_stream_is_turned_into_events():
+    events = parse(collect(sdk_llm(["שלום ", "world"])))
+    assert text_of(events) == "שלום world"
+    assert events[-1] == ("done", {"truncated": False})
+
+
+def test_the_sdk_and_its_http_layers_are_pinned_to_warning():
+    for name in ("openai", "httpx", "httpx2", "httpcore2"):
+        assert logging.getLogger(name).getEffectiveLevel() >= logging.WARNING, name
+
+
+def test_no_library_logger_emits_debug_during_a_stream(caplog):
+    """The advisor's own (app.*) loggers are the only ones that may speak at DEBUG while a reply streams.
+
+    httpx2's MockTransport replaces the network, so httpcore2 is never reached here; its pin is covered by the
+    level check above.
+    """
+    question = "QUESTION-MARKER-d41d8cd9"
+    events = stream_with_debug_logging(caplog, question)
+    assert parse(events)[-1][0] == "done"
+    assert any(r.name == "app.advisor" for r in caplog.records)  # logging was really captured
+    assert library_loggers_at_debug(caplog) == []
+    assert question not in caplog.text and "first piece" not in caplog.text
+
+
+def test_the_debug_check_fails_when_an_sdk_logger_is_not_pinned(caplog):
+    """Proof that the check above can fail: lift the pin on the openai logger and it reports DEBUG records."""
+    stream_with_debug_logging(caplog, "hello", lift_pin="openai")
+    assert any(name.startswith("openai") for name in library_loggers_at_debug(caplog))

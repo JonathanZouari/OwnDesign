@@ -352,7 +352,14 @@ def test_client_reads_the_advisor_reply_as_it_is_written(advisor_servers, page, 
 
     # The page says plainly that nothing is saved and that questions go to OpenAI.
     privacy = page.locator(".privacy").inner_text()
-    assert "does not save this conversation" in privacy and "sent to OpenAI" in privacy
+    for phrase in (
+        "Each question",
+        "earlier messages in this conversation",
+        "project's name, type, room names and room types",
+        "sent to OpenAI",
+        "does not save the conversation",
+    ):
+        assert phrase in privacy, phrase
     assert "Conceptual guidance only" in page.locator(".notices").inner_text()
 
     box, send = page.get_by_label("Your question"), page.get_by_role("button", name="Send")

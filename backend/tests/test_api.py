@@ -405,5 +405,5 @@ def test_advisor_never_logs_question_history_or_reply_text(api, world, llm, admi
         assert marker not in caplog.text
     audit_text = json.dumps(admin.table("audit_events").select("*").eq("actor_id", world.client_a.id).execute().data)
     assert not any(marker in audit_text for marker in (question, history, reply))
-    assert logging.getLogger("openai").getEffectiveLevel() >= logging.WARNING
-    assert logging.getLogger("httpx").getEffectiveLevel() >= logging.WARNING
+    for name in ("openai", "httpx", "httpx2", "httpcore2"):
+        assert logging.getLogger(name).getEffectiveLevel() >= logging.WARNING, name
