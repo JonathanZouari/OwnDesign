@@ -14,7 +14,7 @@ Each screen has its Stitch HTML and a 1000 px wide preview of its screenshot.
 | Studio Overview & Project Directory | `studio-overview.*` | `9b6d7113841b46e3b1c34c01f784a110` | `frontend/studio.html` |
 | Studio White-Label Branding & Atelier Settings | `branding.*` | `bc995470b8674b049a69d9ff7118c2de` | Not built. Reference for studio branding. |
 | Client & Designer Project Dossier & Specs Export | `dossier.*` | `2b2c8e525cff4315b6e1299e739538b0` | Not built. Reference for dossier and budget. |
-| Client AI Consultant & Spatial Advisor | `ai-consultant.*` | `f25a1641c4b64ec9946293d53f5a26fd` | Not built. Reference for the AI consultant. |
+| Client AI Consultant & Spatial Advisor | `ai-consultant.*` | `f25a1641c4b64ec9946293d53f5a26fd` | `frontend/advisor.html` (conversation, composer and notices only; the sample-data panels are not built) |
 | 3D Render Views & Photorealistic Gallery | `renders.*` | `e1f415546ba3446d80be70a71b57bbd8` | Not built. Reference for renderings. |
 
 Images generated in Stitch: `render-concept-a.jpg` (used as the illustration on the client portal,

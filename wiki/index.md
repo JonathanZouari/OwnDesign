@@ -11,6 +11,7 @@ Project memory for Atelier. Rules for maintaining it are in [`../CLAUDE.md`](../
 ## Engineering
 
 - [architecture.md](architecture.md): how frontend, backend and Supabase fit together; access model; plan geometry.
+- [advisor.md](advisor.md): the AI advisor: who can use it, the streaming protocol, limits, what is and is not stored or logged, what is not verified.
 - [security.md](security.md): tenant isolation, review findings and what was fixed.
 - [testing.md](testing.md): the test suites, how to run them, what they cover and what they do not.
 
