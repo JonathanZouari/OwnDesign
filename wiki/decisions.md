@@ -20,4 +20,7 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **One JSON document per plan version**, in centimetres. The current plan is the latest version; no separate floor-plan table.
 - **supabase-js is vendored**, not loaded from a CDN, with a `script-src 'self'` policy. Came out of the security review.
 - **Product name "ATELIER"** in the UI, taken from Stitch. The PRD leaves the name undecided.
+- **Phase 2 data model:** the brief is one JSON document per project; finishes and the moodboard are saved as a whole set (delete then insert, not atomic, saving again recovers).
+- **Consultant memory policy** (PRD 5.4 leaves it open): messages are stored per project and user, private to that user, capped at 30 a day per user. A failed OpenAI call still uses a slot because it may have been billed.
+- **Images go through the backend**, not directly to storage, so type, size, count and access are checked in one place.
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.

@@ -26,10 +26,10 @@ there lists the Stitch screen ids. Pulled 2026-11-19.
 | Studio Overview & Project Directory | `frontend/studio.html` | Built |
 | Studio White-Label Branding & Atelier Settings | none | Reference for the branding phase |
 | Client & Designer Project Dossier & Specs Export | none | Reference for the dossier and budget phase |
-| Client AI Consultant & Spatial Advisor | none | Reference for the AI consultant phase |
+| Client AI Consultant & Spatial Advisor | `frontend/consultant.html` | Built (real data only; no credits, sample suggestions or action buttons) |
 | 3D Render Views & Photorealistic Gallery | none | Reference for the renderings phase |
 
-`index.html`, `auth.html` and `projects.html` have no Stitch screen; they follow the design system.
+`index.html`, `auth.html`, `projects.html` and `design.html` (brief, materials, moodboard) have no Stitch screen; they follow the design system.
 
 ## Rules for turning a Stitch screen into a page
 
