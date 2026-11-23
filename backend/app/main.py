@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.db import settings
 from app.responses import fail, ok
-from app.routes import projects, studios
+from app.routes import design, projects, studios
 
 log = logging.getLogger(__name__)
 MAX_BODY_BYTES = 2_000_000  # a full 1000-item plan is well under this
@@ -16,11 +16,13 @@ app = FastAPI(title="OwnDesign API", version="1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in settings().allowed_origins.split(",") if origin.strip()],
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
 app.include_router(studios.router)
 app.include_router(projects.router)
+app.include_router(design.catalog_router)
+app.include_router(design.router)
 
 
 class BodyLimit:

@@ -4,6 +4,7 @@ import math
 from typing import Annotated, Literal
 from uuid import UUID
 
+from app.catalog import STYLE_IDS
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, model_validator
 
 MAX_COORD_CM = 100_000  # 1 km: far beyond any residential plan
@@ -110,3 +111,36 @@ class ProjectCreate(Strict):
 class VersionCreate(Strict):
     label: Annotated[str, StringConstraints(strip_whitespace=True, max_length=80)] = ""
     geometry: Geometry
+
+
+Text = Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)]
+Hex = Annotated[str, StringConstraints(pattern=r"^#[0-9a-fA-F]{6}$")]
+Money = Annotated[int, Field(ge=0, le=100_000_000)]
+
+
+class Brief(Strict):
+    """The design brief (PRD FR-04): style, colours, budget, household, needs, constraints, existing items."""
+
+    styles: Annotated[list[str], Field(max_length=5)] = []
+    colors: Annotated[list[Hex], Field(max_length=8)] = []
+    budget_min: Money | None = None
+    budget_max: Money | None = None
+    currency: Literal["USD", "EUR", "GBP", "ILS"] = "USD"
+    adults: Annotated[int, Field(ge=0, le=20)] = 1
+    children: Annotated[int, Field(ge=0, le=20)] = 0
+    pets: bool = False
+    lifestyle: Text = ""
+    needs: Text = ""
+    constraints: Text = ""
+    existing_items: Text = ""
+
+    @model_validator(mode="after")
+    def _consistent(self):
+        unknown = [style for style in self.styles if style not in STYLE_IDS]
+        if unknown or len(set(self.styles)) != len(self.styles):
+            raise ValueError("styles must be distinct and from the catalog")
+        if len(set(self.colors)) != len(self.colors):
+            raise ValueError("colors must be distinct")
+        if self.budget_min is not None and self.budget_max is not None and self.budget_min > self.budget_max:
+            raise ValueError("budget_min must not exceed budget_max")
+        return self
