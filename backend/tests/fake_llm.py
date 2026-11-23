@@ -2,6 +2,10 @@
 
 import asyncio
 
+# Replies the browser journeys script and then look for on the page.
+ENGLISH_REPLY = ["A warm oak floor ", "pairs well with ", "a linen sofa in ", "the living room."]
+HEBREW_REPLY = ["שלום! ", "ספה בצבע אפור ", "תתאים לסלון של 3.5 מ' ", "(Kvadrat 2.4)."]
+
 
 class FakeLlm:
     """Streams `pieces`, optionally slowly, failing, or hanging. Records what it was asked and whether it was closed."""
