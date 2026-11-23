@@ -15,7 +15,7 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Advisor: the conversation is not saved** in the database for now. Retention and consent stay open ([advisor.md](advisor.md)).
 - **Advisor: only the client who owns the project** can use it; the studio's designers cannot.
 - **Advisor: its own page** `advisor.html`, reached from a tab in the editor.
-- **Advisor notice says where the text goes:** the conversation is not saved, but each question is sent to OpenAI.
+- **Advisor notice says what goes to OpenAI:** each question, the earlier messages, and the project's name, type, room names and room types. It also says OwnDesign does not save the conversation.
 - **Advisor: no question, history or reply text in any log or audit row**, enforced by a test.
 - **Advisor RTL styles stay on the advisor page** (`frontend/css/advisor.css`, all under `body.advisor`; `app.css` unchanged), because another team owns Hebrew RTL.
 - **`apiStream` in `frontend/js/api.js`** carries the advisor's streaming request, so token handling and error envelopes stay in one place. It was not in the first plan; the user approved it.

@@ -147,3 +147,30 @@ test counts (testing). Every page is in the index; links checked by reading. Not
 `backend/.env.example` now lists `OPENAI_API_KEY=` and `OPENAI_MODEL=` (names only). The open item that
 said they were missing is removed. Commit `70c17a2`; the wiki fix is the commit that adds this entry.
 Pages: [open-items](open-items.md).
+
+## [2026-11-24] security | Branch-wide review of the advisor
+`security-review` on all seven local commits. No vulnerability. Five LOW candidates, each checked by its own
+false-positive review and none held (1 to 2 out of 10): designer-written room names in the client's prompt,
+a notice that understated what is sent, the new dependency set (`httpx2` is the SDK's official HTTP layer),
+log pins aimed at the wrong logger names, the key held as a plain string. Two real, non-security findings
+came out of the checks: the log pin named `httpx` while the SDK uses `httpx2`, and a stale comment.
+Pages: [security](security.md), [open-items](open-items.md).
+
+## [2026-11-24] build | Advisor hardening before push
+The user asked for three fixes. Loggers `httpx2` and `httpcore2` pinned to WARNING and the stale comment
+corrected, with a test that runs the real SDK over a canned network at DEBUG and fails if a logger outside
+`app.*` speaks (and a control that lifts a pin). The notice now lists everything sent to OpenAI (room types
+included, since they are sent too). The system prompt says room and project names are data, not
+instructions. Backend 109 passed (was 104), frontend 34 passed, none failed or skipped.
+Commit `b259ea8`. Pages: [advisor](advisor.md), [testing](testing.md), [decisions](decisions.md).
+
+## [2026-11-24] security | Review of the hardening commit
+`security-review` on `b259ea8` only. No vulnerability; seven candidates, all non-findings (the prompt rule
+is additive, the pins only reduce logging, the notice is static text and matches what the code sends, the
+test key is a dummy). Not reachable and not introduced here: `hpack`/`h2` would log headers at DEBUG only
+with HTTP/2 enabled. Open items added: the tests import `httpx2` directly; `SecretStr` for the keys.
+Pages: [security](security.md), [open-items](open-items.md).
+
+## [2026-11-24] docs | Advisor wiki updated after the hardening
+`security.md`, `open-items.md`, `advisor.md`, `decisions.md`, `testing.md` and this log updated to match
+`b259ea8` (notice text, logger pins, prompt rule, test counts, review results). The commit that adds this entry.

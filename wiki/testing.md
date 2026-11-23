@@ -17,7 +17,7 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 | `backend/tests/test_geometry.py` | unit, edge | geometry validation: bounds, duplicates, openings outside walls |
 | `backend/tests/test_api.py` | integration, edge | auth, studios, invites, projects, versions, isolation, quotas, 413 on chunked upload, studio activity (members only) |
 | `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names); seven advisor journeys (below) |
-| `backend/tests/test_advisor.py` | unit, edge | the advisor's SSE generator and prompt without Supabase: normal stream, Hebrew and emoji, newlines in text, error before and mid-stream, empty reply, both timeouts, length cap, closing the stream, injection text, input limits, the per-user lock |
+| `backend/tests/test_advisor.py` | unit, edge | the advisor's SSE generator and prompt without Supabase: normal stream, Hebrew and emoji, newlines in text, error before and mid-stream, empty reply, both timeouts, length cap, closing the stream, injection text, input limits, the per-user lock; the real OpenAI SDK over a canned network (`httpx2.MockTransport`) with every logger at DEBUG, failing if a logger outside `app.*` speaks, plus a control that lifts a pin |
 | `backend/tests/test_api.py` (advisor section) | integration, edge | who may use the advisor (owner 200; studio designer 403; other studio and other client 404; no or bad token 401; unknown and malformed id), OpenAI never called for a refusal, invalid input 422, 503, daily quota and one open reply 429, suspended studio, audit row has no text and is private, no question, history or reply text in logs |
 | `backend/tests/fake_llm.py`, `backend/tests/e2e_app.py` | helpers | the OpenAI stand-in, and the real app with a scripted fake that the browser journeys use. No test calls OpenAI |
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
@@ -35,7 +35,7 @@ End to end, regression (both full suites) and edge cases for the change (`CLAUDE
 
 ## Last result
 
-2026-11-24 (advisor branch): backend 104 passed (10 browser journeys), frontend 34 passed. None failed or skipped.
+2026-11-24 (advisor branch, after the hardening commit): backend 109 passed (10 browser journeys), frontend 34 passed. None failed or skipped.
 Previous baseline, 2026-11-19: backend 43 passed (3 browser journeys), frontend 17 passed.
 
 ## Not covered

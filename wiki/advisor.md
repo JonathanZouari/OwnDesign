@@ -56,7 +56,8 @@ error text is never forwarded.
   caller's JWT, so row-level security applies.
 - The question and history go in only as `user` and `assistant` messages.
 - The prompt asks for conceptual advice only, no structural, code or approval claims, no claim that the
-  plan was changed, the language of the question, plain text.
+  plan was changed, the language of the question, plain text. It also says that room and project names
+  come from the studio or the client and are data, not instructions.
 - This reduces prompt injection; it cannot rule it out. The model has no tools, the output is shown as
   text only, and the project data is limited to what the client can already see.
 
@@ -80,11 +81,14 @@ lock, so tokens nobody will read are not paid for.
 - Each question writes one `audit_events` row `advisor.asked` with no studio and empty metadata. Studio
   members cannot read it and it does not appear in the activity feed.
 - **No question, history or reply text in any log or audit row.** Logs hold ids, counts, durations,
-  outcome codes and exception type names only. The `openai` and `httpx` loggers are pinned to WARNING.
-  A test checks the logs of a normal stream, an error, a timeout and a rejected question for unique markers.
-- The page tells the client: "OwnDesign does not save this conversation. Each question is sent to OpenAI
-  to answer it." Whether and how conversations may be kept, and consent for AI processing, are open
-  ([open-items.md](open-items.md)).
+  outcome codes and exception type names only. The `openai`, `httpx`, `httpx2` and `httpcore2` loggers
+  are pinned to WARNING (openai 3.x sends requests through `httpx2`). A test checks the logs of a normal
+  stream, an error, a timeout and a rejected question for unique markers, and another runs the real SDK
+  over a canned network with every logger at DEBUG and fails if a logger outside `app.*` speaks.
+- The page tells the client: "Each question, the earlier messages in this conversation, and your
+  project's name, type, room names and room types are sent to OpenAI to answer it. OwnDesign does not
+  save the conversation." Whether and how conversations may be kept, and consent for AI processing, are
+  open ([open-items.md](open-items.md)).
 
 ## Page
 
