@@ -42,7 +42,6 @@ is built as the advisor ([advisor.md](advisor.md)) without its sample-data panel
 - The editor's sign in/out button is hidden on phones.
 - The editor's tabs are hidden below 768 px, so on a phone the "AI Consultant" tab cannot be reached from the editor; `advisor.html?project=<id>` itself fits a phone.
 - The wording of the advisor page (notices, errors, buttons) has not had a copywriting review, and its layout has not had a design review against the Stitch screen.
-- `backend/.env.example` does not list `OPENAI_API_KEY` and `OPENAI_MODEL`; they are documented in `README.md`.
 - The coordinate limit is enforced in the editor only by clamping the view.
 - Two adjacent rooms from the wizard produce two overlapping walls.
 - Commit author address in the published history is the user's personal one (published by the user's choice).

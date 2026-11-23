@@ -142,3 +142,8 @@ The commit that adds this entry.
 Fixed claims the code no longer supports: "AI consultant" under Not built (overview, README, open-items),
 "AI advisor left out" (decisions), the Stitch screen's state (design, `design/stitch/README.md`), and the
 test counts (testing). Every page is in the index; links checked by reading. Nothing contradicting left.
+
+## [2026-11-24] docs | OpenAI settings listed in .env.example
+`backend/.env.example` now lists `OPENAI_API_KEY=` and `OPENAI_MODEL=` (names only). The open item that
+said they were missing is removed. Commit `70c17a2`; the wiki fix is the commit that adds this entry.
+Pages: [open-items](open-items.md).
