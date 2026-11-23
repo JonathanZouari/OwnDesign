@@ -1,3 +1,5 @@
+import { COMMON } from "./strings.js";
+
 export const $ = (selector, root = document) => root.querySelector(selector);
 
 // Tiny DOM builder. Text always goes in as text nodes, never as HTML, so user content cannot inject markup.
@@ -28,7 +30,7 @@ export async function run(main) {
   try {
     await main();
   } catch (error) {
-    toast(error.message || "Something went wrong.", "error");
+    toast(error.message || COMMON.somethingWentWrong, "error");
   }
 }
 
@@ -40,7 +42,7 @@ export const action = (handler) => async (event) => {
   try {
     await handler(event);
   } catch (error) {
-    toast(error.message || "Something went wrong.", "error");
+    toast(error.message || COMMON.somethingWentWrong, "error");
   } finally {
     control.disabled = false;
   }
@@ -49,14 +51,14 @@ export const action = (handler) => async (event) => {
 export async function copyText(text) {
   try {
     await navigator.clipboard.writeText(text);
-    toast("Link copied");
+    toast(COMMON.linkCopied);
   } catch {
-    toast("Copy failed. Select the link and copy it manually.", "error");
+    toast(COMMON.copyFailed, "error");
   }
 }
 
 export const formatDate = (iso) =>
-  new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleString("he-IL", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 export const pageUrl = (page) => new URL(page, location.href).href;
 

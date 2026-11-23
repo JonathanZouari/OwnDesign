@@ -1,3 +1,5 @@
+import { STUDIO } from "./strings.js";
+
 // Pure helpers for the studio dashboard: everything shown is derived from what the API returned.
 
 const sameMonth = (iso, now) => {
@@ -15,17 +17,16 @@ export function studioMetrics(projects, invites, now = new Date()) {
   };
 }
 
-const ROLE = { client: "the client", designer: "the designer" };
+const T = STUDIO.activity;
 const SENTENCE = {
-  "studio.created": () => "Studio created",
-  "invite.created": () => "Invite link created",
-  "invite.accepted": () => "Invite accepted by the client",
-  "project.created": () => "Project created",
-  "plan_version.created": (metadata) =>
-    `Version ${metadata.version_no ?? "?"} saved by ${ROLE[metadata.author_role] ?? "a studio member"}`,
+  "studio.created": () => T.studioCreated,
+  "invite.created": () => T.inviteCreated,
+  "invite.accepted": () => T.inviteAccepted,
+  "project.created": () => T.projectCreated,
+  "plan_version.created": (metadata) => T.versionSaved(metadata.version_no ?? "?", T.roles[metadata.author_role] ?? T.roles.other),
 };
 
-// One audit row as a sentence, e.g. "Version 2 saved by the designer · Flat A".
+// One audit row as a sentence, e.g. "גרסה 2 נשמרה על ידי המעצב · Flat A".
 export function activityText({ action, metadata, project }) {
   const sentence = SENTENCE[action]?.(metadata ?? {}) ?? action;
   return project?.name ? `${sentence} · ${project.name}` : sentence;

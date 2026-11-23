@@ -1,11 +1,11 @@
 import { api, requireSession, signOut } from "../api.js";
+import { COMMON, PROJECT_TYPES, ROLES, STUDIO } from "../strings.js";
 import { isPlan, planArea } from "../plan.js";
 import { KEYS, save } from "../store.js";
 import { activityText, matchesProject, studioMetrics } from "../studio-data.js";
 import { planThumbnail } from "../thumbnail.js";
 import { $, action, copyText, formatDate, h, pageUrl, run, showStudio } from "../ui.js";
 
-const TYPE_LABEL = { existing: "Existing home", new_build: "New build" };
 const UNKNOWN = "—";
 
 const icon = (name) => h("span", { class: "icon", "aria-hidden": "true" }, name);
@@ -19,8 +19,8 @@ function showInvites(invites) {
         "tr",
         {},
         h("td", {}, h("span", { class: "who" }, invite.client_name), h("span", { class: "code" }, invite.client_email)),
-        h("td", {}, h("span", { class: `chip ${invite.accepted_at ? "ok" : ""}` }, invite.accepted_at ? "Accepted" : "Pending")),
-        h("td", {}, h("button", { type: "button", onclick: () => copyText(inviteUrl(invite)) }, "Copy link")),
+        h("td", {}, h("span", { class: `chip ${invite.accepted_at ? "ok" : ""}` }, invite.accepted_at ? STUDIO.accepted : STUDIO.pending)),
+        h("td", {}, h("button", { type: "button", onclick: () => copyText(inviteUrl(invite)) }, COMMON.copyLink)),
       ),
     ),
   );
@@ -52,23 +52,23 @@ function projectCard(project) {
       h(
         "div",
         { class: "project-meta" },
-        h("span", { class: "chip" }, TYPE_LABEL[project.property_type] ?? project.property_type),
-        h("span", { class: "code" }, `Created ${formatDate(project.created_at)}`),
+        h("span", { class: "chip" }, PROJECT_TYPES[project.property_type] ?? project.property_type),
+        h("span", { class: "code" }, STUDIO.created(formatDate(project.created_at))),
       ),
       h("h3", { id: titleId }, project.name),
-      h("p", { class: "client" }, icon("person"), h("span", {}, project.client_email ?? "No client email")),
-      h("dl", { class: "facts" }, fact("Floor area", "fact-area"), fact("Latest version", "fact-version")),
-      h("div", {}, h("a", { class: "button primary", href: `editor.html?project=${project.id}` }, icon("architecture"), "Launch 2D canvas")),
+      h("p", { class: "client" }, icon("person"), h("span", {}, project.client_email ?? STUDIO.noClientEmail)),
+      h("dl", { class: "facts" }, fact(STUDIO.floorArea, "fact-area"), fact(STUDIO.latestVersion, "fact-version")),
+      h("div", {}, h("a", { class: "button primary", href: `editor.html?project=${project.id}` }, icon("architecture"), STUDIO.launchCanvas)),
     ),
   );
 }
 
 function showPreview(card, project, version) {
   const plan = version.geometry;
-  $(".fact-version", card).textContent = `v${version.version_no} · ${version.author_role}`;
+  $(".fact-version", card).textContent = STUDIO.versionFact(version.version_no, ROLES[version.author_role] ?? version.author_role);
   if (!isPlan(plan)) return; // nothing drawable: the neutral tile stays
-  $(".thumb", card).replaceWith(planThumbnail(plan, `Floor plan of ${project.name}`));
-  $(".fact-area", card).textContent = `${planArea(plan).toFixed(1)} m²`;
+  $(".thumb", card).replaceWith(planThumbnail(plan, STUDIO.floorPlanOf(project.name)));
+  $(".fact-area", card).textContent = STUDIO.areaValue(planArea(plan).toFixed(1));
 }
 
 // A project without a saved version answers 404. Any other failure keeps the neutral placeholder:
@@ -78,8 +78,8 @@ async function loadPreview(project, card) {
     showPreview(card, project, await api(`/v1/projects/${project.id}/versions/latest`));
   } catch (error) {
     if (error.status !== 404) return;
-    $(".thumb", card).replaceWith(thumbPlaceholder("empty", "No plan saved yet"));
-    $(".fact-version", card).textContent = "None yet";
+    $(".thumb", card).replaceWith(thumbPlaceholder("empty", STUDIO.noPlanYet));
+    $(".fact-version", card).textContent = STUDIO.none;
   }
 }
 
@@ -146,8 +146,8 @@ function showIdentity(studio, email, role) {
   save(KEYS.studio, studio); // "Create new project" from here starts a project in the designer's own studio
   showStudio(studio.name);
   $("#studio-name").textContent = studio.name;
-  $("#signed-in").textContent = `Signed in as ${email}`;
-  document.title = `${studio.name} · Studio`;
+  $("#signed-in").textContent = STUDIO.signedInAs(email);
+  document.title = STUDIO.title(studio.name);
   $("#studio-url").value = pageUrl(`entry.html?studio=${studio.slug}`);
   $("#copy-studio-url").addEventListener("click", () => copyText($("#studio-url").value));
   $("#role").textContent = role ?? "";

@@ -25,10 +25,10 @@ test("the same month of another year is not this month", () => {
 
 test("activity rows read as sentences", () => {
   const version = { action: "plan_version.created", metadata: { version_no: 2, author_role: "designer" }, project: { name: "Flat A" } };
-  assert.equal(activityText(version), "Version 2 saved by the designer · Flat A");
-  assert.equal(activityText({ ...version, metadata: { version_no: 1, author_role: "client" }, project: null }), "Version 1 saved by the client");
-  assert.equal(activityText({ action: "project.created", metadata: {}, project: { name: "Flat A" } }), "Project created · Flat A");
-  assert.equal(activityText({ action: "invite.accepted", metadata: null, project: null }), "Invite accepted by the client");
+  assert.equal(activityText(version), "גרסה 2 נשמרה על ידי המעצב · Flat A");
+  assert.equal(activityText({ ...version, metadata: { version_no: 1, author_role: "client" }, project: null }), "גרסה 1 נשמרה על ידי הלקוח");
+  assert.equal(activityText({ action: "project.created", metadata: {}, project: { name: "Flat A" } }), "הפרויקט נוצר · Flat A");
+  assert.equal(activityText({ action: "invite.accepted", metadata: null, project: null }), "ההזמנה אושרה על ידי הלקוח");
   assert.equal(activityText({ action: "something.new", metadata: {}, project: null }), "something.new");
 });
 

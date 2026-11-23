@@ -17,7 +17,9 @@ class CurrentUser:
     email: str | None
     db: Client  # RLS-scoped: sees only what this user may see
 
-    def role_in(self, studio_id: str) -> str | None:
+    def role_in(self, studio_id: str | None) -> str | None:
+        if studio_id is None:
+            return None
         rows = self.db.table("studio_memberships").select("role").eq("studio_id", studio_id).execute().data
         return rows[0]["role"] if rows else None
 

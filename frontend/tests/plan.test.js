@@ -144,3 +144,67 @@ test("a room disappears with its last wall, and a zero move changes nothing", ()
   assert.equal(P.remove(start, "walls", start.walls[0].id).rooms.length, 2, "a room with walls left stays");
   assert.equal(P.translate(start, "rooms", room.id, 0, 0), start);
 });
+
+// ---- rooms with an outline (imported rooms) ----
+const L_SHAPE = [[0, 0], [600, 0], [600, 200], [300, 200], [300, 400], [0, 400]];
+const withOutline = (outline = [[0, 0], [400, 0], [400, 300], [0, 300]]) => ({
+  ...P.emptyPlan(),
+  rooms: [{ id: "r1", name: "Hall", type: "living", outline }],
+  walls: [{ id: "w1", x1: 0, y1: 0, x2: 400, y2: 0, thickness: 20, kind: "exterior" }],
+});
+
+test("a room with an outline has its shoelace area, not the wall box", () => {
+  const plan = withOutline(L_SHAPE);
+  assert.equal(P.roomArea(plan, plan.rooms[0]), 18);
+  assert.equal(P.planArea(plan), 18);
+  assert.equal(P.polygonArea([[0, 0], [100, 0], [0, 100]]), 5000);
+});
+
+test("rooms without an outline keep the wall-box area", () => {
+  const plan = P.fromRooms([{ name: "A", type: "other", width: 400, length: 300 }]);
+  assert.equal(P.planArea(plan), 12);
+  assert.equal(P.roomArea(plan, plan.rooms[0]), 12);
+});
+
+test("label point is the centroid when inside, else a point inside the polygon", () => {
+  assert.deepEqual(P.labelPoint([[0, 0], [400, 0], [400, 300], [0, 300]]), { x: 200, y: 150 });
+  const u = [[0, 0], [100, 0], [100, 300], [200, 300], [200, 0], [300, 0], [300, 400], [0, 400]]; // U: centroid in the notch
+  const p = P.labelPoint(u);
+  const inside = (x, y) => (x > 0 && x < 100 && y > 0 && y < 400) || (x > 200 && x < 300 && y > 0 && y < 400) || (y > 300 && y < 400 && x > 0 && x < 300);
+  assert.ok(inside(p.x, p.y), JSON.stringify(p));
+});
+
+test("moving an outlined room shifts its outline", () => {
+  const moved = P.translate(withOutline(), "rooms", "r1", 50, -20);
+  assert.deepEqual(moved.rooms[0].outline, [[50, -20], [450, -20], [450, 280], [50, 280]]);
+  assert.equal(moved.walls[0].x1, 0, "walls without that roomId stay");
+});
+
+test("an outlined room survives without walls and deleting it removes only the room", () => {
+  const plan = withOutline();
+  const noWalls = P.remove(plan, "walls", "w1");
+  assert.equal(noWalls.rooms.length, 1);
+  const gone = P.remove(plan, "rooms", "r1");
+  assert.equal(gone.rooms.length, 0);
+  assert.equal(gone.walls.length, 1);
+});
+
+test("roomBox of an outlined room is the outline's box", () => {
+  const plan = withOutline(L_SHAPE);
+  assert.deepEqual(P.roomBox(plan, "r1"), { x: 0, y: 0, w: 600, h: 400 });
+});
+
+test("applyKind and setRoomKind set name and type together and keep the rest", async () => {
+  const { ROOM_KINDS } = await import("../js/strings.js");
+  const living = ROOM_KINDS.find((k) => k.name === "סלון");
+  const room = { id: "r1", name: "מרפסת", type: "balcony", outline: [[0, 0], [100, 0], [100, 100], [0, 100]] };
+  const next = P.applyKind(room, living);
+  assert.deepEqual(next, { ...room, name: "סלון", type: "living" });
+  assert.equal(room.name, "מרפסת"); // input untouched
+  const plan = { ...P.emptyPlan(), rooms: [room, { ...room, id: "r2" }] };
+  const out = P.setRoomKind(plan, "r1", living);
+  assert.equal(out.rooms[0].name, "סלון");
+  assert.equal(out.rooms[0].type, "living");
+  assert.equal(out.rooms[1].name, "מרפסת");
+  assert.equal(P.setRoomKind(plan, "missing", living).rooms[0].name, "מרפסת");
+});

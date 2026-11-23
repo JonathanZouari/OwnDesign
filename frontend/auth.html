@@ -1,33 +1,43 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
-  <title>Sign in · Atelier</title>
+  <title>התחברות · ATELIER</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
   <header class="appbar"><a class="brand" href="index.html">ATELIER</a></header>
   <main class="page narrow">
-    <h1 id="title">Sign in</h1>
+    <h1 id="title">התחברות</h1>
     <p class="muted" id="subtitle"></p>
+    <p class="card stack" id="reset-invalid" hidden>
+      <span>הקישור אינו תקף או שפג תוקפו. בקשו קישור חדש.</span>
+      <button class="primary" id="request-new" type="button">בקשת קישור חדש</button>
+    </p>
     <form id="auth-form" class="card stack">
-      <label id="studio-field" hidden>Studio name
+      <label id="studio-field" hidden>שם הסטודיו
         <input name="studio" maxlength="80" autocomplete="organization">
       </label>
-      <label>Email
+      <label>אימייל
         <input name="email" type="email" required autocomplete="email">
       </label>
-      <label>Password
+      <label id="password-field"><span id="password-label">סיסמה</span>
         <input name="password" type="password" required minlength="8" autocomplete="current-password">
       </label>
-      <button class="primary" id="submit">Sign in</button>
+      <label id="confirm-field"><span>אישור סיסמה</span>
+        <input name="confirm" type="password" required minlength="8" autocomplete="new-password">
+      </label>
+      <button class="primary" id="submit">התחברות</button>
     </form>
-    <p><button class="link" id="switch" type="button"></button></p>
+    <p class="row between">
+      <button class="link" id="switch" type="button"></button>
+      <button class="link" id="forgot" type="button">שכחתי סיסמה</button>
+    </p>
   </main>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/auth.js"></script>

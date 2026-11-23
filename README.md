@@ -5,7 +5,7 @@ Phase 1 of the product described in `Interior_Design_AI_PRD_EN.md`: studios, cli
 immutable plan versions, and tenant isolation.
 
 ```
-frontend/   Static HTML/CSS/ES modules, no build step. UI follows the Stitch "Architectural Atelier" design system.
+frontend/   Static HTML/CSS/ES modules, no build step. UI follows the Stitch "Architectural Drafting & Spatial Intelligence" design system.
             vendor/ holds the official supabase-js browser build (from npm), so no third-party script loads at runtime.
 backend/    FastAPI API (Python 3.13, managed with uv).
 supabase/   Database migrations and the auth settings this project manages.

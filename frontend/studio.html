@@ -1,118 +1,118 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
-  <title>Studio · Atelier</title>
+  <title>סטודיו · ATELIER</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="app">
   <header class="appbar">
     <div class="group"><a class="brand" href="studio.html">ATELIER</a><span class="chip studio" id="studio-brand" hidden></span></div>
-    <nav aria-label="Account"><button id="sign-out" type="button">Sign out</button></nav>
+    <nav aria-label="חשבון"><button id="sign-out" type="button">התנתקות</button></nav>
   </header>
 
   <aside class="palette">
     <div>
-      <div class="row between"><span class="label">Workspace</span></div>
-      <nav aria-label="Sections">
-        <a href="studio.html" aria-current="page"><span class="icon" aria-hidden="true">dashboard</span>Studio overview</a>
-        <a href="#projects"><span class="icon" aria-hidden="true">folder_open</span>Projects</a>
-        <a href="#clients"><span class="icon" aria-hidden="true">group</span>Clients &amp; invites</a>
-        <span title="Coming in a later phase"><span class="icon" aria-hidden="true">view_in_ar</span>Spatial Renders</span>
-        <span title="Coming in a later phase"><span class="icon" aria-hidden="true">receipt_long</span>Dossier &amp; Specs</span>
-        <span title="Coming in a later phase"><span class="icon" aria-hidden="true">palette</span>Studio Branding</span>
+      <div class="row between"><span class="label">סביבת עבודה</span></div>
+      <nav aria-label="אזורים">
+        <a href="studio.html" aria-current="page"><span class="icon" aria-hidden="true">dashboard</span>סקירת הסטודיו</a>
+        <a href="#projects"><span class="icon" aria-hidden="true">folder_open</span>פרויקטים</a>
+        <a href="#clients"><span class="icon" aria-hidden="true">group</span>לקוחות והזמנות</a>
+        <span title="יגיע בשלב מאוחר יותר"><span class="icon" aria-hidden="true">view_in_ar</span>הדמיות מרחביות</span>
+        <span title="יגיע בשלב מאוחר יותר"><span class="icon" aria-hidden="true">receipt_long</span>תיק ומפרטים</span>
+        <span title="יגיע בשלב מאוחר יותר"><span class="icon" aria-hidden="true">palette</span>מיתוג הסטודיו</span>
       </nav>
     </div>
     <div>
-      <div class="readout" id="role-readout" hidden><span class="label">Your role</span><span class="code" id="role"></span></div>
+      <div class="readout" id="role-readout" hidden><span class="label">התפקיד שלכם</span><span class="code" id="role"></span></div>
     </div>
   </aside>
 
   <main class="workspace">
     <div class="dash">
       <form id="create-studio" class="card stack dash-narrow" hidden>
-        <h2>Create your studio</h2>
-        <label>Studio name <input name="name" required maxlength="80"></label>
-        <button class="primary">Create studio</button>
+        <h2>יצירת הסטודיו שלכם</h2>
+        <label>שם הסטודיו <input name="name" required maxlength="80"></label>
+        <button class="primary">יצירת סטודיו</button>
       </form>
 
       <div id="dashboard" class="dash-flow" hidden>
         <header class="dash-head">
           <div class="dash-title">
-            <span class="label accent">Studio overview</span>
+            <span class="label accent">סקירת הסטודיו</span>
             <h1 id="studio-name"></h1>
             <p class="muted small" id="signed-in"></p>
           </div>
           <div class="dash-actions">
-            <button type="button" id="invite-client"><span class="icon" aria-hidden="true">share</span>Invite client</button>
-            <a class="button primary" href="wizard.html" id="new-project"><span class="icon" aria-hidden="true">add</span>Create new project</a>
+            <button type="button" id="invite-client"><span class="icon" aria-hidden="true">share</span>הזמנת לקוח</button>
+            <a class="button primary" href="wizard.html?via=studio" id="new-project"><span class="icon" aria-hidden="true">add</span>פרויקט חדש</a>
           </div>
         </header>
 
-        <dl class="metrics" aria-label="Studio totals">
-          <div class="card metric"><dt class="label">Projects</dt><dd><span class="value" data-metric="projects"></span><span class="code">In this studio</span></dd></div>
-          <div class="card metric"><dt class="label">Clients</dt><dd><span class="value" data-metric="clients"></span><span class="code">With at least one project</span></dd></div>
-          <div class="card metric"><dt class="label">Pending invites</dt><dd><span class="value" data-metric="pending-invites"></span><span class="code">Not accepted yet</span></dd></div>
-          <div class="card metric"><dt class="label">New this month</dt><dd><span class="value" data-metric="new-this-month"></span><span class="code">Projects created</span></dd></div>
+        <dl class="metrics" aria-label="סיכומי הסטודיו">
+          <div class="card metric"><dt class="label">פרויקטים</dt><dd><span class="value" data-metric="projects"></span><span class="code">בסטודיו הזה</span></dd></div>
+          <div class="card metric"><dt class="label">לקוחות</dt><dd><span class="value" data-metric="clients"></span><span class="code">עם פרויקט אחד לפחות</span></dd></div>
+          <div class="card metric"><dt class="label">הזמנות ממתינות</dt><dd><span class="value" data-metric="pending-invites"></span><span class="code">טרם אושרו</span></dd></div>
+          <div class="card metric"><dt class="label">חדשים החודש</dt><dd><span class="value" data-metric="new-this-month"></span><span class="code">פרויקטים שנוצרו</span></dd></div>
         </dl>
 
         <div class="dash-body">
           <section class="dash-main" id="projects" aria-labelledby="projects-title">
             <div class="card dash-toolbar">
               <div>
-                <h2 id="projects-title">Projects</h2>
-                <p class="muted small">Every project in this studio, newest first.</p>
+                <h2 id="projects-title">פרויקטים</h2>
+                <p class="muted small">כל הפרויקטים בסטודיו הזה, החדשים ראשונים.</p>
               </div>
-              <label class="filter"><span>Search projects</span>
-                <input id="project-filter" type="search" aria-label="Search projects" placeholder="Name or email" autocomplete="off">
+              <label class="filter"><span>חיפוש פרויקטים</span>
+                <input id="project-filter" type="search" aria-label="חיפוש פרויקטים" placeholder="שם או אימייל" autocomplete="off">
               </label>
             </div>
             <div id="project-list" class="project-list"></div>
-            <p class="card muted" id="empty" hidden>No projects yet. Share your studio link to get the first one.</p>
-            <p class="card muted" id="no-match" role="status" hidden>No projects match this search.</p>
+            <p class="card muted" id="empty" hidden>אין עדיין פרויקטים. שתפו את קישור הסטודיו כדי לקבל את הראשון.</p>
+            <p class="card muted" id="no-match" role="status" hidden>אף פרויקט אינו תואם לחיפוש.</p>
           </section>
 
           <div class="dash-side">
             <section class="card stack" id="clients" aria-labelledby="clients-title">
-              <h2 id="clients-title"><span class="icon" aria-hidden="true">link</span>Client onboarding portal</h2>
-              <p class="muted small">Anyone with this link can try the planner and start a project with your studio.</p>
+              <h2 id="clients-title"><span class="icon" aria-hidden="true">link</span>פורטל קליטת לקוחות</h2>
+              <p class="muted small">כל מי שמחזיק בקישור הזה יכול לנסות את המתכנן ולפתוח פרויקט בסטודיו שלכם.</p>
               <div class="linkbox">
-                <input id="studio-url" readonly aria-label="Studio link">
-                <button type="button" id="copy-studio-url">Copy</button>
+                <input id="studio-url" readonly aria-label="קישור הסטודיו">
+                <button type="button" id="copy-studio-url">העתקה</button>
               </div>
 
-              <h3 class="label">Invite a client</h3>
+              <h3 class="label">הזמנת לקוח</h3>
               <form id="invite-form" class="stack">
-                <label>Client name <input name="client_name" required maxlength="80"></label>
-                <label>Client email <input name="client_email" type="email" required></label>
-                <button class="primary">Create invite link</button>
+                <label>שם הלקוח <input name="client_name" required maxlength="80"></label>
+                <label>אימייל הלקוח <input name="client_email" type="email" required></label>
+                <button class="primary">יצירת קישור הזמנה</button>
               </form>
-              <p class="muted small">This creates a personal link for you to send. No email is sent automatically.</p>
+              <p class="muted small">נוצר קישור אישי שתוכלו לשלוח. לא נשלח מייל אוטומטית.</p>
               <div class="table-wrap">
                 <table class="invites">
-                  <thead><tr><th>Client</th><th>Status</th><th>Link</th></tr></thead>
+                  <thead><tr><th>לקוח</th><th>סטטוס</th><th>קישור</th></tr></thead>
                   <tbody id="invites"></tbody>
                 </table>
               </div>
-              <p class="muted small" id="no-invites" hidden>No invites yet.</p>
+              <p class="muted small" id="no-invites" hidden>אין עדיין הזמנות.</p>
             </section>
 
             <section class="card stack" aria-labelledby="activity-title">
-              <h2 id="activity-title"><span class="icon" aria-hidden="true">history</span>Recent activity</h2>
+              <h2 id="activity-title"><span class="icon" aria-hidden="true">history</span>פעילות אחרונה</h2>
               <ul class="activity" id="activity"></ul>
-              <p class="muted small" id="no-activity" hidden>Nothing has happened in this studio yet.</p>
+              <p class="muted small" id="no-activity" hidden>עדיין לא קרה דבר בסטודיו הזה.</p>
             </section>
 
             <aside class="disclaimer" aria-labelledby="disclaimer-title">
               <span class="tile"><span class="icon" aria-hidden="true">architecture</span></span>
               <div>
-                <h2 class="label" id="disclaimer-title">Conceptual planning</h2>
-                <p>Plans made here are design explorations with approximate dimensions. They are not a measured survey or construction documents.</p>
+                <h2 class="label" id="disclaimer-title">תכנון רעיוני</h2>
+                <p>התוכניות כאן הן הצעות עיצוב עם מידות משוערות. הן אינן מדידה מקצועית או שרטוטי ביצוע.</p>
               </div>
             </aside>
           </div>
@@ -122,8 +122,8 @@
   </main>
 
   <footer class="statusbar">
-    <span>Areas in m², approximate</span>
-    <span class="wide">Projects are visible only to your studio and each project's client</span>
+    <span>שטחים במ״ר, בקירוב</span>
+    <span class="wide">הפרויקטים גלויים רק לסטודיו שלכם וללקוח של כל פרויקט</span>
   </footer>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/studio.js"></script>

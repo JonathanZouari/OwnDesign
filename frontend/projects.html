@@ -1,37 +1,36 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
-  <title>My projects · Atelier</title>
+  <title>הפרויקטים שלי · ATELIER</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
   <header class="appbar">
     <a class="brand" href="projects.html">ATELIER</a>
     <nav>
-      <a class="button" id="studio-link" href="studio.html" hidden>Studio dashboard</a>
-      <button id="sign-out" type="button">Sign out</button>
+      <button id="sign-out" type="button">התנתקות</button>
     </nav>
   </header>
   <main class="page">
     <div class="row between">
-      <h1>My projects</h1>
-      <button class="primary" id="new-project" type="button">New project</button>
+      <h1>הפרויקטים שלי</h1>
+      <button class="primary" id="new-project" type="button">פרויקט חדש</button>
     </div>
-    <p class="card" id="draft-notice" hidden>You have an unsaved plan. <a href="editor.html">Continue editing it</a>.</p>
+    <p class="card" id="draft-notice" hidden>יש לכם תוכנית שלא נשמרה. <a href="editor.html">המשיכו לערוך אותה</a>.</p>
     <section class="card">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Project</th><th>Studio</th><th>Type</th><th>Created</th><th></th></tr></thead>
+          <thead><tr><th>פרויקט</th><th>סוג</th><th>נוצר</th><th></th></tr></thead>
           <tbody id="projects"></tbody>
         </table>
       </div>
-      <p class="muted" id="empty" hidden>No projects yet. Use your designer's link, or "New project", to start one.</p>
+      <p class="muted" id="empty" hidden>אין עדיין פרויקטים. התחילו אחד עם "פרויקט חדש".</p>
     </section>
   </main>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>

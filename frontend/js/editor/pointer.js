@@ -2,6 +2,7 @@
 // furniture, pan and pinch/wheel zoom. Every edit goes through the pure functions in plan.js.
 import { FURNITURE_BY_TYPE } from "../catalog.js";
 import * as P from "../plan.js";
+import { EDITOR } from "../strings.js";
 import { visibleArea } from "./render.js";
 
 const AXIS_LOCK = 15; // cm: a nearly straight wall snaps to exactly horizontal or vertical
@@ -33,7 +34,7 @@ export function attachPointer(canvas, editor) {
     const { tool, plan } = editor;
     if (tool === "door" || tool === "window") {
       const hit = P.nearestWall(plan, point, WALL_REACH_PX * visibleArea(canvas).scale);
-      if (!hit) return editor.toast("Click on a wall to place it there.");
+      if (!hit) return editor.toast(EDITOR.clickWall);
       const next = P.addOpening(plan, hit.wall.id, tool, hit.along);
       editor.commit(next, { kind: "openings", id: next.openings.at(-1).id });
     } else {

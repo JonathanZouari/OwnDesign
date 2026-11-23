@@ -5,6 +5,10 @@ Source: `Interior_Design_AI_PRD_EN.md`, `README.md`.
 A multi-tenant web platform where an interior design studio invites clients, and the client and
 designer work on the same floor plan. AI assistance comes in later phases.
 
+**Current focus (user decision, 2026-11-19):** a homeowner or new-build buyer designs on their own,
+without a studio. The studio features below are built but hidden from the UI for now
+([decisions.md](decisions.md)).
+
 ## Built: Phase 1
 
 - A designer signs up and opens a studio. One studio per owner.

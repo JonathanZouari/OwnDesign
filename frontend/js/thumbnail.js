@@ -1,5 +1,6 @@
 import { svg } from "./editor/render.js";
 import { planBox } from "./plan.js";
+import { STUDIO } from "./strings.js";
 
 const PAD = 0.08; // margin around the plan, as a share of its longer side
 
@@ -26,6 +27,6 @@ export function planThumbnail(plan, label) {
     ),
     // A saved plan with nothing drawn yet would otherwise be an unexplained blank tile.
     plan.walls.length + plan.furniture.length === 0 &&
-      svg("text", { x: bounds.x + bounds.w / 2, y: bounds.y + bounds.h / 2, "text-anchor": "middle" }, "Blank canvas"),
+      svg("text", { x: bounds.x + bounds.w / 2, y: bounds.y + bounds.h / 2, "text-anchor": "middle" }, STUDIO.blankCanvas),
   );
 }

@@ -78,6 +78,13 @@ export function addFurniture(plan, { type, w, d }, x, y) {
 }
 
 // kind is the collection name: "rooms" | "walls" | "openings" | "furniture".
+// A room with the name and type of a room kind ({ name, type }); the outline and id stay.
+export const applyKind = (room, kind) => ({ ...room, name: kind.name, type: kind.type });
+
+export function setRoomKind(plan, id, kind) {
+  return normalize({ ...plan, rooms: plan.rooms.map((room) => (room.id === id ? applyKind(room, kind) : room)) });
+}
+
 export function patch(plan, kind, id, changes) {
   const valid = Object.entries(changes).filter(
     ([key, value]) => typeof value !== "number" || (Number.isFinite(value) && (!POSITIVE.has(key) || value > 0)),
@@ -89,18 +96,29 @@ export function patch(plan, kind, id, changes) {
 
 export function remove(plan, kind, id) {
   const without = { ...plan, [kind]: plan[kind].filter((item) => item.id !== id) };
-  if (kind === "rooms") return normalize({ ...without, walls: without.walls.filter((wall) => wall.roomId !== id) });
+  if (kind === "rooms") {
+    // A room with an outline (imported) owns no walls: deleting it removes only the room.
+    const outlined = plan.rooms.some((room) => room.id === id && room.outline);
+    return outlined ? without : normalize({ ...without, walls: without.walls.filter((wall) => wall.roomId !== id) });
+  }
   if (kind !== "walls") return without;
-  // A room only exists as its walls: once the last one is gone it could no longer be seen, selected or deleted.
+  // A room without an outline only exists as its walls: once the last one is gone it could no longer be seen,
+  // selected or deleted.
   const walled = new Set(without.walls.map((wall) => wall.roomId));
-  return normalize({ ...without, rooms: without.rooms.filter((room) => walled.has(room.id)) });
+  return normalize({ ...without, rooms: without.rooms.filter((room) => room.outline || walled.has(room.id)) });
 }
 
 const shiftWall = (wall, dx, dy) => ({ ...wall, x1: wall.x1 + dx, y1: wall.y1 + dy, x2: wall.x2 + dx, y2: wall.y2 + dy });
 
 export function translate(plan, kind, id, dx, dy) {
   if (!dx && !dy) return plan;
-  if (kind === "rooms") return { ...plan, walls: plan.walls.map((wall) => (wall.roomId === id ? shiftWall(wall, dx, dy) : wall)) };
+  if (kind === "rooms") {
+    return {
+      ...plan,
+      walls: plan.walls.map((wall) => (wall.roomId === id ? shiftWall(wall, dx, dy) : wall)),
+      rooms: plan.rooms.map((room) => (room.id === id && room.outline ? { ...room, outline: room.outline.map(([x, y]) => [x + dx, y + dy]) } : room)),
+    };
+  }
   if (kind === "walls") return { ...plan, walls: plan.walls.map((wall) => (wall.id === id ? shiftWall(wall, dx, dy) : wall)) };
   if (kind === "furniture") {
     return { ...plan, furniture: plan.furniture.map((item) => (item.id === id ? { ...item, x: item.x + dx, y: item.y + dy } : item)) };
@@ -158,7 +176,68 @@ function box(points) {
 
 const wallPoints = (walls) => walls.flatMap((wall) => [[wall.x1, wall.y1], [wall.x2, wall.y2]]);
 
-export const roomBox = (plan, roomId) => box(wallPoints(plan.walls.filter((wall) => wall.roomId === roomId)));
+export const roomBox = (plan, roomId) => {
+  const outline = plan.rooms.find((room) => room.id === roomId)?.outline;
+  return outline ? box(outline) : box(wallPoints(plan.walls.filter((wall) => wall.roomId === roomId)));
+};
+
+// Shoelace area of a polygon given as [[x, y], ...], in the square of the input unit.
+export function polygonArea(points) {
+  let twice = 0;
+  for (let i = 0; i < points.length; i++) {
+    const [x1, y1] = points[i];
+    const [x2, y2] = points[(i + 1) % points.length];
+    twice += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(twice) / 2;
+}
+
+function insidePolygon(points, x, y) {
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const [xi, yi] = points[i];
+    const [xj, yj] = points[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+// A point inside the polygon for the room label: the centroid when it lies inside, otherwise the middle of the
+// longest stretch of the horizontal line through the centroid that is inside (U and L shapes).
+export function labelPoint(points) {
+  let twice = 0;
+  let cx = 0;
+  let cy = 0;
+  for (let i = 0; i < points.length; i++) {
+    const [x1, y1] = points[i];
+    const [x2, y2] = points[(i + 1) % points.length];
+    const cross = x1 * y2 - x2 * y1;
+    twice += cross;
+    cx += (x1 + x2) * cross;
+    cy += (y1 + y2) * cross;
+  }
+  if (Math.abs(twice) < 1e-9) return { x: points[0][0], y: points[0][1] };
+  const centre = { x: cx / (3 * twice), y: cy / (3 * twice) };
+  if (insidePolygon(points, centre.x, centre.y)) return centre;
+  const xs = [];
+  for (let i = 0; i < points.length; i++) {
+    const [x1, y1] = points[i];
+    const [x2, y2] = points[(i + 1) % points.length];
+    if (y1 > centre.y !== y2 > centre.y) xs.push(x1 + ((centre.y - y1) / (y2 - y1)) * (x2 - x1));
+  }
+  xs.sort((a, b) => a - b);
+  let best = null;
+  for (let i = 0; i + 1 < xs.length; i += 2) if (!best || xs[i + 1] - xs[i] > best[1] - best[0]) best = [xs[i], xs[i + 1]];
+  return best ? { x: (best[0] + best[1]) / 2, y: centre.y } : { x: points[0][0], y: points[0][1] };
+}
+
+// Floor area in m2: the outline when the room has one, else the bounding box of its walls.
+export const roomArea = (plan, room) => (room.outline ? polygonArea(room.outline) / 10_000 : squareMetres(roomBox(plan, room.id)));
+export const roomLabelPoint = (plan, room) => {
+  if (room.outline) return labelPoint(room.outline);
+  const b = roomBox(plan, room.id);
+  return b ? { x: b.x + b.w / 2, y: b.y + Math.min(b.h / 2, 60) } : null;
+};
 
 export function planBox(plan) {
   const reach = (item) => Math.hypot(item.w, item.d) / 2;
@@ -171,7 +250,7 @@ export function planBox(plan) {
 
 export const metres = (cm) => (cm / 100).toFixed(2);
 export const squareMetres = (b) => (b ? (b.w * b.h) / 10_000 : 0);
-export const planArea = (plan) => plan.rooms.reduce((total, room) => total + squareMetres(roomBox(plan, room.id)), 0);
+export const planArea = (plan) => plan.rooms.reduce((total, room) => total + roomArea(plan, room), 0);
 
 export function duplicateFurniture(plan, id) {
   const item = plan.furniture.find((candidate) => candidate.id === id);

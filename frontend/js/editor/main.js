@@ -3,19 +3,21 @@
 import { api, getSession, requireSession, signOut } from "../api.js";
 import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
 import * as P from "../plan.js";
+import { EDITOR, EDITOR_UNDERLAY, UNITS, ltr } from "../strings.js";
 import { KEYS, load, save as store } from "../store.js";
 import { $, action, h, run, showStudio, toast } from "../ui.js";
+import { getImage, loadPlacement, projectKey, renameImage, savePlacement } from "../import/underlay.js";
 import { renderInspector } from "./panel.js";
 import { attachPointer, zoomAt } from "./pointer.js";
 import { draw, visibleArea } from "./render.js";
 
 const TOOLS = [
-  { id: "select", icon: "near_me", key: "V", label: "Select and move" },
-  { id: "exterior", icon: "polyline", key: "W", label: "Draw exterior wall" },
-  { id: "partition", icon: "vertical_split", key: "P", label: "Draw partition" },
-  { id: "door", icon: "meeting_room", key: "D", label: "Place door" },
-  { id: "window", icon: "window", key: "N", label: "Place window" },
-  { id: "furniture", icon: "chair", key: "F", label: "Furniture catalog" },
+  { id: "select", icon: "near_me", key: "V", label: EDITOR.tools.select },
+  { id: "exterior", icon: "polyline", key: "W", label: EDITOR.tools.exterior },
+  { id: "partition", icon: "vertical_split", key: "P", label: EDITOR.tools.partition },
+  { id: "door", icon: "meeting_room", key: "D", label: EDITOR.tools.door },
+  { id: "window", icon: "window", key: "N", label: EDITOR.tools.window },
+  { id: "furniture", icon: "chair", key: "F", label: EDITOR.tools.furniture },
 ];
 const VIEW_LIMIT = 99_000; // cm
 const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
@@ -37,6 +39,7 @@ const state = {
   draft: null,
   versions: null,
   signedIn: false,
+  underlay: null, // { href (object URL), key, x, y, width, height, opacity, visible } or null
 };
 
 const editor = {
@@ -109,7 +112,14 @@ function render() {
   canvas.setAttribute("viewBox", `${x} ${y} ${w} ${height}`);
   canvas.dataset.tool = state.tool;
   const hadFocus = canvas.contains(document.activeElement);
-  draw(canvas, { plan, selection: state.selection, preview: state.previewLine });
+  draw(canvas, { plan, selection: state.selection, preview: state.previewLine, underlay: state.underlay });
+  $("#underlay-control").hidden = !state.underlay;
+  if (state.underlay) {
+    const shown = state.underlay.visible !== false;
+    $("#underlay-toggle").textContent = shown ? EDITOR_UNDERLAY.hide : EDITOR_UNDERLAY.show;
+    $("#underlay-toggle").setAttribute("aria-pressed", String(shown));
+    $("#underlay-opacity").value = state.underlay.opacity;
+  }
   if (hadFocus) {
     const node = state.selection && canvas.querySelector(`[data-kind="${state.selection.kind}"][data-id="${state.selection.id}"]`);
     (node ?? canvas).focus({ preventScroll: true });
@@ -124,7 +134,7 @@ function render() {
   }
   for (const button of $("#catalog").querySelectorAll("button")) button.setAttribute("aria-pressed", String(`furniture:${button.dataset.type}` === state.tool));
   $("#catalog").hidden = !state.catalogOpen;
-  $("#tool-name").textContent = state.tool.startsWith("furniture:") ? "Place furniture" : TOOLS.find((tool) => tool.id === state.tool).label;
+  $("#tool-name").textContent = state.tool.startsWith("furniture:") ? EDITOR.placeFurniture : TOOLS.find((tool) => tool.id === state.tool).label;
   $("#undo").disabled = state.history.past.length === 0;
   $("#redo").disabled = state.history.future.length === 0;
 
@@ -135,17 +145,20 @@ function render() {
 
   const zoom = `${Math.round(100 / visibleArea(canvas).scale)}%`;
   $("#zoom-level").textContent = zoom;
-  $("#status-zoom").textContent = `Zoom: ${zoom}`;
-  $("#context-area").textContent = `${P.planArea(plan).toFixed(1)} m²`;
+  $("#status-zoom").textContent = EDITOR.zoom(zoom);
+  $("#context-area").textContent = `${P.planArea(plan).toFixed(1)} ${UNITS.m2}`;
   const latest = state.versions?.[0];
-  $("#crumb-version").textContent = state.project ? `Plan Editor (${latest ? `v${latest.version_no}` : "no versions"}${isDirty() ? ", edited" : ""})` : "Plan Editor (Draft)";
+  $("#crumb-version").textContent = state.project ? EDITOR.crumbVersion(latest?.version_no, isDirty()) : EDITOR.crumbDraft;
   $("#status-save").textContent = state.project
-    ? isDirty() ? "Unsaved changes" : latest ? `Saved · v${latest.version_no}` : "Nothing saved yet"
-    : state.signedIn ? "Draft · not saved to your account yet" : "Guest draft · kept in this browser only";
+    ? isDirty() ? EDITOR.unsaved : latest ? EDITOR.saved(latest.version_no) : EDITOR.nothingSaved
+    : state.signedIn ? EDITOR.draftSignedIn : EDITOR.draftGuest;
 }
 
 function fit() {
-  const box = P.planBox(editor.plan);
+  const plan = editor.plan;
+  const empty = !plan.walls.length && !plan.furniture.length;
+  const u = state.underlay;
+  const box = empty && u ? { x: u.x, y: u.y, w: u.width, h: u.height } : P.planBox(plan);
   const pad = 180;
   editor.setView({ x: box.x - pad, y: box.y - pad, w: box.w + 2 * pad, h: box.h + 2 * pad });
 }
@@ -154,6 +167,25 @@ const zoomBy = (factor) => {
   const area = visibleArea(canvas);
   editor.setView(zoomAt(state.view, { x: area.x + area.w / 2, y: area.y + area.h / 2 }, factor));
 };
+
+// Placement and opacity of the background drawing live with the draft, or per project once saved.
+function keepUnderlay() {
+  const u = state.underlay;
+  if (!u) return;
+  const { href, key, ...meta } = u;
+  if (state.project) savePlacement(state.project.id, meta);
+  else if (state.draft) {
+    state.draft = { ...state.draft, underlay: { key, ...meta } };
+    store(KEYS.draft, state.draft);
+  }
+  render();
+}
+
+async function loadUnderlay(meta, key) {
+  const blob = await getImage(key);
+  if (!blob) return toast(EDITOR_UNDERLAY.missing, "error");
+  state.underlay = { ...meta, key, href: URL.createObjectURL(blob) };
+}
 
 const undo = () => {
   state.history = P.history.undo(state.history);
@@ -194,7 +226,7 @@ function placeAtCentre() {
     kind = "walls";
   } else if (tool === "door" || tool === "window") {
     const wall = state.selection?.kind === "walls" && plan.walls.find((candidate) => candidate.id === state.selection.id);
-    if (!wall) return toast("Select a wall first, then choose the door or window tool and press Enter.");
+    if (!wall) return toast(EDITOR.selectWallFirst);
     next = P.addOpening(plan, wall.id, tool, P.wallLength(wall) / 2);
     kind = "openings";
   } else {
@@ -208,7 +240,9 @@ function placeAtCentre() {
 function onKey(event) {
   if (event.target.closest("input, select, textarea, dialog")) return;
   if (state.live || state.previewLine) return; // mid-drag: the drag would overwrite a keyboard edit
-  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  // Shortcuts follow the physical key, so they also work while a Hebrew keyboard layout is active.
+  const latin = /^[a-z]$/i.test(event.key) || !event.code?.startsWith("Key");
+  const key = event.key.length === 1 ? (latin ? event.key.toLowerCase() : event.code.slice(3).toLowerCase()) : event.key;
   const mod = event.ctrlKey || event.metaKey;
   if (mod && key === "z") event.shiftKey ? redo() : undo();
   else if (mod && key === "y") redo();
@@ -250,7 +284,7 @@ async function loadVersion(summary) {
   if (!version) return;
   editor.commit(version.geometry, null);
   fit();
-  toast(`Loaded v${version.version_no}. Save to make it the newest version, or Undo to go back.`);
+  toast(EDITOR.loaded(version.version_no));
 }
 
 function openSave() {
@@ -267,7 +301,9 @@ async function savePlan(label) {
     // First save of a draft: create the project, then store the plan as version 1.
     const { name, property_type: propertyType, studio } = state.draft;
     const remembered = state.draft.projectId;
-    const id = remembered ?? (await api("/v1/projects", { method: "POST", body: { studio_id: studio.id, name, property_type: propertyType } })).id;
+    // A homeowner's project has no studio; an old draft that still names one keeps it.
+    const body = { name, property_type: propertyType, ...(studio?.id ? { studio_id: studio.id } : {}) };
+    const id = remembered ?? (await api("/v1/projects", { method: "POST", body })).id;
     state.draft = { ...state.draft, projectId: id }; // if the next call fails, a retry reuses this project
     store(KEYS.draft, state.draft);
     try {
@@ -279,6 +315,12 @@ async function savePlan(label) {
       store(KEYS.draft, state.draft);
       return savePlan(label);
     }
+    const u = state.draft.underlay;
+    if (u) {
+      // The drawing follows the project: re-key the image and keep its placement under the project id.
+      const { key, ...meta } = u;
+      if (await renameImage(key, projectKey(id))) savePlacement(id, meta);
+    }
     store(KEYS.draft, null);
     return location.replace(`editor.html?project=${id}`);
   }
@@ -286,7 +328,7 @@ async function savePlan(label) {
   state.saved = plan;
   state.versions = [version, ...state.versions];
   render();
-  toast(`Saved as v${version.version_no}`);
+  toast(EDITOR.savedAs(version.version_no));
 }
 
 function buildChrome(name, role) {
@@ -306,18 +348,18 @@ function buildChrome(name, role) {
         FURNITURE.filter((item) => item.group === group).map((item) =>
           h("button", { type: "button", "data-type": item.type, onclick: () => chooseTool(`furniture:${item.type}`) },
             item.label,
-            h("span", { class: "code" }, `${item.w}×${item.d}`),
+            h("span", { class: "code" }, ltr(`${item.w}×${item.d}`)),
           ),
         ),
       ),
     ]),
   );
 
-  document.title = `${name} · 2D Canvas`;
+  document.title = EDITOR.title(name);
   $("#crumb-name").textContent = name;
   $("#context-name").textContent = name;
   $("#context-role").textContent = role;
-  $("#account").textContent = state.signedIn ? "Sign out" : "Sign in";
+  $("#account").textContent = state.signedIn ? EDITOR.signOut : EDITOR.signIn;
   $("#account").addEventListener("click", () => (state.signedIn ? signOut() : location.assign("auth.html?next=editor.html")));
   $("#home-link").href = state.signedIn ? "projects.html" : "index.html";
 
@@ -328,6 +370,14 @@ function buildChrome(name, role) {
   $("#duplicate").addEventListener("click", () => {
     const next = P.duplicateFurniture(editor.plan, state.selection.id);
     editor.commit(next, { kind: "furniture", id: next.furniture.at(-1).id });
+  });
+  $("#underlay-toggle").addEventListener("click", () => {
+    state.underlay = { ...state.underlay, visible: state.underlay.visible === false };
+    keepUnderlay();
+  });
+  $("#underlay-opacity").addEventListener("input", (event) => {
+    state.underlay = { ...state.underlay, opacity: Number(event.target.value) };
+    keepUnderlay();
   });
   $("#zoom-in").addEventListener("click", () => zoomBy(1 / 1.25));
   $("#zoom-out").addEventListener("click", () => zoomBy(1.25));
@@ -362,11 +412,13 @@ run(async () => {
     [state.project, state.versions] = await Promise.all([api(base), api(`${base}/versions`)]);
     plan = state.versions.length ? (await api(`${base}/versions/latest`)).geometry : P.emptyPlan();
     name = state.project.name;
-    role = `Editing as ${state.project.my_role}`;
-    showStudio(state.project.studio.name);
+    const meta = loadPlacement(projectId);
+    if (meta) await loadUnderlay(meta, projectKey(projectId));
+    role = EDITOR.editingAs(state.project.my_role);
+    if (state.project.studio) showStudio(state.project.studio.name);
     // Starting over from the wizard would discard this saved plan's context, so those links go to the project list.
     $("#tab-wizard").href = state.project.my_role === "designer" ? "studio.html" : "projects.html";
-    $("#tab-wizard").textContent = "All projects";
+    $("#tab-wizard").textContent = EDITOR.allProjects;
     $("#nav-wizard").hidden = true;
   } else {
     state.draft = load(KEYS.draft);
@@ -374,8 +426,12 @@ run(async () => {
     state.signedIn = Boolean(await getSession());
     plan = state.draft.plan;
     name = state.draft.name;
-    role = "Draft";
-    showStudio(state.draft.studio.name);
+    if (state.draft.underlay) {
+      const { key, ...meta } = state.draft.underlay;
+      await loadUnderlay({ visible: true, ...meta }, key);
+    }
+    role = EDITOR.draftRole;
+    if (state.draft.studio) showStudio(state.draft.studio.name);
   }
   state.history = P.history.start(plan);
   state.saved = plan;

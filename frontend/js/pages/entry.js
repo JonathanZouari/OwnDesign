@@ -1,5 +1,6 @@
 import { api } from "../api.js";
 import { emptyPlan } from "../plan.js";
+import { ENTRY } from "../strings.js";
 import { KEYS, load, save } from "../store.js";
 import { $, action, run, showStudio } from "../ui.js";
 
@@ -22,9 +23,9 @@ async function resolveLink(invite, slug) {
 // Same draft the wizard's "Skip to 2D canvas" stores, so the editor opens on an empty plan.
 function startBlankCanvas(studio) {
   // Checked at click time: a draft may have been started in another tab since this page loaded.
-  if (load(KEYS.draft) && !confirm("Replace your unsaved plan with a blank canvas?")) return;
-  const draft = { name: "My home", property_type: "existing", studio, plan: emptyPlan() };
-  if (!save(KEYS.draft, draft)) throw new Error("Your browser blocked local storage, so the plan cannot be kept. Allow site data and try again.");
+  if (load(KEYS.draft) && !confirm(ENTRY.replaceDraft)) return;
+  const draft = { name: ENTRY.defaultProject, property_type: "existing", studio, plan: emptyPlan() };
+  if (!save(KEYS.draft, draft)) throw new Error(ENTRY.storageBlocked);
   location.assign("editor.html");
 }
 
@@ -39,11 +40,11 @@ run(async () => {
   if (invite) save(KEYS.invite, invite);
   save(KEYS.studio, studio);
   showStudio(studio.name);
-  document.title = `Start designing · ${studio.name}`;
-  $("#headline").textContent = clientName ? `Hi ${clientName}, plan your home with ${studio.name}.` : `Plan your home with ${studio.name}.`;
+  document.title = `${ENTRY.title} · ${studio.name}`;
+  $("#headline").textContent = ENTRY.headline(studio.name, clientName);
   $("#portal-studio").textContent = studio.name;
-  $("#entry-kind").textContent = invite ? "Personal invitation" : "Studio link";
-  $("#privacy").textContent = `Your plans are visible only to you and ${studio.name}.`;
+  $("#entry-kind").textContent = invite ? ENTRY.kindInvite : ENTRY.kindStudio;
+  $("#privacy").textContent = ENTRY.privacy(studio.name);
   $("#draft-notice").hidden = !load(KEYS.draft);
   $("#blank-canvas").addEventListener("click", action(async () => startBlankCanvas(studio)));
   $("#welcome").hidden = false;

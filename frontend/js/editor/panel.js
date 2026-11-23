@@ -1,8 +1,9 @@
-// The "Element Inspector": numeric editing of the selected element, the plan summary and the version list.
+// The PANEL.title: numeric editing of the selected element, the plan summary and the version list.
 // It is rebuilt only when the selection (or version list) changes; otherwise values are refreshed in place,
 // so tabbing between fields never loses focus.
 import { FURNITURE_BY_TYPE, REVIEW_NOTE, ROOM_TYPES } from "../catalog.js";
 import * as P from "../plan.js";
+import { PANEL, ROLES, ROOM_KINDS, UNITS } from "../strings.js";
 import { formatDate, h } from "../ui.js";
 
 const number = (label, unit, read, write, { min = 1, max = 3000, step = 1 } = {}) => ({ label, unit, read, write, min, max, step });
@@ -12,38 +13,38 @@ const set = (kind, key) => (plan, id, value) => P.patch(plan, kind, id, { [key]:
 
 const SPEC = {
   walls: {
-    title: (wall) => (wall.kind === "exterior" ? "Exterior wall" : "Partition wall"),
+    title: (wall) => (wall.kind === "exterior" ? PANEL.wall.exterior : PANEL.wall.partition),
     review: () => true,
     fields: [
-      number("Length", "m", (wall) => P.metres(P.wallLength(wall)), (plan, id, m) => P.setWallLength(plan, id, m * 100), { min: 0.1, max: 100, step: 0.1 }),
-      number("Thickness", "cm", (wall) => wall.thickness, set("walls", "thickness"), { max: 100 }),
-      choice("Type", [["exterior", "Exterior"], ["partition", "Partition"]], (wall) => wall.kind, set("walls", "kind")),
+      number(PANEL.fields.length, UNITS.m, (wall) => P.metres(P.wallLength(wall)), (plan, id, m) => P.setWallLength(plan, id, m * 100), { min: 0.1, max: 100, step: 0.1 }),
+      number(PANEL.fields.thickness, UNITS.cm, (wall) => wall.thickness, set("walls", "thickness"), { max: 100 }),
+      choice(PANEL.fields.type, [["exterior", PANEL.exteriorOption], ["partition", PANEL.partitionOption]], (wall) => wall.kind, set("walls", "kind")),
     ],
   },
   openings: {
-    title: (opening) => (opening.type === "door" ? "Door" : "Window"),
+    title: (opening) => (opening.type === "door" ? PANEL.opening.door : PANEL.opening.window),
     review: () => true,
     fields: [
-      number("Width", "cm", (opening) => Math.round(opening.width), set("openings", "width"), { min: 30 }),
-      number("From wall start", "cm", (opening) => Math.round(opening.offset), set("openings", "offset"), { min: 0, max: 100_000 }),
-      choice("Type", [["door", "Door"], ["window", "Window"]], (opening) => opening.type, set("openings", "type")),
+      number(PANEL.fields.width, UNITS.cm, (opening) => Math.round(opening.width), set("openings", "width"), { min: 30 }),
+      number(PANEL.fields.fromWallStart, UNITS.cm, (opening) => Math.round(opening.offset), set("openings", "offset"), { min: 0, max: 100_000 }),
+      choice(PANEL.fields.type, [["door", PANEL.doorOption], ["window", PANEL.windowOption]], (opening) => opening.type, set("openings", "type")),
     ],
   },
   furniture: {
     title: (item) => FURNITURE_BY_TYPE.get(item.type)?.label ?? item.type,
     review: (item) => Boolean(FURNITURE_BY_TYPE.get(item.type)?.review),
     fields: [
-      number("Width (X)", "cm", (item) => Math.round(item.w), set("furniture", "w"), { min: 10 }),
-      number("Depth (Y)", "cm", (item) => Math.round(item.d), set("furniture", "d"), { min: 10 }),
-      number("Rotation", "deg", (item) => Math.round(item.rotation), set("furniture", "rotation"), { min: -360, max: 360, step: 15 }),
+      number(PANEL.fields.widthX, UNITS.cm, (item) => Math.round(item.w), set("furniture", "w"), { min: 10 }),
+      number(PANEL.fields.depthY, UNITS.cm, (item) => Math.round(item.d), set("furniture", "d"), { min: 10 }),
+      number(PANEL.fields.rotation, UNITS.deg, (item) => Math.round(item.rotation), set("furniture", "rotation"), { min: -360, max: 360, step: 15 }),
     ],
   },
   rooms: {
     title: (room) => room.name,
     review: () => false,
     fields: [
-      text("Name", (room) => room.name, (plan, id, value) => (value.trim() ? P.patch(plan, "rooms", id, { name: value.trim().slice(0, 80) }) : plan)),
-      choice("Room type", ROOM_TYPES, (room) => room.type, set("rooms", "type")),
+      text(PANEL.fields.name, (room) => room.name, (plan, id, value) => (value.trim() ? P.patch(plan, "rooms", id, { name: value.trim().slice(0, 80) }) : plan)),
+      choice(PANEL.fields.roomType, ROOM_TYPES, (room) => room.type, set("rooms", "type")),
     ],
   },
 };
@@ -70,34 +71,50 @@ function fieldNode(spec, editor) {
   return h("div", { class: "field" }, h("span", {}, spec.label), h("div", { class: "value" }, control, spec.unit && h("span", { class: "unit" }, spec.unit)));
 }
 
+// One button per room kind: a click sets name and type together as a single undoable edit.
+function kindsNode(editor) {
+  const buttons = ROOM_KINDS.map((k) => {
+    const button = h("button", { type: "button", class: "kind", "aria-pressed": "false", "data-kind-name": k.name }, k.name);
+    button.addEventListener("click", () => {
+      const { selection, plan } = editor;
+      if (selection?.kind === "rooms") editor.commit(P.setRoomKind(plan, selection.id, k));
+    });
+    return button;
+  });
+  syncers.push((room) => {
+    ROOM_KINDS.forEach((k, i) => buttons[i].setAttribute("aria-pressed", String(room.name === k.name && room.type === k.type)));
+  });
+  return h("div", { class: "stack" }, h("span", { class: "label" }, PANEL.roomKinds), h("div", { class: "kind-grid", role: "group", "aria-label": PANEL.roomKinds }, buttons));
+}
+
 function summaryNode() {
   const line = (label) => {
     const value = h("span", { class: "mono" });
     return { value, node: h("div", { class: "row between" }, h("span", { class: "muted" }, label), value) };
   };
-  const rows = { rooms: line("Rooms"), area: line("Room area"), walls: line("Walls"), openings: line("Doors & windows"), furniture: line("Furniture") };
+  const rows = { rooms: line(PANEL.rooms), area: line(PANEL.roomArea), walls: line(PANEL.walls), openings: line(PANEL.openings), furniture: line(PANEL.furniture) };
   syncers.push((_, plan) => {
     rows.rooms.value.textContent = plan.rooms.length;
-    rows.area.value.textContent = `${P.planArea(plan).toFixed(1)} m²`;
+    rows.area.value.textContent = `${P.planArea(plan).toFixed(1)} ${UNITS.m2}`;
     rows.walls.value.textContent = plan.walls.length;
     rows.openings.value.textContent = plan.openings.length;
     rows.furniture.value.textContent = plan.furniture.length;
   });
   return [
-    h("div", { class: "selection stack" }, h("span", { class: "label" }, "Plan summary"), Object.values(rows).map((row) => row.node)),
-    h("p", { class: "muted small" }, "Select anything on the canvas to edit its dimensions. Drag to move, drag a wall's end points to resize it."),
+    h("div", { class: "selection stack" }, h("span", { class: "label" }, PANEL.summary), Object.values(rows).map((row) => row.node)),
+    h("p", { class: "muted small" }, PANEL.hint),
   ];
 }
 
 function versionsNode(versions, onLoad) {
   if (!versions) return null;
   return h("div", { class: "stack" },
-    h("div", { class: "row between" }, h("span", { class: "label" }, "Plan versions"), h("span", { class: "code" }, `${versions.length} saved`)),
-    versions.length === 0 && h("p", { class: "muted small" }, "Nothing saved yet."),
+    h("div", { class: "row between" }, h("span", { class: "label" }, PANEL.versions), h("span", { class: "code" }, PANEL.saved(versions.length))),
+    versions.length === 0 && h("p", { class: "muted small" }, PANEL.nothingSaved),
     versions.map((version) =>
-      h("button", { type: "button", class: "version", title: "Load this version onto the canvas", onclick: () => onLoad(version) },
-        h("span", { class: `chip ${version.author_role === "designer" ? "accent" : "ok"}` }, `v${version.version_no} · ${version.author_role}`),
-        h("span", {}, version.label || "Untitled"),
+      h("button", { type: "button", class: "version", title: PANEL.loadVersion, onclick: () => onLoad(version) },
+        h("span", { class: `chip ${version.author_role === "designer" ? "accent" : "ok"}` }, `גרסה ${version.version_no} · ${ROLES[version.author_role] ?? version.author_role}`),
+        h("span", {}, version.label || PANEL.untitled),
         h("span", { class: "code when" }, formatDate(version.created_at)),
       ),
     ),
@@ -116,11 +133,12 @@ export function renderInspector(root, editor, { versions, onLoadVersion }) {
     if (spec) syncers.push((current) => (title.textContent = spec.title(current)));
     root.replaceChildren(
       ...[
-        h("div", {}, h("h2", {}, "Element Inspector"), h("div", { class: "code" }, item ? `${selection.kind.toUpperCase()} · ${selection.id}` : "NOTHING SELECTED")),
+        h("div", {}, h("h2", {}, PANEL.title), h("div", { class: "code" }, item ? PANEL.kinds[selection.kind] : PANEL.nothingSelected)),
         spec
           ? [
-              h("div", { class: "selection" }, h("span", { class: "label" }, "Active selection"), title),
-              h("div", { class: "stack" }, h("span", { class: "label" }, "Dimensions"), h("div", { class: "fields" }, spec.fields.map((field) => fieldNode(field, editor)))),
+              h("div", { class: "selection" }, h("span", { class: "label" }, PANEL.activeSelection), title),
+              selection.kind === "rooms" && kindsNode(editor),
+              h("div", { class: "stack" }, h("span", { class: "label" }, PANEL.dimensions), h("div", { class: "fields" }, spec.fields.map((field) => fieldNode(field, editor)))),
               spec.review(item) && h("p", { class: "note" }, REVIEW_NOTE),
             ]
           : summaryNode(),
