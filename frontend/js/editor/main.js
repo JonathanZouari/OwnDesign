@@ -368,6 +368,11 @@ run(async () => {
     $("#tab-wizard").href = state.project.my_role === "designer" ? "studio.html" : "projects.html";
     $("#tab-wizard").textContent = "All projects";
     $("#nav-wizard").hidden = true;
+    // The advisor is for the client who owns the project; the server refuses everyone else too.
+    if (state.project.my_role === "client") {
+      $("#tab-advisor").href = `advisor.html?project=${encodeURIComponent(state.project.id)}`;
+      $("#tab-advisor").hidden = false;
+    }
   } else {
     state.draft = load(KEYS.draft);
     if (!state.draft || !P.isPlan(state.draft.plan)) return location.replace("wizard.html");

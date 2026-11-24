@@ -26,6 +26,8 @@ supabase/   migrations and managed auth settings
 
 `studios`, `studio_memberships` (owner or designer; one owned studio per user), `studio_invites`,
 `projects`, `plan_versions` (insert only, unique `(project_id, version_no)`), `audit_events` (insert only).
+`audit_events` also holds the advisor's `advisor.asked` rows, written with no studio so members never
+see them; they are what the daily quota counts ([advisor.md](advisor.md)).
 
 ## Plan geometry
 
@@ -51,3 +53,11 @@ each change; the plan object is never mutated.
 Studios, invites, studio activity (`GET /v1/studios/{id}/audit`, the latest 10 audit events, members
 only): `backend/app/routes/studios.py`. Projects, versions: `backend/app/routes/projects.py`.
 Quotas: 20 projects per client per studio, 500 versions per project.
+
+The advisor, `POST /v1/projects/{id}/advisor`: `backend/app/routes/advisor.py` (access, quota, lock)
+and `backend/app/advisor.py` (prompt, OpenAI call through `get_llm`, SSE). It is the one route that
+answers with a stream (`text/event-stream`) instead of the JSON envelope, and the one place the backend
+calls an external AI service. Settings `OPENAI_API_KEY` and `OPENAI_MODEL` are read from `backend/.env`;
+the advisor answers 503 until both are set. The browser reads the stream with `apiStream`
+(`frontend/js/api.js`) and `frontend/js/sse.js`, because `EventSource` cannot send a bearer token.
+Full description: [advisor.md](advisor.md).

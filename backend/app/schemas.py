@@ -110,3 +110,18 @@ class ProjectCreate(Strict):
 class VersionCreate(Strict):
     label: Annotated[str, StringConstraints(strip_whitespace=True, max_length=80)] = ""
     geometry: Geometry
+
+
+MAX_QUESTION_CHARS = 2000
+MAX_TURN_CHARS = 8000
+MAX_HISTORY_TURNS = 10
+
+
+class Turn(Strict):
+    role: Literal["user", "assistant"]
+    content: Annotated[str, StringConstraints(min_length=1, max_length=MAX_TURN_CHARS)]
+
+
+class AdvisorAsk(Strict):
+    question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_QUESTION_CHARS)]
+    history: Annotated[list[Turn], Field(max_length=MAX_HISTORY_TURNS)] = []

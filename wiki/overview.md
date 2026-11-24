@@ -3,7 +3,7 @@
 Source: `Interior_Design_AI_PRD_EN.md`, `README.md`.
 
 A multi-tenant web platform where an interior design studio invites clients, and the client and
-designer work on the same floor plan. AI assistance comes in later phases.
+designer work on the same floor plan. AI assistance is arriving in phases: the advisor is the first piece.
 
 ## Built: Phase 1
 
@@ -18,13 +18,19 @@ designer work on the same floor plan. AI assistance comes in later phases.
   the studio link, invites and recent activity.
 - One studio cannot see another studio's data ([security.md](security.md)).
 
+## Built: AI advisor (first Phase 2 piece)
+
+- A client asks questions about their own saved project on `advisor.html` and the reply is written on
+  screen as it is generated (SSE), through the OpenAI API. Nothing is saved. Details and limits:
+  [advisor.md](advisor.md). It has not yet been run against the real OpenAI API.
+
 ## Not built yet
 
-Design brief, styles and materials, moodboard, AI consultant, renderings, budget, dossier,
-messaging and tasks, studio branding, invitation emails, per-project team permissions, deployment,
-rate limiting, subscriptions and credits.
+Design brief, styles and materials, moodboard, saved advisor conversations and the advisor's
+suggestions on the plan, renderings, budget, dossier, messaging and tasks, studio branding, invitation
+emails, per-project team permissions, deployment, general rate limiting, subscriptions and credits.
 
 ## Next
 
-Phase 2 per the PRD: design brief, styles and materials, moodboard, AI consultant through the
-OpenAI API ([decisions.md](decisions.md)).
+Rest of Phase 2 per the PRD: design brief, styles and materials, moodboard
+([decisions.md](decisions.md)).

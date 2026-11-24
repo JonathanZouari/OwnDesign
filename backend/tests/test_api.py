@@ -6,11 +6,15 @@ client's plan) and 7 (Studio A cannot read or mutate Studio B's records, through
 the API or directly against the Data API).
 """
 
+import json
+import logging
+import uuid
 from types import SimpleNamespace
 
 import pytest
 
 from tests.conftest import needs_supabase
+from tests.fake_llm import FakeLlm
 from tests.test_geometry import VALID
 
 pytestmark = needs_supabase
@@ -234,3 +238,172 @@ def test_studio_activity_is_listed_for_members_only(api, world):
 
     other = api.get(f"/v1/studios/{world.studio_b['id']}/audit", headers=world.designer_b.headers).json()["data"]
     assert other and "Flat A" not in {event["project"]["name"] for event in other if event["project"]}
+
+
+# --- AI advisor: OpenAI is always replaced by FakeLlm ---
+
+
+@pytest.fixture
+def llm(api):
+    from app.advisor import get_llm
+
+    fake = FakeLlm(["Hello ", "there."])
+    api.app.dependency_overrides[get_llm] = lambda: fake
+    yield fake
+    api.app.dependency_overrides.pop(get_llm, None)
+
+
+def ask(api, project_id, headers=None, question="Which sofa fits?", **extra):
+    return api.post(f"/v1/projects/{project_id}/advisor", json={"question": question, **extra}, headers=headers or {})
+
+
+def events_of(response):
+    events = []
+    for block in response.text.split("\n\n")[:-1]:
+        name, data = block.split("\n")
+        events.append((name.removeprefix("event: "), json.loads(data.removeprefix("data: "))))
+    return events
+
+
+def test_client_gets_a_streamed_advisor_reply_about_their_project(api, world, llm):
+    response = ask(api, world.project_a["id"], world.client_a.headers)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    assert response.headers["cache-control"] == "no-cache"
+    assert [name for name, _ in events_of(response)] == ["delta", "delta", "done"]
+    assert len(llm.calls) == 1
+    context = llm.calls[0][1]["content"]  # the project data message
+    assert "Flat A" in context and "Flat B" not in context
+
+
+@pytest.mark.parametrize(
+    "who, expected",
+    [
+        ("client_a", 200),
+        ("designer_a", 403),  # a member of the studio, not the client
+        ("designer_b", 404),  # another studio
+        ("client_b", 404),  # another client
+        (None, 401),
+    ],
+)
+def test_only_the_owning_client_may_use_the_advisor(api, world, llm, who, expected):
+    headers = getattr(world, who).headers if who else {}
+    assert ask(api, world.project_a["id"], headers).status_code == expected
+    assert len(llm.calls) == (1 if expected == 200 else 0)  # OpenAI is never reached by a refused request
+
+
+@pytest.mark.parametrize("project_id, expected", [(str(uuid.uuid4()), 404), ("not-a-uuid", 422)])
+def test_advisor_refuses_unknown_and_malformed_project_ids(api, world, llm, project_id, expected):
+    assert ask(api, project_id, world.client_a.headers).status_code == expected
+    assert llm.calls == []
+
+
+def test_advisor_refuses_a_bad_token(api, world, llm):
+    assert ask(api, world.project_a["id"], {"Authorization": "Bearer not-a-token"}).status_code == 401
+    assert llm.calls == []
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"question": ""},
+        {"question": "   "},
+        {"question": "x" * 2001},
+        {"question": "ok", "extra": 1},
+        {"question": "ok", "history": [{"role": "system", "content": "x"}]},
+        {"question": "ok", "history": [{"role": "user", "content": "x"}] * 11},
+        {},
+    ],
+)
+def test_advisor_rejects_invalid_input_before_calling_openai(api, world, llm, payload):
+    response = api.post(f"/v1/projects/{world.project_a['id']}/advisor", json=payload, headers=world.client_a.headers)
+    assert response.status_code == 422
+    assert llm.calls == []
+
+
+def test_advisor_accepts_the_longest_question(api, world, llm):
+    assert ask(api, world.project_a["id"], world.client_a.headers, question="ש" * 2000).status_code == 200
+
+
+def test_advisor_is_unavailable_when_openai_is_not_configured(api, world):
+    from app.advisor import get_llm
+
+    api.app.dependency_overrides[get_llm] = lambda: None
+    try:
+        assert ask(api, world.project_a["id"], world.client_a.headers).status_code == 503
+        # An outsider still learns nothing about the configuration.
+        assert ask(api, world.project_a["id"], world.client_b.headers).status_code == 404
+    finally:
+        api.app.dependency_overrides.pop(get_llm, None)
+
+
+def test_advisor_daily_quota_and_one_stream_at_a_time(api, world, llm, monkeypatch):
+    from app.routes import advisor as route
+
+    used = route._questions_today(world.client_a.id)
+    monkeypatch.setattr(route, "MAX_QUESTIONS_PER_DAY", used)
+    assert ask(api, world.project_a["id"], world.client_a.headers).status_code == 429
+    monkeypatch.setattr(route, "MAX_QUESTIONS_PER_DAY", used + 5)
+
+    assert route._acquire(world.client_a.id)  # as if the user had a reply streaming in another tab
+    try:
+        assert ask(api, world.project_a["id"], world.client_a.headers).status_code == 429
+    finally:
+        route._release(world.client_a.id)
+    assert llm.calls == []
+    assert ask(api, world.project_a["id"], world.client_a.headers).status_code == 200
+
+
+def test_advisor_refuses_a_suspended_studio(api, world, llm, admin):
+    admin.table("studios").update({"status": "suspended"}).eq("id", world.studio_a["id"]).execute()
+    try:
+        assert ask(api, world.project_a["id"], world.client_a.headers).status_code == 403
+    finally:
+        admin.table("studios").update({"status": "active"}).eq("id", world.studio_a["id"]).execute()
+    assert llm.calls == []
+
+
+def test_advisor_audit_event_is_private_and_holds_no_text(api, world, llm, admin):
+    from app.db import user_client
+
+    marker = f"AUDITMARK-{uuid.uuid4().hex}"
+    assert ask(api, world.project_a["id"], world.client_a.headers, question=marker).status_code == 200
+    rows = admin.table("audit_events").select("*").eq("actor_id", world.client_a.id).eq("action", "advisor.asked").execute().data
+    assert rows and all(row["studio_id"] is None and row["metadata"] == {} for row in rows)
+    assert marker not in json.dumps(rows)
+    # Studio members read audit events through RLS: they never see these, nor in the activity feed.
+    seen = user_client(world.designer_a.token).table("audit_events").select("action").execute().data
+    assert "advisor.asked" not in {row["action"] for row in seen}
+    feed = api.get(f"/v1/studios/{world.studio_a['id']}/audit", headers=world.designer_a.headers).json()["data"]
+    assert "advisor.asked" not in {event["action"] for event in feed}
+
+
+def test_advisor_never_logs_question_history_or_reply_text(api, world, llm, admin, caplog, monkeypatch):
+    from app import advisor
+    from tests.test_advisor import api_error
+
+    question, history, reply = (f"{kind}-{uuid.uuid4().hex}" for kind in ("QMARK", "HMARK", "RMARK"))
+    turns = [{"role": "user", "content": history}, {"role": "assistant", "content": history}]
+    caplog.set_level(logging.DEBUG)
+    base = world.project_a["id"], world.client_a.headers
+
+    llm.pieces = [reply, reply]  # a normal stream
+    assert ask(api, *base, question=question, history=turns).status_code == 200
+
+    llm.pieces, llm.fail_at, llm.error = [reply, reply], 1, api_error(reply)  # OpenAI fails mid-stream
+    assert "error" in [name for name, _ in events_of(ask(api, *base, question=question, history=turns))]
+
+    monkeypatch.setattr(advisor, "FIRST_PIECE_TIMEOUT_S", 0.05)  # OpenAI never answers
+    llm.pieces, llm.fail_at, llm.hang_at = [reply], None, 0
+    assert "timeout" in json.dumps(events_of(ask(api, *base, question=question, history=turns)))
+
+    too_long = ask(api, *base, question=question + "x" * 2001, history=turns)  # rejected input
+    assert too_long.status_code == 422 and question not in too_long.text
+
+    assert any(record.name.startswith("app.") for record in caplog.records)  # logging was really captured
+    for marker in (question, history, reply):
+        assert marker not in caplog.text
+    audit_text = json.dumps(admin.table("audit_events").select("*").eq("actor_id", world.client_a.id).execute().data)
+    assert not any(marker in audit_text for marker in (question, history, reply))
+    for name in ("openai", "httpx", "httpx2", "httpcore2"):
+        assert logging.getLogger(name).getEffectiveLevel() >= logging.WARNING, name
