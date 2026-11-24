@@ -1,6 +1,7 @@
 import { api } from "../api.js";
 import { emptyPlan } from "../plan.js";
 import { KEYS, load, save } from "../store.js";
+import { t } from "../i18n.js";
 import { $, action, run, showStudio } from "../ui.js";
 
 const params = new URLSearchParams(location.search);
@@ -22,7 +23,7 @@ async function resolveLink(invite, slug) {
 // Same draft the wizard's "Skip to 2D canvas" stores, so the editor opens on an empty plan.
 function startBlankCanvas(studio) {
   // Checked at click time: a draft may have been started in another tab since this page loaded.
-  if (load(KEYS.draft) && !confirm("Replace your unsaved plan with a blank canvas?")) return;
+  if (load(KEYS.draft) && !confirm(t("Replace your unsaved plan with a blank canvas?"))) return;
   const draft = { name: "My home", property_type: "existing", studio, plan: emptyPlan() };
   if (!save(KEYS.draft, draft)) throw new Error("Your browser blocked local storage, so the plan cannot be kept. Allow site data and try again.");
   location.assign("editor.html");

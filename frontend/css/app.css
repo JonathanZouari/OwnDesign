@@ -95,7 +95,7 @@ button[aria-pressed="true"] { background: var(--inverse); border-color: var(--in
 .stack { display: grid; gap: 0.75rem; }
 
 table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--hairline); vertical-align: middle; }
+th, td { text-align: start; padding: 10px 8px; border-bottom: 1px solid var(--hairline); vertical-align: middle; }
 th { font: 600 11px/14px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
 td.mono { font-size: 12px; }
 .table-wrap { overflow-x: auto; }
@@ -174,12 +174,12 @@ body.app .appbar { grid-column: 1 / -1; }
 .stepper button { min-height: 0; height: 100%; padding: 0; border: 0; font: 500 16px/1 var(--font-mono); }
 .stepper input { height: 100%; border: 0; background: none; text-align: center; font: 500 16px/1 var(--font-mono); -moz-appearance: textfield; appearance: textfield; }
 .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { appearance: none; margin: 0; }
-.stepper .unit { padding-right: 4px; }
+.stepper .unit { padding-inline-end: 4px; }
 .dims { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 .area { font: 500 22px/30px var(--font-head); color: var(--primary); }
 .room-list { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
-.room-list li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 4px; background: var(--surface-low); border-left: 2px solid transparent; }
-.room-list li.current { background: #fbeee9; border-left-color: var(--primary); }
+.room-list li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 4px; background: var(--surface-low); border-inline-start: 2px solid transparent; }
+.room-list li.current { background: #fbeee9; border-inline-start-color: var(--primary); }
 .room-list .grow { flex: 1; min-width: 0; }
 .room-list .name { font: 500 15px/22px var(--font-head); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .room-list button { min-height: 32px; padding: 0 6px; border: 0; }
@@ -196,16 +196,16 @@ body.app .appbar { grid-column: 1 / -1; }
 .rail button .icon { font-size: 20px; }
 .rail button .key { font: 400 9px/1.1 var(--font-mono); }
 .rail button[aria-pressed="true"] { background: var(--inverse); color: var(--on-inverse); }
-.rail button[aria-pressed="true"]::after { content: ""; position: absolute; right: -4px; top: 8px; width: 4px; height: 12px; border-radius: 4px; background: var(--primary); }
+.rail button[aria-pressed="true"]::after { content: ""; position: absolute; inset-inline-end: -4px; top: 8px; width: 4px; height: 12px; border-radius: 4px; background: var(--primary); }
 .rail hr { width: 24px; border: 0; border-top: 1px solid var(--surface-high); margin: 4px 0; }
 .stage { flex: 1; min-width: 0; position: relative; background: var(--surface-low); }
 .floating { position: absolute; z-index: 4; background: rgb(255 255 255 / 0.94); backdrop-filter: blur(12px); border: 1px solid rgb(36 37 35 / 0.12); border-radius: 8px; box-shadow: var(--shadow-2); }
-#catalog { left: 8px; top: 8px; bottom: 8px; width: 216px; padding: 10px; overflow-y: auto; }
+#catalog { inset-inline-start: 8px; top: 8px; bottom: 8px; width: 216px; padding: 10px; overflow-y: auto; }
 #catalog .label { display: block; margin: 10px 0 6px; }
 #catalog .label:first-child { margin-top: 0; }
 #catalog .items { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-#catalog button { flex-direction: column; align-items: flex-start; gap: 0; min-height: 44px; padding: 4px 8px; font-weight: 500; font-size: 12px; text-align: left; }
-#zoom { right: 12px; bottom: 12px; display: grid; justify-items: center; padding: 2px; }
+#catalog button { flex-direction: column; align-items: flex-start; gap: 0; min-height: 44px; padding: 4px 8px; font-weight: 500; font-size: 12px; text-align: start; }
+#zoom { inset-inline-end: 12px; bottom: 12px; display: grid; justify-items: center; padding: 2px; }
 #zoom button { width: 36px; min-height: 32px; padding: 0; border: 0; }
 #actions { left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; padding: 4px; background: var(--inverse); border-color: var(--inverse); box-shadow: var(--shadow-3); }
 #actions button { border: 0; color: var(--on-inverse); white-space: nowrap; }
@@ -221,7 +221,7 @@ body.app .appbar { grid-column: 1 / -1; }
 .field input, .field select { height: 26px; padding: 0; border: 0; background: none; font: 500 14px/20px var(--font-mono); }
 .field input:focus-visible, .field select:focus-visible { border: 0; box-shadow: 0 1.5px 0 var(--primary-bright); }
 .field .unit, .stepper .unit { font: 400 10px/14px var(--font-mono); color: var(--outline); text-transform: none; }
-.version { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; width: 100%; min-height: 0; padding: 8px 10px; border: 0; border-radius: 4px; background: var(--surface-low); text-align: left; justify-items: start; font-weight: 400; }
+.version { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; width: 100%; min-height: 0; padding: 8px 10px; border: 0; border-radius: 4px; background: var(--surface-low); text-align: start; justify-items: start; font-weight: 400; }
 .version:hover { background: var(--surface-mid); }
 .version .when { grid-column: 1 / -1; }
 
@@ -275,7 +275,7 @@ body.app .appbar { grid-column: 1 / -1; }
   .rail .tools { grid-auto-flow: column; }
   .rail hr { display: none; }
   .inspector { order: 3; width: 100%; max-height: 34vh; }
-  #catalog { width: auto; right: 8px; bottom: auto; max-height: 60%; }
+  #catalog { width: auto; inset-inline-end: 8px; bottom: auto; max-height: 60%; }
 }
 
 /* ==========================================================================
@@ -380,13 +380,13 @@ svg.thumb { display: block; padding: 0; }
 .dash-side h2 .icon { color: var(--primary); }
 .dash-side .card p { margin: 0; }
 .invites th, .invites td { padding: 8px 6px; }
-.invites th:first-child, .invites td:first-child { padding-left: 0; }
-.invites th:last-child, .invites td:last-child { padding-right: 0; text-align: right; }
+.invites th:first-child, .invites td:first-child { padding-inline-start: 0; }
+.invites th:last-child, .invites td:last-child { padding-inline-end: 0; text-align: end; }
 .invites .who, .invites .code { display: block; overflow-wrap: anywhere; }
 .invites .who { font-weight: 500; }
 .activity { display: grid; gap: 12px; list-style: none; margin: 0; padding: 0; }
-.activity li { position: relative; display: grid; gap: 2px; padding-left: 16px; overflow-wrap: anywhere; }
-.activity li::before { content: ""; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+.activity li { position: relative; display: grid; gap: 2px; padding-inline-start: 16px; overflow-wrap: anywhere; }
+.activity li::before { content: ""; position: absolute; inset-inline-start: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
 
 @media (max-width: 1199px) {
   .dash-body { grid-template-columns: minmax(0, 1fr); }
@@ -404,3 +404,21 @@ svg.thumb { display: block; padding: 0; }
   .metric .value { font-size: 32px; line-height: 36px; }
   .project { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ==========================================================================
+   Language toggle (EN | HE) and right-to-left layout
+   ========================================================================== */
+.lang-toggle { display: inline-flex; flex: none; gap: 4px; }
+.lang-toggle button { display: grid; place-items: center; min-height: 0; height: 28px; padding: 0 4px; border: 0; background: transparent; opacity: 0.5; }
+.lang-toggle button:hover { background: transparent; opacity: 0.8; }
+.lang-toggle button[aria-pressed="true"], .lang-toggle button[aria-pressed="true"]:hover { opacity: 1; background: transparent; border: 0; } /* beats the global dark pressed-button style */
+.lang-toggle .flag { display: block; width: 22px; height: 16px; border-radius: 2px; }
+.appbar > .lang-toggle { margin-inline-start: 8px; } /* pages whose bar has no nav or group */
+
+/* Hebrew: letter spacing breaks up Hebrew letters, and Inter has no Hebrew glyphs. */
+:lang(he) { --font-head: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif; --font-body: Inter, "Segoe UI", Arial, sans-serif; }
+:lang(he) * { letter-spacing: normal !important; }
+/* A floor plan is geometry: its drawing, rulers and numbers keep their left-to-right reading. */
+[dir="rtl"] #canvas, [dir="rtl"] #preview, [dir="rtl"] .thumb svg { direction: ltr; }
+/* Emails, links, numbers and units stay left-to-right inside Hebrew text. */
+[dir="rtl"] input[type="email"], [dir="rtl"] input[type="number"], [dir="rtl"] #studio-url, [dir="rtl"] .code { unicode-bidi: plaintext; }
