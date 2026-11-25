@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     supabase_secret_key: str
     allowed_origins: str = "http://localhost:5500"
     # The advisor answers 503 until both are set. There is deliberately no default model.
-    openai_api_key: str | None = None
-    openai_model: str | None = None
+    groq_api_key: str | None = None
+    groq_model: str | None = None
 
 
 @lru_cache
