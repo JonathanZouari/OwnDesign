@@ -3,7 +3,7 @@
 Source: `Interior_Design_AI_PRD_EN.md`, `README.md`.
 
 A multi-tenant web platform where an interior design studio invites clients, and the client and
-designer work on the same floor plan. AI assistance is arriving in phases: the advisor is the first piece.
+designer work on the same floor plan. AI assistance is arriving in phases: so far the consultant (saved chat) and the advisor (streaming).
 
 ## Built: Phase 1
 
