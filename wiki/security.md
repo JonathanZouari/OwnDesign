@@ -97,7 +97,7 @@ its analysis was run on a saved copy of the `dev...HEAD` diff instead.
 - A `general-purpose` reviewer with a security brief (read-only, no `.env`): no vulnerability, nothing at
   or above low. It examined and rejected: the log of a `RateLimitError`, an information difference between
   `rate_limited` and `upstream` (both come after the access checks), the base URL being overridden (it is
-  a constant passed explicitly), leftover `OPENAI_*` variables (ignored, tested), a whitespace-only key,
+  a constant passed explicitly), leftover `OPENAI_*` variables (the advisor does not read them, tested; after the upstream merge they belong to the consultant), a whitespace-only key,
   retry amplification (`max_retries=0`), the key's `repr`.
 - The `security-review` skill (identification step, read-only file tools): no finding at the 8-of-10
   bar, so no false-positive checks were needed. It did not re-read `frontend/js/pages/advisor.js`; the first

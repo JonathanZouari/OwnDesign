@@ -9,6 +9,28 @@ A client asks a question about their own project and the answer appears while it
 streamed from Groq (free tier) as Server-Sent Events (SSE). There is no non-streaming path: a second endpoint
 would duplicate the logic for no gain.
 
+## Next to the consultant
+
+Upstream (`upstream/dev`, 2026-11-23) added its own AI feature, the **consultant** (`consultant.html`,
+`backend/app/routes/consultant.py`). The owner chose to keep both and to let the upstream author decide, in a
+draft pull request, whether to merge, replace or fold one into the other ([decisions.md](decisions.md)).
+
+| | Consultant (upstream) | Advisor (this page) |
+|---|---|---|
+| Provider | paid OpenAI, `gpt-5-mini` by default | Groq free tier, `openai/gpt-oss-120b` |
+| Delivery | one JSON answer, `POST …/consultant/messages` | streaming SSE, `POST …/advisor` |
+| Memory | saved in `ai_conversations` and `ai_messages`, private to the user | nothing saved |
+| Daily cap | 30 messages per user, atomic in SQL (`reserve_ai_message`) | 50 questions per user, counted from `audit_events` |
+| Who | writers of the project (client and studio) | the owning client only |
+| Settings | `OPENAI_API_KEY`, `OPENAI_MODEL` | `GROQ_API_KEY`, `GROQ_MODEL` |
+| Editor link | "AI Consultant" (sidebar, or the tab bar under 1200 px) | "AI Advisor" (tab bar) |
+
+The two share nothing at run time: separate keys and hosts (a test checks that each client carries only its
+own key to its own host), separate caps (a user at one cap is not blocked from the other, tested), separate
+routes. The privacy notice on this page ("does not save the conversation") is true of the advisor only; the
+consultant saves its conversations. PRD 9.1 says no paid third-party APIs: the advisor follows it, the
+consultant does not ([open-items.md](open-items.md)).
+
 ## Who can use it
 
 Only the client who owns the project. Checked in this order, all before the stream opens:
@@ -131,8 +153,9 @@ lock, so tokens nobody will read are not paid for.
 
 ## Page
 
-`advisor.html?project=<id>`, reached from the "AI Consultant" tab in the editor (shown only to the
-client of a saved project). `js/sse.js` parses the stream; `apiStream` in `js/api.js` sends the POST,
+`advisor.html?project=<id>`, reached from the "AI Advisor" tab in the editor (shown only to the
+client of a saved project). The page, its tab and its messages all say "AI Advisor"; "AI Consultant" is
+upstream's other feature (below). `js/sse.js` parses the stream; `apiStream` in `js/api.js` sends the POST,
 because `EventSource` cannot send a bearer token or a body.
 
 - A typing indicator shows until the first piece; the reply grows in one text node (never HTML); the

@@ -12,6 +12,8 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Project data sent to Groq.** The advisor sends the project name and type, each room's name and type, counts of walls, openings and furniture, up to 10 earlier messages and the question. The page says so (every item except the counts) and that OwnDesign does not save the conversation. Whether this needs explicit consent is undecided.
 - **Overlap with the "AI cost budget" team.** The advisor's 50-questions-per-user-per-day quota (`MAX_QUESTIONS_PER_DAY` in `backend/app/routes/advisor.py`) is a stopgap. It must be reconciled with their budget before the advisor ships beyond dev.
 - **Overlap with the "Hebrew RTL" team.** The advisor's RTL rules are local to `frontend/css/advisor.css`. When their global RTL work lands, check the advisor page against it and decide whether those rules move.
+- **Two AI features in one product area** (for upstream's author to decide). The streaming Groq advisor and the saved-chat OpenAI consultant differ in provider (free Groq against paid OpenAI, which conflicts with PRD 9.1), memory (nothing saved against saved), cap (50 a day counted from audit events against 30 a day in SQL), audience (owning client against project writers) and privacy wording ("does not save the conversation" is true of the advisor only). Options: keep both, replace one, or fold streaming and Groq into the consultant. See [advisor.md](advisor.md).
+- **Other open upstream pull requests** (#2 sharing, tour and project chat; #4 Hebrew RTL and PDF import; #1 and #3 model setup) edit files this work also edits (`editor.html`, `js/editor/main.js`, `js/api.js`, `schemas.py`, `main.py`, the shared test modules, wiki pages). Whichever merges second needs another merge of `upstream/dev`; #4 is already reported as conflicting.
 
 ## Phase 2 gaps
 
@@ -22,6 +24,10 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Delete-then-insert saves** of finishes and the moodboard are not atomic.
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
 - The editor has no link to the Phase 2 pages at 767 px and below.
+- **Database review of upstream's four migrations** (2026-11-26, read-only, before they were applied as written; upstream's files, not changed here):
+  - medium: a moodboard item's `asset_id` is tied to the asset but not to the same project (`phase2_design.sql:36-47`); the backend checks it in code today. Fix: composite foreign key `(project_id, asset_id)`.
+  - medium: `reserve_ai_message` does not check that the conversation belongs to the user, and a `null` cap skips the limit (`ai_message_reservation.sql:5-19`); only the backend (service role) can call it.
+  - low: `for update` on `projects` is stronger than needed (`asset_quota.sql:6`, use `for no key update`); `storage_path` check is prefix-only (`phase2_design.sql:30`); `drop function` lacks `if exists` (`drop_release_ai_message.sql:2`); the daily cap resets if a project, studio or user is cascade-deleted; no way to delete an AI message except a cascade (intended); the 30-image cap is per project only; the comment in `consultant.py:21` says "per project and user" but the SQL caps per user.
 
 ## Later phases with a Stitch screen waiting
 
@@ -54,7 +60,10 @@ consultant screen is built twice, as the advisor ([advisor.md](advisor.md)) and 
 - Audit event ids are one sequence across all studios, so a member can infer overall event volume.
 - Fonts load from Google, which exposes the visitor's IP address to Google.
 - The editor's sign in/out button is hidden on phones.
-- The editor's tabs are hidden below 768 px, so on a phone the "AI Consultant" tab cannot be reached from the editor; `advisor.html?project=<id>` itself fits a phone.
+- The editor's tabs are hidden below 768 px, so on a phone the "AI Advisor" tab cannot be reached from the editor (nor can upstream's two Phase 2 links); `advisor.html?project=<id>` itself fits a phone.
+- **Editor header overflow with the advisor tab.** For a client, the "AI Advisor" tab makes the header overflow sideways by 38 px at 900 px wide, where the designer view (no advisor tab) does not, and by 170 px at 768 px, where the designer view already overflows by 81 px (upstream's own links). Accepted by the owner (2026-11-26); `test_the_advisor_tab_adds_only_the_known_header_overflow` pins the measured amounts and fails if they grow or appear at another width. A real fix is a few lines in the shared `css/app.css` (tighter tab padding under 1200 px) or moving the link to the sidebar.
+- Upstream's browser file `tests/test_e2e_design.py` starts the real backend without setting `ALLOWED_ORIGINS`, so on a machine whose `.env` lacks `http://127.0.0.1:5500` five of its six tests fail on CORS (seen on 2026-11-26; all six pass when the variable is set). The advisor's own browser tests set it themselves.
+- `backend/uv.lock` is upstream's, with `revision = 3`; a newer `uv` writes `revision = 5` and may rewrite it on `uv lock`. `uv lock --check` passes.
 - The wording of the advisor page (notices, errors, buttons) has not had a copywriting review, and its layout has not had a design review against the Stitch screen.
 - The tests import `httpx2` directly, but it is only a dependency of `openai`, not of this project. If a later `openai` release changes its HTTP library, `backend/tests/test_advisor.py` needs updating.
 - The `Settings` class holds `groq_api_key` as a plain string, like the Supabase keys. Consider `SecretStr` for all of them together.
