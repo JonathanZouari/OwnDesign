@@ -255,3 +255,37 @@ def test_studio_activity_is_listed_for_members_only(api, world):
 
     other = api.get(f"/v1/studios/{world.studio_b['id']}/audit", headers=world.designer_b.headers).json()["data"]
     assert other and "Flat A" not in {event["project"]["name"] for event in other if event["project"]}
+
+
+def test_version_review_is_shared_scoped_and_retryable(api, world):
+    path = f"/v1/projects/{world.project_a['id']}/versions/{world.version_a['id']}/reviews"
+    payload = {"room_id": "r1", "item_id": "f1", "decision": "approve", "note": "Keep this layout"}
+    assert api.put(path, json=payload, headers=world.client_a.headers).status_code == 200
+    payload["note"] = "Measured and approved"
+    assert api.put(path, json=payload, headers=world.client_a.headers).status_code == 200
+    rows = api.get(path, headers=world.designer_a.headers).json()["data"]
+    assert len(rows) == 1 and rows[0]["note"] == payload["note"]
+    assert api.get(path, headers=world.client_b.headers).status_code == 404
+    assert api.put(path, json={**payload, "room_id": "missing"}, headers=world.client_a.headers).status_code == 422
+
+def test_project_conversation_and_receipts(api, world):
+    from uuid import uuid4
+
+    path = f"/v1/projects/{world.project_a['id']}/messages"
+    client, designer, outsider = world.client_a.headers, world.designer_a.headers, world.client_b.headers
+    payload = {"request_id": str(uuid4()), "body": "Could we move the sofa?"}
+    for _ in range(2):
+        assert api.post(path, headers=client, json=payload).status_code == 201
+    feed = api.get(path, headers=designer).json()["data"]
+    assert feed["unread"] == len(feed["items"]) == 1
+    message = feed["items"][0]
+    assert message["body"] == payload["body"] and not message["mine"]
+    ids = {"ids": [message["id"]]}
+    for _ in range(2):
+        assert api.put(path + "/read", headers=designer, json=ids).status_code == 200
+    assert api.get(path, headers=designer).json()["data"]["unread"] == 0
+    assert api.post(path, headers=designer, json={**payload, "body": "Yes"}).status_code == 201
+    assert api.get(path, headers=client).json()["data"]["unread"] == 1
+    assert api.get(path, headers=outsider).status_code == 404
+    assert api.post(path, headers=outsider, json=payload).status_code == 404
+    assert api.put(path + "/read", headers=outsider, json=ids).status_code == 404

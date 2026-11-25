@@ -77,7 +77,7 @@ function chip(x, y, text, scale) {
 
 const focusable = (kind, id, label, cls) => ({ "data-kind": kind, "data-id": id, tabindex: 0, role: "button", "aria-label": label, class: cls });
 
-function wallNode(wall, selected) {
+export function wallNode(wall, selected) {
   const line = (cls, width) => svg("line", { x1: wall.x1, y1: wall.y1, x2: wall.x2, y2: wall.y2, class: cls, "stroke-width": width });
   const name = wall.kind === "exterior" ? "Exterior wall" : "Partition";
   return svg("g", focusable("walls", wall.id, `${name}, ${metres(wallLength(wall))} m`, selected ? "selected" : ""),
@@ -86,7 +86,7 @@ function wallNode(wall, selected) {
   );
 }
 
-function openingNode(opening, wall, selected) {
+export function openingNode(opening, wall, selected) {
   const s = openingSegment(wall, opening);
   const nx = -s.uy; // unit normal to the wall
   const ny = s.ux;
@@ -125,7 +125,7 @@ function furnitureNode(item, selected) {
   );
 }
 
-function clientFurniture(item) {
+export function clientFurniture(item) {
   // Normalized footprints keep each symbol aligned with the saved size and rotation.
   const ink = "#344942", linen = "#faf5e8", sage = "#a4bdaf", steel = "#b7c7cb";
   const rect = (x,y,width,height,fill,rx=4) => svg("rect",{x,y,width,height,fill,rx});
@@ -232,7 +232,7 @@ function clientFurniture(item) {
     default: return furnitureNode(item,false);
   }
   const label=FURNITURE_BY_TYPE.get(item.type)?.label ?? item.type;
-  return svg("g",{transform:`translate(${item.x} ${item.y}) rotate(${item.rotation})`},
+  return svg("g",{"data-id":item.id,transform:`translate(${item.x} ${item.y}) rotate(${item.rotation})`},
     svg("title",{},label),
     svg("svg",{x:-item.w/2,y:-item.d/2,width:item.w,height:item.d,viewBox:"0 0 100 100",preserveAspectRatio:"none",stroke:ink,"stroke-width":2.6,"stroke-linejoin":"round","stroke-linecap":"round"},shapes),
     svg("text",{x:0,y:item.d/2+8,"text-anchor":"middle","font-size":9,fill:ink},label));

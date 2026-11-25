@@ -1,9 +1,10 @@
+from datetime import datetime, timezone
 from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from postgrest.exceptions import APIError
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, current_user
 from app.db import audit, service
@@ -180,3 +181,37 @@ def create_version(project_id: UUID, body: VersionCreate, user: CurrentUser = De
         author_role=author_role,
     )
     return ok({key: version[key] for key in ("id", "version_no", "label", "author_role", "created_at")})
+
+class LayoutReview(BaseModel):
+    room_id: str = Field(min_length=1, max_length=120)
+    item_id: str = Field(default="", max_length=120)
+    decision: Literal["comment", "approve", "revise"]
+    note: str = Field(default="", max_length=1200)
+
+
+@router.get("/{project_id}/versions/{version_id}/reviews")
+def list_layout_reviews(project_id: UUID, version_id: UUID, user: CurrentUser = Depends(current_user)):
+    get_version(project_id, version_id, user)
+    rows = user.db.table("layout_reviews").select("room_id,item_id,author_role,decision,note,updated_at").eq(
+        "version_id", str(version_id)
+    ).order("updated_at", desc=True).execute().data
+    return ok(rows)
+
+
+@router.put("/{project_id}/versions/{version_id}/reviews")
+def save_layout_review(project_id: UUID, version_id: UUID, body: LayoutReview, user: CurrentUser = Depends(current_user)):
+    project = _project_or_404(user, project_id)
+    if project["studio"]["status"] != "active":
+        raise HTTPException(403, "This studio is not active")
+    if body.decision == "comment" and not body.note.strip():
+        raise HTTPException(422, "A comment needs text")
+    geometry = get_version(project_id, version_id, user)["data"]["geometry"]
+    if not any(r["id"] == body.room_id for r in geometry["rooms"]):
+        raise HTTPException(422, "Unknown room")
+    if body.item_id and not any(f["id"] == body.item_id for f in geometry["furniture"]):
+        raise HTTPException(422, "Unknown item")
+    role = "designer" if user.role_in(project["studio_id"]) else "client"
+    row = {**body.model_dump(), "author_id": user.id, "version_id": str(version_id),
+           "author_role": role, "updated_at": datetime.now(timezone.utc).isoformat()}
+    service().table("layout_reviews").upsert(row).execute()
+    return ok({"saved": True})

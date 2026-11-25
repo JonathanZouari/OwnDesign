@@ -421,3 +421,28 @@ def test_consultant_page_starts_empty_and_limits_the_message(servers, page, worl
     assert page.locator("#plan-link").get_attribute("href") == f"editor.html?project={world.pid}"
     page.set_viewport_size({"width": 390, "height": 800})
     assert not overflows(page)
+
+def test_atelier_project_conversation_and_audit(servers, browser, world):
+    from playwright.sync_api import expect
+
+    with browser.new_context() as a, browser.new_context() as b:
+        client, designer = a.new_page(), b.new_page()
+        target = f"atelier.html?project={world.pid}"
+        sign_in(client, world.client, target)
+        sign_in(designer, world.designer, target)
+        client.locator("#audit-panel summary").click()
+        client.locator("#audit-run").click()
+        expect(client.locator("#findings li").first).to_be_visible()
+        client.locator("#messages-panel summary").click()
+        client.locator("#message-text").fill("Move the sofa next to the window")
+        client.locator("#compose button").click()
+        expect(designer.locator("#message-badge")).to_contain_text("1", timeout=15000)
+        designer.locator("#messages-panel summary").click()
+        expect(designer.locator("#messages li")).to_have_text(["לקוח · Move the sofa next to the window"])
+        expect(designer.locator("#message-badge")).to_have_text("")
+        designer.locator("#message-text").fill("I will prepare a new layout")
+        designer.locator("#compose button").click()
+        expect(client.locator("#messages li").last).to_contain_text("I will prepare a new layout", timeout=15000)
+        client.reload()
+        client.locator("#messages-panel summary").click()
+        expect(client.locator("#messages li")).to_have_count(2)

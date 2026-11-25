@@ -432,6 +432,7 @@ run(async () => {
         $("#save").before(h("a",{class:"button tour-switch",href:url.href},tour ? "עריכת התוכנית" : "תצוגת לקוח"));
       }
     }
+    $("#save").before(h("a", {class: "button", href: "atelier.html?project="+encodeURIComponent(projectId)}, "סטודיו לחלופות"));
     role = state.project.access === "view" ? "View only" : `Editing as ${state.project.my_role}`;
     showStudio(state.project.studio.name);
     // Starting over from the wizard would discard this saved plan's context, so those links go to the project list.

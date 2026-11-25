@@ -56,6 +56,7 @@ class Opening(Strict):
 
 
 class Furniture(Strict):
+    dimension_source: Literal["measured", "catalog"] | None = None
     id: Id
     type: Annotated[str, StringConstraints(pattern=r"^[a-z0-9_-]{1,40}$")]
     x: Cm
