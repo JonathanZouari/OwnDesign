@@ -247,9 +247,10 @@ def test_designer_sees_the_clients_brief_materials_and_moodboard(servers, page, 
     assert page.locator("#assets .chip").inner_text() == "Item I own"
     # The signed link really serves the client's image to the designer.
     picture = page.get_by_role("img", name="Grandma's sofa")
-    picture.scroll_into_view_if_needed()
     deadline = time.monotonic() + 15  # polled from here: the page's CSP forbids wait_for_function
-    while not picture.evaluate("img => img.complete && img.naturalWidth > 0"):
+    # Renewing a signed URL can replace the image. Resolve the current node on
+    # each poll and bring that node into view so lazy loading can start.
+    while not picture.evaluate("img => { img.scrollIntoView(); return img.complete && img.naturalWidth > 0; }"):
         assert time.monotonic() < deadline, "the uploaded image did not load from its signed link"
         page.wait_for_timeout(200)
 
