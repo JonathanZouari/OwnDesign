@@ -235,3 +235,17 @@ a small model) list the model as production and not deprecated, but mark both Ll
 "Enterprise" / "ContactSales"; this is a possible cause, not confirmed. The Hebrew quality could not be
 judged. No second call was made and the model was not changed. Waiting for the owner's decision.
 Pages: [advisor](advisor.md), [open-items](open-items.md).
+
+## [2026-11-25] decision | Model changed to openai/gpt-oss-120b
+The owner checked the Groq console: `llama-3.3-70b-versatile` is not in this account's model list (that was the
+404), `openai/gpt-oss-120b` is. The owner set it in `backend/.env` (not read by Claude). Because gpt-oss
+models reason before answering, the owner approved a guard: `reasoning_effort="low"` only for model IDs
+starting with `openai/gpt-oss`, and `MAX_REPLY_TOKENS` 1000 to 4000. Pages: [decisions](decisions.md),
+[advisor](advisor.md), [open-items](open-items.md).
+
+## [2026-11-25] build | Reasoning guard for gpt-oss models
+Tests first (7 failed for the right reasons, 4 more pinned existing behaviour and passed). Then
+`backend/app/advisor.py`: `REASONING_EFFORT`, `MAX_REPLY_TOKENS = 4000`, and the model-prefix condition;
+`.env.example` example ID. Raw results: backend 154 passed (was 144), browser journeys alone 12 passed,
+frontend 36 passed; none failed or skipped. Still no successful live call. Pages: [advisor](advisor.md),
+[testing](testing.md).

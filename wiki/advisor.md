@@ -31,10 +31,26 @@ refused request (tested).
 
 Groq, through the `openai` Python package pointed at `GROQ_BASE_URL` (`https://api.groq.com/openai/v1`),
 a constant in `backend/app/advisor.py` that no setting or input can change. Settings in `backend/.env`:
-`GROQ_API_KEY` and `GROQ_MODEL` (no default). The model in use is `llama-3.3-70b-versatile`: a plain chat
-model, so the whole reply is in `delta.content`; Groq's `openai/gpt-oss-*` models reason first, which could
-use up `max_completion_tokens` before any text. `max_completion_tokens` and streaming are documented as
-supported by Groq's endpoint (Groq docs, read 2026-11-25). Retries are off, as before.
+`GROQ_API_KEY` and `GROQ_MODEL` (no default). The model in use is `openai/gpt-oss-120b`, chosen by the
+owner from the models listed in the Groq console for this account. `llama-3.3-70b-versatile` was the first
+choice but is not in this account's list, which is why the first live call got a 404.
+
+gpt-oss models reason before they answer, and the reasoning could use up `max_completion_tokens` before any
+text appears. Two settings in `backend/app/advisor.py` guard against that:
+
+- `REASONING_EFFORT = "low"`, sent as `reasoning_effort` only when the model ID starts with
+  `openai/gpt-oss` (any other model would probably refuse the parameter, so switching `GROQ_MODEL` to
+  another family keeps working). Groq's docs list `low`, `medium` and `high` for these models.
+- `MAX_REPLY_TOKENS = 4000` (it was 1000): the longest reply the 8000-character cap allows is about 2,700
+  tokens at 3 characters a token (a test checks this), plus 1,000 tokens of headroom. The docs do not say
+  whether reasoning tokens count toward this limit; it is sized as if they do.
+
+The reasoning arrives in a separate `reasoning` field of each chunk. The code reads only `delta.content`, so
+reasoning text is never sent to the page or logged (tested with a marker). Reasoning chunks reach the
+generator as empty pieces, which end the 20 s first-piece wait; the 90 s total still applies. If the limit
+is ever reached during reasoning the reply is empty and the page shows "The advisor returned no answer"
+(tested). `max_completion_tokens` and streaming are documented as supported by Groq's endpoint (Groq docs,
+read 2026-11-25). Retries are off, as before.
 
 A chunk with no `choices` (a usage-only chunk), a role-only first chunk and a `null` content are skipped
 (tested through the real SDK).
@@ -90,7 +106,7 @@ exception type name is logged. The question still counts against the user's dail
 |---|---|
 | first piece of the reply | 20 s |
 | whole reply | 90 s |
-| reply length | 8000 characters, and `max_completion_tokens` 1000; reaching either ends with `done` and `truncated: true` |
+| reply length | 8000 characters, and `max_completion_tokens` 4000 (room for reasoning, see Provider); reaching either ends with `done` and `truncated: true` |
 | questions | 50 per user per 24 hours, counted from `advisor.asked` rows in `audit_events` |
 | open replies | one per user, held in memory per server process; an entry expires after 120 s |
 
@@ -136,16 +152,16 @@ Coverage: [testing.md](testing.md).
 
 ## Not verified yet
 
-- **The one live call so far failed (2026-11-25).** A short Hebrew question through `get_llm()` and
-  `stream_reply`, model `llama-3.3-70b-versatile`, got HTTP 404 (`NotFoundError`) from Groq before any text,
-  so the advisor showed the generic "could not finish" message. The cause is not known. Groq's docs (read
-  through a page summariser, so unconfirmed) list the model as a production model and not deprecated, but
-  mark the two Llama production models "Enterprise" with "ContactSales", which may mean this account has no
-  access. Nothing was changed in response; the model is the owner's choice. Until a call succeeds, the
-  streaming, the model's Hebrew and the 429 path are unverified against the real API. Before that call,
-  `GroqLlm` was checked only against the installed SDK's signatures (`openai` 3.57.0:
-  `max_completion_tokens`, `AsyncStream.close()`) and a canned network that checks the URL, key header and
-  request body. The model is chosen by `GROQ_MODEL`; there is no default.
+- **No live call has succeeded yet.** The only one so far (2026-11-25, `llama-3.3-70b-versatile`, a short
+  Hebrew question through `get_llm()` and `stream_reply`) got HTTP 404 from Groq before any text, and the
+  page showed the generic "could not finish" message. The owner then checked the Groq console: that model
+  is not in this account's list, `openai/gpt-oss-120b` is, so that was the cause. (Groq's docs, read through a
+  page summariser, had listed the Llama model as a production model and marked it "Enterprise".) The
+  model was then changed to `openai/gpt-oss-120b`; it has not been called yet. Until a call succeeds, these
+  are unverified against the real API: streaming, the model's Hebrew, that `reasoning_effort: "low"` is
+  accepted, that 4000 tokens is enough, and the 429 path. `GroqLlm` has been checked only against the
+  installed SDK's signatures (`openai` 3.57.0: `max_completion_tokens`, `reasoning_effort`,
+  `AsyncStream.close()`) and a canned network that checks the URL, key header and request body.
 - That a real server notices a closed browser tab and stops the reply (the closing itself is tested).
 - That Railway's proxy does not buffer SSE; nothing is deployed yet.
 - The wording of the page's notices and messages has not had a copywriting review.
