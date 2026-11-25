@@ -363,3 +363,14 @@ Raw results, tree clean, ports 8000 and 5500 free: full backend as is `5 failed,
 upstream browser tests above); full backend with `ALLOWED_ORIGINS` set `222 passed`; the browser journeys of
 both files alone `20 passed`; frontend `50 passed, 0 failed, 0 skipped`. Baseline on `dev`: backend 154
 passed, frontend 36 passed. Nothing is pushed. Pages: [testing](testing.md).
+
+## [2026-11-26] docs | Branch pushed, draft pull request to upstream
+With the owner's go, `feat/advisor-on-upstream` was pushed to the fork (remote tip `3a38a8f`, plain push, no
+force; the fork's `main` stays at `472a0ed`). The owner reviewed every finding of every review and accepted
+the unfixed low and medium ones as listed (all are in [open-items](open-items.md)). The owner approved the
+text of the pull request, which is opened right after this commit as a **draft** to `JonathanZouari/OwnDesign`,
+base `dev`, head `sarah-s-1:feat/advisor-on-upstream`: the two AI features side by side and the four questions
+for upstream's author (keep both, the provider and PRD 9.1, the header overflow, the consultant's audit event),
+the setup note that `tests/test_e2e_design.py` needs `http://127.0.0.1:5500` in `ALLOWED_ORIGINS`, and the two
+medium findings of the migration review. Upstream was still at `39134d8` when the pull request was opened.
+Pages: [decisions](decisions.md), [open-items](open-items.md).
