@@ -358,6 +358,39 @@ def test_a_groq_rate_limit_is_a_friendly_error_event_and_frees_the_user_for_the_
     assert [name for name, _ in events_of(ask(api, world.project_a["id"], world.client_a.headers))] == ["delta", "delta", "done"]
 
 
+def test_the_largest_advisor_request_passes_the_upstream_body_limit(api, world, llm):
+    """2000 characters plus 10 turns of 8000, all outside the basic plane: well under the 2 MB cap (only .../assets gets 6 MB)."""
+    history = [{"role": "user" if i % 2 == 0 else "assistant", "content": "😀" * 8000} for i in range(10)]
+    response = ask(api, world.project_a["id"], world.client_a.headers, question="😀" * 2000, history=history)
+    assert response.status_code == 200
+    assert [name for name, _ in events_of(response)] == ["delta", "delta", "done"]
+
+
+def test_the_advisor_and_the_consultant_have_independent_daily_caps(api, world, llm, monkeypatch):
+    from app.routes import advisor as advisor_route
+    from app.routes import consultant
+    from tests.test_consultant import FakeOpenAI
+
+    api.app.dependency_overrides[consultant.get_openai] = lambda: FakeOpenAI()
+    project, headers = world.project_a["id"], world.client_a.headers
+
+    def message():
+        return api.post(f"/v1/projects/{project}/consultant/messages", json={"message": "hello"}, headers=headers)
+
+    try:
+        used = advisor_route._questions_today(world.client_a.id)
+        monkeypatch.setattr(advisor_route, "MAX_QUESTIONS_PER_DAY", used)  # the advisor is at its cap
+        assert ask(api, project, headers).status_code == 429
+        assert message().status_code == 201  # the consultant still answers
+
+        monkeypatch.setattr(advisor_route, "MAX_QUESTIONS_PER_DAY", used + 5)
+        monkeypatch.setattr(consultant, "DAILY_MESSAGE_CAP", 0)  # now the consultant is at its cap
+        assert message().status_code == 429
+        assert ask(api, project, headers).status_code == 200  # the advisor still answers
+    finally:
+        api.app.dependency_overrides.pop(consultant.get_openai, None)
+
+
 def test_advisor_is_unavailable_when_groq_is_not_configured(api, world):
     from app.advisor import get_llm
 

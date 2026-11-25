@@ -1,4 +1,5 @@
-"""The backend the browser journeys run against: the real app, with Groq replaced by a scripted fake.
+"""The backend the browser journeys run against: the real app, with Groq replaced by a scripted fake
+and upstream's OpenAI consultant switched off (503).
 
 It is only ever started by tests/test_e2e.py. Nothing here is imported by the application.
 The question decides what the fake does, so one server serves every journey:
@@ -20,6 +21,7 @@ import openai
 
 from app.advisor import get_llm
 from app.main import app
+from app.routes.consultant import get_openai
 from tests.fake_llm import ENGLISH_REPLY, HEBREW_REPLY, FakeLlm
 
 DELAY_S = 0.45  # long enough for a browser test to see the typing indicator and a half-written reply
@@ -53,3 +55,6 @@ class ScriptedLlm:
 
 
 app.dependency_overrides[get_llm] = lambda: ScriptedLlm()
+# Upstream's consultant calls OpenAI (paid). Here it is switched off, so no browser journey can reach it
+# even if backend/.env holds a key: its endpoint answers 503.
+app.dependency_overrides[get_openai] = lambda: None

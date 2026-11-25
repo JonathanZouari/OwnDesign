@@ -15,6 +15,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import quote
 
+import httpx
 import pytest
 from playwright.sync_api import expect
 
@@ -340,9 +341,14 @@ def test_client_reads_the_advisor_reply_as_it_is_written(advisor_servers, page, 
     world = advisor_world(api, make_user)
 
     # The editor offers the tab to the client, and the advisor page's styles do not reach the editor.
+    # Upstream's consultant has its own link; the two names are distinct, so each locator matches exactly one link.
     sign_in(page, world.client, f"editor.html?project={world.project['id']}")
-    tab = page.get_by_role("link", name="AI Consultant")
+    tab = page.get_by_role("link", name="AI Advisor")
     tab.wait_for()
+    consultant = page.get_by_role("link", name="AI Consultant")
+    consultant.wait_for()
+    assert tab.count() == 1 and consultant.count() == 1
+    assert (consultant.get_attribute("href") or "").startswith("consultant.html?project=")
     assert not page.evaluate("document.body.classList.contains('advisor')")
     assert not page.evaluate("[...document.styleSheets].some(sheet => (sheet.href || '').endsWith('advisor.css'))")
     tab.click()
@@ -555,10 +561,13 @@ def test_advisor_is_closed_to_the_designer_and_to_other_users(advisor_servers, p
     outsider = make_user("e2e-adv-outsider")
     project_page = f"advisor.html?project={world.project['id']}"
 
-    # The studio's designer sees the project in the editor, but has no AI Consultant tab and no advisor page.
+    # The studio's designer sees the project in the editor, but has no AI Advisor tab and no advisor page.
+    # Upstream's consultant is open to the studio's designers too, so its link is there.
     sign_in(page, world.designer, f"editor.html?project={world.project['id']}")
     page.get_by_text("Editing as designer").wait_for()
     assert page.locator("#tab-advisor").is_hidden()
+    assert page.get_by_role("link", name="AI Advisor").count() == 0
+    page.get_by_role("link", name="AI Consultant").wait_for()
     page.goto(f"{SITE}/{project_page}")
     page.locator("#blocked").wait_for()
     assert "for the client who owns this project" in page.locator("#blocked").inner_text()
@@ -576,6 +585,14 @@ def test_advisor_is_closed_to_the_designer_and_to_other_users(advisor_servers, p
         page.goto(f"{SITE}/advisor.html{query}")
         page.locator("#blocked").wait_for()
         assert page.locator("#chat").is_hidden()
+
+
+def test_the_scripted_backend_never_reaches_openai(advisor_servers, api, make_user):
+    """tests/e2e_app.py replaces the consultant's OpenAI client too: a message is refused with 503, whatever .env holds."""
+    world = advisor_world(api, make_user)
+    url = f"http://127.0.0.1:8000/v1/projects/{world.project['id']}/consultant/messages"
+    response = httpx.post(url, json={"message": "hello"}, headers=world.client.headers, timeout=15)
+    assert response.status_code == 503
 
 
 def test_advisor_fits_a_phone(advisor_servers, page, api, make_user):
