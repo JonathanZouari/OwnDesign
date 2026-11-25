@@ -1,17 +1,20 @@
-"""The backend the browser journeys run against: the real app, with OpenAI replaced by a scripted fake.
+"""The backend the browser journeys run against: the real app, with Groq replaced by a scripted fake.
 
 It is only ever started by tests/test_e2e.py. Nothing here is imported by the application.
 The question decides what the fake does, so one server serves every journey:
 
     Hebrew letters in the question  -> a Hebrew reply
-    "[error]" in the question        -> two pieces, then OpenAI fails
+    "[error]" in the question        -> two pieces, then Groq fails
     "[flaky]" in the question        -> fails on the first attempt for that exact question, works on the next
+    "[busy]" in the question         -> Groq's rate limit (429) before any text on the first attempt, works on the next
+    "[busy-late]" in the question    -> two pieces, then the rate limit on the first attempt, works on the next
     anything else                    -> an English reply
 """
 
 import re
 
 import httpx
+import httpx2
 import openai
 
 from app.advisor import get_llm
@@ -28,11 +31,22 @@ def _failure() -> openai.APIError:
     return openai.APIError("simulated failure", request=httpx.Request("POST", "https://example.invalid"), body=None)
 
 
+def _rate_limited() -> openai.RateLimitError:
+    request = httpx2.Request("POST", "https://example.invalid")
+    return openai.RateLimitError("simulated rate limit", response=httpx2.Response(429, request=request), body=None)
+
+
 class ScriptedLlm:
     def stream(self, messages):
         question = messages[-1]["content"]
         _attempts[question] = _attempts.get(question, 0) + 1
-        if "[error]" in question or ("[flaky]" in question and _attempts[question] == 1):
+        first_attempt = _attempts[question] == 1
+        pieces = HEBREW_REPLY if HEBREW_LETTER.search(question) else ENGLISH_REPLY
+        if "[busy-late]" in question and first_attempt:
+            return FakeLlm(pieces, delay=DELAY_S, fail_at=2, error=_rate_limited()).stream(messages)
+        if "[busy]" in question and first_attempt:
+            return FakeLlm(pieces, delay=DELAY_S, fail_at=0, error=_rate_limited()).stream(messages)
+        if "[error]" in question or ("[flaky]" in question and first_attempt):
             return FakeLlm(ENGLISH_REPLY, delay=DELAY_S, fail_at=2, error=_failure()).stream(messages)
         pieces = HEBREW_REPLY if HEBREW_LETTER.search(question) else ENGLISH_REPLY
         return FakeLlm(pieces, delay=DELAY_S).stream(messages)

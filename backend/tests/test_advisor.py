@@ -1,11 +1,12 @@
 """Unit tests for the advisor: the SSE generator, the prompt, the input schema and the per-user lock.
 
-No Supabase and no network: OpenAI is replaced by tests/fake_llm.py.
+No Supabase and no network: Groq is replaced by tests/fake_llm.py, or by a canned network under the real SDK.
 """
 
 import asyncio
 import json
 import logging
+from types import SimpleNamespace
 
 import httpx
 import httpx2  # the HTTP layer of openai 3.x
@@ -47,6 +48,16 @@ def text_of(parsed):
 
 def api_error(message="boom"):
     return openai.APIError(message, request=httpx.Request("POST", "https://example.invalid"), body=None)
+
+
+def status_error(cls, status, message="boom"):
+    """What the SDK raises for an HTTP error status (429 -> RateLimitError, 500 -> InternalServerError)."""
+    request = httpx2.Request("POST", "https://example.invalid")
+    return cls(message, response=httpx2.Response(status, request=request), body=None)
+
+
+def rate_limit_error(message="boom"):
+    return status_error(openai.RateLimitError, 429, message)
 
 
 def test_normal_stream_ends_with_done():
@@ -228,25 +239,36 @@ def test_system_prompt_says_room_and_project_names_are_data_not_instructions():
 # --- Logging: the real SDK over a canned network, with every logger at DEBUG ---
 
 
-def sdk_llm(pieces):
-    """The real OpenAILlm and the real OpenAI SDK. Only the network is replaced, by a canned streaming reply."""
+def chunk_body(text, finish=None):
+    return {
+        "id": "chunk-1",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "test-model",
+        "choices": [{"index": 0, "delta": {"content": text}, "finish_reason": finish}],
+    }
 
-    def chunk(text, finish=None):
-        body = {
-            "id": "chunk-1",
-            "object": "chat.completion.chunk",
-            "created": 0,
-            "model": "test-model",
-            "choices": [{"index": 0, "delta": {"content": text}, "finish_reason": finish}],
-        }
-        return f"data: {json.dumps(body)}\n\n"
 
-    stream = "".join(chunk(piece) for piece in pieces) + chunk("", "stop") + "data: [DONE]\n\n"
-    transport = httpx2.MockTransport(
-        lambda request: httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=stream.encode())
-    )
+def wire(*bodies):
+    """The streaming body Groq sends: one `data:` line per chunk, then [DONE]."""
+    return "".join(f"data: {json.dumps(body, ensure_ascii=False)}\n\n" for body in bodies) + "data: [DONE]\n\n"
+
+
+def sdk_llm_over(transport):
+    """The real GroqLlm and the real OpenAI SDK. Only the network is replaced."""
     client = openai.AsyncOpenAI(api_key="not-a-real-key", max_retries=0, http_client=httpx2.AsyncClient(transport=transport))
-    return advisor.OpenAILlm(client, "test-model")
+    return advisor.GroqLlm(client, "test-model")
+
+
+def sdk_llm_from_stream(stream):
+    return sdk_llm_over(
+        httpx2.MockTransport(lambda request: httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=stream.encode()))
+    )
+
+
+def sdk_llm(pieces):
+    """A canned streaming reply: one chunk per piece, then a chunk that finishes the reply."""
+    return sdk_llm_from_stream(wire(*(chunk_body(piece) for piece in pieces), chunk_body("", "stop")))
 
 
 def stream_with_debug_logging(caplog, question, lift_pin=None):
@@ -296,3 +318,175 @@ def test_the_debug_check_fails_when_an_sdk_logger_is_not_pinned(caplog):
     """Proof that the check above can fail: lift the pin on the openai logger and it reports DEBUG records."""
     stream_with_debug_logging(caplog, "hello", lift_pin="openai")
     assert any(name.startswith("openai") for name in library_loggers_at_debug(caplog))
+
+
+# --- Groq: configuration, endpoint, stream shapes, rate limit ---
+
+
+@pytest.fixture
+def fresh_client_cache():
+    advisor._client.cache_clear()
+    yield
+    advisor._client.cache_clear()
+
+
+@pytest.mark.parametrize(
+    "key, model",
+    [(None, None), (None, "llama-3.3-70b-versatile"), ("gsk-test", None), ("", "m"), ("gsk-test", ""), ("   ", "m"), ("gsk-test", "   ")],
+)
+def test_advisor_is_not_configured_without_both_a_key_and_a_model(monkeypatch, key, model):
+    monkeypatch.setattr(advisor, "settings", lambda: SimpleNamespace(groq_api_key=key, groq_model=model))
+    assert advisor.get_llm() is None
+
+
+def test_advisor_is_configured_with_a_key_and_a_model(monkeypatch, fresh_client_cache):
+    monkeypatch.setattr(advisor, "settings", lambda: SimpleNamespace(groq_api_key="gsk-test", groq_model="llama-3.3-70b-versatile"))
+    assert isinstance(advisor.get_llm(), advisor.GroqLlm)
+
+
+def test_openai_settings_no_longer_configure_the_advisor(monkeypatch):
+    monkeypatch.setattr(
+        advisor,
+        "settings",
+        lambda: SimpleNamespace(groq_api_key=None, groq_model=None, openai_api_key="sk-old", openai_model="gpt-old"),
+    )
+    assert advisor.get_llm() is None
+
+
+def test_the_client_talks_to_groq_with_the_configured_key_and_model(monkeypatch, fresh_client_cache):
+    seen = []
+
+    def handler(request):
+        seen.append(request)
+        return httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=wire(chunk_body("ok"), chunk_body("", "stop")).encode())
+
+    real = openai.AsyncOpenAI
+    monkeypatch.setattr(advisor, "AsyncOpenAI", lambda **kw: real(**kw, http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(handler))))
+    monkeypatch.setattr(advisor, "settings", lambda: SimpleNamespace(groq_api_key="gsk-test-key", groq_model="llama-3.3-70b-versatile"))
+
+    parsed = parse(collect(advisor.get_llm()))
+    assert text_of(parsed) == "ok"
+    (request,) = seen
+    assert str(request.url) == "https://api.groq.com/openai/v1/chat/completions"
+    assert request.headers["authorization"] == "Bearer gsk-test-key"
+    body = json.loads(request.content)
+    assert body["model"] == "llama-3.3-70b-versatile"
+    assert body["stream"] is True
+    assert body["max_completion_tokens"] == advisor.MAX_REPLY_TOKENS
+    assert body["messages"] == MESSAGES
+
+
+def test_a_chunk_without_choices_or_without_text_is_skipped():
+    """Groq may send a usage-only chunk (no choices), a first chunk with only the role, and a null content."""
+    stream = wire(
+        {"id": "c", "object": "chat.completion.chunk", "created": 0, "model": "m", "choices": [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}]},
+        chunk_body("a"),
+        {"id": "c", "object": "chat.completion.chunk", "created": 0, "model": "m", "choices": []},
+        chunk_body(None),
+        chunk_body("b", "stop"),
+    )
+    parsed = parse(collect(sdk_llm_from_stream(stream)))
+    assert text_of(parsed) == "ab"
+    assert parsed[-1] == ("done", {"truncated": False})
+
+
+def test_a_reply_that_hits_the_token_limit_is_reported_as_truncated_through_the_sdk():
+    parsed = parse(collect(sdk_llm_from_stream(wire(chunk_body("a partial answer"), chunk_body("", "length")))))
+    assert text_of(parsed) == "a partial answer"
+    assert parsed[-1] == ("done", {"truncated": True})
+
+
+def test_a_reply_that_only_finishes_is_an_empty_error_through_the_sdk():
+    parsed = parse(collect(sdk_llm_from_stream(wire(chunk_body("", "stop")))))
+    assert [(name, data.get("code")) for name, data in parsed] == [("error", "empty")]
+
+
+def test_hebrew_survives_the_wire_even_when_a_letter_is_split_between_network_chunks():
+    pieces = ["שלום עולם, ", "ספה של 2.4 מ' ", "(Kvadrat) 🛋️\n", "שורה שנייה"]
+    stream = wire(*(chunk_body(piece) for piece in pieces), chunk_body("", "stop")).encode()
+
+    async def one_byte_at_a_time():
+        for index in range(len(stream)):
+            yield stream[index : index + 1]
+
+    transport = httpx2.MockTransport(lambda request: httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=one_byte_at_a_time()))
+    parsed = parse(collect(sdk_llm_over(transport)))
+    assert text_of(parsed) == "".join(pieces)
+    assert parsed[-1] == ("done", {"truncated": False})
+
+
+def test_hebrew_question_and_history_reach_groq_unchanged():
+    seen = []
+
+    def handler(request):
+        seen.append(json.loads(request.content))
+        return httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=wire(chunk_body("ok"), chunk_body("", "stop")).encode())
+
+    messages = advisor.build_messages({"name": "דירה בתל אביב"}, [{"role": "assistant", "content": "שלום"}], "איזו ספה מתאימה?")
+    parse(collect(sdk_llm_over(httpx2.MockTransport(handler)), messages))
+    sent = seen[0]["messages"]
+    assert sent[-1] == {"role": "user", "content": "איזו ספה מתאימה?"}
+    assert "דירה בתל אביב" in sent[1]["content"]
+
+
+# Groq answers 429 when the organisation's free-tier quota is used up. The limit is shared by every user of the app.
+
+
+def test_rate_limit_before_the_first_piece_is_a_friendly_error():
+    llm = FakeLlm(["x"], fail_at=0, error=rate_limit_error("SECRET-DETAIL"))
+    events = collect(llm)
+    parsed = parse(events)
+    assert [(name, data.get("code")) for name, data in parsed] == [("error", "rate_limited")]
+    assert parsed[0][1]["message"] == advisor.ERRORS["rate_limited"]
+    assert "SECRET-DETAIL" not in "".join(events)
+    assert llm.closed == 1
+
+
+def test_rate_limit_after_some_text_keeps_the_text_and_sends_no_done():
+    llm = FakeLlm(["one ", "two ", "three"], fail_at=2, error=rate_limit_error())
+    parsed = parse(collect(llm))
+    assert [name for name, _ in parsed] == ["delta", "delta", "error"]
+    assert parsed[-1][1]["code"] == "rate_limited"
+    assert llm.closed == 1
+
+
+def test_rate_limit_message_is_not_the_generic_failure_message():
+    message = advisor.ERRORS["rate_limited"]
+    assert message != advisor.ERRORS["upstream"]
+    assert "busy" in message and "minute" in message
+
+
+def test_other_provider_errors_are_still_the_generic_failure():
+    for error in (api_error(), status_error(openai.InternalServerError, 500), status_error(openai.AuthenticationError, 401)):
+        parsed = parse(collect(FakeLlm(["x"], fail_at=0, error=error)))
+        assert [(name, data.get("code")) for name, data in parsed] == [("error", "upstream")], type(error).__name__
+
+
+def test_a_real_429_from_the_network_is_a_friendly_error_that_hides_the_provider_text(caplog):
+    marker = "PROVIDER-BODY-d41d8cd9"
+    question = "QUESTION-MARKER-9f86d081"
+    body = {"error": {"message": f"Rate limit reached ({marker})", "type": "tokens", "code": "rate_limit_exceeded"}}
+    transport = httpx2.MockTransport(lambda request: httpx2.Response(429, headers={"retry-after": "30"}, json=body))
+
+    caplog.set_level(logging.DEBUG)
+    events = collect(sdk_llm_over(transport), [{"role": "user", "content": question}])
+    parsed = parse(events)
+
+    assert [(name, data.get("code")) for name, data in parsed] == [("error", "rate_limited")]
+    assert parsed[0][1]["message"] == advisor.ERRORS["rate_limited"]
+    for secret in (marker, "rate_limit_exceeded", question):
+        assert secret not in "".join(events)
+    assert marker not in caplog.text and question not in caplog.text
+    assert "RateLimitError" in caplog.text  # the exception type name is what gets logged
+
+
+def test_a_missing_retry_after_header_still_gives_the_friendly_error():
+    transport = httpx2.MockTransport(lambda request: httpx2.Response(429, json={"error": {"message": "x"}}))
+    parsed = parse(collect(sdk_llm_over(transport)))
+    assert [(name, data.get("code")) for name, data in parsed] == [("error", "rate_limited")]
+
+
+def test_a_429_that_is_not_json_still_gives_the_friendly_error():
+    transport = httpx2.MockTransport(lambda request: httpx2.Response(429, content=b"<html>Too Many Requests</html>"))
+    parsed = parse(collect(sdk_llm_over(transport)))
+    assert [(name, data.get("code")) for name, data in parsed] == [("error", "rate_limited")]

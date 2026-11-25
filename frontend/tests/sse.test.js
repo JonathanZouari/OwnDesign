@@ -39,6 +39,20 @@ test("one byte at a time still decodes Hebrew and emoji", () => {
   assert.equal(JSON.parse(events[0].data).text, text);
 });
 
+test("an error event with a Hebrew message arrives whole, even one byte at a time", () => {
+  const payload = { code: "rate_limited", message: "היועץ עסוק כרגע. נסו שוב בעוד דקה. (busy)" };
+  const wire = encode(frame("delta", { text: "a" }) + frame("error", payload));
+  for (const events of [parse(wire), parse(...Array.from(wire, (byte) => Uint8Array.of(byte)))]) {
+    assert.deepEqual(events.map((e) => e.event), ["delta", "error"]);
+    assert.deepEqual(JSON.parse(events[1].data), payload);
+  }
+});
+
+test("an error event with no text before it is still dispatched", () => {
+  const events = parse(frame("error", { code: "rate_limited", message: "busy" }));
+  assert.deepEqual(events.map((e) => e.event), ["error"]);
+});
+
 test("a Hebrew letter split between two chunks is not damaged", () => {
   const wire = encode(frame("delta", { text: "א" }));
   const letter = wire.indexOf(0xd7); // first byte of U+05D0
