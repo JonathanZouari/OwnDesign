@@ -54,14 +54,19 @@ instructions, and a notice that lists everything sent to OpenAI.
 
 Controls, all tested ([advisor.md](advisor.md)):
 
-- Only the client who owns the project reaches OpenAI: 401, 404 (not visible), 403 (studio member or
-  inactive studio) and 422 are answered before the stream opens, and OpenAI is not called for them.
+- Only the client who owns the project reaches Groq: 401, 404 (not visible), 403 (studio member or
+  inactive studio) and 422 are answered before the stream opens, and Groq is not called for them.
   The "not configured" answer (503) comes after those checks.
 - The system prompt is a constant; user text never enters it. It says that project and room names are
   data, not instructions. The model has no tools. This reduces prompt injection, including text a
   designer saved in a room name, but cannot rule it out.
-- The project data sent to OpenAI is read with the caller's JWT and limited to the name, property type,
+- The project data sent to Groq is read with the caller's JWT and limited to the name, property type,
   room names and types, and counts.
+- The provider's address is the constant `GROQ_BASE_URL`; no setting or user input can point the API key
+  at another host. A test checks the URL, the key header and the request body that the real SDK sends.
+- Groq's 429 is answered with a fixed message under the code `rate_limited`; a test seeds the provider's
+  error body with a marker and checks that it appears in no event and no log (only the exception type name
+  is logged).
 - No question, history or reply text in logs or audit rows; provider error text is never returned. The
   `openai`, `httpx`, `httpx2` and `httpcore2` loggers are pinned to WARNING. A test runs the real SDK over
   a canned network with every logger at DEBUG and fails if any logger outside `app.*` speaks; a control
@@ -72,12 +77,13 @@ Controls, all tested ([advisor.md](advisor.md)):
 - Audit rows `advisor.asked` have no studio, so members never read them.
 
 Known limits are in [open-items.md](open-items.md): the one-reply lock is per process, project data goes
-to a third party (OpenAI), and the daily quota overlaps another team's cost budget. The notice names what
-is sent, but whether that is enough consent is still undecided.
+to a third party (Groq), and the daily quota overlaps another team's cost budget. The notice names what
+is sent, but whether that is enough consent is still undecided. Groq's free-tier limit is shared by all
+users, so one user can make the advisor answer "busy" to the others (availability, not a data exposure).
 
-Looked at and left alone, because they are not vulnerabilities today: the OpenAI key is a plain string in
+Looked at and left alone, because they are not vulnerabilities today: the Groq key is a plain string in
 `Settings` like the Supabase keys (nothing logs or returns the settings); `hpack` and `h2` would log
-headers at DEBUG only if HTTP/2 were switched on for the OpenAI client, which it is not.
+headers at DEBUG only if HTTP/2 were switched on for the SDK client, which it is not.
 
 Process note: in the second review the sub-task was told to use read-only file tools and also ran two
 read-only shell commands. Nothing was changed.

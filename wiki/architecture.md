@@ -55,9 +55,10 @@ only): `backend/app/routes/studios.py`. Projects, versions: `backend/app/routes/
 Quotas: 20 projects per client per studio, 500 versions per project.
 
 The advisor, `POST /v1/projects/{id}/advisor`: `backend/app/routes/advisor.py` (access, quota, lock)
-and `backend/app/advisor.py` (prompt, OpenAI call through `get_llm`, SSE). It is the one route that
+and `backend/app/advisor.py` (prompt, Groq call through `get_llm`, SSE). It is the one route that
 answers with a stream (`text/event-stream`) instead of the JSON envelope, and the one place the backend
-calls an external AI service. Settings `OPENAI_API_KEY` and `OPENAI_MODEL` are read from `backend/.env`;
+calls an external AI service (Groq, through the OpenAI SDK pointed at `https://api.groq.com/openai/v1`,
+a constant in the code). Settings `GROQ_API_KEY` and `GROQ_MODEL` are read from `backend/.env`;
 the advisor answers 503 until both are set. The browser reads the stream with `apiStream`
 (`frontend/js/api.js`) and `frontend/js/sse.js`, because `EventSource` cannot send a bearer token.
 Full description: [advisor.md](advisor.md).

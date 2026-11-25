@@ -2,11 +2,11 @@
 
 Sources: `backend/app/advisor.py`, `backend/app/routes/advisor.py`, `backend/app/schemas.py`,
 `frontend/advisor.html`, `frontend/js/pages/advisor.js`, `frontend/js/sse.js`, `frontend/js/api.js`,
-`frontend/css/advisor.css`. Commits `baa3fa9`, `2490bec`, `e3d03d3`, `e9b2c9a`. Design reference:
-`design/stitch/ai-consultant.*` ([design.md](design.md)).
+`frontend/css/advisor.css`. Commits `baa3fa9`, `2490bec`, `e3d03d3`, `e9b2c9a`; switch from OpenAI to Groq
+`d1608be`, `13d81bf`. Design reference: `design/stitch/ai-consultant.*` ([design.md](design.md)).
 
 A client asks a question about their own project and the answer appears while it is being written,
-streamed from OpenAI as Server-Sent Events (SSE). There is no non-streaming path: a second endpoint
+streamed from Groq (free tier) as Server-Sent Events (SSE). There is no non-streaming path: a second endpoint
 would duplicate the logic for no gain.
 
 ## Who can use it
@@ -19,13 +19,25 @@ Only the client who owns the project. Checked in this order, all before the stre
 | project not visible to the caller (another studio, another client, unknown id) | 404 |
 | member of the project's studio (designer or owner) | 403 |
 | studio not active | 403 |
-| OpenAI key or model not set | 503 (answered only after the checks above, so an outsider learns nothing about the setup) |
+| Groq key or model not set (empty or only spaces counts as not set) | 503 (answered only after the checks above, so an outsider learns nothing about the setup) |
 | 50 questions in the last 24 hours | 429 |
 | another reply for the same user is still streaming | 429 |
 | malformed project id, or invalid body | 422 |
 
-Failures arrive as the usual JSON envelope, never as a half-open stream. OpenAI is not called for any
+Failures arrive as the usual JSON envelope, never as a half-open stream. Groq is not called for any
 refused request (tested).
+
+## Provider
+
+Groq, through the `openai` Python package pointed at `GROQ_BASE_URL` (`https://api.groq.com/openai/v1`),
+a constant in `backend/app/advisor.py` that no setting or input can change. Settings in `backend/.env`:
+`GROQ_API_KEY` and `GROQ_MODEL` (no default). The model in use is `llama-3.3-70b-versatile`: a plain chat
+model, so the whole reply is in `delta.content`; Groq's `openai/gpt-oss-*` models reason first, which could
+use up `max_completion_tokens` before any text. `max_completion_tokens` and streaming are documented as
+supported by Groq's endpoint (Groq docs, read 2026-11-25). Retries are off, as before.
+
+A chunk with no `choices` (a usage-only chunk), a role-only first chunk and a `null` content are skipped
+(tested through the real SDK).
 
 ## Endpoint and wire format
 
@@ -42,11 +54,18 @@ line is one line of JSON, so a newline inside the text cannot break an event:
 ```
 event: delta   data: {"text": "..."}
 event: done    data: {"truncated": false}
-event: error   data: {"code": "timeout" | "upstream" | "empty", "message": "..."}
+event: error   data: {"code": "timeout" | "upstream" | "empty" | "rate_limited", "message": "..."}
 ```
 
 A reply ends with `done` or with `error`, never both. Error messages come from a fixed table; provider
 error text is never forwarded.
+
+`rate_limited` is Groq answering 429 (the free tier's limit, which is per organisation, so any user can
+meet it). It is caught by the SDK's `RateLimitError` type, not by reading the error body, because Groq's
+docs give no error-body format. The message is "The advisor is busy right now. Please try again in a
+minute." It can arrive before any text (the page shows only the message) or after some (the text stays,
+marked "Reply interrupted"); both have "Try again". Only the exception type name is logged. The question
+still counts against the user's daily 50 ([open-items.md](open-items.md)).
 
 ## Prompt and untrusted input
 
@@ -71,7 +90,7 @@ error text is never forwarded.
 | questions | 50 per user per 24 hours, counted from `advisor.asked` rows in `audit_events` |
 | open replies | one per user, held in memory per server process; an entry expires after 120 s |
 
-The page ending the request (leaving the page, closing the tab) closes the OpenAI stream and frees the
+The page ending the request (leaving the page, closing the tab) closes the Groq stream and frees the
 lock, so tokens nobody will read are not paid for.
 
 ## What is stored and logged
@@ -86,7 +105,7 @@ lock, so tokens nobody will read are not paid for.
   stream, an error, a timeout and a rejected question for unique markers, and another runs the real SDK
   over a canned network with every logger at DEBUG and fails if a logger outside `app.*` speaks.
 - The page tells the client: "Each question, the earlier messages in this conversation, and your
-  project's name, type, room names and room types are sent to OpenAI to answer it. OwnDesign does not
+  project's name, type, room names and room types are sent to Groq to answer it. OwnDesign does not
   save the conversation." Whether and how conversations may be kept, and consent for AI processing, are
   open ([open-items.md](open-items.md)).
 
@@ -107,14 +126,16 @@ because `EventSource` cannot send a bearer token or a body.
 
 ## Tests
 
-No test calls OpenAI. `backend/tests/fake_llm.py` is the stand-in; `backend/tests/e2e_app.py` is the real
-app with a scripted fake for the browser journeys. Coverage: [testing.md](testing.md).
+No test calls Groq. `backend/tests/fake_llm.py` is the stand-in; `backend/tests/e2e_app.py` is the real
+app with a scripted fake for the browser journeys (`[busy]` and `[busy-late]` in a question script a 429).
+Coverage: [testing.md](testing.md).
 
 ## Not verified yet
 
-- **No real OpenAI call has been made.** `OpenAILlm` was checked against the installed SDK's signatures
-  (`openai` 3.57.0: `max_completion_tokens`, `AsyncStream.close()`), not against the live API. The model
-  is chosen by `OPENAI_MODEL`; there is no default.
+- **No real Groq call has been made.** `GroqLlm` was checked against the installed SDK's signatures
+  (`openai` 3.57.0: `max_completion_tokens`, `AsyncStream.close()`) and against a canned network that
+  checks the URL, key header and request body, not against the live API. The model is chosen by
+  `GROQ_MODEL`; there is no default. How well `llama-3.3-70b-versatile` writes Hebrew is unknown.
 - That a real server notices a closed browser tab and stops the reply (the closing itself is tested).
 - That Railway's proxy does not buffer SSE; nothing is deployed yet.
 - The wording of the page's notices and messages has not had a copywriting review.

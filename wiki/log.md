@@ -174,3 +174,32 @@ Pages: [security](security.md), [open-items](open-items.md).
 ## [2026-11-24] docs | Advisor wiki updated after the hardening
 `security.md`, `open-items.md`, `advisor.md`, `decisions.md`, `testing.md` and this log updated to match
 `b259ea8` (notice text, logger pins, prompt rule, test counts, review results). The commit that adds this entry.
+
+## [2026-11-25] plan | Switch the advisor from OpenAI to Groq
+The user asked to move the advisor to Groq's free tier because PRD 9.1 says no paid APIs, and to open the
+work as a pull request to the fork's `dev` (nothing to the upstream repository). Groq's docs read: base URL
+`https://api.groq.com/openai/v1`, OpenAI SDK compatible, `max_completion_tokens` and streaming supported,
+production models that stream listed. The user chose `llama-3.3-70b-versatile`, to keep the `openai`
+package, and that a poor Hebrew result in the live check means stop and report, not switch. Plan approved.
+Pages: [decisions](decisions.md).
+
+## [2026-11-25] test | Baseline before the Groq switch
+Before any change: backend 109 passed (10 browser journeys), frontend 34 passed. None failed or skipped.
+Pages: [testing](testing.md).
+
+## [2026-11-25] build | Advisor now calls Groq, with a friendly rate-limit message
+Settings `GROQ_API_KEY` and `GROQ_MODEL` replace the OpenAI ones; `GroqLlm` uses the SDK with the fixed base
+URL; Groq's 429 (`RateLimitError`) becomes the error code `rate_limited` with a fixed "busy" message; the
+page notice, `.env.example` and README say Groq. Tests first: the Groq settings, the request the SDK
+sends, chunks without text, the token limit, Hebrew split byte by byte, 429 before and after text, wider
+input limits at the API, two new browser journeys (English and Hebrew, with retry), the notice, and an SSE
+test for a Hebrew error message. Backend 142 passed (12 browser journeys), frontend 36 passed, none
+failed or skipped. Commits `d1608be`, `13d81bf`. No real Groq call has been made yet.
+Pages: [advisor](advisor.md), [architecture](architecture.md), [overview](overview.md),
+[testing](testing.md), [security](security.md), [open-items](open-items.md).
+
+## [2026-11-25] decision | Groq replaces OpenAI as the advisor's provider
+Groq's free tier fits PRD 9.1 ("no paid third-party API integrations"); OpenAI did not. Recorded in
+[decisions](decisions.md): the provider, the model, keeping the `openai` package, the friendly 429
+message. Open items updated: PRD 9.1 and the free tier's limit, per-organisation limits, a 429 still
+counting against the daily 50, the live check of the model and its Hebrew.
