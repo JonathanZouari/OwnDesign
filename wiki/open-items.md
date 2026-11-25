@@ -9,9 +9,19 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Product name.** "ATELIER" comes from Stitch; the PRD says undecided.
 - **PRD text** still says "no paid API", which the OpenAI decision overrides.
 
+## Phase 2 gaps
+
+- **Consultant retention and consent.** Conversations are kept without an expiry or a delete action; the brief and plan text go to OpenAI. A privacy notice and a retention rule are needed before production.
+- **Spend and storage budgets.** The message cap is per user only; there is no per-studio or global ceiling, no per-studio storage quota (20 projects x 30 images x 5 MB per account), and nothing limits studios per user beyond one owned studio.
+- **Thread pool.** The consultant call is synchronous and holds a worker for up to 30 s; many parallel requests could starve other routes. Move to an async client and an in-flight limit.
+- **Orphaned image files.** Files of a deleted project or user are queued in `storage_deletions` and removed only the next time an asset is deleted. Needs a scheduled drain.
+- **Delete-then-insert saves** of finishes and the moodboard are not atomic.
+- **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
+- The editor has no link to the Phase 2 pages at 767 px and below.
+
 ## Later phases with a Stitch screen waiting
 
-Studio branding, project dossier and export, AI consultant, 3D renderings: designs are in
+Studio branding, project dossier and export, 3D renderings: designs are in
 `design/stitch/` ([design.md](design.md)). Each is built as a real feature in its own phase.
 
 ## Before production

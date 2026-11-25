@@ -21,7 +21,17 @@ run(async () => {
         h("td", {}, project.studio?.name ?? ""),
         h("td", {}, TYPE_LABEL[project.property_type]),
         h("td", {}, formatDate(project.created_at)),
-        h("td", {}, h("a", { class: "button", href: `editor.html?project=${project.id}` }, "Open")),
+        h(
+          "td",
+          {},
+          h(
+            "div",
+            { class: "project-links" },
+            h("a", { class: "button", href: `editor.html?project=${project.id}`, "aria-label": `Open the plan of ${project.name}` }, "Open"),
+            h("a", { class: "button", href: `design.html?project=${project.id}`, "aria-label": `Brief and materials of ${project.name}` }, "Brief & materials"),
+            h("a", { class: "button", href: `consultant.html?project=${project.id}`, "aria-label": `Design consultant for ${project.name}` }, "Consultant"),
+          ),
+        ),
       ),
     ),
   );

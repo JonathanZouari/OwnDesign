@@ -438,6 +438,13 @@ run(async () => {
     $("#tab-wizard").href = state.project.my_role === "designer" ? "studio.html" : "projects.html";
     $("#tab-wizard").textContent = "All projects";
     $("#nav-wizard").hidden = true;
+    // The brief and the consultant belong to a saved project, so their links appear only here.
+    for (const page of ["design", "consultant"]) {
+      for (const link of [$(`#tab-${page}`), $(`#nav-${page}`)]) {
+        link.href = `${page}.html?project=${encodeURIComponent(projectId)}`;
+        link.hidden = false;
+      }
+    }
   } else {
     state.draft = load(KEYS.draft);
     if (!state.draft || !P.isPlan(state.draft.plan)) return location.replace("wizard.html");

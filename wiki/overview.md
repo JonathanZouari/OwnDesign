@@ -18,13 +18,27 @@ designer work on the same floor plan. AI assistance comes in later phases.
   the studio link, invites and recent activity.
 - One studio cannot see another studio's data ([security.md](security.md)).
 
+## Built: Phase 2
+
+- Design brief per project: styles (up to 5), colours, budget range and currency, household, lifestyle,
+  needs, fixed constraints, existing items to accommodate (`design.html`).
+- Finish selections per room and surface (floor, walls, ceiling, cabinets) from a fixed catalog of styles
+  and materials.
+- Inspiration and existing-item images (JPEG, PNG, WebP, 5 MB, 30 per project) in private storage, shown
+  through short-lived signed URLs, and a moodboard of images, styles and materials with notes and order.
+- AI consultant (`consultant.html`): OpenAI `gpt-5-mini`, answers from the project's brief, finishes and
+  plan summary, recommends only and never edits the plan. One private conversation per user and project,
+  30 messages per user per day.
+- The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
+  private to the user who held it.
+
 ## Not built yet
 
-Design brief, styles and materials, moodboard, AI consultant, renderings, budget, dossier,
+Renderings, budget, dossier,
 messaging and tasks, studio branding, invitation emails, per-project team permissions, deployment,
 rate limiting, subscriptions and credits.
 
 ## Next
 
-Phase 2 per the PRD: design brief, styles and materials, moodboard, AI consultant through the
-OpenAI API ([decisions.md](decisions.md)).
+Per the PRD: renderings, version comparison, budget and shopping list, dossier and handoff, messaging and
+tasks, studio branding ([open-items.md](open-items.md) lists what must be settled before production).

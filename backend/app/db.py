@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     supabase_publishable_key: str
     supabase_secret_key: str
     allowed_origins: str = "http://localhost:5500"
+    openai_api_key: str = ""  # empty: the consultant answers 503
+    openai_model: str = "gpt-5-mini"
 
 
 @lru_cache

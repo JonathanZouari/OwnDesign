@@ -421,6 +421,132 @@ svg.thumb { display: block; padding: 0; }
   .project { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* ==========================================================================
+   Design brief, finishes and moodboard (design.html) and the design
+   consultant (consultant.html, after the Stitch screen
+   "Client AI Consultant & Spatial Advisor")
+   ========================================================================== */
+textarea {
+  width: 100%; min-height: 88px; padding: 8px 10px; border: 1px solid var(--hairline-strong); border-radius: 4px; resize: vertical;
+  background: var(--surface); font: 400 14px/20px var(--font-body); letter-spacing: 0; text-transform: none; color: var(--ink);
+}
+textarea:focus-visible { outline: none; border: 1.5px solid var(--primary-bright); }
+textarea:read-only { background: var(--surface-mid); color: var(--ink-soft); }
+input[type="checkbox"] { width: 18px; height: 18px; padding: 0; accent-color: var(--primary); }
+input[type="color"] { width: 56px; padding: 2px; cursor: pointer; }
+input[type="file"] { height: auto; padding: 6px; }
+input[type="checkbox"]:focus-visible, input[type="color"]:focus-visible { outline: 2px solid var(--primary-bright); outline-offset: 2px; }
+label.check { display: flex; align-items: center; gap: 8px; align-self: end; min-height: 36px; font: 400 14px/20px var(--font-body); letter-spacing: 0; text-transform: none; color: var(--ink); }
+.hint { margin: 0; font-size: 12px; line-height: 18px; color: var(--ink-soft); }
+.stack-tight { display: grid; gap: 4px; align-content: start; }
+.field-hint { margin-top: 8px; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.status { margin: 0; min-height: 18px; font-size: 12px; line-height: 18px; color: var(--on-secondary-tint); overflow-wrap: anywhere; }
+.status.error { color: var(--error); }
+.status:empty { min-height: 0; }
+.savebar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.project-nav { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 1.5rem; padding: 4px; border-radius: 8px; background: var(--surface-low); box-shadow: var(--shadow-1); }
+.project-nav a { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 4px; color: var(--ink-soft); font: 600 12px/18px var(--font-body); text-decoration: none; white-space: nowrap; }
+.project-nav a:hover { background: var(--surface-mid); color: var(--ink); }
+.project-nav a[aria-current="page"] { background: var(--panel); color: var(--primary); box-shadow: var(--shadow-1); }
+.project-links { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+/* Editor header: above 1199 px these links live in the sidebar, which is hidden below that width. */
+.tabs .compact-only { display: none; }
+
+.design-head { display: grid; gap: 4px; margin-bottom: 1rem; }
+.design-head h1 { margin: 0; overflow-wrap: anywhere; }
+.design-head p { margin: 0; }
+.design .card h2, .consult .card h2 { overflow-wrap: anywhere; }
+.tablist { display: flex; gap: 4px; margin-bottom: 1.25rem; border-bottom: 1px solid var(--hairline-strong); overflow-x: auto; }
+.tablist button { border: 0; border-bottom: 2px solid transparent; border-radius: 4px 4px 0 0; color: var(--ink-soft); }
+.tablist button[aria-selected="true"] { color: var(--primary); border-bottom-color: var(--primary); }
+.tablist button:focus-visible { outline-offset: -2px; }
+[role="tabpanel"]:focus-visible { outline-offset: 6px; }
+
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.form-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.style-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.style-chip { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 2px; padding: 10px 12px; white-space: normal; text-align: left; }
+.style-chip small { font: 400 12px/18px var(--font-body); opacity: 0.8; }
+.color-list { display: flex; gap: 8px; flex-wrap: wrap; list-style: none; margin: 0 0 12px; padding: 0; }
+.color-list:empty { display: none; }
+.color-list li { display: flex; align-items: center; gap: 6px; padding: 2px 2px 2px 8px; border-radius: 4px; background: var(--surface-low); font-size: 12px; }
+.color-list button { min-height: 28px; padding: 0 4px; }
+.swatch-dot { display: inline-block; flex: none; width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--hairline-strong); }
+.swatch-dot.none { background: repeating-linear-gradient(135deg, var(--surface-low) 0 4px, var(--surface-highest) 4px 6px); }
+
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.swatch {
+  position: relative; display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; min-height: 36px; padding: 6px 12px 6px 8px;
+  border: 1px solid var(--hairline-strong); border-radius: 4px; background: var(--panel); cursor: pointer;
+  font: 400 13px/18px var(--font-body); letter-spacing: 0; text-transform: none; color: var(--ink);
+}
+.swatch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.swatch:hover { background: var(--surface-low); }
+.swatch:has(input:checked) { border-color: var(--primary); background: var(--primary-tint); box-shadow: inset 0 0 0 1px var(--primary); }
+.swatch:has(input:focus-visible) { outline: 2px solid var(--primary-bright); outline-offset: 2px; }
+.surfaces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.5rem; margin-top: 12px; }
+.room-finishes .chip { text-transform: uppercase; }
+
+.board-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1rem; align-items: start; }
+.board-layout .card { margin: 0; display: grid; gap: 12px; }
+.board-layout .card h2, .board-layout .card p { margin: 0; }
+.board { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.board:empty, .asset-grid:empty { display: none; }
+.board-item { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px; border-radius: 8px; background: var(--surface-low); }
+.board-text { display: grid; gap: 6px; min-width: 0; }
+.board-text strong { overflow-wrap: anywhere; }
+.preview { display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 3; border-radius: 4px; border: 1px solid var(--hairline); background: var(--surface-high); color: var(--outline); object-fit: cover; }
+.preview .icon { font-size: 28px; }
+.board-actions { display: flex; gap: 4px; }
+.board-actions button { padding: 0 8px; }
+.asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; list-style: none; margin: 0; padding: 0; }
+.asset { display: grid; gap: 6px; align-content: start; justify-items: start; padding: 8px; border-radius: 8px; background: var(--surface-low); min-width: 0; }
+.asset img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; background: var(--surface-high); }
+.asset .caption { overflow-wrap: anywhere; }
+
+.page.consult { max-width: 1280px; }
+.consult-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr); gap: 1.25rem; align-items: start; }
+.consult-layout > * { min-width: 0; }
+.consult aside .card { display: grid; gap: 10px; margin: 0; justify-items: start; }
+.consult aside .card > * { margin: 0; }
+.consult aside #plan-figure { width: 100%; }
+.consult aside #plan-figure:empty { display: none; }
+.chat { display: grid; gap: 12px; }
+.chat > * { margin: 0; }
+.chat-head { display: flex; align-items: flex-start; gap: 12px; }
+.chat-head h1 { margin: 0 0 4px; font-size: 22px; line-height: 30px; letter-spacing: -0.015em; }
+.chat-head p { margin: 0 0 8px; }
+.chat-head .chip { white-space: normal; }
+.thread { display: grid; gap: 12px; list-style: none; margin: 0; padding: 0; }
+.thread:empty { display: none; }
+.msg { max-width: 88%; padding: 12px 16px; border-radius: 8px; }
+.msg.user { justify-self: end; background: var(--surface-high); }
+.msg.assistant { justify-self: start; background: var(--panel); border: 1px solid var(--hairline); box-shadow: var(--shadow-1); }
+.msg-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 4px; }
+.msg-head .who { font: 500 12px/16px var(--font-mono); color: var(--primary); }
+.msg.assistant .who { color: var(--secondary); }
+.msg-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 24px; }
+.composer { display: grid; gap: 8px; box-shadow: var(--shadow-2); }
+.composer-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.notice { display: flex; align-items: flex-start; gap: 10px; }
+.notice p { margin: 0; }
+
+@media (max-width: 1199px) {
+  .tabs .compact-only { display: inline; }
+  .board-layout, .consult-layout { grid-template-columns: minmax(0, 1fr); }
+  .consult aside { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
+@media (max-width: 767px) {
+  .form-grid, .form-grid.three, .surfaces, .consult aside { grid-template-columns: minmax(0, 1fr); }
+  .project-nav a { flex: 1 1 auto; justify-content: center; }
+  .project-links { justify-content: flex-start; }
+  .board-item { grid-template-columns: 72px minmax(0, 1fr); }
+  .board-item .board-actions { grid-column: 1 / -1; justify-content: flex-end; }
+  .msg { max-width: 100%; }
+}
+
 /* Room-first presentation for clients. Editing keeps its own controls. */
 .client-tour .rail,.client-tour .palette,.client-tour .contextbar .group:last-child,
 .client-tour .statusbar,.client-tour #catalog,.client-tour #actions { display:none }
