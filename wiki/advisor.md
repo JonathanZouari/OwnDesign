@@ -63,9 +63,13 @@ error text is never forwarded.
 `rate_limited` is Groq answering 429 (the free tier's limit, which is per organisation, so any user can
 meet it). It is caught by the SDK's `RateLimitError` type, not by reading the error body, because Groq's
 docs give no error-body format. The message is "The advisor is busy right now. Please try again in a
-minute." It can arrive before any text (the page shows only the message) or after some (the text stays,
-marked "Reply interrupted"); both have "Try again". Only the exception type name is logged. The question
-still counts against the user's daily 50 ([open-items.md](open-items.md)).
+little while." (not "a minute": Groq also answers 429 when a daily quota is used up). A real 429 is an HTTP
+status, so it arrives before any text and the page shows only the message, with "Try again". The case
+"some text, then the rate limit" exists only in the tests, where the fake raises `RateLimitError` after two
+pieces (the page then keeps the text, marked "Reply interrupted"): the SDK reports an error event inside an
+open 200 stream as a plain `APIError`, which gets the generic "could not finish" message (tested). Only the
+exception type name is logged. The question still counts against the user's daily 50
+([open-items.md](open-items.md)).
 
 ## Prompt and untrusted input
 

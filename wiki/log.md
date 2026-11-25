@@ -203,3 +203,16 @@ Groq's free tier fits PRD 9.1 ("no paid third-party API integrations"); OpenAI d
 [decisions](decisions.md): the provider, the model, keeping the `openai` package, the friendly 429
 message. Open items updated: PRD 9.1 and the free tier's limit, per-organisation limits, a 429 still
 counting against the daily 50, the live check of the model and its Hebrew.
+
+## [2026-11-25] lint | Code review of the Groq switch, and fixes
+One `general-purpose` reviewer (Sonnet, read-only, `git diff dev...HEAD`). No high finding. Verified against
+the code and fixed: (1) the SDK raises a plain `APIError` for an error event inside an open stream, so
+"rate limit after some text" exists only in the fake; the wiki claimed otherwise and now says so, a test
+pins the generic message for that case, and an open item records it; (2) the message said "in a minute"
+but Groq also answers 429 for a daily quota, so it now says "in a little while"; (3) a duplicate line in
+`tests/e2e_app.py` removed; (4) the old-settings test now uses the real `Settings` class; (5) a vacuous
+assertion dropped. Not changed: the shared `_attempts` dict in `tests/e2e_app.py` is fragile if a journey is
+re-run against the same server (unique questions today), and the test modules import error factories from
+each other. Process note: the reviewer ran `grep -c` on `backend/.env` against the instruction not to open
+it; the output was a line count only. Backend 144 passed, frontend 36 passed, none failed or skipped.
+Pages: [advisor](advisor.md), [open-items](open-items.md), [testing](testing.md).

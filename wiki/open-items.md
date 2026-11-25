@@ -27,6 +27,7 @@ is built as the advisor ([advisor.md](advisor.md)) without its sample-data panel
 - The quota query filters `audit_events` by actor and action; the only index is on `(studio_id, created_at)`, so it scans. Add an index when the table grows.
 - Run the advisor against the real Groq API (none of it has been run live). The model is `llama-3.3-70b-versatile`; its Hebrew quality is unverified, and the model ID was read from Groq's docs page, not from the console. Also confirm a closed browser tab stops the reply on a real server, and that Railway's proxy does not buffer SSE.
 - Groq's free-tier limits are per organisation, so one user's heavy use can make the advisor answer "busy" to everyone. The numbers for the chosen model are not recorded here; read them from the console's limits page.
+- If Groq ever reports a rate limit as an error event inside an open stream (not seen; unknown whether it does), the client gets the generic failure message instead of the "busy" one, because the SDK raises a plain `APIError` for it. Decide after the live check whether to read the event's error code.
 - A question that Groq refuses with 429 still counts against the user's 50 a day, because the `advisor.asked` row is written before the stream opens.
 - `connect-src` in the content security policy, per environment.
 - Railway deployment files and environments.
