@@ -1,4 +1,4 @@
-// AI Consultant page. Sends a question and shows the reply while it is being written (Server-Sent Events).
+// AI Advisor page. Sends a question and shows the reply while it is being written (Server-Sent Events).
 // Nothing is stored: the conversation lives in this page only, and the page sends its own recent turns with each question.
 import { api, apiStream, requireSession, signOut } from "../api.js";
 import { readSse } from "../sse.js";
@@ -166,7 +166,7 @@ addEventListener("pagehide", () => state.controller?.abort());
 run(async () => {
   await requireSession();
   $("#sign-out").addEventListener("click", signOut);
-  if (!projectId) return block("No project selected. Open the AI Consultant from one of your saved projects.");
+  if (!projectId) return block("No project selected. Open the AI Advisor from one of your saved projects.");
   let project;
   try {
     project = await api(`/v1/projects/${encodeURIComponent(projectId)}`);
@@ -175,7 +175,7 @@ run(async () => {
   }
   $("#project-name").textContent = project.name;
   $("#back").href = $("#tab-canvas").href = `editor.html?project=${encodeURIComponent(project.id)}`;
-  if (project.my_role !== "client") return block("The AI Consultant is for the client who owns this project.");
+  if (project.my_role !== "client") return block("The AI Advisor is for the client who owns this project.");
   $("#chat").hidden = false;
   refresh();
   box.focus();

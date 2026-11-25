@@ -1,4 +1,4 @@
-/* AI Consultant page. Every selector starts with body.advisor: nothing here may affect another page,
+/* AI Advisor page. Every selector starts with body.advisor: nothing here may affect another page,
    and the Hebrew/RTL handling below is deliberately local to this page (RTL as a whole belongs to another team). */
 
 body.advisor .sr-only {
