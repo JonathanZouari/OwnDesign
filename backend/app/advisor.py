@@ -54,7 +54,7 @@ ERRORS = {
     "upstream": "The advisor could not finish this reply. Please try again.",
     "empty": "The advisor returned no answer. Please try again.",
     # Groq's free tier is limited per organisation, so this can happen to any user.
-    "rate_limited": "The advisor is busy right now. Please try again in a minute.",
+    "rate_limited": "The advisor is busy right now. Please try again in a little while.",
 }
 
 
