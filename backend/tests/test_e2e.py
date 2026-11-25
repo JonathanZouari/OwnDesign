@@ -71,7 +71,11 @@ def servers():
             process.terminate()
     for process in started:
         if process:
-            process.wait(timeout=10)  # the next browser module starts its own backend on the same port
+            try:
+                process.wait(timeout=10)  # the next browser module starts its own backend on the same port
+            except subprocess.TimeoutExpired:  # for example an SSE stream a journey left open
+                process.kill()
+                process.wait()
 
 
 @pytest.fixture
@@ -609,18 +613,17 @@ HEADER_WIDTHS = (768, 900, 1000, 1199, 1200, 1280)
 
 
 def overflowing_widths(page, details: dict | None = None) -> list[int]:
-    """The widths at which the editor page scrolls sideways or its tab bar is wider than its box.
-    `details` receives {width: (page overflow px, tab bar overflow px)} for the failing widths."""
+    """The widths at which the editor page scrolls sideways. `details` receives {width: overflow in px}.
+    (The tab bar is `flex: none` and grows with its content, so its own scrollWidth never shows the problem.)"""
     bad = []
     page.evaluate("document.fonts.ready.then(() => true)")  # text widths depend on the web font having loaded
     for width in HEADER_WIDTHS:
         page.set_viewport_size({"width": width, "height": 800})
         over = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
-        bar = page.locator("nav.tabs").evaluate("el => el.scrollWidth - el.clientWidth")
-        if over > 0 or bar > 1:
+        if over > 0:
             bad.append(width)
             if details is not None:
-                details[width] = (over, bar)
+                details[width] = over
     return bad
 
 
@@ -648,13 +651,11 @@ def test_the_advisor_tab_adds_only_the_known_header_overflow(advisor_servers, pa
     page.get_by_role("link", name="AI Advisor").wait_for()
     with_advisor = overflowing_widths(page, advisor_details)
 
-    message = f"(page px, tab bar px) with the tab {advisor_details}, control {control_details}"
+    message = f"page overflow in px with the tab {advisor_details}, control {control_details}"
     assert set(with_advisor) - set(control) <= set(KNOWN_EXTRA_OVERFLOW_PX), f"new overflow widths: {message}"
     for width, limit in KNOWN_EXTRA_OVERFLOW_PX.items():
         if width in advisor_details:
-            assert advisor_details[width][0] <= limit, f"the overflow at {width} px grew: {message}"
-    for width, (_, bar) in advisor_details.items():  # the tab bar itself must not become wider than its box
-        assert bar <= control_details.get(width, (0, 0))[1] + 2, f"the tab bar overflows at {width} px: {message}"
+            assert advisor_details[width] <= limit, f"the overflow at {width} px grew: {message}"
 
 
 def test_advisor_fits_a_phone(advisor_servers, page, api, make_user):
