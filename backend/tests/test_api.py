@@ -240,7 +240,7 @@ def test_studio_activity_is_listed_for_members_only(api, world):
     assert other and "Flat A" not in {event["project"]["name"] for event in other if event["project"]}
 
 
-# --- AI advisor: OpenAI is always replaced by FakeLlm ---
+# --- AI advisor: Groq is always replaced by FakeLlm ---
 
 
 @pytest.fixture
@@ -289,7 +289,7 @@ def test_client_gets_a_streamed_advisor_reply_about_their_project(api, world, ll
 def test_only_the_owning_client_may_use_the_advisor(api, world, llm, who, expected):
     headers = getattr(world, who).headers if who else {}
     assert ask(api, world.project_a["id"], headers).status_code == expected
-    assert len(llm.calls) == (1 if expected == 200 else 0)  # OpenAI is never reached by a refused request
+    assert len(llm.calls) == (1 if expected == 200 else 0)  # Groq is never reached by a refused request
 
 
 @pytest.mark.parametrize("project_id, expected", [(str(uuid.uuid4()), 404), ("not-a-uuid", 422)])
@@ -308,15 +308,28 @@ def test_advisor_refuses_a_bad_token(api, world, llm):
     [
         {"question": ""},
         {"question": "   "},
+        {"question": "\n\t "},
         {"question": "x" * 2001},
+        {"question": "ש" * 2001},
+        {"question": None},
+        {"question": ["a"]},
         {"question": "ok", "extra": 1},
         {"question": "ok", "history": [{"role": "system", "content": "x"}]},
+        {"question": "ok", "history": [{"role": "user", "content": ""}]},
+        {"question": "ok", "history": [{"role": "user", "content": "x" * 8001}]},
         {"question": "ok", "history": [{"role": "user", "content": "x"}] * 11},
         {},
     ],
 )
-def test_advisor_rejects_invalid_input_before_calling_openai(api, world, llm, payload):
+def test_advisor_rejects_invalid_input_before_calling_groq(api, world, llm, payload):
     response = api.post(f"/v1/projects/{world.project_a['id']}/advisor", json=payload, headers=world.client_a.headers)
+    assert response.status_code == 422
+    assert llm.calls == []
+
+
+def test_advisor_rejects_a_body_that_is_not_json(api, world, llm):
+    headers = {**world.client_a.headers, "Content-Type": "application/json"}
+    response = api.post(f"/v1/projects/{world.project_a['id']}/advisor", content=b"{not json", headers=headers)
     assert response.status_code == 422
     assert llm.calls == []
 
@@ -325,7 +338,27 @@ def test_advisor_accepts_the_longest_question(api, world, llm):
     assert ask(api, world.project_a["id"], world.client_a.headers, question="ש" * 2000).status_code == 200
 
 
-def test_advisor_is_unavailable_when_openai_is_not_configured(api, world):
+def test_advisor_accepts_the_shortest_question_and_a_full_history(api, world, llm):
+    turns = [{"role": "user" if i % 2 == 0 else "assistant", "content": "ש" * 8000 if i == 0 else "x"} for i in range(10)]
+    assert ask(api, world.project_a["id"], world.client_a.headers, question="?", history=turns).status_code == 200
+    assert len(llm.calls[0]) == 3 + 10  # system, project data, ten turns, the question
+
+
+def test_a_groq_rate_limit_is_a_friendly_error_event_and_frees_the_user_for_the_next_question(api, world, llm):
+    from app.advisor import ERRORS
+    from tests.test_advisor import rate_limit_error
+
+    llm.fail_at, llm.error = 0, rate_limit_error("PROVIDER-TEXT")
+    response = ask(api, world.project_a["id"], world.client_a.headers)
+    assert response.status_code == 200  # the stream was already open when Groq refused
+    assert events_of(response) == [("error", {"code": "rate_limited", "message": ERRORS["rate_limited"]})]
+    assert "PROVIDER-TEXT" not in response.text
+
+    llm.fail_at, llm.error = None, None  # the one-open-reply lock was released, so the next question is not refused
+    assert [name for name, _ in events_of(ask(api, world.project_a["id"], world.client_a.headers))] == ["delta", "delta", "done"]
+
+
+def test_advisor_is_unavailable_when_groq_is_not_configured(api, world):
     from app.advisor import get_llm
 
     api.app.dependency_overrides[get_llm] = lambda: None
@@ -380,7 +413,7 @@ def test_advisor_audit_event_is_private_and_holds_no_text(api, world, llm, admin
 
 def test_advisor_never_logs_question_history_or_reply_text(api, world, llm, admin, caplog, monkeypatch):
     from app import advisor
-    from tests.test_advisor import api_error
+    from tests.test_advisor import api_error, rate_limit_error
 
     question, history, reply = (f"{kind}-{uuid.uuid4().hex}" for kind in ("QMARK", "HMARK", "RMARK"))
     turns = [{"role": "user", "content": history}, {"role": "assistant", "content": history}]
@@ -390,10 +423,13 @@ def test_advisor_never_logs_question_history_or_reply_text(api, world, llm, admi
     llm.pieces = [reply, reply]  # a normal stream
     assert ask(api, *base, question=question, history=turns).status_code == 200
 
-    llm.pieces, llm.fail_at, llm.error = [reply, reply], 1, api_error(reply)  # OpenAI fails mid-stream
+    llm.pieces, llm.fail_at, llm.error = [reply, reply], 1, api_error(reply)  # Groq fails mid-stream
     assert "error" in [name for name, _ in events_of(ask(api, *base, question=question, history=turns))]
 
-    monkeypatch.setattr(advisor, "FIRST_PIECE_TIMEOUT_S", 0.05)  # OpenAI never answers
+    llm.error = rate_limit_error(reply)  # Groq's free-tier limit is reached mid-stream
+    assert "rate_limited" in json.dumps(events_of(ask(api, *base, question=question, history=turns)))
+
+    monkeypatch.setattr(advisor, "FIRST_PIECE_TIMEOUT_S", 0.05)  # Groq never answers
     llm.pieces, llm.fail_at, llm.hang_at = [reply], None, 0
     assert "timeout" in json.dumps(events_of(ask(api, *base, question=question, history=turns)))
 

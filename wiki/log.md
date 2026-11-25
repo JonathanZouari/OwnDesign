@@ -174,3 +174,108 @@ Pages: [security](security.md), [open-items](open-items.md).
 ## [2026-11-24] docs | Advisor wiki updated after the hardening
 `security.md`, `open-items.md`, `advisor.md`, `decisions.md`, `testing.md` and this log updated to match
 `b259ea8` (notice text, logger pins, prompt rule, test counts, review results). The commit that adds this entry.
+
+## [2026-11-25] plan | Switch the advisor from OpenAI to Groq
+The user asked to move the advisor to Groq's free tier because PRD 9.1 says no paid APIs, and to open the
+work as a pull request to the fork's `dev` (nothing to the upstream repository). Groq's docs read: base URL
+`https://api.groq.com/openai/v1`, OpenAI SDK compatible, `max_completion_tokens` and streaming supported,
+production models that stream listed. The user chose `llama-3.3-70b-versatile`, to keep the `openai`
+package, and that a poor Hebrew result in the live check means stop and report, not switch. Plan approved.
+Pages: [decisions](decisions.md).
+
+## [2026-11-25] test | Baseline before the Groq switch
+Before any change: backend 109 passed (10 browser journeys), frontend 34 passed. None failed or skipped.
+Pages: [testing](testing.md).
+
+## [2026-11-25] build | Advisor now calls Groq, with a friendly rate-limit message
+Settings `GROQ_API_KEY` and `GROQ_MODEL` replace the OpenAI ones; `GroqLlm` uses the SDK with the fixed base
+URL; Groq's 429 (`RateLimitError`) becomes the error code `rate_limited` with a fixed "busy" message; the
+page notice, `.env.example` and README say Groq. Tests first: the Groq settings, the request the SDK
+sends, chunks without text, the token limit, Hebrew split byte by byte, 429 before and after text, wider
+input limits at the API, two new browser journeys (English and Hebrew, with retry), the notice, and an SSE
+test for a Hebrew error message. Backend 142 passed (12 browser journeys), frontend 36 passed, none
+failed or skipped. Commits `d1608be`, `13d81bf`. No real Groq call has been made yet.
+Pages: [advisor](advisor.md), [architecture](architecture.md), [overview](overview.md),
+[testing](testing.md), [security](security.md), [open-items](open-items.md).
+
+## [2026-11-25] decision | Groq replaces OpenAI as the advisor's provider
+Groq's free tier fits PRD 9.1 ("no paid third-party API integrations"); OpenAI did not. Recorded in
+[decisions](decisions.md): the provider, the model, keeping the `openai` package, the friendly 429
+message. Open items updated: PRD 9.1 and the free tier's limit, per-organisation limits, a 429 still
+counting against the daily 50, the live check of the model and its Hebrew.
+
+## [2026-11-25] lint | Code review of the Groq switch, and fixes
+One `general-purpose` reviewer (Sonnet, read-only, `git diff dev...HEAD`). No high finding. Verified against
+the code and fixed: (1) the SDK raises a plain `APIError` for an error event inside an open stream, so
+"rate limit after some text" exists only in the fake; the wiki claimed otherwise and now says so, a test
+pins the generic message for that case, and an open item records it; (2) the message said "in a minute"
+but Groq also answers 429 for a daily quota, so it now says "in a little while"; (3) a duplicate line in
+`tests/e2e_app.py` removed; (4) the old-settings test now uses the real `Settings` class; (5) a vacuous
+assertion dropped. Not changed: the shared `_attempts` dict in `tests/e2e_app.py` is fragile if a journey is
+re-run against the same server (unique questions today), and the test modules import error factories from
+each other. Process note: the reviewer ran `grep -c` on `backend/.env` against the instruction not to open
+it; the output was a line count only. Backend 144 passed, frontend 36 passed, none failed or skipped.
+Pages: [advisor](advisor.md), [open-items](open-items.md), [testing](testing.md).
+
+## [2026-11-25] security | Reviews of the Groq switch (`dev...HEAD`)
+Two reviews, one at a time, both on `git diff dev...HEAD` as the owner asked. (1) `general-purpose` reviewer
+with a security brief, finished in about a minute: no vulnerability; candidates rejected (provider text in
+logs, `rate_limited` versus `upstream`, base URL override, leftover `OPENAI_*` variables, whitespace key,
+retries, key `repr`). It did not touch `.env`. (2) `security-review` skill: it diffs against `origin/main`
+and the base cannot be changed, so its analysis ran on a saved copy of the `dev...HEAD` diff; nothing at the
+8-of-10 bar, so no false-positive sub-tasks. That sub-task made only three tool calls and did not re-read
+`advisor.js`; the first reviewer had. No critical or high finding, nothing to fix before the push.
+Pages: [security](security.md).
+
+## [2026-11-25] test | Live check against Groq failed with 404
+With the owner's approval, one streaming call through `get_llm()` and `stream_reply` (short Hebrew question,
+empty project data, model `llama-3.3-70b-versatile`). Result: Groq answered HTTP 404 (`NotFoundError`) in
+0.27 s, no text; the advisor sent the generic error. Nothing secret was printed. Groq's docs (summarised by
+a small model) list the model as production and not deprecated, but mark both Llama production models
+"Enterprise" / "ContactSales"; this is a possible cause, not confirmed. The Hebrew quality could not be
+judged. No second call was made and the model was not changed. Waiting for the owner's decision.
+Pages: [advisor](advisor.md), [open-items](open-items.md).
+
+## [2026-11-25] decision | Model changed to openai/gpt-oss-120b
+The owner checked the Groq console: `llama-3.3-70b-versatile` is not in this account's model list (that was the
+404), `openai/gpt-oss-120b` is. The owner set it in `backend/.env` (not read by Claude). Because gpt-oss
+models reason before answering, the owner approved a guard: `reasoning_effort="low"` only for model IDs
+starting with `openai/gpt-oss`, and `MAX_REPLY_TOKENS` 1000 to 4000. Pages: [decisions](decisions.md),
+[advisor](advisor.md), [open-items](open-items.md).
+
+## [2026-11-25] build | Reasoning guard for gpt-oss models
+Tests first (7 failed for the right reasons, 4 more pinned existing behaviour and passed). Then
+`backend/app/advisor.py`: `REASONING_EFFORT`, `MAX_REPLY_TOKENS = 4000`, and the model-prefix condition;
+`.env.example` example ID. Raw results: backend 154 passed (was 144), browser journeys alone 12 passed,
+frontend 36 passed; none failed or skipped. Still no successful live call. Pages: [advisor](advisor.md),
+[testing](testing.md).
+
+## [2026-11-25] security | Review of the reasoning guard (`e0b4063..HEAD`)
+One reviewer (`general-purpose`, Sonnet, read-only), started once and finished in under a minute; told never to
+touch any `.env` file, and it reports it did not. No vulnerability. Two uncertainties, neither a finding:
+reasoning inside `content` would be shown to the user, and whether the requested maximum counts against
+Groq's shared per-minute limit (already an open item). No critical or high finding, nothing to fix before
+the push. Pages: [security](security.md).
+
+## [2026-11-25] test | Live check with openai/gpt-oss-120b succeeded
+With the owner's approval, one streaming call through `get_llm()` and `stream_reply` (short Hebrew question,
+empty project data, a wrapper that counted chunks and would have printed the error). Groq accepted
+`reasoning_effort: "low"` and `max_completion_tokens` 4000; 100 upstream chunks, 8 without text (7 before the
+first text); first text after 0.63 s, total 0.77 s; `finish_reason` `stop`; events ended `done`,
+`truncated: false`; 213 characters of fluent Hebrew with two small wording slips (Claude's reading; the owner
+judges). No key or `.env` content was printed. Not covered: a long answer, the 429 path, repeated
+questions. Pages: [advisor](advisor.md), [open-items](open-items.md).
+
+## [2026-11-25] docs | Pull request #2 to the fork's dev
+With the owner's go, `feat/advisor-groq` was pushed to the fork `sarah-s-1/OwnDesign` and PR #2 opened to its
+`dev` (nothing to the upstream course repository, `main` untouched). The head at that moment was `e7f37f8`
+(the same as the local head). Full backend suite 154 passed, frontend 36 passed, none failed or skipped. The
+repository has no CI workflows, so no CI run started. The PR body names the why (PRD 9.1), the model
+`openai/gpt-oss-120b`, `reasoning_effort` low, 4000 tokens, the live check and the open items. The owner
+reviewed every finding of the four reviews and accepted the unfixed ones as open items: the in-stream rate
+limit getting the generic message, a refused question still counting toward the daily 50, the fragile
+`_attempts` dict and the `httpx`/`httpx2` mix in `e2e_app.py`, tests importing factories from each other,
+the key as a plain string, a leftover `OPENAI_ORG_ID`, reasoning inside `content`, and the unknown effect of
+the requested maximum on Groq's shared per-minute limit. Those not already there were added to
+[open-items](open-items.md) in the commit that adds this entry, which also fixes the PR body's statement that
+all open items were in that page.

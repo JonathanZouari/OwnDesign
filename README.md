@@ -3,7 +3,7 @@
 Phase 1 of the product described in `Interior_Design_AI_PRD_EN.md`: studios, client entry
 (studio link, personal invite, guest trial), a guided room wizard, a 2D floor-plan editor,
 immutable plan versions, and tenant isolation. The AI consultant, which streams its replies from
-OpenAI, is the first piece of Phase 2 (see `wiki/advisor.md`).
+Groq (free tier), is the first piece of Phase 2 (see `wiki/advisor.md`).
 
 ```
 frontend/   Static HTML/CSS/ES modules, no build step. UI follows the Stitch "Architectural Atelier" design system.
@@ -29,7 +29,7 @@ Prerequisites: Python 3.13 + [uv](https://docs.astral.sh/uv/), Node 22 (frontend
 
 1. `backend/.env` — copy `backend/.env.example` and fill in the Supabase URL and keys
    (`supabase projects api-keys --project-ref <ref> --reveal`). To use the AI consultant also add
-   `OPENAI_API_KEY` and `OPENAI_MODEL` (the model has no default); until both are set the advisor
+   `GROQ_API_KEY` and `GROQ_MODEL` (the model has no default); until both are set the advisor
    answers "not available". They stay in `backend/.env`, never in the frontend.
 2. `frontend/js/config.js` — copy `frontend/js/config.example.js` and fill in the URL and the **publishable** key.
 3. Start both servers:
@@ -50,7 +50,7 @@ cd frontend && npm test             # plan logic (node --test)
 
 Integration and E2E tests run against the project in `backend/.env`, create throw-away users
 (`*@owndesign-test.example.com`) and delete them afterwards. They are skipped when `.env` is missing.
-First E2E run needs `uv run playwright install chromium`. No test calls OpenAI: the advisor is tested
+First E2E run needs `uv run playwright install chromium`. No test calls Groq: the advisor is tested
 with a fake. The browser journeys start their own backend on port 8000; if another backend is already
 running there, the advisor journeys are skipped.
 

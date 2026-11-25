@@ -54,7 +54,7 @@ def _serve(port: int, command: list[str], cwd: Path, env: dict[str, str] | None 
 
 @pytest.fixture(scope="module")
 def servers():
-    # The backend is tests/e2e_app.py: the real app with OpenAI replaced by a scripted fake.
+    # The backend is tests/e2e_app.py: the real app with Groq replaced by a scripted fake.
     # The browser opens the site at SITE (127.0.0.1), which the default allowed origin (localhost) does not cover,
     # so the backend this fixture starts is told to accept it. An environment variable overrides backend/.env.
     origins = {"ALLOWED_ORIGINS": f"{SITE},http://localhost:5500"}
@@ -70,7 +70,7 @@ def servers():
 
 @pytest.fixture
 def advisor_servers(servers):
-    """The advisor journeys need the scripted backend. A server that was already running on port 8000 would call real OpenAI."""
+    """The advisor journeys need the scripted backend. A server that was already running on port 8000 would call real Groq."""
     if not servers["scripted_backend"]:
         pytest.skip("port 8000 is already served by another backend; stop it so the advisor journeys can use the scripted one")
     return servers
@@ -350,16 +350,17 @@ def test_client_reads_the_advisor_reply_as_it_is_written(advisor_servers, page, 
     page.get_by_role("heading", name="Advisor Flat").wait_for()
     assert page.evaluate("document.body.classList.contains('advisor')")
 
-    # The page says plainly that nothing is saved and that questions go to OpenAI.
+    # The page says plainly that nothing is saved and that questions go to Groq (and no longer says OpenAI).
     privacy = page.locator(".privacy").inner_text()
     for phrase in (
         "Each question",
         "earlier messages in this conversation",
         "project's name, type, room names and room types",
-        "sent to OpenAI",
+        "sent to Groq",
         "does not save the conversation",
     ):
         assert phrase in privacy, phrase
+    assert "OpenAI" not in page.content()
     assert "Conceptual guidance only" in page.locator(".notices").inner_text()
 
     box, send = page.get_by_label("Your question"), page.get_by_role("button", name="Send")
@@ -413,7 +414,7 @@ def test_advisor_shows_a_failed_reply_and_retries_the_same_question(advisor_serv
     world = advisor_world(api, make_user)
     open_advisor(page, world)
 
-    ask(page, "[flaky] Which lamp?")  # OpenAI fails after two pieces on the first attempt
+    ask(page, "[flaky] Which lamp?")  # Groq fails after two pieces on the first attempt
     failed = page.locator(".msg.advisor.failed")
     failed.wait_for(timeout=STREAM_WAIT_MS)
     shown = failed.inner_text()
@@ -434,6 +435,53 @@ def test_advisor_shows_a_failed_reply_and_retries_the_same_question(advisor_serv
     ask(page, "Which curtains?")
     wait_until_answered(page)
     assert page.get_by_role("button", name="Try again").count() == 0
+
+
+def test_advisor_says_it_is_busy_when_groq_rate_limits_and_works_again_on_retry(advisor_servers, page, api, make_user):
+    world = advisor_world(api, make_user)
+    open_advisor(page, world)
+    busy = "The advisor is busy right now. Please try again in a little while."
+
+    # Rate limit before any text: the friendly message, not the generic failure, and a working retry.
+    ask(page, "[busy] Which lamp?")
+    failed = page.locator(".msg.advisor.failed")
+    failed.wait_for(timeout=STREAM_WAIT_MS)
+    assert busy in failed.inner_text() and "could not finish" not in failed.inner_text()
+    assert "Reply interrupted" not in failed.inner_text()  # nothing had been written yet
+    expect(page.get_by_label("Your question")).to_be_enabled()
+    page.get_by_role("button", name="Try again").click()
+    expect(page.locator(".msg.advisor.failed")).to_have_count(0)
+    wait_until_answered(page)
+    assert page.locator(".msg.advisor .text").last.inner_text().strip() == ENGLISH_TEXT
+    assert page.locator(".msg.user").count() == 1
+
+    # Rate limit after some text: the text stays, marked as interrupted, with the same message.
+    ask(page, "[busy-late] Which rug?")
+    failed = page.locator(".msg.advisor.failed")
+    failed.wait_for(timeout=STREAM_WAIT_MS)
+    shown = failed.inner_text()
+    assert "Reply interrupted" in shown and busy in shown and "A warm oak floor pairs well with" in shown
+    page.get_by_role("button", name="Try again").click()
+    wait_until_answered(page)
+    assert page.locator(".msg.advisor .text").last.inner_text().strip() == ENGLISH_TEXT
+
+
+def test_hebrew_question_that_meets_the_rate_limit_keeps_its_direction_and_retries_in_hebrew(advisor_servers, page, api, make_user):
+    world = advisor_world(api, make_user)
+    open_advisor(page, world)
+
+    ask(page, "איזו ספה מתאימה לסלון? [busy]")
+    page.locator(".msg.advisor.failed").wait_for(timeout=STREAM_WAIT_MS)
+    assert "The advisor is busy right now" in page.locator(".msg.advisor.failed").inner_text()
+    assert direction(page.locator(".msg.user .text").last) == "rtl"
+    assert not overflows(page)
+
+    page.get_by_role("button", name="Try again").click()
+    wait_until_answered(page)
+    reply = page.locator(".msg.advisor .text").last
+    assert reply.inner_text().strip() == HEBREW_TEXT
+    assert direction(reply) == "rtl"
+    assert page.locator(".msg.user").count() == 1
 
 
 def test_advisor_reports_a_connection_that_drops_mid_reply(advisor_servers, page, api, make_user):

@@ -1,4 +1,4 @@
-"""The AI advisor: builds the prompt, calls OpenAI and turns the reply into Server-Sent Events.
+"""The AI advisor: builds the prompt, calls Groq and turns the reply into Server-Sent Events.
 
 Nothing here may log question, history or reply text. Log ids, counts, durations, outcome codes and
 exception type names only (never `str(error)`: provider errors can echo request content).
@@ -12,7 +12,7 @@ from collections.abc import AsyncGenerator, AsyncIterator
 from functools import lru_cache
 from typing import Protocol
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 
 from app.db import settings
 
@@ -24,10 +24,17 @@ log = logging.getLogger(__name__)
 for _name in ("openai", "httpx", "httpx2", "httpcore2"):
     logging.getLogger(_name).setLevel(logging.WARNING)
 
+# Groq's endpoint is OpenAI-compatible, so the OpenAI SDK talks to it. Fixed in code, never taken from settings or input.
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+
 FIRST_PIECE_TIMEOUT_S = 20
 TOTAL_TIMEOUT_S = 90
 MAX_REPLY_CHARS = 8000
-MAX_REPLY_TOKENS = 1000
+# The 8000-character cap is about 2,000 to 3,000 tokens (more for Hebrew). The rest is headroom for reasoning,
+# which may count toward this limit.
+MAX_REPLY_TOKENS = 4000
+# Low effort keeps the reasoning short. Only sent to Groq's reasoning (gpt-oss) models; other models reject it.
+REASONING_EFFORT = "low"
 
 SYSTEM_PROMPT = """\
 You are the design advisor inside Atelier, an app where a client plans their own home.
@@ -50,6 +57,8 @@ ERRORS = {
     "timeout": "The advisor took too long to answer. Please try again.",
     "upstream": "The advisor could not finish this reply. Please try again.",
     "empty": "The advisor returned no answer. Please try again.",
+    # Groq's free tier is limited per organisation, so this can happen to any user.
+    "rate_limited": "The advisor is busy right now. Please try again in a little while.",
 }
 
 
@@ -58,14 +67,19 @@ class Llm(Protocol):
         """Yields (text, finish_reason) pieces. Closing the iterator must stop the upstream request."""
 
 
-class OpenAILlm:
+class GroqLlm:
     def __init__(self, client: AsyncOpenAI, model: str):
         self._client = client
         self._model = model
+        self._extra = {"reasoning_effort": REASONING_EFFORT} if model.startswith("openai/gpt-oss") else {}
 
     async def stream(self, messages: list[dict]) -> AsyncGenerator[tuple[str, str | None]]:
         upstream = await self._client.chat.completions.create(
-            model=self._model, messages=messages, stream=True, max_completion_tokens=MAX_REPLY_TOKENS
+            model=self._model,
+            messages=messages,
+            stream=True,
+            max_completion_tokens=MAX_REPLY_TOKENS,
+            **self._extra,
         )
         try:
             async for chunk in upstream:
@@ -79,15 +93,16 @@ class OpenAILlm:
 @lru_cache
 def _client(api_key: str) -> AsyncOpenAI:
     # No retries: a retry would only delay the first piece, and a half-sent reply cannot be resumed.
-    return AsyncOpenAI(api_key=api_key, max_retries=0, timeout=TOTAL_TIMEOUT_S)
+    return AsyncOpenAI(api_key=api_key, base_url=GROQ_BASE_URL, max_retries=0, timeout=TOTAL_TIMEOUT_S)
 
 
 def get_llm() -> Llm | None:
     """FastAPI dependency. None means the advisor is not configured; tests override it with a fake."""
     config = settings()
-    if not (config.openai_api_key and config.openai_model):
+    api_key, model = (config.groq_api_key or "").strip(), (config.groq_model or "").strip()
+    if not (api_key and model):
         return None
-    return OpenAILlm(_client(config.openai_api_key), config.openai_model)
+    return GroqLlm(_client(api_key), model)
 
 
 def build_messages(context: dict, history: list[dict], question: str) -> list[dict]:
@@ -147,6 +162,10 @@ async def stream_reply(llm: Llm, messages: list[dict]) -> AsyncIterator[str]:
     except TimeoutError:
         outcome = "timeout"
         yield _error("timeout")
+    except RateLimitError as error:
+        outcome = "rate_limited"
+        log.warning("Advisor upstream error: %s", type(error).__name__)
+        yield _error("rate_limited")
     except Exception as error:
         outcome = "upstream"
         log.warning("Advisor upstream error: %s", type(error).__name__)

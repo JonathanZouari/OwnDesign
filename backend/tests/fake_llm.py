@@ -1,4 +1,4 @@
-"""A stand-in for OpenAI. No test and no browser journey calls the real API."""
+"""A stand-in for Groq. No test and no browser journey calls the real API."""
 
 import asyncio
 
