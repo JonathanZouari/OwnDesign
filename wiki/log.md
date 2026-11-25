@@ -256,3 +256,12 @@ touch any `.env` file, and it reports it did not. No vulnerability. Two uncertai
 reasoning inside `content` would be shown to the user, and whether the requested maximum counts against
 Groq's shared per-minute limit (already an open item). No critical or high finding, nothing to fix before
 the push. Pages: [security](security.md).
+
+## [2026-11-25] test | Live check with openai/gpt-oss-120b succeeded
+With the owner's approval, one streaming call through `get_llm()` and `stream_reply` (short Hebrew question,
+empty project data, a wrapper that counted chunks and would have printed the error). Groq accepted
+`reasoning_effort: "low"` and `max_completion_tokens` 4000; 100 upstream chunks, 8 without text (7 before the
+first text); first text after 0.63 s, total 0.77 s; `finish_reason` `stop`; events ended `done`,
+`truncated: false`; 213 characters of fluent Hebrew with two small wording slips (Claude's reading; the owner
+judges). No key or `.env` content was printed. Not covered: a long answer, the 429 path, repeated
+questions. Pages: [advisor](advisor.md), [open-items](open-items.md).

@@ -22,7 +22,8 @@ designer work on the same floor plan. AI assistance is arriving in phases: the a
 
 - A client asks questions about their own saved project on `advisor.html` and the reply is written on
   screen as it is generated (SSE), through Groq's free tier. Nothing is saved. Details and limits:
-  [advisor.md](advisor.md). It has not yet been run against the real Groq API.
+  [advisor.md](advisor.md). One live call to Groq (`openai/gpt-oss-120b`) has worked; longer answers, the
+  rate-limit path and repeated use have not been tried live.
 
 ## Not built yet
 

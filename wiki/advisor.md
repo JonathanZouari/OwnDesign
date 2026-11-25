@@ -152,16 +152,21 @@ Coverage: [testing.md](testing.md).
 
 ## Not verified yet
 
-- **No live call has succeeded yet.** The only one so far (2026-11-25, `llama-3.3-70b-versatile`, a short
-  Hebrew question through `get_llm()` and `stream_reply`) got HTTP 404 from Groq before any text, and the
-  page showed the generic "could not finish" message. The owner then checked the Groq console: that model
-  is not in this account's list, `openai/gpt-oss-120b` is, so that was the cause. (Groq's docs, read through a
-  page summariser, had listed the Llama model as a production model and marked it "Enterprise".) The
-  model was then changed to `openai/gpt-oss-120b`; it has not been called yet. Until a call succeeds, these
-  are unverified against the real API: streaming, the model's Hebrew, that `reasoning_effort: "low"` is
-  accepted, that 4000 tokens is enough, and the 429 path. `GroqLlm` has been checked only against the
-  installed SDK's signatures (`openai` 3.57.0: `max_completion_tokens`, `reasoning_effort`,
-  `AsyncStream.close()`) and a canned network that checks the URL, key header and request body.
+- **Live checks so far (2026-11-25), one call each, a short Hebrew question through `get_llm()` and
+  `stream_reply` with empty project data.** First, `llama-3.3-70b-versatile` got HTTP 404 before any text: the
+  owner then saw in the Groq console that this model is not in the account's list, while `openai/gpt-oss-120b`
+  is. (Groq's docs, read through a page summariser, had listed the Llama model as a production model and
+  marked it "Enterprise".) Second, `openai/gpt-oss-120b` worked: Groq accepted `reasoning_effort: "low"` and
+  the 4000-token limit, the reply streamed (100 chunks, 8 of them without text, 7 of those before the first
+  text, which is what a short reasoning phase looks like; the reasoning itself was not inspected), the first
+  text came after 0.63 s, the whole reply took 0.77 s, `finish_reason` was `stop` and the page-side events
+  ended with `done` and `truncated: false`. The reply was 213 characters of fluent, relevant Hebrew with two
+  small wording slips ("עמודי הדגש", accent pillars, where accent walls was meant, and "להרחיב אופק", broaden
+  the horizon, for enlarging the room). That is Claude's reading; the owner is the judge of the Hebrew.
+  Still not verified against the real API: a long reply (this one was short, so it says little about
+  whether 4000 tokens is enough when the answer is long), the 429 path, and many questions in a row.
+  `GroqLlm` was otherwise checked against the installed SDK's signatures (`openai` 3.57.0:
+  `max_completion_tokens`, `reasoning_effort`, `AsyncStream.close()`) and a canned network.
 - That a real server notices a closed browser tab and stops the reply (the closing itself is tested).
 - That Railway's proxy does not buffer SSE; nothing is deployed yet.
 - The wording of the page's notices and messages has not had a copywriting review.
