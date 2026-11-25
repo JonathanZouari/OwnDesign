@@ -136,10 +136,16 @@ Coverage: [testing.md](testing.md).
 
 ## Not verified yet
 
-- **No real Groq call has been made.** `GroqLlm` was checked against the installed SDK's signatures
-  (`openai` 3.57.0: `max_completion_tokens`, `AsyncStream.close()`) and against a canned network that
-  checks the URL, key header and request body, not against the live API. The model is chosen by
-  `GROQ_MODEL`; there is no default. How well `llama-3.3-70b-versatile` writes Hebrew is unknown.
+- **The one live call so far failed (2026-11-25).** A short Hebrew question through `get_llm()` and
+  `stream_reply`, model `llama-3.3-70b-versatile`, got HTTP 404 (`NotFoundError`) from Groq before any text,
+  so the advisor showed the generic "could not finish" message. The cause is not known. Groq's docs (read
+  through a page summariser, so unconfirmed) list the model as a production model and not deprecated, but
+  mark the two Llama production models "Enterprise" with "ContactSales", which may mean this account has no
+  access. Nothing was changed in response; the model is the owner's choice. Until a call succeeds, the
+  streaming, the model's Hebrew and the 429 path are unverified against the real API. Before that call,
+  `GroqLlm` was checked only against the installed SDK's signatures (`openai` 3.57.0:
+  `max_completion_tokens`, `AsyncStream.close()`) and a canned network that checks the URL, key header and
+  request body. The model is chosen by `GROQ_MODEL`; there is no default.
 - That a real server notices a closed browser tab and stops the reply (the closing itself is tested).
 - That Railway's proxy does not buffer SSE; nothing is deployed yet.
 - The wording of the page's notices and messages has not had a copywriting review.

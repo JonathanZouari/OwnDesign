@@ -226,3 +226,12 @@ and the base cannot be changed, so its analysis ran on a saved copy of the `dev.
 8-of-10 bar, so no false-positive sub-tasks. That sub-task made only three tool calls and did not re-read
 `advisor.js`; the first reviewer had. No critical or high finding, nothing to fix before the push.
 Pages: [security](security.md).
+
+## [2026-11-25] test | Live check against Groq failed with 404
+With the owner's approval, one streaming call through `get_llm()` and `stream_reply` (short Hebrew question,
+empty project data, model `llama-3.3-70b-versatile`). Result: Groq answered HTTP 404 (`NotFoundError`) in
+0.27 s, no text; the advisor sent the generic error. Nothing secret was printed. Groq's docs (summarised by
+a small model) list the model as production and not deprecated, but mark both Llama production models
+"Enterprise" / "ContactSales"; this is a possible cause, not confirmed. The Hebrew quality could not be
+judged. No second call was made and the model was not changed. Waiting for the owner's decision.
+Pages: [advisor](advisor.md), [open-items](open-items.md).
