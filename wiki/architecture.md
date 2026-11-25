@@ -27,6 +27,11 @@ supabase/   migrations and managed auth settings
 `studios`, `studio_memberships` (owner or designer; one owned studio per user), `studio_invites`,
 `projects`, `plan_versions` (insert only, unique `(project_id, version_no)`), `audit_events` (insert only).
 
+Phase 2 (`supabase/migrations/20261123*`): `project_briefs` (one JSON document per project),
+`finish_selections` (unique per room and surface), `inspiration_assets`, `moodboard_items`,
+`ai_conversations` (unique per project and user), `ai_messages`, `storage_deletions` (queue of files to remove).
+Their SELECT policies go through `projects`, except conversations: only their own user reads them.
+
 ## Plan geometry
 
 One JSON document per version, validated in `backend/app/schemas.py` and edited by pure functions in
@@ -51,3 +56,22 @@ each change; the plan object is never mutated.
 Studios, invites, studio activity (`GET /v1/studios/{id}/audit`, the latest 10 audit events, members
 only): `backend/app/routes/studios.py`. Projects, versions: `backend/app/routes/projects.py`.
 Quotas: 20 projects per client per studio, 500 versions per project.
+
+Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `backend/app/catalog.py`):
+`GET /v1/catalog`; under `/v1/projects/{id}`: `brief`, `finishes`, `assets`, `moodboard`
+(GET and PUT, assets POST and DELETE), `consultant/messages` (GET, POST). Every write goes through
+`_writable_project`, which refuses a suspended studio.
+
+- **Images:** private bucket `project-assets`, no storage policies. The backend checks the file's bytes
+  (not the declared type), stores it under `<project_id>/<uuid>.<ext>` and returns signed URLs valid for
+  10 minutes. Deleting an asset row, directly or by cascade, queues the file in `storage_deletions`;
+  the backend removes queued files after an asset is deleted. The 30-image limit is enforced by a
+  database trigger. The body cap is 6 MB for `POST .../assets` only, 2 MB elsewhere.
+- **Consultant:** `reserve_ai_message` (database function) takes a per-user lock, counts the user's
+  messages of the last 24 hours across all projects, and stores the user message before the paid call.
+  The project context goes to OpenAI as a separate, escaped, untrusted input item, not in the
+  system prompt. A failed call keeps its slot. The OpenAI client is a FastAPI dependency (`get_openai`)
+  so tests replace it. `OPENAI_API_KEY` and `OPENAI_MODEL` are read from `backend/.env`; without a key
+  the endpoint answers 503.
+- **Frontend:** `design.html` (brief, materials, moodboard tabs), `consultant.html`; pure logic in
+  `frontend/js/design-logic.js`.

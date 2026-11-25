@@ -90,3 +90,18 @@ review, then push. Pages: [security](security.md).
 ## [2026-11-19] docs | Model split: Opus 5.5 plans, Sonnet 5.5 executes
 Replaced Fable 5.2 with `opusplan` in `.claude/settings.json`; CLAUDE.md subagent rule updated to match.
 Pages: [decisions](decisions.md).
+
+## [2026-11-23] build | Phase 2: brief, finishes, images, moodboard, AI consultant
+Backend: three-plus migrations (tables, asset quota trigger, atomic consultant reservation), endpoints for
+brief, finishes, assets, moodboard and consultant, tests first. Frontend: `design.html`, `consultant.html`
+built by a general-purpose agent from the design system. Commits `90763ab`, `2c7278f`, `8a5bcc2`, `797dcec`,
+`5466898`, `f50c0bb`. Pages: [overview](overview.md), [architecture](architecture.md), [decisions](decisions.md),
+[design](design.md), [open-items](open-items.md).
+
+## [2026-11-23] security | Review of the Phase 2 backend
+Several findings fixed (suspended studios, upload race, consultant cap and context injection); see
+[security](security.md).
+
+## [2026-11-23] test | Phase 2 verified
+Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
+
