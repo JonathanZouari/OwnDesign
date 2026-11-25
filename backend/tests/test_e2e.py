@@ -58,7 +58,9 @@ def servers():
     # The backend is tests/e2e_app.py: the real app with Groq replaced by a scripted fake.
     # The browser opens the site at SITE (127.0.0.1), which the default allowed origin (localhost) does not cover,
     # so the backend this fixture starts is told to accept it. An environment variable overrides backend/.env.
-    origins = {"ALLOWED_ORIGINS": f"{SITE},http://localhost:5500"}
+    # It also gets a made-up OpenAI key: tests/e2e_app.py switches the consultant off, and if that ever stopped
+    # working a call would be rejected by OpenAI (and the test would see 502, not 503) instead of being billed.
+    origins = {"ALLOWED_ORIGINS": f"{SITE},http://localhost:5500", "OPENAI_API_KEY": "sk-e2e-made-up-never-valid"}
     started = [
         _serve(8000, [sys.executable, "-m", "uvicorn", "tests.e2e_app:app", "--host", "127.0.0.1", "--port", "8000"], BACKEND, origins),
         _serve(5500, [sys.executable, "-m", "http.server", "5500", "--bind", "127.0.0.1"], FRONTEND),
@@ -355,6 +357,9 @@ def test_client_reads_the_advisor_reply_as_it_is_written(advisor_servers, page, 
     page.wait_for_url("**/advisor.html?project=*")
     page.get_by_role("heading", name="Advisor Flat").wait_for()
     assert page.evaluate("document.body.classList.contains('advisor')")
+    # The page carries its own name everywhere: "AI Consultant" is upstream's other feature.
+    assert page.title().startswith("AI Advisor")
+    assert "AI Consultant" not in page.locator("body").inner_text()
 
     # The page says plainly that nothing is saved and that questions go to Groq (and no longer says OpenAI).
     privacy = page.locator(".privacy").inner_text()
@@ -571,6 +576,7 @@ def test_advisor_is_closed_to_the_designer_and_to_other_users(advisor_servers, p
     page.goto(f"{SITE}/{project_page}")
     page.locator("#blocked").wait_for()
     assert "for the client who owns this project" in page.locator("#blocked").inner_text()
+    assert "The AI Advisor is for the client" in page.locator("#blocked").inner_text()
     assert page.locator("#chat").is_hidden()
 
     # Another user cannot even tell that the project exists.
@@ -588,11 +594,59 @@ def test_advisor_is_closed_to_the_designer_and_to_other_users(advisor_servers, p
 
 
 def test_the_scripted_backend_never_reaches_openai(advisor_servers, api, make_user):
-    """tests/e2e_app.py replaces the consultant's OpenAI client too: a message is refused with 503, whatever .env holds."""
+    """tests/e2e_app.py switches the consultant's OpenAI client off: 503. The fixture gives that backend a made-up key
+    on purpose, so without the override this call would reach OpenAI and come back 502 (a rejected key), not 503."""
     world = advisor_world(api, make_user)
     url = f"http://127.0.0.1:8000/v1/projects/{world.project['id']}/consultant/messages"
     response = httpx.post(url, json={"message": "hello"}, headers=world.client.headers, timeout=15)
     assert response.status_code == 503
+
+
+HEADER_WIDTHS = (768, 900, 1000, 1199, 1200, 1280)
+
+
+def overflowing_widths(page, details: dict | None = None) -> list[int]:
+    """The widths at which the editor page scrolls sideways or its tab bar is wider than its box.
+    `details` receives {width: (page overflow px, tab bar overflow px)} for the failing widths."""
+    bad = []
+    for width in HEADER_WIDTHS:
+        page.set_viewport_size({"width": width, "height": 800})
+        over = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
+        bar = page.locator("nav.tabs").evaluate("el => el.scrollWidth - el.clientWidth")
+        if over > 0 or bar > 1:
+            bad.append(width)
+            if details is not None:
+                details[width] = (over, bar)
+    return bad
+
+
+KNOWN_EXTRA_OVERFLOW_PX = {900: 40, 768: 175}  # measured: 38 px at 900 (control 0), 170 px at 768 (control 81); see open-items.md
+
+
+def test_the_advisor_tab_adds_only_the_known_header_overflow(advisor_servers, page, api, make_user):
+    """The designer has upstream's links but no advisor tab, so it is the control. The client, who also has the
+    advisor tab, overflows a little at 900 px (a known, accepted open item) and must not overflow at any other width
+    where the designer does not, nor by more than the measured amount."""
+    world = advisor_world(api, make_user)
+    editor = f"editor.html?project={world.project['id']}"
+
+    sign_in(page, world.designer, editor)
+    page.get_by_text("Editing as designer").wait_for()
+    assert page.get_by_role("link", name="AI Advisor").count() == 0
+    control_details, advisor_details = {}, {}
+    control = overflowing_widths(page, control_details)
+
+    page.evaluate("localStorage.clear()")
+    page.set_viewport_size({"width": 1280, "height": 800})
+    sign_in(page, world.client, editor)
+    page.get_by_role("link", name="AI Advisor").wait_for()
+    with_advisor = overflowing_widths(page, advisor_details)
+
+    message = f"(page px, tab bar px) with the tab {advisor_details}, control {control_details}"
+    assert set(with_advisor) - set(control) <= set(KNOWN_EXTRA_OVERFLOW_PX), f"new overflow widths: {message}"
+    for width, limit in KNOWN_EXTRA_OVERFLOW_PX.items():
+        if width in advisor_details:
+            assert advisor_details[width][0] <= limit, f"the overflow at {width} px grew: {message}"
 
 
 def test_advisor_fits_a_phone(advisor_servers, page, api, make_user):

@@ -19,7 +19,7 @@ def settings_with(**values):
 @pytest.fixture(autouse=True)
 def clean_environment(monkeypatch):
     # A key exported in the developer's shell overrides a default; none of these tests may depend on it.
-    for name in ("GROQ_API_KEY", "GROQ_MODEL", "OPENAI_API_KEY", "OPENAI_MODEL"):
+    for name in ("GROQ_API_KEY", "GROQ_MODEL", "OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_BASE_URL"):
         monkeypatch.delenv(name, raising=False)
     advisor._client.cache_clear()
     consultant._client.cache_clear()

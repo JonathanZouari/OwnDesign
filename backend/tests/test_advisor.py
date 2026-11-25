@@ -345,7 +345,8 @@ def test_advisor_is_configured_with_a_key_and_a_model(monkeypatch, fresh_client_
 
 
 def test_old_openai_environment_variables_do_not_configure_the_advisor(monkeypatch):
-    """The real Settings class: a leftover OPENAI_* line is ignored, and the Groq fields stay empty."""
+    """The real Settings class: the advisor does not read the OPENAI_* settings (they belong to the consultant),
+    so with only those set the Groq fields stay empty and the advisor is not configured."""
     from app.db import Settings
 
     for name in ("GROQ_API_KEY", "GROQ_MODEL"):
