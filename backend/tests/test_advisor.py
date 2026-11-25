@@ -509,3 +509,80 @@ def test_a_429_that_is_not_json_still_gives_the_friendly_error():
     transport = httpx2.MockTransport(lambda request: httpx2.Response(429, content=b"<html>Too Many Requests</html>"))
     parsed = parse(collect(sdk_llm_over(transport)))
     assert [(name, data.get("code")) for name, data in parsed] == [("error", "rate_limited")]
+
+
+# --- Reasoning models (openai/gpt-oss-*): low effort, a bigger token budget, and reasoning text kept out ---
+
+
+def reasoning_body(text):
+    """A chunk the way Groq streams a reasoning model's thinking: a `reasoning` field and no `content`."""
+    delta = {"role": "assistant", "reasoning": text}
+    return {"id": "c", "object": "chat.completion.chunk", "created": 0, "model": "m", "choices": [{"index": 0, "delta": delta, "finish_reason": None}]}
+
+
+def sdk_llm_for(model, handler):
+    client = openai.AsyncOpenAI(api_key="not-a-real-key", max_retries=0, http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(handler)))
+    return advisor.GroqLlm(client, model)
+
+
+@pytest.mark.parametrize(
+    "model, sends_effort",
+    [
+        ("openai/gpt-oss-120b", True),
+        ("openai/gpt-oss-20b", True),
+        ("llama-3.3-70b-versatile", False),
+        ("llama-3.1-8b-instant", False),
+        ("qwen/qwen3.8-27b", False),
+        ("gpt-oss-120b", False),  # Groq's IDs carry the "openai/" prefix; the condition is on the exact prefix
+    ],
+)
+def test_reasoning_effort_is_sent_only_to_gpt_oss_models(model, sends_effort):
+    seen = []
+
+    def handler(request):
+        seen.append(json.loads(request.content))
+        return httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=wire(chunk_body("ok"), chunk_body("", "stop")).encode())
+
+    assert text_of(parse(collect(sdk_llm_for(model, handler)))) == "ok"
+    (body,) = seen
+    assert body["model"] == model
+    assert body["max_completion_tokens"] == 4000
+    if sends_effort:
+        assert body["reasoning_effort"] == "low"
+    else:
+        assert "reasoning_effort" not in body
+
+
+def test_reply_budget_leaves_room_for_reasoning_beyond_the_character_cap():
+    assert advisor.MAX_REPLY_TOKENS == 4000
+    # The longest reply the character cap allows (about 3 characters a token) plus 1,000 tokens of reasoning headroom.
+    assert advisor.MAX_REPLY_TOKENS >= advisor.MAX_REPLY_CHARS // 3 + 1000
+
+
+def test_reasoning_text_is_never_part_of_the_reply_or_the_logs(caplog):
+    marker = "REASONING-MARKER-5d41402a"
+    pieces = ["שלום! ", "ספה אפורה ", "מתאימה לסלון."]
+    stream = wire(reasoning_body(f"thinking about {marker}"), reasoning_body("more thinking"), *(chunk_body(p) for p in pieces), chunk_body("", "stop"))
+    caplog.set_level(logging.DEBUG)
+    events = collect(sdk_llm_for("openai/gpt-oss-120b", lambda request: httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=stream.encode())))
+    parsed = parse(events)
+    assert text_of(parsed) == "".join(pieces)
+    assert parsed[-1] == ("done", {"truncated": False})
+    assert marker not in "".join(events) and marker not in caplog.text
+
+
+def test_reasoning_that_uses_up_the_whole_budget_is_an_empty_error():
+    """Pins what the page shows if the limit is ever hit during reasoning: the generic 'no answer', not a hang."""
+    stream = wire(reasoning_body("a very long thought"), reasoning_body("and another"), chunk_body("", "length"))
+    llm = sdk_llm_for("openai/gpt-oss-120b", lambda request: httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=stream.encode()))
+    parsed = parse(collect(llm))
+    assert [(name, data.get("code")) for name, data in parsed] == [("error", "empty")]
+
+
+def test_a_slow_reasoning_phase_does_not_trip_the_first_piece_timeout(monkeypatch):
+    """Reasoning chunks arrive as empty pieces, and those count as the first piece."""
+    monkeypatch.setattr(advisor, "FIRST_PIECE_TIMEOUT_S", 0.2)
+    llm = FakeLlm(["", "", "", "the answer"], delay=0.1)  # 0.1 s to the first (empty) piece, 0.4 s to the text
+    parsed = parse(collect(llm))
+    assert text_of(parsed) == "the answer"
+    assert parsed[-1] == ("done", {"truncated": False})
