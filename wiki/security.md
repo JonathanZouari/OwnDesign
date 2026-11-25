@@ -105,6 +105,16 @@ its analysis was run on a saved copy of the `dev...HEAD` diff instead.
 - What the change adds: Groq's shared free-tier limit lets any user make the advisor answer "busy" to
   the others (availability only; the daily 50 and the one-open-reply lock still apply per user).
 
+Reasoning guard for gpt-oss models (`git diff e0b4063..HEAD`, one `general-purpose` reviewer, read-only, told
+never to touch any `.env` file; it reports it did not): no vulnerability. Checked and rejected: reasoning
+text reaching events or logs (only `delta.content` is read; a test with a marker at DEBUG), user input
+reaching the extra request parameters (they come from a constant and the trusted model ID), a bypass of the
+per-user quota or lock by the larger token budget (bounded: 50 questions of up to 4000 tokens a day, up
+from 1000 each), a look-alike model ID matching the prefix (the model ID is a trusted setting). It was
+unsure about two things, neither a vulnerability: reasoning text placed inside `content` (for example in
+think tags) would be shown to the user, and whether Groq counts the requested maximum against the shared
+per-minute limit (an open item).
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

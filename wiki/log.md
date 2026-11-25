@@ -249,3 +249,10 @@ Tests first (7 failed for the right reasons, 4 more pinned existing behaviour an
 `.env.example` example ID. Raw results: backend 154 passed (was 144), browser journeys alone 12 passed,
 frontend 36 passed; none failed or skipped. Still no successful live call. Pages: [advisor](advisor.md),
 [testing](testing.md).
+
+## [2026-11-25] security | Review of the reasoning guard (`e0b4063..HEAD`)
+One reviewer (`general-purpose`, Sonnet, read-only), started once and finished in under a minute; told never to
+touch any `.env` file, and it reports it did not. No vulnerability. Two uncertainties, neither a finding:
+reasoning inside `content` would be shown to the user, and whether the requested maximum counts against
+Groq's shared per-minute limit (already an open item). No critical or high finding, nothing to fix before
+the push. Pages: [security](security.md).
