@@ -7,21 +7,25 @@ from fastapi.responses import JSONResponse
 
 from app.db import settings
 from app.responses import fail, ok
-from app.routes import advisor, projects, studios
+from app.routes import advisor, consultant, design, projects, studios
 
 log = logging.getLogger(__name__)
 MAX_BODY_BYTES = 2_000_000  # a full 1000-item plan is well under this
+MAX_UPLOAD_BODY_BYTES = 6_000_000  # a 5 MB image plus multipart overhead; only POST .../assets
 
 app = FastAPI(title="OwnDesign API", version="1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in settings().allowed_origins.split(",") if origin.strip()],
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
 app.include_router(studios.router)
 app.include_router(projects.router)
 app.include_router(advisor.router)
+app.include_router(design.catalog_router)
+app.include_router(design.router)
+app.include_router(consultant.router)
 
 
 class BodyLimit:
@@ -39,13 +43,15 @@ class BodyLimit:
         if scope["type"] != "http":
             return await self.inner(scope, receive, send)
         received = 0
+        is_upload = scope["method"] == "POST" and scope["path"].endswith("/assets")
+        limit = MAX_UPLOAD_BODY_BYTES if is_upload else MAX_BODY_BYTES
 
         async def capped_receive():
             nonlocal received
             message = await receive()
             if message["type"] == "http.request":
                 received += len(message.get("body", b""))
-                if received > MAX_BODY_BYTES:
+                if received > limit:
                     raise HTTPException(413, "Request too large")
             return message
 

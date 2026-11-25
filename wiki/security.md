@@ -115,6 +115,18 @@ unsure about two things, neither a vulnerability: reasoning text placed inside `
 think tags) would be shown to the user, and whether Groq counts the requested maximum against the shared
 per-minute limit (an open item).
 
+## Review of Phase 2 (backend)
+
+`security-review` and a security-reviewer agent on the local commits. Fixed: a suspended studio could still
+write design data; parallel uploads could pass the 30-image limit (now a database trigger); the consultant's
+daily cap could be bypassed (empty answers, parallel calls, many projects) and is now reserved atomically per
+user before the paid call; project text sent to OpenAI could pose as instructions (now an escaped,
+untrusted input item). Checked, no finding: tenant isolation of every new table and route, upload byte
+checks, signed URLs, no IDOR through asset or room ids. Not fixed: see the Phase 2 gaps in
+[open-items.md](open-items.md). The Phase 2 frontend had a code review (fixed: expiring image links,
+duplicate chat message after a failed answer, unvalidated `?project=`); a security review of the frontend
+commits is still to do.
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

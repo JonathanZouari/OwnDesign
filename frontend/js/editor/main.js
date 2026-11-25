@@ -373,6 +373,13 @@ run(async () => {
       $("#tab-advisor").href = `advisor.html?project=${encodeURIComponent(state.project.id)}`;
       $("#tab-advisor").hidden = false;
     }
+    // The brief and the consultant belong to a saved project, so their links appear only here.
+    for (const page of ["design", "consultant"]) {
+      for (const link of [$(`#tab-${page}`), $(`#nav-${page}`)]) {
+        link.href = `${page}.html?project=${encodeURIComponent(projectId)}`;
+        link.hidden = false;
+      }
+    }
   } else {
     state.draft = load(KEYS.draft);
     if (!state.draft || !P.isPlan(state.draft.plan)) return location.replace("wizard.html");

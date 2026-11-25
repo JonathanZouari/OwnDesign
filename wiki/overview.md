@@ -18,20 +18,35 @@ designer work on the same floor plan. AI assistance is arriving in phases: the a
   the studio link, invites and recent activity.
 - One studio cannot see another studio's data ([security.md](security.md)).
 
-## Built: AI advisor (first Phase 2 piece)
+## Built: Phase 2
 
-- A client asks questions about their own saved project on `advisor.html` and the reply is written on
-  screen as it is generated (SSE), through Groq's free tier. Nothing is saved. Details and limits:
-  [advisor.md](advisor.md). One live call to Groq (`openai/gpt-oss-120b`) has worked; longer answers, the
-  rate-limit path and repeated use have not been tried live.
+- Design brief per project: styles (up to 5), colours, budget range and currency, household, lifestyle,
+  needs, fixed constraints, existing items to accommodate (`design.html`).
+- Finish selections per room and surface (floor, walls, ceiling, cabinets) from a fixed catalog of styles
+  and materials.
+- Inspiration and existing-item images (JPEG, PNG, WebP, 5 MB, 30 per project) in private storage, shown
+  through short-lived signed URLs, and a moodboard of images, styles and materials with notes and order.
+- AI consultant (`consultant.html`): OpenAI `gpt-5-mini`, answers from the project's brief, finishes and
+  plan summary, recommends only and never edits the plan. One private conversation per user and project,
+  30 messages per user per day.
+- The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
+  private to the user who held it.
+
+## Built: AI advisor (streaming, Groq)
+
+- A second AI feature next to the consultant. A client asks questions about their own saved project on
+  `advisor.html` and the reply is written on screen as it is generated (SSE), through Groq's free tier.
+  Nothing is saved. Details and limits: [advisor.md](advisor.md). One live call to Groq
+  (`openai/gpt-oss-120b`) has worked; longer answers, the rate-limit path and repeated use have not been
+  tried live.
 
 ## Not built yet
 
-Design brief, styles and materials, moodboard, saved advisor conversations and the advisor's
-suggestions on the plan, renderings, budget, dossier, messaging and tasks, studio branding, invitation
-emails, per-project team permissions, deployment, general rate limiting, subscriptions and credits.
+Saved advisor conversations (the consultant keeps its own), the advisor's suggestions on the plan,
+renderings, budget, dossier, messaging and tasks, studio branding, invitation emails, per-project team
+permissions, deployment, general rate limiting, subscriptions and credits.
 
 ## Next
 
-Rest of Phase 2 per the PRD: design brief, styles and materials, moodboard
-([decisions.md](decisions.md)).
+Per the PRD: renderings, version comparison, budget and shopping list, dossier and handoff, messaging and
+tasks, studio branding ([open-items.md](open-items.md) lists what must be settled before production).

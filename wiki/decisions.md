@@ -30,8 +30,11 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **One JSON document per plan version**, in centimetres. The current plan is the latest version; no separate floor-plan table.
 - **supabase-js is vendored**, not loaded from a CDN, with a `script-src 'self'` policy. Came out of the security review.
 - **Product name "ATELIER"** in the UI, taken from Stitch. The PRD leaves the name undecided.
-- **Later-phase widgets shown in Stitch are left out** (credits, budget, compliance badges, cost and floor-plan panels in the AI consultant screen) so the UI shows no fake data. The advisor itself is built with real data only.
+- **Later-phase widgets shown in Stitch are left out** (credits, budget, compliance badges, cost and floor-plan panels in the AI consultant screen) so the UI shows no fake data. The advisor and the consultant are both built with real data only.
 - **Advisor is streaming only.** No separate non-streaming endpoint: it would duplicate the logic.
 - **The page sends its own recent turns** (up to 10) with each question, because the server stores nothing.
 - **Groq's rate limit (429) is shown as a friendly "busy" message** with its own error code `rate_limited`, not as the generic failure, because it is a wait-and-retry condition. The provider's error text is never forwarded. No automatic retry (`max_retries=0`), as before.
 - **Daily advisor quota of 50 questions per user** is a stopgap cost guard that overlaps the "AI cost budget" team's work ([open-items.md](open-items.md)).
+- **Phase 2 data model:** the brief is one JSON document per project; finishes and the moodboard are saved as a whole set (delete then insert, not atomic, saving again recovers).
+- **Consultant memory policy** (PRD 5.4 leaves it open): messages are stored per project and user, private to that user, capped at 30 a day per user. A failed OpenAI call still uses a slot because it may have been billed.
+- **Images go through the backend**, not directly to storage, so type, size, count and access are checked in one place.
