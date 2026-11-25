@@ -47,6 +47,11 @@ is built as the advisor ([advisor.md](advisor.md)) without its sample-data panel
 - The wording of the advisor page (notices, errors, buttons) has not had a copywriting review, and its layout has not had a design review against the Stitch screen.
 - The tests import `httpx2` directly, but it is only a dependency of `openai`, not of this project. If a later `openai` release changes its HTTP library, `backend/tests/test_advisor.py` needs updating.
 - The `Settings` class holds `groq_api_key` as a plain string, like the Supabase keys. Consider `SecretStr` for all of them together.
+- If a reasoning model ever put its reasoning inside `content` (for example in think tags), the advisor would show it to the user, because only `delta.content` is displayed. `openai/gpt-oss-120b` sends reasoning in a separate `reasoning` field, so this is hypothetical today. The reasoning guard's reviewer raised it; accepted as open (2026-11-25).
+- A leftover `OPENAI_ORG_ID` or `OPENAI_PROJECT_ID` in the server's environment could in theory be sent by the SDK to Groq as a header. Environment values are trusted and there is no known exploit; accepted as open (2026-11-25).
+- `backend/tests/e2e_app.py` keeps the attempt count of each question in a module-level dict (`_attempts`), so re-running a journey against the same server would see its first-attempt failure only once. The journeys use unique questions today.
+- `backend/tests/e2e_app.py` builds one fake error with `httpx` and another with `httpx2`; harmless, and the other test modules do the same.
+- Test modules import error factories from each other (`tests/test_api.py` from `tests/test_advisor.py`). They could move to `tests/fake_llm.py`.
 - The coordinate limit is enforced in the editor only by clamping the view.
 - Two adjacent rooms from the wizard produce two overlapping walls.
 - Commit author address in the published history is the user's personal one (published by the user's choice).

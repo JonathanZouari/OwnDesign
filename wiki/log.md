@@ -265,3 +265,17 @@ first text); first text after 0.63 s, total 0.77 s; `finish_reason` `stop`; even
 `truncated: false`; 213 characters of fluent Hebrew with two small wording slips (Claude's reading; the owner
 judges). No key or `.env` content was printed. Not covered: a long answer, the 429 path, repeated
 questions. Pages: [advisor](advisor.md), [open-items](open-items.md).
+
+## [2026-11-25] docs | Pull request #2 to the fork's dev
+With the owner's go, `feat/advisor-groq` was pushed to the fork `sarah-s-1/OwnDesign` and PR #2 opened to its
+`dev` (nothing to the upstream course repository, `main` untouched). The head at that moment was `e7f37f8`
+(the same as the local head). Full backend suite 154 passed, frontend 36 passed, none failed or skipped. The
+repository has no CI workflows, so no CI run started. The PR body names the why (PRD 9.1), the model
+`openai/gpt-oss-120b`, `reasoning_effort` low, 4000 tokens, the live check and the open items. The owner
+reviewed every finding of the four reviews and accepted the unfixed ones as open items: the in-stream rate
+limit getting the generic message, a refused question still counting toward the daily 50, the fragile
+`_attempts` dict and the `httpx`/`httpx2` mix in `e2e_app.py`, tests importing factories from each other,
+the key as a plain string, a leftover `OPENAI_ORG_ID`, reasoning inside `content`, and the unknown effect of
+the requested maximum on Groq's shared per-minute limit. Those not already there were added to
+[open-items](open-items.md) in the commit that adds this entry, which also fixes the PR body's statement that
+all open items were in that page.
