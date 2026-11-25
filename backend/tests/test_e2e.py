@@ -69,6 +69,9 @@ def servers():
     for process in started:
         if process:
             process.terminate()
+    for process in started:
+        if process:
+            process.wait(timeout=10)  # the next browser module starts its own backend on the same port
 
 
 @pytest.fixture
@@ -609,6 +612,7 @@ def overflowing_widths(page, details: dict | None = None) -> list[int]:
     """The widths at which the editor page scrolls sideways or its tab bar is wider than its box.
     `details` receives {width: (page overflow px, tab bar overflow px)} for the failing widths."""
     bad = []
+    page.evaluate("document.fonts.ready.then(() => true)")  # text widths depend on the web font having loaded
     for width in HEADER_WIDTHS:
         page.set_viewport_size({"width": width, "height": 800})
         over = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
@@ -620,7 +624,9 @@ def overflowing_widths(page, details: dict | None = None) -> list[int]:
     return bad
 
 
-KNOWN_EXTRA_OVERFLOW_PX = {900: 40, 768: 175}  # measured: 38 px at 900 (control 0), 170 px at 768 (control 81); see open-items.md
+# Measured: 38 px at 900 (control 0) and 170 px at 768 (control 81); see open-items.md. The limits leave about 15 px
+# for the difference in text length between the two users' headers and for font metrics.
+KNOWN_EXTRA_OVERFLOW_PX = {900: 55, 768: 185}
 
 
 def test_the_advisor_tab_adds_only_the_known_header_overflow(advisor_servers, page, api, make_user):
@@ -647,6 +653,8 @@ def test_the_advisor_tab_adds_only_the_known_header_overflow(advisor_servers, pa
     for width, limit in KNOWN_EXTRA_OVERFLOW_PX.items():
         if width in advisor_details:
             assert advisor_details[width][0] <= limit, f"the overflow at {width} px grew: {message}"
+    for width, (_, bar) in advisor_details.items():  # the tab bar itself must not become wider than its box
+        assert bar <= control_details.get(width, (0, 0))[1] + 2, f"the tab bar overflows at {width} px: {message}"
 
 
 def test_advisor_fits_a_phone(advisor_servers, page, api, make_user):
