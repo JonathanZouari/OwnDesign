@@ -40,7 +40,8 @@ End to end, regression (both full suites) and edge cases for the change (`CLAUDE
 
 ## Last result
 
-2026-11-25 (`feat/advisor-groq`, after the reasoning guard): backend 154 passed (including 12 browser journeys, which also pass on their own), frontend 36 passed. None failed or skipped.
+2026-11-26 (`feat/advisor-on-upstream`, `2cb7762`, upstream merged in, its four migrations applied): full backend `222 passed` with `ALLOWED_ORIGINS` including `http://127.0.0.1:5500` in the environment (as is: `5 failed, 217 passed`, the five failures being upstream's `test_e2e_design.py` on CORS because `.env` lacks that origin); browser journeys of both files alone `20 passed`; frontend `50 passed`. None skipped. Baseline on `dev` before the merge: backend 154 passed, frontend 36 passed.
+Before the merge: 2026-11-25 (`feat/advisor-groq`, after the reasoning guard): backend 154 passed (including 12 browser journeys, which also pass on their own), frontend 36 passed. None failed or skipped.
 Before the reasoning guard (after the code-review fixes): backend 144 passed, frontend 36 passed.
 Baseline run the same day before any change: backend 109 passed, frontend 34 passed.
 2026-11-24 (advisor branch, after the hardening commit): backend 109 passed (10 browser journeys), frontend 34 passed. None failed or skipped.

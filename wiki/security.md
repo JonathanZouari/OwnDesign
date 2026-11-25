@@ -127,6 +127,27 @@ checks, signed URLs, no IDOR through asset or room ids. Not fixed: see the Phase
 duplicate chat message after a failed answer, unvalidated `?project=`); a security review of the frontend
 commits is still to do.
 
+## Merge of upstream/dev (2026-11-26)
+
+The streaming Groq advisor now lives next to upstream's saved-chat OpenAI consultant ([advisor.md](advisor.md)).
+
+- **Database review** of upstream's four Phase 2 migrations (one reviewer, read-only, before they were applied as
+  written): no critical or high finding; the two medium and six low findings are in [open-items.md](open-items.md).
+  RLS on all new tables with SELECT-only policies, tenant isolation inherited from `projects`, `ai_conversations`
+  own-only, definer functions with a pinned `search_path` and service-role-only, a private bucket, nothing destructive.
+- **Code reviews** (four runs): the real defects were naming and documentation after the merge, test weaknesses and
+  an editor header overflow; all fixed or accepted by the owner ([log.md](log.md)).
+- **Security review** of the merge resolution and follow-ups, by a reviewer and by the `security-review` skill's
+  analysis: no vulnerability. Checked: each client carries only its own key to its own host (the advisor passes the
+  Groq URL explicitly, and the installed SDK falls back to `OPENAI_BASE_URL` only when no URL is given; a test pins
+  each client's key and host); the advisor's access checks and their order are unchanged and run before the stream
+  opens; the advisor's audit row still has no studio, so members cannot read it; CORS origins unchanged (upstream
+  added PUT and DELETE, which the POST-only advisor route does not use); the 6 MB body limit applies only to
+  `POST .../assets`; no test fake is reachable from the app (`e2e_app.py` is only started as a test subprocess,
+  and it also switches the consultant off).
+- Not changed, recorded as open items: the OpenAI organisation, project and custom-header environment variables would
+  also be sent to Groq by the advisor's client; the consultant's audit event carries the studio id.
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

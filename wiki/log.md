@@ -293,3 +293,73 @@ the key as a plain string, a leftover `OPENAI_ORG_ID`, reasoning inside `content
 the requested maximum on Groq's shared per-minute limit. Those not already there were added to
 [open-items](open-items.md) in the commit that adds this entry, which also fixes the PR body's statement that
 all open items were in that page.
+
+## [2026-11-25] plan | Bring upstream into the advisor work, then a draft pull request to upstream
+The owner wanted the fork's work on a new branch with `upstream` merged in, and then a pull request to
+`JonathanZouari/OwnDesign`. Read-only GitHub queries (approved) showed upstream `main` and `dev` both at
+`39134d8`, 8 commits ahead of the fork's `main` (`472a0ed`), all Phase 2: design brief, finishes, images,
+moodboard, four SQL migrations and an AI consultant of its own (paid OpenAI, saved chat). All four open
+upstream pull requests target `dev`. Decisions by the owner: keep both AI features and open the pull request
+as a draft; merge, never rebase, never push to `main`; apply upstream's migrations only after a database
+review. Pages: [decisions](decisions.md), [advisor](advisor.md).
+
+## [2026-11-25] build | Merge of upstream/dev into feat/advisor-on-upstream
+`upstream` remote added and fetched (owner's go); baseline on `dev` first: backend 154 passed, frontend 36
+passed. `git merge-tree` predicted 14 conflicting files of the 17 changed on both sides, and the merge
+confirmed exactly those: 6 code files and 8 wiki pages. Resolved by keeping both sides: both settings blocks
+(`groq_*`, `openai_*`), both routers, both schema blocks, both editor links (the advisor tab renamed
+"AI Advisor"), `uv.lock` taken from upstream (`uv lock --check` passed; `uv sync --locked` installed one
+package, `python-multipart`, with the owner's go), `log.md` interleaved by date. Merge commit `a5f4715`.
+Follow-ups: `3a63961` (new `test_coexist.py`, body-limit and independent-cap tests, distinct tab names,
+`e2e_app.py` switches the consultant's OpenAI client off), `c87da3a` (the advisor page renamed), `780889f`,
+`ef57110`, `2cb7762` (test fixes from the reviews), `a538e7d`, `7a1a7fc` (docs). Pages:
+[architecture](architecture.md), [advisor](advisor.md), [decisions](decisions.md), [overview](overview.md),
+[testing](testing.md).
+
+## [2026-11-26] security | Database review of upstream's four migrations
+One `general-purpose` reviewer (Sonnet, read-only, no `.env`), about 8 minutes: no critical or high finding;
+two medium (a moodboard item's asset not tied to the same project; `reserve_ai_message` trusts its
+arguments and a `null` cap skips the limit) and six low ones; "safe to apply to a dev project: yes with
+these changes". RLS is on for all six new tables plus `storage_deletions`, with SELECT-only policies and tenant
+isolation inherited from `projects`; the `SECURITY DEFINER` functions pin `search_path` and are service-role
+only; nothing is destructive. The owner chose to apply the files as upstream wrote them (they are upstream's),
+so the findings are in [open-items](open-items.md). The owner checked in the dashboard that the project has no
+storage policies (`pg_policies` for schema `storage` returned no rows). Pages: [security](security.md).
+
+## [2026-11-26] infra | Upstream's four migrations applied to the linked project
+`supabase migration list --linked` (output filtered to version rows, nothing else printed) showed only the two
+Phase 1 migrations applied. `supabase db push --linked --dry-run` listed exactly the four Phase 2 files;
+after the owner's explicit go the real push applied them (exit 0), and the list then showed all 6 applied on
+both sides. No schema change was made by Claude beyond applying upstream's files as written.
+Pages: [decisions](decisions.md).
+
+## [2026-11-26] test | First run on the merged branch
+Backend 216 passed, 5 failed: all five in upstream's `tests/test_e2e_design.py`. Cause, shown by re-running
+those tests with `ALLOWED_ORIGINS` set in the environment (6 passed): upstream's fixture starts the backend
+without the origins the browser needs, so `ALLOWED_ORIGINS` in `backend/.env` must include
+`http://127.0.0.1:5500` (a setup requirement upstream's own wiki states). Not a code defect.
+Pages: [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] lint | Code reviews of the merge, four runs, and their fixes
+Four `general-purpose` runs (Sonnet, read-only), each re-run after code changed. Real defects found and fixed:
+the advisor page, tab and messages still said "AI Consultant" next to upstream's feature (`c87da3a`); false
+statements in the wiki and README after the merge (`a538e7d`); the scripted backend's OpenAI isolation now
+proven by a made-up key (502 if the override fails, 503 if it works); a header-overflow comparison test that
+had limits too tight and a check that could never fail (removed); a server-shutdown race in the test fixture.
+Found and accepted by the owner as open items: the editor header overflows by 38 px at about 900 px with the
+advisor tab (the designer view, without it, does not); upstream's consultant audit event and stale comment.
+The last two runs found nothing at medium or high. Pages: [open-items](open-items.md), [testing](testing.md).
+
+## [2026-11-26] security | Reviews of the merge: no vulnerability
+One security reviewer (`general-purpose`, Sonnet, read-only, told never to touch any `.env` file) and the
+`security-review` skill's analysis (it diffs against `origin/main`, which here would include all of upstream's
+code, so it ran on a saved diff of the merge resolution and follow-ups). Neither found a vulnerability. The
+reviewer's one unverified claim, that an explicit `base_url` beats `OPENAI_BASE_URL`, was checked in the
+installed SDK: only `None` falls back to the environment. The same SDK file also reads `OPENAI_CUSTOM_HEADERS`
+(added to the existing open item). No reviewer reported touching a `.env` file. Pages: [security](security.md).
+
+## [2026-11-26] test | Pre-push gate on the merged branch (`2cb7762`)
+Raw results, tree clean, ports 8000 and 5500 free: full backend as is `5 failed, 217 passed` (the five
+upstream browser tests above); full backend with `ALLOWED_ORIGINS` set `222 passed`; the browser journeys of
+both files alone `20 passed`; frontend `50 passed, 0 failed, 0 skipped`. Baseline on `dev`: backend 154
+passed, frontend 36 passed. Nothing is pushed. Pages: [testing](testing.md).
