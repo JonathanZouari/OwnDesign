@@ -30,7 +30,11 @@ GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 FIRST_PIECE_TIMEOUT_S = 20
 TOTAL_TIMEOUT_S = 90
 MAX_REPLY_CHARS = 8000
-MAX_REPLY_TOKENS = 1000
+# The 8000-character cap is about 2,000 to 3,000 tokens (more for Hebrew). The rest is headroom for reasoning,
+# which may count toward this limit.
+MAX_REPLY_TOKENS = 4000
+# Low effort keeps the reasoning short. Only sent to Groq's reasoning (gpt-oss) models; other models reject it.
+REASONING_EFFORT = "low"
 
 SYSTEM_PROMPT = """\
 You are the design advisor inside Atelier, an app where a client plans their own home.
@@ -67,10 +71,15 @@ class GroqLlm:
     def __init__(self, client: AsyncOpenAI, model: str):
         self._client = client
         self._model = model
+        self._extra = {"reasoning_effort": REASONING_EFFORT} if model.startswith("openai/gpt-oss") else {}
 
     async def stream(self, messages: list[dict]) -> AsyncGenerator[tuple[str, str | None]]:
         upstream = await self._client.chat.completions.create(
-            model=self._model, messages=messages, stream=True, max_completion_tokens=MAX_REPLY_TOKENS
+            model=self._model,
+            messages=messages,
+            stream=True,
+            max_completion_tokens=MAX_REPLY_TOKENS,
+            **self._extra,
         )
         try:
             async for chunk in upstream:
