@@ -8,6 +8,7 @@ The question decides what the fake does, so one server serves every journey:
     "[flaky]" in the question        -> fails on the first attempt for that exact question, works on the next
     "[busy]" in the question         -> Groq's rate limit (429) before any text on the first attempt, works on the next
     "[busy-late]" in the question    -> two pieces, then the rate limit on the first attempt, works on the next
+                                        (simulated: the real SDK reports a limit inside an open stream as a plain APIError)
     anything else                    -> an English reply
 """
 
@@ -48,7 +49,6 @@ class ScriptedLlm:
             return FakeLlm(pieces, delay=DELAY_S, fail_at=0, error=_rate_limited()).stream(messages)
         if "[error]" in question or ("[flaky]" in question and first_attempt):
             return FakeLlm(ENGLISH_REPLY, delay=DELAY_S, fail_at=2, error=_failure()).stream(messages)
-        pieces = HEBREW_REPLY if HEBREW_LETTER.search(question) else ENGLISH_REPLY
         return FakeLlm(pieces, delay=DELAY_S).stream(messages)
 
 

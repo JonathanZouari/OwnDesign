@@ -344,13 +344,27 @@ def test_advisor_is_configured_with_a_key_and_a_model(monkeypatch, fresh_client_
     assert isinstance(advisor.get_llm(), advisor.GroqLlm)
 
 
-def test_openai_settings_no_longer_configure_the_advisor(monkeypatch):
-    monkeypatch.setattr(
-        advisor,
-        "settings",
-        lambda: SimpleNamespace(groq_api_key=None, groq_model=None, openai_api_key="sk-old", openai_model="gpt-old"),
-    )
+def test_old_openai_environment_variables_do_not_configure_the_advisor(monkeypatch):
+    """The real Settings class: a leftover OPENAI_* line is ignored, and the Groq fields stay empty."""
+    from app.db import Settings
+
+    for name in ("GROQ_API_KEY", "GROQ_MODEL"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-old")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-old")
+    config = Settings(_env_file=None, supabase_url="http://x", supabase_publishable_key="x", supabase_secret_key="x")
+    assert config.groq_api_key is None and config.groq_model is None
+    monkeypatch.setattr(advisor, "settings", lambda: config)
     assert advisor.get_llm() is None
+
+
+def test_groq_environment_variables_are_read_into_the_settings(monkeypatch):
+    from app.db import Settings
+
+    monkeypatch.setenv("GROQ_API_KEY", "gsk-test")
+    monkeypatch.setenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    config = Settings(_env_file=None, supabase_url="http://x", supabase_publishable_key="x", supabase_secret_key="x")
+    assert (config.groq_api_key, config.groq_model) == ("gsk-test", "llama-3.3-70b-versatile")
 
 
 def test_the_client_talks_to_groq_with_the_configured_key_and_model(monkeypatch, fresh_client_cache):
@@ -451,9 +465,14 @@ def test_rate_limit_after_some_text_keeps_the_text_and_sends_no_done():
 
 
 def test_rate_limit_message_is_not_the_generic_failure_message():
-    message = advisor.ERRORS["rate_limited"]
-    assert message != advisor.ERRORS["upstream"]
-    assert "busy" in message and "minute" in message
+    assert advisor.ERRORS["rate_limited"] != advisor.ERRORS["upstream"]
+
+
+def test_a_limit_reported_inside_an_open_stream_is_the_generic_failure():
+    """The SDK raises a plain APIError for an error event in a 200 stream, so only an HTTP 429 gets the busy message."""
+    stream = wire(chunk_body("some text"), {"error": {"message": "PROVIDER-TEXT", "type": "tokens", "code": "rate_limit_exceeded"}})
+    parsed = parse(collect(sdk_llm_from_stream(stream)))
+    assert [(name, data.get("code")) for name, data in parsed] == [("delta", None), ("error", "upstream")]
 
 
 def test_other_provider_errors_are_still_the_generic_failure():

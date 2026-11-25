@@ -440,7 +440,7 @@ def test_advisor_shows_a_failed_reply_and_retries_the_same_question(advisor_serv
 def test_advisor_says_it_is_busy_when_groq_rate_limits_and_works_again_on_retry(advisor_servers, page, api, make_user):
     world = advisor_world(api, make_user)
     open_advisor(page, world)
-    busy = "The advisor is busy right now. Please try again in a minute."
+    busy = "The advisor is busy right now. Please try again in a little while."
 
     # Rate limit before any text: the friendly message, not the generic failure, and a working retry.
     ask(page, "[busy] Which lamp?")
