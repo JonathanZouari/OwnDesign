@@ -88,6 +88,23 @@ headers at DEBUG only if HTTP/2 were switched on for the SDK client, which it is
 Process note: in the second review the sub-task was told to use read-only file tools and also ran two
 read-only shell commands. Nothing was changed.
 
+### Switch from OpenAI to Groq (2026-11-25)
+
+Both reviews covered `git diff dev...HEAD` only (the owner's choice). The `security-review` skill itself
+diffs against `origin/main`, which also contains the earlier advisor work; its base cannot be changed, so
+its analysis was run on a saved copy of the `dev...HEAD` diff instead.
+
+- A `general-purpose` reviewer with a security brief (read-only, no `.env`): no vulnerability, nothing at
+  or above low. It examined and rejected: the log of a `RateLimitError`, an information difference between
+  `rate_limited` and `upstream` (both come after the access checks), the base URL being overridden (it is
+  a constant passed explicitly), leftover `OPENAI_*` variables (ignored, tested), a whitespace-only key,
+  retry amplification (`max_retries=0`), the key's `repr`.
+- The `security-review` skill (identification step, read-only file tools): no finding at the 8-of-10
+  bar, so no false-positive checks were needed. It did not re-read `frontend/js/pages/advisor.js`; the first
+  reviewer did, and found the error text goes in as a text node.
+- What the change adds: Groq's shared free-tier limit lets any user make the advisor answer "busy" to
+  the others (availability only; the daily 50 and the one-open-reply lock still apply per user).
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

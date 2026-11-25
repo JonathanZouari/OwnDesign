@@ -216,3 +216,13 @@ re-run against the same server (unique questions today), and the test modules im
 each other. Process note: the reviewer ran `grep -c` on `backend/.env` against the instruction not to open
 it; the output was a line count only. Backend 144 passed, frontend 36 passed, none failed or skipped.
 Pages: [advisor](advisor.md), [open-items](open-items.md), [testing](testing.md).
+
+## [2026-11-25] security | Reviews of the Groq switch (`dev...HEAD`)
+Two reviews, one at a time, both on `git diff dev...HEAD` as the owner asked. (1) `general-purpose` reviewer
+with a security brief, finished in about a minute: no vulnerability; candidates rejected (provider text in
+logs, `rate_limited` versus `upstream`, base URL override, leftover `OPENAI_*` variables, whitespace key,
+retries, key `repr`). It did not touch `.env`. (2) `security-review` skill: it diffs against `origin/main`
+and the base cannot be changed, so its analysis ran on a saved copy of the `dev...HEAD` diff; nothing at the
+8-of-10 bar, so no false-positive sub-tasks. That sub-task made only three tool calls and did not re-read
+`advisor.js`; the first reviewer had. No critical or high finding, nothing to fix before the push.
+Pages: [security](security.md).
