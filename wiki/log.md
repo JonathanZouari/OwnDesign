@@ -87,6 +87,10 @@ Pages: [security](security.md), [open-items](open-items.md).
 The `security-review` skill reviews local commits against `origin/main`, so the rule is now: commit,
 review, then push. Pages: [security](security.md).
 
+## [2026-11-19] docs | Model split: Opus 5.5 plans, Sonnet 5.5 executes
+Replaced Fable 5.2 with `opusplan` in `.claude/settings.json`; CLAUDE.md subagent rule updated to match.
+Pages: [decisions](decisions.md).
+
 ## [2026-11-23] build | Phase 2: brief, finishes, images, moodboard, AI consultant
 Backend: three-plus migrations (tables, asset quota trigger, atomic consultant reservation), endpoints for
 brief, finishes, assets, moodboard and consultant, tests first. Frontend: `design.html`, `consultant.html`
