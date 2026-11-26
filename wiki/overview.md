@@ -32,6 +32,13 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 
+## Built: room scan (branch `feature/room-scan`, not merged yet)
+
+- "In the room" tab on `design.html`: take or choose a photo, YOLOv8 finds furniture and objects, each gets a
+  name, category, colour and position; the person checks the list and adds what is right. Items can also be
+  added by hand, edited and deleted, grouped by room, and the consultant sees them
+  ([architecture.md](architecture.md#room-scan-and-item-list)).
+
 ## Not built yet
 
 Renderings, budget, dossier,

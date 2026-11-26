@@ -24,3 +24,8 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Consultant memory policy** (PRD 5.4 leaves it open): messages are stored per project and user, private to that user, capped at 30 a day per user. A failed OpenAI call still uses a slot because it may have been billed.
 - **Images go through the backend**, not directly to storage, so type, size, count and access are checked in one place.
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.
+- **Room scan with YOLOv8n in the backend (ONNX, CPU).** The user asked for YOLOv8. ONNX keeps PyTorch out of
+  production; the server keeps the existing upload checks in one place. Detections are only suggestions: the
+  person confirms each item before it is listed. Items are a structured table, not the brief's free-text field.
+- **Inspiration images will be characterised with YOLOv8 plus a colour palette** (user's choice, 2026-11-26),
+  after the room scan ships; no style name from the model.

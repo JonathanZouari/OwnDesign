@@ -101,3 +101,23 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+
+## [2026-11-26] plan | Room scan with YOLOv8
+Approved plan: YOLOv8n as ONNX in the backend, a structured `room_items` list, the person confirms each
+detection, branch `feature/room-scan` from `dev`. Pages: [decisions](decisions.md).
+
+## [2026-11-26] build | Room scan and the "In the room" tab
+Model (`06dc9c0`), vision module (`5904d03`), table (`36b56fc`), API (`46e8ff9`), logic (`c4a6d33`), review fixes
+(`a802b21`), tab (`566d503`), browser journeys (`1cd40e4`). Pages: [architecture](architecture.md),
+[overview](overview.md), [open-items](open-items.md).
+
+## [2026-11-26] security | Review of the room scan
+Database and code reviews, findings fixed; `security-review`: no High or Medium finding. Pages:
+[security](security.md).
+
+## [2026-11-26] test | Room scan, partly verified
+`test_vision.py` 35 passed, frontend 40 passed. Integration and browser tests not run: empty Supabase keys in
+`backend/.env` and the migration not applied. Pages: [testing](testing.md).
+
+## [2026-11-26] decision | Inspiration images: YOLOv8 plus colours
+User's choice, built after the room scan. Pages: [decisions](decisions.md), [open-items](open-items.md).
