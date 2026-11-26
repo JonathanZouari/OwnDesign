@@ -55,8 +55,14 @@ export async function copyText(text) {
   }
 }
 
-export const formatDate = (iso) =>
-  new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+// dd/mm/YYYY hh:mi:ss AM/PM in local time, the same in English and Hebrew.
+export function formatDate(iso) {
+  const date = new Date(iso);
+  const two = (n) => String(n).padStart(2, "0");
+  const hours = date.getHours() % 12 || 12;
+  const meridiem = date.getHours() < 12 ? "AM" : "PM";
+  return `${two(date.getDate())}/${two(date.getMonth() + 1)}/${date.getFullYear()} ${two(hours)}:${two(date.getMinutes())}:${two(date.getSeconds())} ${meridiem}`;
+}
 
 export const pageUrl = (page) => new URL(page, location.href).href;
 
