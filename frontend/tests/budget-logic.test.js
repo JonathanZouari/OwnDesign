@@ -198,6 +198,53 @@ test("import strips the formula guard only before a formula character", () => {
   assert.deepEqual(result.items.map((i) => i.name), ["=a", "+a", "-a", "@a", "'a", "''=a", "a'=b"]);
 });
 
+// A spreadsheet whose list separator is ; or tab splits inside our cells: no piece may look like a formula.
+const FORMULA_PIECE = /[;\t\r\n][\s"]*[=+\-@]/;
+
+test("csvCell defuses formulas after a separator or line break and quotes ; and tab", () => {
+  assert.equal(B.csvCell("x;=1+1;y"), `"x;'=1+1;y"`);
+  assert.equal(B.csvCell("a;b"), '"a;b"');
+  assert.equal(B.csvCell("a\tb"), '"a\tb"');
+  assert.equal(B.csvCell("a; -5"), `"a; '-5"`);
+  assert.equal(B.csvCell('x;"=1'), `"x;""'=1"`);
+  assert.equal(B.csvCell("\t=1"), `"'\t'=1"`);
+  for (const separator of [";", "\t", "\r", "\n", "\r\n", ";;", ";  ", "\t ", ';" "']) {
+    for (const start of ["=", "+", "-", "@"]) {
+      const cell = B.csvCell(`x${separator}${start}1`);
+      assert.doesNotMatch(cell, FORMULA_PIECE, JSON.stringify(cell));
+      assert.ok(cell.includes(`'${start}1`), JSON.stringify(cell));
+    }
+  }
+  for (const safe of ["a=b", "a - 5", "x,y=1", "mail@example", "a;b-1"]) assert.ok(!B.csvCell(safe).includes("'"), safe);
+});
+
+test("toCsv guards separators in name, room and note", () => {
+  const csv = B.toCsv([item({ name: "n;=1+1;y", room: "r\t+2", note: "m\n@SUM(1)" })], "ILS", B.CSV_LABELS);
+  assert.doesNotMatch(csv.replaceAll("\r\n", "\r\n#"), FORMULA_PIECE);
+  for (const guarded of [`"n;'=1+1;y"`, `"r\t'+2"`, `"m\n'@SUM(1)"`]) assert.ok(csv.includes(guarded), guarded);
+});
+
+test("round trip: separators and formula characters inside name, room and note", () => {
+  const values = [
+    "x;=1+1;y", "a; -5", "a;-5", "x,=1", "x\t+1", "a\n=1", "a\r-1", "a\r\n@x", "a;\n\t=1", "a;;=1", 'x;"=1', 'x;""+1',
+    "=a;=b", "-1;-2", "x;'a", "x';=1", "a;b", "a\tb", ";", ";=", "x;= ",
+  ].map((value) => value.trim());
+  const items = values.map((value) => item({ name: value, room: value, note: value }));
+  const result = imp(B.toCsv(items, "USD", B.CSV_LABELS));
+  assert.deepEqual(result.errors, undefined);
+  assert.deepEqual(result.items, items);
+});
+
+test("known limitation: an apostrophe already between a separator and a formula character is dropped on import", () => {
+  const result = imp(B.toCsv([item({ name: "x;'=1" })], "USD", B.CSV_LABELS));
+  assert.equal(result.items[0].name, "x;=1");
+});
+
+test("import handles a huge cell of line breaks and separators", () => {
+  const cell = ";\n\t\r ".repeat(50_000);
+  assert.deepEqual(errorsOf(HEADER, `"${cell}",Furniture,,1,unit,1,1,`).map((e) => e.key), ["nameTooLong"]);
+});
+
 test("import accepts semicolons, tabs, a BOM, LF endings and a trailing blank line", () => {
   for (const sep of [";", "\t", ","]) {
     const text = `﻿${[HEADER, GOOD].map((l) => l.split(",").join(sep)).join("\n")}\n\n`;

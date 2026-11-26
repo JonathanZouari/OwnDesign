@@ -145,11 +145,19 @@ export const validateItem = (raw) => parseItem(raw).errors;
 
 // ---- CSV ---------------------------------------------------------------------------------------------
 
-// A cell that starts with = + - @ tab or CR can run as a formula in a spreadsheet; a leading ' defuses it.
+// Where a spreadsheet may start a cell: the start of the value, or after a ; tab or line break inside it (with a
+// ";" list separator Excel splits there, quoted or not), skipping blanks and quotes.
+const CELL_START = String.raw`(^|[;\t\r\n](?:[^\S\t\r\n]|")*)`;
+const FORMULA_AHEAD = String.raw`(?=[=+\-@])`;
+const UNGUARDED = new RegExp(`${CELL_START}${FORMULA_AHEAD}`, "g");
+const GUARDED = new RegExp(`${CELL_START}'${FORMULA_AHEAD}`, "g");
+
+// = + - @ at a cell start, or a leading tab or CR, can run as a formula in a spreadsheet; a ' in front defuses it.
 export function csvCell(value) {
   let text = value == null ? "" : String(value);
-  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
-  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  text = text.replace(UNGUARDED, "$1'");
+  if (/^[\t\r]/.test(text)) text = `'${text}`;
+  return /[",;\t\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
 // labels: {columns: [name, category, room, quantity, unit, unitPrice, amount, note], total, categories: {key: text}, units: {key: text}}
@@ -278,8 +286,8 @@ const plainNumber = (value) => {
   return /^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(text) ? text.replaceAll(",", "") : "invalid";
 };
 
-// Removes the apostrophe that csvCell adds in front of a would-be formula.
-const unguard = (value) => value.replace(/^'(?=[=+\-@\t\r])/, "");
+// Removes the apostrophes that csvCell adds in front of would-be formulas.
+const unguard = (value) => value.replace(GUARDED, "$1").replace(/^'(?=[\t\r])/, "");
 
 // Header record -> {at: {field: index}, currency, errors}.
 function readHeader({ line, cells }, labels) {
