@@ -21,6 +21,8 @@ alter table public.owned_items enable row level security;
 revoke all on public.owned_items from anon, authenticated;
 grant select on public.owned_items to authenticated;
 grant select, insert, delete on public.owned_items to service_role;
+-- Supabase's default privileges give service_role everything on new tables; an accepted item is never edited.
+revoke update, truncate, references, trigger on public.owned_items from service_role;
 
 -- Same rule as the other design data: whoever sees the project sees its items.
 create policy owned_items_select_via_project on public.owned_items

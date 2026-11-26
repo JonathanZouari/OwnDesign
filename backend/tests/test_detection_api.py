@@ -227,19 +227,54 @@ def test_no_items_for_strangers(api, world):
     assert api.delete(f"{items_url(world.theirs)}/{item['id']}", headers=world.other_client.headers).status_code == 404
 
 
-def test_users_cannot_read_or_write_items_through_the_data_api(world):
+def test_users_cannot_read_or_write_items_through_the_data_api(world, admin):
     from supabase import create_client
 
     from app.db import settings
 
-    data_api = create_client(settings().supabase_url, settings().supabase_publishable_key)
-    data_api.postgrest.auth(world.other_client.token)
-    assert data_api.table("owned_items").select("*").eq("project_id", world.mine["id"]).execute().data == []
-    with pytest.raises(Exception):
-        data_api.table("owned_items").insert({"project_id": world.theirs["id"], "item_class": "couch", "quantity": 1}).execute()
-    anonymous = create_client(settings().supabase_url, settings().supabase_publishable_key)
-    with pytest.raises(Exception, match="permission denied"):  # anon has no grant on the table at all
-        anonymous.table("owned_items").select("*").execute()
+    row = admin.table("owned_items").insert({"project_id": world.mine["id"], "item_class": "clock", "quantity": 1}).execute().data[0]
+    try:
+        def as_user(user):
+            client = create_client(settings().supabase_url, settings().supabase_publishable_key)
+            client.postgrest.auth(user.token)
+            return client
+
+        # The policy lets the project's client and the studio's designer in, and nobody else.
+        for user in (world.client, world.designer):
+            assert row["id"] in {r["id"] for r in as_user(user).table("owned_items").select("id").execute().data}
+        for user in (world.other_client, world.designer_b):
+            assert as_user(user).table("owned_items").select("*").eq("project_id", world.mine["id"]).execute().data == []
+        # Signed-in users can never write, not even to their own project's items.
+        owner = as_user(world.client)
+        for write in (
+            lambda: owner.table("owned_items").insert({"project_id": world.mine["id"], "item_class": "couch", "quantity": 1}).execute(),
+            lambda: owner.table("owned_items").update({"quantity": 5}).eq("id", row["id"]).execute(),
+            lambda: owner.table("owned_items").delete().eq("id", row["id"]).execute(),
+        ):
+            with pytest.raises(Exception, match="permission denied"):
+                write()
+        anonymous = create_client(settings().supabase_url, settings().supabase_publishable_key)
+        with pytest.raises(Exception, match="permission denied"):  # anon has no grant on the table at all
+            anonymous.table("owned_items").select("*").execute()
+    finally:
+        admin.table("owned_items").delete().eq("id", row["id"]).execute()
+
+
+def test_items_per_project_are_capped(api, world, admin, monkeypatch):
+    from app.routes import detection
+
+    monkeypatch.setattr(detection, "MAX_ITEMS_PER_PROJECT", len(stored(admin, world.mine)) + 1)
+    body = {"items": [{"item_class": "tv", "quantity": 1}, {"item_class": "sink", "quantity": 1}]}
+    assert api.post(items_url(world.mine), json=body, headers=world.client.headers).status_code == 409
+
+
+def test_service_role_cannot_edit_an_accepted_item(world, admin):
+    row = admin.table("owned_items").insert({"project_id": world.mine["id"], "item_class": "vase", "quantity": 1}).execute().data[0]
+    try:
+        with pytest.raises(Exception, match="permission denied"):
+            admin.table("owned_items").update({"quantity": 2}).eq("id", row["id"]).execute()
+    finally:
+        admin.table("owned_items").delete().eq("id", row["id"]).execute()
 
 
 def test_removing_an_item(api, world, admin):

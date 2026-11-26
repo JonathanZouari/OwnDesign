@@ -51,7 +51,7 @@ RLS-scoped read, writes with the service key, and refuses writes in a suspended 
 2. The client selects **Detect items** on that photo.
 3. The server runs detection on the stored image and returns the items found.
 4. The page draws a box and a name for each item on the photo, with a confidence level.
-5. The client ticks the items to keep and selects **Add to brief**.
+5. The client ticks the items to keep, adjusts how many of each, and selects **Add to brief**. The suggested quantity counts the sure detections of that item (unsure ones are often the same item seen twice), or all of them when none is sure.
 6. The accepted items appear in the brief's existing items and are saved with it.
 7. In the plan editor, the palette shows a "My items" group with the accepted items that have a catalog type. The user places them like any other furniture, at the catalog's default size, and can resize them.
 
@@ -135,6 +135,12 @@ Run on the two interior images in `design/stitch/` (1376 x 768), threshold 0.4:
 - Pre-processing: resize to the model's square input, scale to 0..1, normalise with ImageNet mean and standard
   deviation. Output: 300 boxes (centre x, centre y, width, height, relative) and class logits (sigmoid).
 - The ONNX file is larger than GitHub's 100 MB file limit, so it cannot be committed (section 13).
+- Supabase Storage accepts at most 50 MB per file by default (and on the free plan), so the full file cannot be
+  stored there either. **Quantized to int8** (ONNX Runtime dynamic quantization) RF-DETR Small is **39 MB**, runs in
+  **0.12 s** per image, and finds the same items; the sofa's confidence in one image dropped from 0.88 to 0.66,
+  still above the threshold. The int8 file is the one used.
+- Exporting again gives a different file (different PyTorch, ONNX or Python versions change the bytes), so the
+  same built file is uploaded to every environment and pinned by its SHA-256.
 - Timings are from a developer laptop; they must be measured again on the deployment server.
 
 ## 12. Repository touchpoints
@@ -152,7 +158,7 @@ Images: `backend/app/routes/design.py` (`/assets`, private bucket `project-asset
 - Model family: RF-DETR (Apache 2.0) instead of YOLOv8 (AGPL-3.0).
 - Runtime: ONNX Runtime on CPU, on Atelier's own server.
 - Model size: RF-DETR Small (input 512). It found the TV, a second plant and books that Nano missed; 0.23 s per image is not noticeable to the user.
-- Model file: kept in a private Supabase Storage bucket. The server downloads it on first use, checks its sha256 against the value pinned in the code, and keeps a local copy. Tests use a small stand-in model.
+- Model file: RF-DETR Small quantized to int8 (39 MB), kept in a private Supabase Storage bucket. The server downloads it on first use, checks its sha256 against the value pinned in the code, and keeps a local copy. Tests use a small stand-in model.
 - Owner consultation: this specification goes to the owner as its own pull request first; code follows in a separate pull request after the owner accepts the direction.
 - Synchronous detection: the request runs the model and answers (about a quarter of a second locally). Concurrent runs are bounded as in plan export: two at a time per process, one per user, 429 with `Retry-After` beyond that. A background job is not worth a queue, a worker and status polling for this duration; revisit if server timings are much slower.
 - Editor: accepted items with a catalog type are offered under "My items" in the editor palette; the user places them. Accepted items are therefore kept as structured data (type, label, count), not only as brief text. The editor is also changed by other open pull requests (3D walkthrough, mobile), so this part may need rebasing.

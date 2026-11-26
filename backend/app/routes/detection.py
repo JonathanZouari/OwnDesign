@@ -34,6 +34,7 @@ ItemClassName = Literal[
     "microwave", "potted plant", "vase", "clock", "book",
 ]
 ITEM_COLUMNS = "id, item_class, quantity, source_asset_id, created_at"
+MAX_ITEMS_PER_PROJECT = 100
 
 
 def get_detector_loader():
@@ -125,6 +126,10 @@ def add_owned_items(project_id: UUID, body: OwnedItemsBody, user: CurrentUser = 
     source = str(body.source_asset_id) if body.source_asset_id else None
     if source and not user.db.table("inspiration_assets").select("id").eq("project_id", project["id"]).eq("id", source).execute().data:
         raise HTTPException(422, "Invalid input (source_asset_id): the photo is not part of this project")
+
+    stored = user.db.table("owned_items").select("id").eq("project_id", project["id"]).execute().data
+    if len(stored) + len(body.items) > MAX_ITEMS_PER_PROJECT:
+        raise HTTPException(409, "This project has reached its limit of owned items. Remove some, then try again.")
 
     # Check the brief can take the line before storing anything.
     current = user.db.table("project_briefs").select("brief").eq("project_id", project["id"]).execute().data
