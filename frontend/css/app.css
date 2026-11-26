@@ -558,6 +558,13 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .board-item { grid-template-columns: 72px minmax(0, 1fr); }
   .board-item .board-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .msg { max-width: 100%; }
+  /* A five column table does not fit a phone: each row becomes a block, so its buttons stay on screen. */
+  .stack-rows, .stack-rows tbody { display: block; }
+  .stack-rows thead { display: none; }
+  .stack-rows tr { display: grid; gap: 4px; padding: 12px 0; border-bottom: 1px solid var(--hairline); }
+  .stack-rows td { padding: 0; border: 0; overflow-wrap: anywhere; }
+  #context-area { white-space: nowrap; }
+  .composer { position: sticky; bottom: env(safe-area-inset-bottom); z-index: 5; } /* send stays in reach above the keyboard */
 }
 
 /* ==========================================================================
