@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [dev, main]
+    branches: [dev, main, ci-red-check]
   pull_request:
 
 permissions:
