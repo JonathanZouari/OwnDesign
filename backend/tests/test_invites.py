@@ -314,3 +314,20 @@ def test_correction_needs_a_member_of_that_studio_and_valid_input(api, make_user
     assert api.post(bad_id, json={"client_email": other, "client_name": "X"}, headers=world.designer.headers).status_code == 422
     assert api.get(f"/v1/invites/{target['token']}").status_code == 200  # every refusal left the invite untouched
     assert api.get(f"/v1/studios/{world.studio['id']}/invites", headers=world.designer_b.headers).status_code == 403
+
+
+def test_users_cannot_call_the_correction_function_directly(api, make_user, world, invite):
+    # correct_invite runs as security definer; only the API (service key), after its membership check, may call it.
+    from postgrest.exceptions import APIError
+    from supabase import create_client
+
+    from app.db import settings, user_client
+
+    target = invite(unique_email("inv-rpc"))
+    args = {"p_invite": target["id"], "p_email": unique_email("inv-rpc-evil"), "p_name": "X",
+            "p_token": uuid.uuid4().hex, "p_expires": "2099-01-01T00:00:00+00:00", "p_actor": world.designer.id}
+    anonymous = create_client(settings().supabase_url, settings().supabase_publishable_key)
+    for caller in (anonymous, user_client(world.designer.token), user_client(make_user("inv-rpc-user").token)):
+        with pytest.raises(APIError):
+            caller.rpc("correct_invite", args).execute()
+    assert api.get(f"/v1/invites/{target['token']}").status_code == 200  # the invite is untouched
