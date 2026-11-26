@@ -15,6 +15,12 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 
 ## By Claude (open to change)
 
+- **Product catalog (approved in plan):** currency from the project brief; editing an approved list returns it
+  to Draft; state in browser storage; PDF through the browser's print dialog; local SVG silhouettes; only
+  non-designers see Approve.
+- **2026-11-26: catalog built in the main session**, not by subagents: Fable 5.2 subagents stopped for lack of
+  usage credits.
+
 - **FastAPI**, managed with `uv`; **no-build frontend** with plain ES modules. Smallest stack that meets the PRD's "Python backend, HTML/CSS frontend".
 - **All writes go through the backend with the service key; users have SELECT only.** The approved plan limited the service key to three operations. Widened so geometry validation and the audit trail cannot be bypassed through the Supabase Data API ([architecture.md](architecture.md)).
 - **One JSON document per plan version**, in centimetres. The current plan is the latest version; no separate floor-plan table.

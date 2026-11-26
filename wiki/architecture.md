@@ -45,6 +45,13 @@ One JSON document per version, validated in `backend/app/schemas.py` and edited 
 - Furniture `x`/`y` is the centre.
 - Limits: 100 rooms, 1000 of each other kind, coordinates within 100,000 cm, body under 2 MB.
 
+## Product catalog
+
+Client side only. `frontend/js/products.js` (mock data), `shop-logic.js` (pure logic), `pages/catalog.js`.
+Only the project and the brief currency come from the API. Favorites, list and status are in `localStorage`
+under `od.shop.<projectId>` and re-validated on load. Approval is not server data and must not be trusted
+by a future backend.
+
 ## Editor
 
 `frontend/js/editor/`: `main.js` (state, tools, keyboard, save), `render.js` (SVG), `pointer.js`

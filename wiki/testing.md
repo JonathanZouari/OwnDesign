@@ -34,6 +34,11 @@ reload; designer sees the client's data; client-side rejections, markup stays te
 visitor; consultant page limits) passes together with `test_e2e.py` (9 browser tests in all). No chat message
 reaches OpenAI in the suite; the real call was checked by hand once.
 
+2026-11-26 (product catalog), on a machine without `backend/.env` or `uv`: frontend 42 passed;
+`test_geometry.py` 22 passed. The integration and browser suites did **not** run, including
+`test_e2e_catalog.py` as written. Two of its journeys (client, designer) passed in installed Chrome with
+`js/api.js` stubbed; the third (tampered storage, stranger) has never run.
+
 ## Local setup notes
 
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the

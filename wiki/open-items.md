@@ -45,3 +45,9 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 - The coordinate limit is enforced in the editor only by clamping the view.
 - Two adjacent rooms from the wizard produce two overlapping walls.
 - Commit author address in the published history is the user's personal one (published by the user's choice).
+
+## Product catalog
+
+- Run `cd backend && uv run pytest` on a configured machine; the catalog browser journeys are unverified there.
+- No independent code or security review of the catalog (subagents unavailable).
+- No sync between devices: a designer sees an approval only in the same browser until there is a backend.
