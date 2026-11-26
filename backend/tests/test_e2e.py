@@ -101,10 +101,15 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     page.get_by_role("button", name="3D walkthrough").click()
     page.locator("#walk canvas[data-position]").wait_for()
     page.keyboard.down("w")
-    page.wait_for_function("document.querySelector('#walk canvas').dataset.position.endsWith(',30')")
+    stopped = page.locator("#walk canvas[data-position$=',30']")  # an attribute wait: the page's CSP forbids eval
+    stopped.wait_for()
     page.wait_for_timeout(500)
     page.keyboard.up("w")
-    assert page.locator("#walk canvas").get_attribute("data-position").endswith(",30")
+    assert stopped.count() == 1
+    # Saving still works here: a guest is asked for an account.
+    page.keyboard.press("Control+s")
+    page.get_by_role("heading", name="Create an account to save your plan").wait_for()
+    page.get_by_role("button", name="Not now").click()
     page.keyboard.press("Escape")
     page.locator("#walk").wait_for(state="hidden")
     assert page.locator("#tool-name").inner_text() == "Select and move"

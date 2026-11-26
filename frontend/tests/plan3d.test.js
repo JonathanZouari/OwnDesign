@@ -107,6 +107,32 @@ test("a start point inside a wall is pushed out of it", () => {
   near(Math.abs(start.y - 150), 5 + RADIUS);
 });
 
+for (const degrees of [3, 10, 30]) {
+  test(`walls meeting at ${degrees} degrees cannot be walked through`, () => {
+    const angle = (degrees * Math.PI) / 180;
+    const slope = Math.tan(angle);
+    let plan = P.addWall(P.emptyPlan(), { x: 0, y: 0 }, { x: 3000, y: 0 }, "partition");
+    plan = P.addWall(plan, { x: 0, y: 0 }, { x: 3000, y: 3000 * slope }, "partition");
+    const solids = wallSolids(plan);
+    // Start between the walls, where there is room to stand, and walk into the point where they meet.
+    const x = 2000;
+    let at = { x, y: (x * slope) / 2 };
+    for (let i = 0; i < 300; i++) at = walk(at, { dx: -11, dy: -5.5 * slope }, solids);
+    assert.ok(at.x > 0 && at.y > 0 && at.y < at.x * slope, `escaped to ${at.x}, ${at.y}`);
+  });
+}
+
+test("a plan with an absurd number of overlapping openings is refused quickly", () => {
+  let plan = room();
+  const [wall] = plan.walls;
+  plan = {
+    ...plan,
+    walls: Array.from({ length: 100 }, (_, i) => ({ ...wall, id: `w${i}` })),
+    openings: Array.from({ length: 1000 }, (_, i) => ({ id: `o${i}`, wallId: "w0", type: "window", offset: i * 0.3, width: 50 })),
+  };
+  assert.throws(() => wallSolids(plan), RangeError);
+});
+
 test("every catalog item has a height below the ceiling", () => {
   for (const { type } of FURNITURE) assert.ok(FURNITURE_HEIGHT[type] > 0 && FURNITURE_HEIGHT[type] < HEIGHT.wall, type);
 });

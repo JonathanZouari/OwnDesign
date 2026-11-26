@@ -68,6 +68,7 @@ function buildScene(plan, solids) {
 
 // Shows the walkthrough inside `root` and returns the function that closes it. Throws when WebGL is unavailable.
 export function startWalk(root, plan, onExit) {
+  const solids = wallSolids(plan); // first, so a plan that is refused leaves no renderer behind
   // A fresh canvas every time: a released WebGL context cannot be reused.
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -76,7 +77,6 @@ export function startWalk(root, plan, onExit) {
   canvas.setAttribute("role", "application");
   canvas.setAttribute("aria-label", "3D view. W and S or up and down arrows walk, A and D step sideways, left and right arrows turn, Escape returns to the 2D plan.");
 
-  const solids = wallSolids(plan);
   const { scene, dispose } = buildScene(plan, solids);
   const camera = new THREE.PerspectiveCamera(70, 1, 2, 100_000);
   camera.rotation.order = "YXZ";

@@ -12,6 +12,8 @@ export const FURNITURE_HEIGHT = {
 };
 export const RADIUS = 20; // how close the walker's centre may get to a wall
 const STEP = 5; // smaller than RADIUS, so no step can jump over a wall
+// shortcut: real plans stay far below this; merge overlapping walls before cutting if one ever reaches it.
+const MAX_HOLES = 5000;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -29,6 +31,7 @@ export function wallSolids(plan) {
     return { ...openingSegment(host, opening), type: opening.type, thickness: host.thickness };
   });
 
+  let cutsLeft = MAX_HOLES;
   return plan.walls.flatMap((wall) => {
     const length = wallLength(wall);
     const ux = (wall.x2 - wall.x1) / length;
@@ -43,6 +46,9 @@ export function wallSolids(plan) {
       const [from, to] = [along(o.x1, o.y1), along(o.x2, o.y2)].sort((a, b) => a - b);
       return to - from > 0.5 ? [{ type: o.type, from, to }] : [];
     });
+    // The server accepts many overlapping walls and openings, and cutting them all would freeze the tab.
+    cutsLeft -= holes.length;
+    if (cutsLeft < 0) throw new RangeError("This plan has too many overlapping openings for the 3D view.");
 
     const cuts = [0, length, ...holes.flatMap((hole) => [hole.from, hole.to])].sort((a, b) => a - b);
     return cuts.slice(1).flatMap((end, i) => {
@@ -66,17 +72,22 @@ export function wallSolids(plan) {
   });
 }
 
-// Moves a point out of one box, if it is closer than RADIUS to it.
-function pushOut(point, solid) {
+// A point in a box's own axes, with the nearest spot of the box and the distance to it.
+function measure(point, solid) {
   const cos = Math.cos(solid.angle);
   const sin = Math.sin(solid.angle);
   const dx = point.x - solid.x;
   const dy = point.y - solid.y;
-  let u = dx * cos + dy * sin;
-  let v = dy * cos - dx * sin;
+  const u = dx * cos + dy * sin;
+  const v = dy * cos - dx * sin;
   const cu = clamp(u, -solid.length / 2, solid.length / 2);
   const cv = clamp(v, -solid.thickness / 2, solid.thickness / 2);
-  const distance = Math.hypot(u - cu, v - cv);
+  return { cos, sin, u, v, cu, cv, distance: Math.hypot(u - cu, v - cv) };
+}
+
+// Moves a point out of one box, if it is closer than RADIUS to it.
+function pushOut(point, solid) {
+  let { cos, sin, u, v, cu, cv, distance } = measure(point, solid);
   if (distance >= RADIUS) return point;
   if (distance > 0) {
     u = cu + ((u - cu) / distance) * RADIUS;
@@ -87,12 +98,20 @@ function pushOut(point, solid) {
   return { x: solid.x + u * cos - v * sin, y: solid.y + u * sin + v * cos };
 }
 
+const isClear = (point, solids) => solids.every((solid) => measure(point, solid).distance >= RADIUS - 0.01);
+
 export function walk(position, { dx, dy }, solids) {
   const inTheWay = solids.filter((solid) => solid.z0 < HEIGHT.eye);
   const steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / STEP));
   let point = position;
+  let clear = isClear(point, inTheWay);
   for (let i = 0; i < steps; i++) {
-    point = inTheWay.reduce(pushOut, { x: point.x + dx / steps, y: point.y + dy / steps });
+    const next = inTheWay.reduce(pushOut, { x: point.x + dx / steps, y: point.y + dy / steps });
+    const nextClear = isClear(next, inTheWay);
+    // Between walls meeting at a sharp angle, leaving one pushes into the other: such a step is not taken.
+    if (clear && !nextClear) break;
+    point = next;
+    clear = nextClear;
   }
   return point;
 }

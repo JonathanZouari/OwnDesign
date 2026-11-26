@@ -230,12 +230,14 @@ async function openWalk() {
     root.hidden = true;
     for (const node of behind) node.inert = false;
     button.disabled = false;
-    toast("The 3D view could not start. This browser or device may not support WebGL.", "error");
+    const reason = error instanceof RangeError ? error.message : "This browser or device may not support WebGL.";
+    toast(`The 3D view could not start. ${reason}`, "error");
   }
 }
 
 function onKey(event) {
-  if (closeWalk) return; // the walkthrough has its own keys, and W and D are drawing tools here
+  // The walkthrough has its own keys (W and D are drawing tools here); only saving still works.
+  if (closeWalk && !((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s")) return;
   if (event.target.closest("input, select, textarea, dialog")) return;
   if (state.live || state.previewLine) return; // mid-drag: the drag would overwrite a keyboard edit
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
