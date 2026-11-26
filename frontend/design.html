@@ -187,7 +187,8 @@
             <h2 id="images-title">התמונות שלכם <span id="asset-count" class="mono muted small"></span></h2>
             <form id="upload-form" class="stack" novalidate>
               <label for="upload-file">תמונה (JPEG, PNG או WebP, עד 5 מ״ב)
-                <input id="upload-file" name="file" type="file" accept="image/jpeg,image/png,image/webp">
+                <input id="upload-file" name="file" type="file" class="file-native" accept="image/jpeg,image/png,image/webp">
+                <span class="file-face" aria-hidden="true"><span class="button">בחירת קובץ</span><span class="file-name">לא נבחר קובץ</span></span>
               </label>
               <div class="form-grid">
                 <label for="upload-kind">מה רואים בתמונה

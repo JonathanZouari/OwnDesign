@@ -11,7 +11,7 @@ import { svg, visibleArea } from "../editor/render.js";
 import { zoomAt } from "../editor/pointer.js";
 import { IMPORT, UNITS, ltr } from "../strings.js";
 import { KEYS, load, save } from "../store.js";
-import { $, h, showStudio, toast, userMessage } from "../ui.js";
+import { $, h, showStudio, toast, userMessage, showFileName } from "../ui.js";
 
 // The PDF reader (pdf.js) is loaded only when a file is chosen.
 let reader = null;
@@ -646,6 +646,7 @@ async function proceed() {
 attachViewer();
 
 $("#pdf-file").addEventListener("change", onFile);
+showFileName($("#pdf-file"));
 $("#page-go").addEventListener("click", () => analyze(Number($("#page-select").value)));
 $("#calibrate").addEventListener("click", () => setPicking(true));
 $("#scale-confirm").addEventListener("click", () => {

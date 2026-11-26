@@ -476,10 +476,17 @@ textarea {
   background: var(--surface); font: 400 14px/20px var(--font-body); letter-spacing: 0; text-transform: none; color: var(--ink);
 }
 textarea:focus-visible { outline: none; border: 1.5px solid var(--primary-bright); }
+/* Each typed paragraph takes the direction of its own text; an empty field stays right to left. */
+.design textarea, .consult textarea { unicode-bidi: plaintext; }
 textarea:read-only { background: var(--surface-mid); color: var(--ink-soft); }
 input[type="checkbox"] { width: 18px; height: 18px; padding: 0; accent-color: var(--primary); }
 input[type="color"] { width: 56px; padding: 2px; cursor: pointer; }
-input[type="file"] { height: auto; padding: 6px; }
+/* The native file control speaks the browser's language, so it is hidden (still focusable) behind a Hebrew face. */
+label:has(> .file-native) { position: relative; cursor: pointer; }
+input.file-native { position: absolute; width: 1px; height: 1px; padding: 0; opacity: 0; }
+.file-face { display: flex; align-items: center; gap: 10px; min-width: 0; font: 400 14px/20px var(--font-body); text-transform: none; color: var(--ink); }
+.file-name { min-width: 0; overflow-wrap: anywhere; unicode-bidi: plaintext; }
+.file-native:focus-visible + .file-face .button { outline: 2px solid var(--primary-bright); outline-offset: 2px; }
 input[type="checkbox"]:focus-visible, input[type="color"]:focus-visible { outline: 2px solid var(--primary-bright); outline-offset: 2px; }
 label.check { display: flex; align-items: center; gap: 8px; align-self: end; min-height: 36px; font: 400 14px/20px var(--font-body); letter-spacing: 0; text-transform: none; color: var(--ink); }
 .hint { margin: 0; font-size: 12px; line-height: 18px; color: var(--ink-soft); }

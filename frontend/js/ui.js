@@ -65,9 +65,18 @@ export const formatDate = (iso) =>
 
 export const pageUrl = (page) => new URL(page, location.href).href;
 
+// Keeps the Hebrew face of a hidden file input showing the chosen file's name.
+export function showFileName(input) {
+  const label = input.parentElement.querySelector(".file-name");
+  const empty = label.textContent;
+  input.addEventListener("change", () => (label.textContent = input.files[0]?.name ?? empty));
+  input.form?.addEventListener("reset", () => (label.textContent = empty));
+}
+
 // The studio a visitor is working with, shown as a chip beside the product name.
 export function showStudio(name) {
   const chip = $("#studio-brand");
   chip.textContent = name;
+  chip.dir = "auto"; // a Latin name is cut at its end, not its start
   chip.hidden = false;
 }

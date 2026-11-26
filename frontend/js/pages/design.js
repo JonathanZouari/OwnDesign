@@ -2,7 +2,7 @@
 import { api, requireSession, signOut } from "../api.js";
 import * as L from "../design-logic.js";
 import { COMMON, DESIGN, ROOM_TYPE_LABELS } from "../strings.js";
-import { $, h, run, showStudio, userMessage } from "../ui.js";
+import { $, h, run, showFileName, showStudio, userMessage } from "../ui.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const requested = new URLSearchParams(location.search).get("project");
@@ -408,6 +408,7 @@ function initMoodboard() {
       DESIGN.boardSaved,
     ),
   );
+  showFileName($("#upload-file"));
   $("#upload-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const form = event.currentTarget;
