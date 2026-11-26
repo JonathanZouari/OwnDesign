@@ -2,7 +2,7 @@
 // hundred elements, so this stays fast and there is no stale state to reconcile.
 // User text (room names) only ever enters as text nodes.
 import { FURNITURE_BY_TYPE } from "../catalog.js";
-import { metres, openingSegment, roomBox, squareMetres, wallLength } from "../plan.js";
+import { metres, openingSegment, roomBox, roomArea, containsPoint, wallLength } from "../plan.js";
 
 const NS = "http://www.w3.org/2000/svg";
 const RULER_PX = 22;
@@ -238,6 +238,22 @@ export function clientFurniture(item) {
     svg("text",{x:0,y:item.d/2+8,"text-anchor":"middle","font-size":9,fill:ink},label));
 }
 
+export function roomSurface(room,b,attrs) {
+  const e=room.ellipse;
+  if (b.polygon) return svg("polygon",{points:b.polygon.map(p=>p.join(",")).join(" "),...attrs});
+  if (!e) return svg("rect",{x:b.x,y:b.y,width:b.w,height:b.h,...attrs});
+  return svg("ellipse",{cx:e.cx,cy:e.cy,rx:e.width/2,ry:e.length/2,
+    transform:`rotate(${e.rotation} ${e.cx} ${e.cy})`,stroke:"#475b52","stroke-width":3,...attrs});
+}
+
+export function layoutSurface(room) {
+  return svg("polygon", {
+    points:room.layout.points.map(p=>p.join(",")).join(" "),
+    fill:"#c4d9c7","fill-opacity":0.54,stroke:"#356748","stroke-width":2.5,
+    "stroke-dasharray":"9 5","data-room":room.id,"data-layout":room.id,
+  });
+}
+
 function roomNode(plan, room, selected, scale) {
   const b = roomBox(plan, room.id);
   if (!b) return null;
@@ -246,10 +262,10 @@ function roomNode(plan, room, selected, scale) {
   const nameSize = Math.max(22, 13 * scale); // never smaller than 13 px on screen
   const metaSize = Math.max(13, 10 * scale);
   const width = Math.max(room.name.length * nameSize * 0.6, nameSize * 5);
-  return svg("g", focusable("rooms", room.id, `Room ${room.name}, ${squareMetres(b).toFixed(1)} square metres`, selected ? "selected" : ""),
+  return svg("g", focusable("rooms", room.id, `Room ${room.name}, ${roomArea(plan,room).toFixed(1)} square metres`, selected ? "selected" : ""),
     svg("rect", { x: cx - width / 2, y: cy - nameSize * 1.3, width, height: nameSize * 2.8, class: "room-hit" }),
     svg("text", { x: cx, y: cy, "text-anchor": "middle", "font-size": nameSize, class: "room-name" }, room.name),
-    svg("text", { x: cx, y: cy + metaSize * 1.6, "text-anchor": "middle", "font-size": metaSize, class: "room-meta" }, `${squareMetres(b).toFixed(1)} m²`),
+    svg("text", { x: cx, y: cy + metaSize * 1.6, "text-anchor": "middle", "font-size": metaSize, class: "room-meta" }, `${roomArea(plan,room).toFixed(1)} m²`),
   );
 }
 
@@ -289,7 +305,7 @@ function selectionOverlay(plan, selection, scale) {
 }
 
 // Presentation layer only: room selection never changes the saved geometry.
-function roomLabelPlacement(box, furniture, name, initialSize, rows=1) {
+function roomLabelPlacement(room, box, furniture, name, initialSize, rows=1) {
   const obstacles = furniture.map(item => {
     const angle = item.rotation * Math.PI / 180;
     const c = Math.abs(Math.cos(angle)), s = Math.abs(Math.sin(angle));
@@ -301,6 +317,8 @@ function roomLabelPlacement(box, furniture, name, initialSize, rows=1) {
     let best;
     for (let y=box.y+halfHeight+12; y<=box.y+box.h-halfHeight-12; y+=6) {
       for (let x=box.x+halfWidth+12; x<=box.x+box.w-halfWidth-12; x+=6) {
+        if ((room.ellipse || box.polygon) && [-1,1].some(dx=>[-1,1].some(dy=>
+          !containsPoint(room,box,{x:x+dx*halfWidth,y:y+dy*halfHeight})))) continue;
         const clearance = Math.min(x-box.x-halfWidth, box.x+box.w-x-halfWidth,
           y-box.y-halfHeight, box.y+box.h-y-halfHeight,
           ...obstacles.map(o=>Math.max(Math.abs(x-o.x)-o.w-halfWidth,Math.abs(y-o.y)-o.h-halfHeight)));
@@ -324,8 +342,7 @@ export function drawClientPlan(canvas, plan, selectedId) {
         rooms: plan.rooms.filter(room => room.id === selectedId),
         walls,
         openings: plan.openings.filter(o => wallIds.has(o.wallId)),
-        furniture: plan.furniture.filter(f => f.x >= box.x && f.x <= box.x + box.w &&
-          f.y >= box.y && f.y <= box.y + box.h),
+        furniture: plan.furniture.filter(f => containsPoint(plan.rooms.find(r=>r.id===selectedId),box,f)),
       };
     }
   }
@@ -335,15 +352,16 @@ export function drawClientPlan(canvas, plan, selectedId) {
     if (!box) continue;
     const selected = room.id === selectedId;
     const tint = { balcony: "#e2ebda", bathroom: "#e0ebec", bedroom: "#f1eae4" }[room.type] || "#f7f2e5";
-    backgrounds.push(svg("rect", {x:box.x, y:box.y, width:box.w, height:box.h,
+    backgrounds.push(roomSurface(room,box,{
       fill:selected ? "#ccdcca" : tint, "data-room":room.id}));
+    if (room.layout) backgrounds.push(layoutSurface(room));
     const words = room.name.trim().split(/\s+/);
     const wrap = words.length > 1 && (room.type === "bathroom" || room.name.includes("ארונות"));
     const split = Math.ceil(words.length/2);
     const lines = wrap ? [words.slice(0,split).join(" "),words.slice(split).join(" ")] : [room.name];
     const longest = lines.reduce((a,b)=>a.length>b.length?a:b);
     const size = Math.min(14 * scale, box.w / (Math.max(1, longest.length) * 0.62 + 1), box.h * .26);
-    const placement = roomLabelPlacement(box, plan.furniture, longest, size, lines.length);
+    const placement = roomLabelPlacement(room, box, plan.furniture, longest, size, lines.length);
     const callout = wrap && (!placement || placement.size < 10*scale) &&
       !plan.rooms.some(other => {
         if(other.id===room.id) return false;
@@ -375,6 +393,13 @@ export function draw(canvas, { plan, selection, preview }) {
   canvas.replaceChildren(
     ...[
       grid(area),
+      plan.rooms.flatMap(room => {
+        const bounds = roomBox(plan,room.id);
+        return room.ellipse || bounds?.polygon ? [roomSurface(room,bounds,{
+          "data-kind":"rooms", "data-id":room.id, fill:"#f5f3ec",
+        })] : [];
+      }),
+      plan.rooms.filter(room=>room.layout).map(layoutSurface),
       plan.furniture.map((item) => furnitureNode(item, is("furniture", item.id))),
       plan.walls.map((wall) => wallNode(wall, is("walls", wall.id))),
       plan.openings.map((opening) => openingNode(opening, walls.get(opening.wallId), is("openings", opening.id))),

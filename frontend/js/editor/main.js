@@ -3,6 +3,7 @@
 import { api, getSession, requireSession, signOut } from "../api.js";
 import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
 import * as P from "../plan.js";
+import { reshapeRoom } from "../room-layout.js";
 import { KEYS, load, save as store } from "../store.js";
 import { $, action, h, run, showStudio, toast } from "../ui.js";
 import { renderInspector } from "./panel.js?v=openings";
@@ -34,9 +35,9 @@ function renderClientView(plan) {
   panel.replaceChildren(h("h2", {}, room?.name || "סיור בדירה"));
   if (room) {
     const box = P.roomBox(plan, room.id);
-    const furniture = plan.furniture.filter(f=>f.x>=box.x && f.x<=box.x+box.w && f.y>=box.y && f.y<=box.y+box.h);
-    panel.append(h("p", {}, "רוחב " + P.metres(box.w) + " מ׳ · אורך " + P.metres(box.h) + " מ׳"),
-      h("p", {}, "שטח " + P.squareMetres(box).toFixed(1) + " מ״ר"),
+    const furniture = plan.furniture.filter(f=>P.containsPoint(room,box,f));
+    panel.append(h("p", {}, "רוחב " + P.metres(room.ellipse?.width ?? box.w) + " מ׳ · אורך " + P.metres(room.ellipse?.length ?? box.h) + " מ׳"),
+      h("p", {}, "שטח " + P.roomArea(plan,room).toFixed(2) + " מ״ר"),
       ...(furniture.length ? [h("h3",{},"ריהוט וציוד"), h("ul",{}, ...furniture.map(f=>h("li",{}, FURNITURE_BY_TYPE.get(f.type)?.label ?? f.type)))] : []),
       h("button", {type:"button", onclick:() => selectRoom(null)}, "חזרה למבט הכללי"));
   } else {
@@ -168,6 +169,7 @@ function render() {
   $("#redo").disabled = state.history.future.length === 0;
 
   $("#actions").hidden = !state.selection;
+  $("#reshape-selected").hidden = state.selection?.kind !== "rooms";
   const isFurniture = state.selection?.kind === "furniture";
   $("#rotate").hidden = !isFurniture;
   $("#duplicate").hidden = !isFurniture;
@@ -400,6 +402,60 @@ function buildChrome(name, role) {
     document.querySelector(".rail").hidden = true;
     return;
   }
+  const roomDialog = $("#room-dialog");
+  const roomForm = roomDialog.querySelector("form");
+  let editRoomId = null;
+  function openRoomDialog(room) {
+    editRoomId = room?.id || null;
+    roomForm.reset();
+    $("#room-dialog-title").textContent = room ? "Change shape · "+room.name : "Add a room";
+    roomForm.elements.namedItem("name").readOnly = Boolean(room);
+    roomForm.querySelector('[value="add"]').textContent = room ? "Apply to this room" : "Add room";
+    if (room) {
+      const b = P.roomBox(editor.plan,room.id);
+      const geometry = room.layout || room.ellipse;
+      for (const [field,value] of Object.entries({name:room.name,shape:room.layout?.shape || (room.ellipse?"ellipse":"rectangle"),
+        width:Math.round(geometry?.width ?? b.w),length:Math.round(geometry?.length ?? b.h),rotation:geometry?.rotation ?? 0})) {
+        roomForm.elements.namedItem(field).value = value;
+      }
+    }
+    roomDialog.showModal();
+  }
+  $("#reshape-selected").onclick = () => openRoomDialog(editor.plan.rooms.find(r=>r.id===state.selection?.id));
+  document.querySelector(".rail .tools:last-child").prepend(h("button", {
+    type:"button", title:"Add shaped room", "aria-label":"Add shaped room", onclick:()=>openRoomDialog(null),
+  }, h("span",{class:"icon","aria-hidden":"true"},"add_box")));
+  roomForm.addEventListener("submit", async event => {
+    if (event.submitter?.value === "cancel") return;
+    const fields = new FormData(roomForm);
+    if (editRoomId) {
+      event.preventDefault();
+      const roomId = editRoomId, plan = editor.plan;
+      roomForm.inert = true;
+      try {
+        const result = await reshapeRoom(plan,roomId,{width:Number(fields.get("width")),length:Number(fields.get("length")),
+          shape:fields.get("shape"),rotation:Number(fields.get("rotation"))});
+        if (!roomDialog.open || editor.plan !== plan) return;
+        editor.commit(P.patch(plan,"rooms",roomId,{layout:result.layout}));
+        roomDialog.close();
+        toast("Room updated · "+result.findings.length+" items to review");
+      } catch (error) { toast(error.message); }
+      finally { roomForm.inert = false; }
+      return;
+    }
+    const name = fields.get("name").trim();
+    if (!name || editor.plan.rooms.length >= 100) {
+      event.preventDefault();
+      toast("Enter a room name and keep the plan within 100 rooms.");
+      return;
+    }
+    const width = Number(fields.get("width")), length = Number(fields.get("length"));
+    const b = P.planBox(editor.plan);
+    const x = editor.plan.rooms.length || editor.plan.walls.length ? b.x+b.w+50+(Math.hypot(width,length)-width)/2 : 0;
+    const next = P.addRoom(editor.plan,{name,type:"other",shape:fields.get("shape"),width,length,rotation:Number(fields.get("rotation"))},x,b.y);
+    editor.commit(next,{kind:"rooms",id:next.rooms.at(-1).id});
+    fit();
+  });
   attachPointer(canvas, editor);
   canvas.addEventListener("focusin", (event) => {
     const target = event.target.closest?.("[data-kind]");

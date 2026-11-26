@@ -10,6 +10,13 @@ const choice = (label, options, read, write) => ({ label, options, read, write }
 const text = (label, read, write) => ({ label, read, write, text: true });
 const set = (kind, key) => (plan, id, value) => P.patch(plan, kind, id, { [key]: value });
 
+const ellipseFields = [
+  ["Interior width","width","cm",50,3000], ["Interior length","length","cm",50,3000], ["Room rotation","rotation","deg",-360,360],
+].map(([label,key,unit,min,max]) => number(label,unit,room=>room.ellipse[key],(plan,id,value)=>{
+  const room=plan.rooms.find(r=>r.id===id);
+  return P.patch(plan,"rooms",id,{ellipse:{...room.ellipse,[key]:value}});
+},{min,max}));
+
 const SPEC = {
   walls: {
     title: (wall) => (wall.kind === "exterior" ? "Exterior wall" : "Partition wall"),
@@ -120,7 +127,7 @@ export function renderInspector(root, editor, { versions, onLoadVersion }) {
         spec
           ? [
               h("div", { class: "selection" }, h("span", { class: "label" }, "Active selection"), title),
-              h("div", { class: "stack" }, h("span", { class: "label" }, "Dimensions"), h("div", { class: "fields" }, spec.fields.map((field) => fieldNode(field, editor)))),
+              h("div", { class: "stack" }, h("span", { class: "label" }, "Dimensions"), h("div", { class: "fields" }, (item.ellipse ? [...spec.fields,...ellipseFields] : spec.fields).map((field) => fieldNode(field, editor)))),
               spec.review(item) && h("p", { class: "note" }, REVIEW_NOTE),
             ]
           : summaryNode(),

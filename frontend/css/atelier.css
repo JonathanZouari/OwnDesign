@@ -373,3 +373,47 @@ summary {
 #room-tools>div{display:flex;align-items:center;flex-wrap:wrap;gap:6px}#room-tools label{font-weight:600}#room-tools small{flex-basis:100%}#exact-angle{width:75px}#angle{width:96px}#rotation-handle{cursor:grab;touch-action:none}#rotation-handle:active{cursor:grabbing}
 @media(max-width:760px){#room-tools{padding:10px;gap:8px}#room-tools label{font-size:14px}#room-tools select{max-width:40vw}}
 .project-tools{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}.project-tools details{background:#fffdf9;border:1px solid #cdc5b7;border-radius:8px;padding:10px 14px;margin:0;min-width:175px}.project-tools details[open]{flex:1 1 330px}.project-tools summary{font-weight:bold}.project-tools label{display:block;margin:.6em 0}.project-tools textarea{width:100%}#findings,#messages{max-height:240px;overflow:auto;padding-inline-start:22px}#findings button{border:0;padding:4px;text-align:start}#message-badge:not(:empty){background:#784529;border-radius:20px;color:white;padding:2px 8px;font-size:13px}#messages li{white-space:pre-wrap;overflow-wrap:anywhere;padding:4px}.audit-target{outline:4px solid #c35432}
+
+.project-tools #ellipse-tools {
+  border: 1px solid #72452c;
+  background: #fcf8f0;
+}
+#ellipse-tools summary {
+  cursor: pointer;
+  color: #66381f;
+}
+#ellipse-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+  gap: 8px 16px;
+  align-items: end;
+  margin-top: 12px;
+}
+#ellipse-form input, #ellipse-form select {
+  width: 100%;
+}
+#ellipse-form button {
+  background: #593e30;
+  color: white;
+}
+
+#plan-stage {position:relative}
+#wall-controls {position:absolute;z-index:3;width:min(225px,calc(100% - 8px));box-sizing:border-box;padding:9px;border:1px solid #d2c1ad;border-radius:12px;background:#fffaf3;box-shadow:0 4px 18px #35261928}
+#wall-controls.dragging {opacity:0;pointer-events:none}
+.wall-heading,.wall-shapes,#wall-exact {display:flex;gap:5px;align-items:center}
+.wall-heading label,.wall-heading select {width:100%;min-width:0}
+.wall-shapes {margin:6px 0}
+.wall-shapes button {flex:1;display:grid;justify-items:center;padding:4px}
+.wall-shapes svg {width:28px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+.wall-shapes button[aria-pressed=true] {background:#553d2e;color:white}
+#wall-controls details {margin:0}
+#wall-controls summary,.partition-handles [data-measure] {cursor:pointer}
+#wall-exact {margin-top:6px}
+#wall-controls[hidden],#wall-exact[hidden] {display:none}
+#wall-distance {width:80px}
+#wall-info {margin:6px 12px}
+.wall-edit-mode {touch-action:none}
+.partition-handles circle {cursor:grab}
+.partition-handles circle:active {cursor:grabbing}
+.direct-edit .tour-objects [data-id] {pointer-events:visiblePainted;cursor:pointer}
+.visually-hidden {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}

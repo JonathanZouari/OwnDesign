@@ -1,7 +1,10 @@
 import { projectChat } from "../project-chat.js";
 import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
-import { roomBox, planBox, openingSegment } from "../plan.js";
+import { reshapeRoom } from "../room-layout.js";
+import { editPartition } from "../partition-editor.js";
+import { roomArea, containsPoint, roomBox, planBox, openingSegment } from "../plan.js";
 import {
+  layoutSurface, roomSurface,
   svg,
   wallNode,
   openingNode,
@@ -59,11 +62,11 @@ function indexPlan() {
     bounds.set(r.id, b);
     $("room").add(new Option(r.name, r.id));
   }
+  $("reshape-room").replaceChildren(new Option("בחרו חדר", ""), ...plan.rooms.filter(r=>bounds.has(r.id)).map(r=>new Option(r.name,r.id)));
   for (const w of plan.walls) openingWalls.set(w.id, w);
   for (const f of plan.furniture) {
     const hit = [...bounds].find(
-      ([, b]) =>
-        f.x >= b.x && f.x <= b.x + b.w && f.y >= b.y && f.y <= b.y + b.h,
+      ([id,b]) => containsPoint(plan.rooms.find(r=>r.id===id),b,f),
     );
     if (hit) owners.set(f.id, hit[0]);
   }
@@ -79,6 +82,15 @@ function go(id) {
   current = id;
   syncControls();
   $("room").value = id;
+  $("reshape-room").value = id;
+  const room = plan.rooms.find(r=>r.id===id);
+  if (room) {
+    const b=bounds.get(id), layout=room.layout || room.ellipse;
+    $("ellipse-width").value = Math.round(layout?.width ?? b.w);
+    $("ellipse-length").value = Math.round(layout?.length ?? b.h);
+    $("ellipse-angle").value = layout?.rotation ?? 0;
+    $("room-template").value = room.layout?.shape || (room.ellipse ? "ellipse" : "rectangle");
+  }
   selected = null;
   nodes.clear();
   $("toolbar").hidden = !id;
@@ -107,7 +119,8 @@ function go(id) {
     b = bounds.get(id);
   focusBox(b);
   board.replaceChildren(
-    svg("rect", { x: b.x, y: b.y, width: b.w, height: b.h, fill: "#f8f4e9" }),
+    roomSurface(r,b,{fill:"#f8f4e9"}),
+    ...(r.layout ? [layoutSurface(r)] : []),
   );
   const defs = svg("defs"),
     clip = svg("clipPath", { id: "access" });
@@ -152,7 +165,7 @@ function go(id) {
     );
   }
   const group =
-    groupByType[r.type] ?? (id === "closet" ? ["Bedroom"] : ["Utility"]);
+    groupByType[r.type] ?? (r.type==="other" ? Object.keys(groupByType).flatMap(type=>groupByType[type]) : null) ?? (id === "closet" ? ["Bedroom"] : ["Utility"]);
   const types = FURNITURE.filter(
     (f) =>
       group.includes(f.group) ||
@@ -253,9 +266,8 @@ function choose(f) {
           : "מידות מהתוכנית")
     : "בחרו רהיט בתוכנית";
 }
-function reposition(f, x, y) {
+function reposition(f, x, y, record=true) {
   if (!editing) return;
-  markDirty();
   const a = (f.rotation * Math.PI) / 180,
     c = Math.abs(Math.cos(a)),
     s = Math.abs(Math.sin(a)),
@@ -266,8 +278,12 @@ function reposition(f, x, y) {
     size <= 2 * reach
       ? start + size / 2
       : Math.max(start + reach, Math.min(start + size - reach, v));
-  f.x = limit(x, b.x, b.w, ex);
-  f.y = limit(y, b.y, b.h, ey);
+  const next = {x:limit(x,b.x,b.w,ex), y:limit(y,b.y,b.h,ey)};
+  const room = plan.rooms.find(r=>r.id===current);
+  if (!containsPoint(room,b,next)) return;
+  if (record && (next.x !== f.x || next.y !== f.y)) markDirty("הזזת רהיט");
+  f.x = next.x;
+  f.y = next.y;
   for (const n of nodes.get(f.id))
     n.setAttribute(
       "transform",
@@ -370,18 +386,20 @@ $("measure").onclick = () => {
     return;
   }
   const f = selected;
+  if (w !== f.w || d !== f.d || f.dimension_source !== "measured") markDirty("שינוי מידות רהיט");
   f.w = w;
   f.d = d;
   f.dimension_source = "measured";
   for (const node of nodes.get(f.id)) node.remove();
   mount(f);
-  reposition(f, f.x, f.y);
+  reposition(f, f.x, f.y, false);
   choose(f);
 };
 function rotateTo(angle) {
   if (!editing || !selected || !Number.isFinite(angle) || angle<0 || angle>360)return;
+  if (selected.rotation !== angle) markDirty("סיבוב רהיט");
   selected.rotation=angle;
-  reposition(selected,selected.x,selected.y);
+  reposition(selected,selected.x,selected.y,false);
   choose(selected);
 }
 $("angle").oninput=e=>rotateTo(e.target.valueAsNumber);
@@ -391,7 +409,7 @@ $("exact-angle").onchange=e=>{
 };
 $("add").onclick = () => {
   if (!editing) return;
-  markDirty();
+  markDirty("הוספת רהיט");
   const spec = FURNITURE_BY_TYPE.get($("catalog").value),
     b = bounds.get(current);
   const f = {
@@ -404,6 +422,22 @@ $("add").onclick = () => {
     y: b.y + b.h / 2,
     rotation: 0,
   };
+  // A concave room's box centre may lie on a corner. Start at an interior
+  // point so reopening the version assigns the new item to the same room.
+  if (b.polygon) {
+    const room = plan.rooms.find(r=>r.id===current);
+    let best = -1;
+    for (let row=1;row<10;row++) for (let col=1;col<10;col++) {
+      const x=b.x+col*b.w/10, y=b.y+row*b.h/10;
+      if (!containsPoint(room,b,{x,y})) continue;
+      const clearance = Math.min(...b.polygon.map(([ax,ay],i)=>{
+        const [bx,by]=b.polygon[(i+1)%b.polygon.length], dx=bx-ax, dy=by-ay;
+        const t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy)));
+        return Math.hypot(x-ax-t*dx,y-ay-t*dy);
+      }));
+      if (clearance>best) {best=clearance; f.x=x; f.y=y;}
+    }
+  }
   plan.furniture.push(f);
   owners.set(f.id, current);
   mount(f);
@@ -413,7 +447,7 @@ $("add").onclick = () => {
 };
 $("remove").onclick = () => {
   if (!selected || !editing) return;
-  markDirty();
+  markDirty("הסרת רהיט");
   const id = selected.id;
   plan.furniture.splice(plan.furniture.indexOf(selected), 1);
   for (const n of nodes.get(id)) n.remove();
@@ -447,7 +481,27 @@ const app = $("workspace");
 function notice(message) {
   $("notice").textContent = message;
 }
-function markDirty() {
+const editHistory=[];
+let gesturePointer=null, gestureRecorded=false;
+app.addEventListener("pointerdown",e=>{
+  gesturePointer=e.pointerId;
+  gestureRecorded=false;
+},true);
+for(const event of ["pointerup","pointercancel"]) document.addEventListener(event,e=>{
+  if (gesturePointer===e.pointerId) gesturePointer=null;
+},true);
+function syncUndo() {
+  const button=$("undo-edit"), last=editHistory.at(-1);
+  button.disabled=!dismissWall && !last;
+  button.textContent=dismissWall ? "↶ ביטול עריכת הקיר" : "↶ ביטול "+(last?.action || "שינוי אחרון");
+}
+function markDirty(action) {
+  if (gesturePointer===null || !gestureRecorded) {
+    editHistory.push({plan:structuredClone(plan),dirty,current,action});
+    if(editHistory.length>40) editHistory.shift();
+    gestureRecorded=true;
+    syncUndo();
+  }
   invalidateAudit();
   if (!dirty) {
     dirty = true;
@@ -457,6 +511,12 @@ function markDirty() {
   }
 }
 function syncControls() {
+  board.classList.toggle("direct-edit",designerMode && maySave);
+  $("wall-edit").hidden = !designerMode || !maySave;
+  $("ellipse-tools").hidden = !designerMode || !maySave;
+  const room = plan?.rooms.find(r=>r.id===current);
+  $("ellipse-area").hidden = !room;
+  $("ellipse-area").textContent = room ? (room.layout ? "שטח החלופה " : room.ellipse ? "שטח פנימי " : "שטח לפי קווי הקירות ")+roomArea(plan,room).toFixed(2)+" מ״ר" : "";
   $("designer").hidden = !canDesign;
   $("designer").setAttribute("aria-pressed", String(designerMode));
   $("client").setAttribute("aria-pressed", String(!designerMode));
@@ -533,6 +593,11 @@ async function initialize() {
     return;
   }
   await loadVersion(versions[0].id);
+  if (params.get("editWall")==="1" && designerMode && maySave) $("wall-edit").onclick();
+  if ((params.get("editRoom") === "1" || params.get("addRoom") === "1") && designerMode && maySave) {
+    $("ellipse-tools").open = true;
+    requestAnimationFrame(() => $("room-template").focus());
+  }
 }
 function versionName(v) {
   return v.label || "גרסה " + v.version_no;
@@ -550,6 +615,8 @@ async function loadVersion(id) {
   const other = versions.find((v) => v.id !== id);
   const comparison = other ? await geometry(other.id) : null;
   plan = next;
+  editHistory.length=0;
+  syncUndo();
   versionId = id;
   invalidateAudit();
   dirty = false;
@@ -706,7 +773,84 @@ window.addEventListener("beforeunload", (e) => {
     e.returnValue = "";
   }
 });
+$("reshape-room").onchange = e => go(e.target.value);
+$("ellipse-form").onsubmit = event => {
+  event.preventDefault();
+  if (!designerMode || !maySave || !current) return;
+  busy(async()=>{
+    const result = await reshapeRoom(plan,current,{
+      width:Number($("ellipse-width").value), length:Number($("ellipse-length").value),
+      shape:$("room-template").value, rotation:Number($("ellipse-angle").value),
+    });
+    const room=plan.rooms.find(r=>r.id===current);
+    markDirty("שינוי צורת החדר");
+    room.layout=result.layout;
+    go(current);
+    $("ellipse-tools").open=false;
+    const issues = result.findings.map(f=>f.rule==="fit"
+      ? itemName(plan.furniture.find(item=>item.id===f.target))+" חורג מגבול החלופה"
+      : "יש לבדוק את החיבור לפתח "+f.target);
+    notice([room.name+" עודכן בתוך הדירה.",result.clipped?"הצורה הותאמה למעטפת הקיימת.":"",
+      ...new Set(issues),"אפשר לשמור כחלופה חדשה."].filter(Boolean).join(" "));
+  });
+};
 let chatUser;
+let dismissWall=null;
+function startWall(wallId=null) {
+  if (!designerMode || !maySave || !plan) return;
+  const initialRoom = current;
+  dismissWall=editPartition(board,plan,current,clearance(),(updated,message)=>{
+    dismissWall=null;
+    if (updated) {
+      markDirty("שינוי הקיר");
+      plan=updated;
+      indexPlan();
+    }
+    go(initialRoom);
+    syncUndo();
+    if (updated) notice(message || "הקיר עודכן בטיוטה.");
+  },wallId);
+  syncUndo();
+}
+$("wall-edit").onclick = ()=>startWall();
+function pickObject(e) {
+  if (!designerMode || !maySave || dismissWall || (e.type==="keydown" && !["Enter"," "].includes(e.key))) return;
+  const node=e.target.closest("[data-kind]");
+  if(node?.dataset.kind==="walls" || node?.dataset.kind==="openings"){
+    e.preventDefault();e.stopImmediatePropagation();
+    startWall(node.dataset.kind==="walls"?node.dataset.id:plan.openings.find(o=>o.id===node.dataset.id)?.wallId);
+  } else if (!current && e.type==="click") {
+    const id=e.target.closest("[data-id]")?.dataset.id;
+    if (!owners.has(id)) return;
+    e.stopImmediatePropagation();
+    go(owners.get(id));
+    choose(plan.furniture.find(f=>f.id===id));
+  }
+}
+board.addEventListener("click",pickObject,true);
+board.addEventListener("keydown",pickObject,true);
+function undoLastEdit() {
+  if (dismissWall) {
+    dismissWall();
+    notice("עריכת הקיר בוטלה.");
+    return;
+  }
+  const step=editHistory.pop();
+  if(!step)return;
+  plan=step.plan; dirty=step.dirty;
+  invalidateAudit();indexPlan();go(step.current);
+  syncUndo();
+  notice("בוטל השינוי האחרון בתוכנית.");
+}
+$("undo-edit").onclick=undoLastEdit;
+document.addEventListener("keydown",event=>{
+  if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey ||
+      (event.code!=="KeyZ" && event.key.toLowerCase()!=="z")) return;
+  if (event.defaultPrevented || app.inert || event.target.isContentEditable ||
+      event.target.closest?.("textarea,input:not([type=range]),[role=textbox]") || $("undo-edit").disabled) return;
+  event.preventDefault();
+  if (!event.repeat) undoLastEdit();
+});
 const clearance=()=>Math.max(30,Math.min(200,Number($("clearance").value)||90));
 let auditRevision=0;
 function invalidateAudit(){
@@ -723,7 +867,7 @@ $("audit-run").onclick=()=>busy(async()=>{
  if(!resp.ok)throw Error("בדיקת התוכנית נכשלה");
  const result=(await resp.json()).data;
  if(revision!==auditRevision)return;
- const labels={window:"בחדר לא סומן חלון",blocked:"רהיט חופף לאזור הגישה",fit:"חלק מהרהיט חורג משטח החדר הפנוי",narrow:"פתח צר מהסף",corridor:"מסדרון צר מהסף",incomplete:"גבולות החדר אינם סגורים באופן חד־משמעי",unassigned:"רהיט מחוץ לחדר מזוהה"};
+ const labels={opening_gap:"הגבול המוצע אינו מתחבר לכל רוחב הפתח",window:"בחדר לא סומן חלון",blocked:"רהיט חופף לאזור הגישה",fit:"חלק מהרהיט חורג משטח החדר הפנוי",narrow:"פתח צר מהסף",corridor:"מסדרון צר מהסף",incomplete:"גבולות החדר אינם סגורים באופן חד־משמעי",unassigned:"רהיט מחוץ לחדר מזוהה"};
  $("audit-result").textContent=(dirty?"הטיוטה הנוכחית":$("version").selectedOptions[0].text)+" · "+result.findings.length+" ממצאים · סף "+result.clearance_cm+" ס״מ";
  $("findings").replaceChildren(...result.findings.map(f=>{
  const li=document.createElement("li"),button=document.createElement("button");

@@ -447,3 +447,178 @@ def test_atelier_project_conversation_and_audit(servers, browser, world):
         client.reload()
         client.locator("#messages-panel summary").click()
         expect(client.locator("#messages li")).to_have_count(2)
+
+def test_shaped_rooms_saved_by_designer_open_in_client_tour(servers, browser, world):
+    from playwright.sync_api import expect
+
+    with browser.new_context() as designer_context, browser.new_context() as client_context:
+        designer, client = designer_context.new_page(), client_context.new_page()
+        sign_in(designer, world.designer, f"editor.html?project={world.pid}")
+        for shape in ("ellipse", "hexagon", "chamfer", "notch"):
+            designer.get_by_role("button", name="Add shaped room").click()
+            dialog = designer.locator("#room-dialog")
+            dialog.get_by_label("Room shape").select_option(shape)
+            dialog.get_by_label("Room name").fill(shape)
+            dialog.get_by_label("Width (cm)").fill("600")
+            dialog.get_by_label("Length (cm)").fill("400")
+            dialog.get_by_role("button", name="Add room", exact=True).click()
+        designer.locator("#save").click()
+        designer.get_by_label("Version note (optional)").fill("Four shapes")
+        designer.get_by_label("Version note (optional)").press("Enter")
+        expect(designer.locator("#status-save")).to_contain_text("Saved")
+        sign_in(client, world.client, f"atelier.html?project={world.pid}")
+        for shape, area, tag in (("ellipse","18.85","ellipse"), ("hexagon","18.00","polygon"),
+                                 ("chamfer","22.53","polygon"), ("notch","18.00","polygon")):
+            client.locator("#room").select_option(label=shape)
+            expect(client.locator("#ellipse-area")).to_contain_text(area)
+            expect(client.locator(f"#canvas > {tag}").first).to_be_visible()
+        client.reload()
+        client.locator("#room").select_option(label="ellipse")
+        expect(client.locator("#ellipse-area")).to_contain_text("18.85")
+
+def test_reshape_furnished_room_preserves_apartment(servers, browser, world, api):
+    import json
+    from playwright.sync_api import expect
+
+    original = json.loads((FRONTEND / "assets" / "sample-apartment.json").read_text(encoding="utf-8"))
+    path = world.base + "/versions"
+    assert api.post(path, headers=world.designer.headers, json={"label":"Apartment","geometry":original}).status_code == 201
+    with browser.new_context() as a, browser.new_context() as b:
+        designer, client = a.new_page(), b.new_page()
+        target = f"atelier.html?project={world.pid}"
+        sign_in(designer, world.designer, target)
+        designer.locator("#room").select_option("living")
+        furniture_count = designer.locator("#items > g").count()
+        assert furniture_count > 0
+        designer.locator("#ellipse-tools summary").click()
+        designer.locator("#room-template").select_option("ellipse")
+        designer.locator("#ellipse-form button").click()
+        expect(designer.locator("#canvas [data-layout=living]")).to_be_visible()
+        expect(designer.locator("#items > g")).to_have_count(furniture_count)
+        designer.locator("#label").fill("Furnished alternative")
+        designer.locator("#save button").click()
+        expect(designer.locator("#notice")).to_contain_text("החלופה נשמרה")
+        saved = api.get(path+"/latest",headers=world.client.headers).json()["data"]["geometry"]
+        for key in ("walls","openings","furniture"):
+            assert saved[key] == original[key]
+        assert [r["id"] for r in saved["rooms"]] == [r["id"] for r in original["rooms"]]
+        for room in saved["rooms"]:
+            if room["id"]=="living":
+                assert room.pop("layout")["shape"] == "ellipse"
+        assert saved["rooms"] == original["rooms"]
+        sign_in(client, world.client, target)
+        client.locator("#room").select_option("living")
+        expect(client.locator("#canvas [data-layout=living]")).to_be_visible()
+        expect(client.locator("#items > g")).to_have_count(furniture_count)
+        client.locator("#overview").click()
+        expect(client.locator("#canvas [data-layout=living]")).to_be_visible()
+
+def test_partition_drag_in_furnished_demo(servers, page):
+    from playwright.sync_api import expect
+
+    page.goto(f"{SITE}/atelier.html?mode=designer&editWall=1")
+    wall = page.locator("#partition-choice")
+    wall.select_option("living_1")
+    handle = page.locator('[data-handle="move"]')
+    handle.scroll_into_view_if_needed()
+    pos = handle.bounding_box()
+    scale = handle.evaluate("n=>n.getScreenCTM().a")
+    x,y = pos["x"]+pos["width"]/2,pos["y"]+pos["height"]/2
+    page.mouse.move(x,y)
+    page.mouse.down()
+    page.mouse.move(x,y+30*scale,steps=8)
+    page.mouse.up()
+    expect(page.locator("#wall-controls")).to_be_hidden()
+    expect(page.locator("#notice")).to_contain_text("סלון")
+    page.locator("#label").fill("Moved partition")
+    page.locator("#save button").click()
+    expect(page.locator("#notice")).to_contain_text("החלופה נשמרה")
+    page.reload()
+    expect(wall).to_be_visible()
+    saved = page.evaluate("JSON.parse(localStorage.getItem('atelier-apartment-v1')).versions")
+    new,old=saved[0]["geometry"], saved[1]["geometry"]
+    assert new["furniture"]==old["furniture"]
+    assert next(w for w in new["walls"] if w["id"]=="living_1")["y1"]>520
+    wall.select_option("living_1")
+    page.locator("#more-wall-shapes summary").click()
+    page.locator("#wall-mode").select_option("end")
+    page.locator("[data-measure]").focus()
+    page.keyboard.press("Enter")
+    page.locator("#wall-distance").fill("15")
+    expect(page.locator("#wall-info")).to_contain_text("הטיה")
+    page.locator("#wall-cancel").click()
+    expect(page.locator("#wall-controls")).to_be_hidden()
+    assert page.evaluate("JSON.parse(localStorage.getItem('atelier-apartment-v1')).versions[0].geometry")==new
+
+@pytest.mark.parametrize("shape", ["ellipse","bay","parallel"])
+def test_partition_profile_drag_and_reload(servers, page, shape):
+    from playwright.sync_api import expect
+
+    page.goto(f"{SITE}/atelier.html?mode=designer&editWall=1&wallMode={shape}")
+    page.locator("#partition-choice").select_option("living_1")
+    handle=page.locator(f'[data-handle="{shape}"]')
+    handle.scroll_into_view_if_needed()
+    pos=handle.bounding_box()
+    scale=handle.evaluate("n=>n.getScreenCTM().a")
+    x,y=pos["x"]+pos["width"]/2,pos["y"]+pos["height"]/2
+    page.mouse.move(x,y)
+    page.mouse.down()
+    page.mouse.move(x,y+30*scale,steps=6)
+    page.mouse.up()
+    expect(page.locator("#wall-mode")).to_have_value(shape)
+    expect(page.locator("#wall-controls")).to_be_hidden()
+    page.locator("#label").fill(shape)
+    page.locator("#save button").click()
+    expect(page.locator("#notice")).to_contain_text("החלופה נשמרה")
+    page.goto(f"{SITE}/atelier.html?mode=client")
+    geometry=page.evaluate("JSON.parse(localStorage.getItem('atelier-apartment-v1')).versions[0].geometry")
+    assert next(w for w in geometry["walls"] if w["id"]=="living_1")["y1"]==500
+    assert any(w["roomId"]=="living" and w["x1"]==400 and w["y1"]>520 for w in geometry["walls"])
+    page.locator("#room").select_option("living")
+    changed = page.locator('#canvas [data-id="living_1"] line.wall')
+    expect(changed).to_be_visible()
+    assert float(changed.get_attribute("y2")) > float(changed.get_attribute("y1"))
+
+def test_direct_wall_edit_and_mixed_draft_undo(servers, page):
+    from playwright.sync_api import expect
+
+    page.set_viewport_size({"width": 390, "height": 800})
+    page.goto(f"{SITE}/atelier.html?mode=designer")
+    canvas = page.locator("#canvas")
+    wall = canvas.locator('[data-id="living_1"] .hit')
+    original_y = canvas.locator('[data-id="living_1"] .wall').get_attribute("y1")
+    item_count = canvas.locator("#items > .editable").count()
+    wall.scroll_into_view_if_needed()
+    point = wall.evaluate("""n=>{
+      const p=n.getPointAtLength(n.getTotalLength()*.25).matrixTransform(n.getScreenCTM());
+      return [p.x,p.y];
+    }""")
+    page.mouse.click(*point)
+    expect(page.locator("#partition-choice")).to_have_value("living_1")
+    page.locator('[data-shape="parallel"]').click()
+    expect(page.locator('[data-handle="parallel"]')).to_be_visible()
+    page.locator('[data-shape="move"]').click()
+    page.locator("[data-measure]").click()
+    page.locator("#wall-distance").fill("15")
+    expect(page.locator(".partition-handles line[stroke-dasharray]")).to_have_count(1)
+    page.locator("#wall-apply").click()
+    expect(page.locator("#wall-controls")).to_be_hidden()
+    page.locator("#add").click()
+    expect(canvas.locator("#items > .editable")).to_have_count(item_count+1)
+    undo = page.locator("#undo-edit")
+    expect(undo).to_contain_text("הוספת רהיט")
+    page.locator("#wall-edit").click()
+    page.keyboard.press("Control+z")
+    expect(page.locator("#wall-controls")).to_be_hidden()
+    expect(canvas.locator("#items > .editable")).to_have_count(item_count+1)
+    page.locator("#label").press_sequentially("draft")
+    page.locator("#label").press("Control+z")
+    expect(canvas.locator("#items > .editable")).to_have_count(item_count+1)
+    undo.focus()
+    page.keyboard.press("Control+z")
+    expect(canvas.locator("#items > .editable")).to_have_count(item_count)
+    expect(undo).to_contain_text("שינוי הקיר")
+    assert canvas.locator('[data-id="living_1"] .wall').get_attribute("y1") != original_y
+    undo.click()
+    expect(canvas.locator('[data-id="living_1"] .wall')).to_have_attribute("y1", original_y)
+    expect(undo).to_be_disabled()

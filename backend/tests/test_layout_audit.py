@@ -28,3 +28,19 @@ def test_rotated_furniture_and_opening_clearance():
     assert rules() == {"narrow", "unassigned"}
     plan["walls"].pop()
     assert rules() == {"incomplete", "unassigned"}
+
+def test_elliptical_room_checks_the_whole_rotated_item():
+    plan = deepcopy(VALID)
+    plan["walls"], plan["openings"] = [], []
+    plan["rooms"][0]["ellipse"] = {"cx": 0, "cy": 0, "width": 600, "length": 400, "rotation": 90}
+    item = plan["furniture"][0]
+    item.update(x=175, y=0, w=90, d=20, rotation=0)
+
+    def rules():
+        return {row["rule"] for row in check_layout(AuditRequest(geometry=plan))["data"]["findings"]}
+
+    assert rules() == {"window", "fit"}
+    item["rotation"] = 90
+    assert rules() == {"window"}
+    item.update(x=195, y=290)
+    assert rules() == {"window", "unassigned"}

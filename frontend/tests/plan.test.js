@@ -144,3 +144,21 @@ test("a room disappears with its last wall, and a zero move changes nothing", ()
   assert.equal(P.remove(start, "walls", start.walls[0].id).rooms.length, 2, "a room with walls left stays");
   assert.equal(P.translate(start, "rooms", room.id, 0, 0), start);
 });
+
+test("room templates keep their true area and outline across a save", () => {
+  for (const [shape, expected] of [["ellipse", Math.PI*4], ["notch",12], ["hexagon",12], ["chamfer",15.02], ["rectangle",16]]) {
+    const plan = JSON.parse(JSON.stringify(P.addRoom(P.emptyPlan(), {name:shape,type:"living",shape,width:400,length:400},0,0)));
+    const room = plan.rooms[0], bounds = P.roomBox(plan,room.id);
+    assert.ok(Math.abs(P.roomArea(plan,room)-expected)<1e-8);
+    assert.equal(P.containsPoint(room,bounds,{x:399,y:1}),shape==="notch" || shape==="rectangle");
+    assert.equal(P.containsPoint(room,bounds,{x:399,y:399}),!["ellipse","notch","hexagon"].includes(shape));
+  }
+});
+
+test("moving a polygon corner keeps the adjacent wall attached", () => {
+  const plan=P.addRoom(P.emptyPlan(),{name:"Six",type:"other",shape:"hexagon",width:600,length:400},0,0);
+  const edited=P.moveWallEnd(plan,plan.walls[0].id,2,425,35);
+  assert.equal(edited.walls[1].x1,425);
+  assert.equal(edited.walls[1].y1,35);
+  assert.equal(P.roomBox(edited,plan.rooms[0].id).polygon.length,6);
+});

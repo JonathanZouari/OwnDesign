@@ -20,7 +20,34 @@ class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
 
 
+class Ellipse(Strict):
+    # Full interior diameters in centimetres.
+    cx: Cm
+    cy: Cm
+    width: Size
+    length: Size
+    rotation: Annotated[float, Field(ge=-360, le=360, allow_inf_nan=False)] = 0
+
+
+class RoomLayout(Strict):
+    shape: Literal["ellipse", "rectangle", "hexagon", "chamfer", "notch"]
+    width: Size
+    length: Size
+    rotation: Annotated[float, Field(ge=-360, le=360, allow_inf_nan=False)]
+    points: Annotated[list[tuple[Cm, Cm]], Field(min_length=3, max_length=2048)]
+
+    @model_validator(mode="after")
+    def _valid_outline(self):
+        from shapely.geometry import Polygon
+        polygon = Polygon(self.points)
+        if not polygon.is_valid or polygon.area <= 0.01:
+            raise ValueError("Layout must be a simple closed outline")
+        return self
+
+
 class Room(Strict):
+    layout: RoomLayout | None = None
+    ellipse: Ellipse | None = None
     id: Id
     name: Name
     type: Annotated[str, StringConstraints(max_length=30)]
