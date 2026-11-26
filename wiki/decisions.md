@@ -16,6 +16,9 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
   on tablet and desktop ([design.md](design.md#phones)). Claude's reading of the decision, after the code review:
   a room is not dragged on a phone either, because that moves its walls.
 - **Phone layouts are adapted from the existing Stitch screens**, with no new mobile screens in Stitch.
+- **Phone details, after reviewing screenshots:** the 3D walkthrough is offered on phones; the inspector sheet
+  reopens for each newly selected item; the phone notice appears once per browser session; the studio chip is
+  hidden below 360 px.
 - **Work for the mobile version goes through a fork.** The `mobile-web` branch is pushed to the user's own fork, with a pull request to the
   original repository's `dev`. The user has no write access to the original.
 - **A separate Supabase project for this contributor's development and tests**, created with the CLI from the

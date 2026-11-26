@@ -29,6 +29,9 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - After crossing the phone breakpoint, focus on a rebuilt rail button is lost, and a wall being drawn keeps its preview line until the pointer lifts (it is then dropped).
 - Disabled later-phase items in the drawer are plain spans with a `title`, which touch screens never show.
 - Precision editing on phones (walls, doors, windows) is not offered. Revisit after user testing (PRD §155).
+- Duplicate reopens the inspector sheet each time, because the copy is a newly selected item. Making several copies means closing it each time.
+- The phone notice covers the top of a small canvas until it is dismissed.
+- Not measured: on a short phone in landscape (under 768 px wide), the 3D hint and the walking pad may overlap. Frame rate of the 3D view on real phones is unmeasured (see the 3D walkthrough gaps).
 
 ## Studio branding
 

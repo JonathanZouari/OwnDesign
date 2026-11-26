@@ -234,3 +234,24 @@ and the comparison and the 3D walkthrough can be open at once. No security findi
 reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
 not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
 Nothing of it is on `dev`.
+
+The entries below also come with pull request #24 (contributor's fork), after it caught up with `dev`.
+
+## [2026-11-26] build | Mobile web branch merged with dev
+`dev` merged into `mobile-web` (`e5ae64b`). Conflicts in `app.css` and four wiki pages, resolved by keeping both
+sides. On the merged tree: backend 123 passed, frontend 67 passed, walkthrough tests included. Pages: [log](log.md).
+
+## [2026-11-26] build | 3D walkthrough on phones, review answers
+The phone CSS hid the context-bar group that holds the merged walkthrough's button. It now shows icon-only, and the
+3D view takes the whole stage (`2f8c0fb`). From the user's review of the screenshots: the inspector sheet reopens for
+each newly selected item, and the studio chip hides below 360 px. A code review then found that the phone catalog
+painted over the 3D view and its pad, and that the sheet could reopen beside the open catalog. Both fixed in `81e0726`,
+together with safe-area padding that was counted twice and the chip rule, now limited to pages with the drawer.
+Pages: [design](design.md), [decisions](decisions.md).
+
+## [2026-11-26] test | Merged mobile branch verified
+Backend 131 passed (31 in `test_e2e_mobile.py`), frontend 67 passed. Two full runs were broken partway by another
+session's test run on the same Supabase project, whose teardown deleted this run's accounts; rerun when that session
+was idle. A visual check found the 2D zoom buttons painted over the phone 3D view and the area wrapping at 320 px, both
+fixed in `2148048`. `security-review` on `e5ae64b`, `2f8c0fb`, `81e0726` and `2148048`: no findings. Pages:
+[testing](testing.md), [open-items](open-items.md).

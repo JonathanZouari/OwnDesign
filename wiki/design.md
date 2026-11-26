@@ -54,10 +54,15 @@ Adapted from the desktop Stitch screens; there are no separate mobile screens (u
   - A drag on anything that cannot move pans the view.
   - A dismissible notice (`#phone-notice`) says this. The dismissal is remembered for the browser session.
   - Below 1200 px, the editor's header tabs and its `#account` button live in the drawer, not in the app bar.
-  - Opening the furniture catalog on a phone closes the inspector sheet, and the action bar hides when none of its buttons applies. Crossing the breakpoint, for example by rotating a tablet, rebuilds the rail. A
-  drawing tool falls back to Select, and a wall being drawn is dropped. The inspector is a bottom sheet
-  (`#inspector.sheet-open`, toggled by `#sheet-toggle`). It opens when something becomes selected and closes when
-  the selection clears, and only on that change, so a sheet closed by hand stays closed during edits.
+  - The inspector is a bottom sheet (`#inspector.sheet-open`, toggled by `#sheet-toggle`). It opens for each newly
+    selected item and closes when the selection clears. A sheet closed by hand stays closed while the same item is
+    edited.
+  - Opening the furniture catalog closes the sheet. The action bar hides when none of its buttons applies.
+  - The 3D walkthrough opens on phones too: `#walk-open` shows as an icon, and while the 3D view is open the sheet,
+    the tool bar and the notice step aside so the view and its walking pad get the whole stage.
+  - Below 360 px the app bar drops the studio chip. The drawer still names the studio.
+  - Crossing the breakpoint, for example by rotating a tablet, rebuilds the rail. A drawing tool falls back to
+    Select, and a wall being drawn is dropped.
 
 ## Rules for turning a Stitch screen into a page
 

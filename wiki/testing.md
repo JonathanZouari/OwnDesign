@@ -68,10 +68,14 @@ reload; designer sees the client's data; client-side rejections, markup stays te
 visitor; consultant page limits) passes together with `test_e2e.py` (9 browser tests in all). No chat message
 reaches OpenAI in the suite; the real call was checked by hand once.
 
-2026-11-26 (branch `mobile-web`, on a contributor's own Supabase project): backend 123 passed, including 23 in
-`test_e2e_mobile.py`; frontend 41 passed. The mobile suite passed on 3 repeated runs. A visual check (screenshots at 320,
-390, 768 and 1440 px, viewed by hand) found four layout bugs that the tests had missed. Passing tests do not replace
-looking at the screens.
+2026-11-26 (branch `mobile-web`, merged with `dev`, on a contributor's own Supabase project): backend 131 passed,
+including 31 in `test_e2e_mobile.py` (among them the 3D walkthrough on a phone); frontend 67 passed. A visual check
+(screenshots at 320, 390, 768 and 1440 px, viewed by hand) has twice found layout bugs that the tests had missed.
+Passing tests do not replace looking at the screens.
+
+Two developers on one Supabase project break each other's runs: each run's teardown deletes every
+`*@owndesign-test.example.com` account, including those of a run still in progress. Run the suite only when no other
+run is active (the CI open item asks for a separate project for this reason).
 
 ## Local setup notes
 
