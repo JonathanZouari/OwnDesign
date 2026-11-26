@@ -209,3 +209,6 @@ Frontend 71 passed, walking-path API 34 passed, browser 3 passed (real YOLOv8 in
 
 ## [2026-11-26] security | How we move
 `security-review`: no finding. Pages: [security](security.md).
+
+## [2026-11-26] docs | How we move sent as pull request #29
+From the fork branch `feat/walk-paths` to `dev`, with screenshots from `design/walk/`. Not merged.
