@@ -134,3 +134,91 @@ def test_png_contains_the_drawing():
     image = Image.open(io.BytesIO(render_png(plan(two_rooms), INFO, "a4"))).convert("L")
     dark = sum(image.resize((248, 351)).histogram()[:100])
     assert dark > 200  # walls and text, not a blank page
+
+
+# ---- DXF -------------------------------------------------------------------------------------------------------
+
+import math  # noqa: E402
+
+import ezdxf  # noqa: E402
+from ezdxf import recover  # noqa: E402
+
+from app.exports.dxf import LAYERS, render_dxf  # noqa: E402
+
+
+def read_dxf(content: bytes):
+    doc, auditor = recover.read(io.BytesIO(content))
+    assert not auditor.has_errors
+    return doc
+
+
+def on(doc, layer, kind=None):
+    return [e for e in doc.modelspace() if e.dxf.layer == layer and (kind is None or e.dxftype() == kind)]
+
+
+def test_dxf_opens_cleanly_in_centimetres_with_the_agreed_layers():
+    doc = read_dxf(render_dxf(plan(two_rooms)))
+    assert doc.dxfversion == ezdxf.const.DXF2010
+    assert doc.header["$INSUNITS"] == 5  # centimetres
+    assert doc.header["$MEASUREMENT"] == 1  # metric
+    assert {"WALLS", "OPENINGS", "FURNITURE", "NOTES"} == set(LAYERS) <= {layer.dxf.name for layer in doc.layers}
+
+
+def test_dxf_walls_are_closed_outlines_split_at_openings():
+    doc = read_dxf(render_dxf(plan(two_rooms)))
+    walls = on(doc, "WALLS")
+    assert {e.dxftype() for e in walls} == {"LWPOLYLINE"} and all(e.closed for e in walls)
+    assert len(walls) == 10  # 8 walls, two of them split by the door and the window
+
+
+def test_dxf_keeps_centimetre_dimensions_and_the_plan_orientation():
+    doc = read_dxf(render_dxf(plan(two_rooms)))
+    points = [p for e in on(doc, "WALLS") for p in e.get_points("xy")]
+    xs, ys = [p[0] for p in points], [p[1] for p in points]
+    assert (min(xs), max(xs)) == pytest.approx((-10, 860))  # 850 cm of rooms plus the square caps
+    # The plan's y grows downward; CAD's grows upward, so the plan's top wall (y = 0) is the highest.
+    assert (max(ys), min(ys)) == pytest.approx((10, -410))
+
+
+def test_dxf_door_is_a_leaf_and_a_counter_clockwise_quarter_arc():
+    doc = read_dxf(render_dxf(plan(two_rooms)))
+    arc, = on(doc, "OPENINGS", "ARC")
+    assert (arc.dxf.center.x, arc.dxf.center.y) == pytest.approx((60, 0))
+    assert arc.dxf.radius == pytest.approx(90)
+    assert (arc.dxf.end_angle - arc.dxf.start_angle) % 360 == pytest.approx(90)
+    # In the plan the leaf opens into the room (y = 90, downward); in CAD that is y = -90.
+    ends = {(round(p.x, 6), round(p.y, 6)) for p in (arc.start_point, arc.end_point)}
+    assert ends == {(60.0, -90.0), (150.0, 0.0)}
+    assert len(on(doc, "OPENINGS", "LINE")) == 1 + 4  # the door leaf and the window's four lines
+
+
+def test_dxf_rotated_furniture_matches_the_editor():
+    geometry = plan(two_rooms)
+    doc = read_dxf(render_dxf(geometry))
+    item, = on(doc, "FURNITURE")
+    expected = [(x, -y) for x, y in L.furniture_corners(geometry.furniture[0])]
+    assert [c for p in item.get_points("xy") for c in p] == pytest.approx([c for p in expected for c in p])
+
+
+def test_dxf_has_the_notice_and_no_annotations():
+    doc = read_dxf(render_dxf(plan(two_rooms)))
+    texts = [e for e in doc.modelspace() if e.dxftype() in ("TEXT", "MTEXT")]
+    assert [e.dxf.layer for e in texts] == ["NOTES"]
+    assert texts[0].dxf.text == NOTICE
+
+
+def test_dxf_of_an_empty_plan_is_only_the_notice():
+    doc = read_dxf(render_dxf(plan(empty)))
+    assert [e.dxf.layer for e in doc.modelspace()] == ["NOTES"]
+
+
+def test_dxf_of_a_rotated_negative_coordinate_plan():
+    def mutate(raw):
+        empty(raw)
+        room(raw, "r", "R", -90_000, -90_000, 400, 300)
+        raw["furniture"] = [{"id": "f", "type": "bed", "x": -89_800, "y": -89_850, "w": 160, "d": 200, "rotation": -360}]
+    doc = read_dxf(render_dxf(plan(mutate)))
+    item, = on(doc, "FURNITURE")
+    xs = [p[0] for p in item.get_points("xy")]
+    assert max(xs) - min(xs) == pytest.approx(160)
+    assert all(math.isfinite(c) for e in doc.modelspace() if e.dxftype() == "LWPOLYLINE" for p in e.get_points("xy") for c in p)
