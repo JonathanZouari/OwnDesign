@@ -283,3 +283,42 @@ def test_an_altered_model_file_is_refused(monkeypatch):
         assert error.value.status_code == 503
     finally:
         vision._load.cache_clear()
+
+
+# ---- inspiration: whole-image palette and analysis -------------------------------------------------------------
+
+
+def test_palette_of_a_solid_image_is_one_colour():
+    [only] = vision.palette(Image.new("RGB", (200, 100), (200, 30, 30)))
+    assert only["name"] == "red" and only["share"] == 1.0 and only["hex"] == only["hex"].lower()
+
+
+def test_palette_of_two_halves_shares_about_half_each_and_sums_to_one():
+    img = Image.new("RGB", (200, 100), "white")
+    img.paste((20, 20, 20), (100, 0, 200, 100))
+    colours = vision.palette(img)
+    assert {c["name"] for c in colours} == {"white", "black"}
+    assert all(0.45 <= c["share"] <= 0.55 for c in colours)
+    assert sum(c["share"] for c in colours) == pytest.approx(1.0)
+
+
+def test_palette_is_sorted_by_share_and_capped():
+    img = Image.new("RGB", (300, 100), "white")
+    for i, colour in enumerate([(200, 30, 30), (40, 90, 180), (60, 135, 70), (230, 205, 70), (120, 80, 50), (230, 155, 180)]):
+        img.paste(colour, (i * 40, 0, i * 40 + 40 - i * 4, 100))
+    colours = vision.palette(img, 5)
+    assert len(colours) <= 5
+    shares = [c["share"] for c in colours]
+    assert shares == sorted(shares, reverse=True) and sum(shares) == pytest.approx(1.0)
+
+
+def test_analyse_the_real_photo_returns_objects_and_a_palette(detector):
+    result = vision.analyse((FIXTURES / "room.jpg").read_bytes(), detector)
+    assert {o["label"] for o in result["objects"]} & {"Sofa", "Chair", "Table"}
+    assert all(set(o) == {"label", "category", "confidence"} for o in result["objects"])
+    assert 1 <= len(result["palette"]) <= 5 and sum(c["share"] for c in result["palette"]) == pytest.approx(1.0)
+
+
+def test_analyse_refuses_a_non_image():
+    with pytest.raises(vision.ImageError):
+        vision.analyse(b"not an image", detector=None)

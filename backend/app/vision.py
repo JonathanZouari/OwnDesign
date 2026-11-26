@@ -178,8 +178,35 @@ def dominant_color(img: Image.Image, box: list[float]) -> tuple[str, str]:
     palette = quantized.getpalette() or []
     _, index = max(quantized.getcolors())
     rgb = tuple(palette[index * 3 : index * 3 + 3])
-    name = min(PALETTE, key=lambda n: sum((a - b) ** 2 for a, b in zip(rgb, PALETTE[n])))
-    return "#{:02x}{:02x}{:02x}".format(*rgb), name
+    return _hex(rgb), _nearest_name(rgb)
+
+
+def _hex(rgb) -> str:
+    return "#{:02x}{:02x}{:02x}".format(*rgb)
+
+
+def _nearest_name(rgb) -> str:
+    return min(PALETTE, key=lambda n: sum((a - b) ** 2 for a, b in zip(rgb, PALETTE[n])))
+
+
+def palette(img: Image.Image, colours: int = 5) -> list[dict]:
+    """The image's main colours with their share of it, largest first. Shares are rounded and add up to 1."""
+    small = img.copy()
+    small.thumbnail((96, 96))
+    quantized = small.quantize(colors=colours)
+    entries = quantized.getpalette() or []
+    counts = sorted(quantized.getcolors() or [], reverse=True)
+    total = sum(count for count, _ in counts)
+    by_name: dict[str, dict] = {}  # shades with one name (e.g. edges blurred by resizing) count as one colour
+    for count, index in counts:  # largest first, so the first shade of a name represents it
+        rgb = tuple(entries[index * 3 : index * 3 + 3])
+        entry = by_name.setdefault(_nearest_name(rgb), {"hex": _hex(rgb), "name": _nearest_name(rgb), "count": 0})
+        entry["count"] += count
+    merged = sorted(by_name.values(), key=lambda c: -c["count"])
+    result = [{"hex": c["hex"], "name": c["name"], "share": round(c["count"] / total, 2)} for c in merged]
+    result = [c for c in result if c["share"] > 0] or result[:1]
+    result[0]["share"] = round(result[0]["share"] + 1 - sum(c["share"] for c in result), 2)  # rounding remainder
+    return result
 
 
 def characterise(img: Image.Image, detections: list[dict]) -> list[dict]:
@@ -243,6 +270,21 @@ def get_detector() -> Detector:
     except (OSError, RuntimeError):
         log.exception("The room scan model could not be loaded")
         raise HTTPException(503, "The room scanner is not available right now.") from None
+
+
+def analyse(data: bytes, detector) -> dict:
+    """An inspiration image: what is in it and its colours. Same slot as a scan."""
+    if not _slots.acquire(timeout=BUSY_SECONDS):
+        raise DetectorBusy("the image analyser is busy")
+    try:
+        img = decode_image(data)
+        found = detector.detect(img)
+        return {
+            "objects": [{"label": f["label"], "category": f["category"], "confidence": f["confidence"]} for f in found],
+            "palette": palette(img),
+        }
+    finally:
+        _slots.release()
 
 
 def scan(data: bytes, detector) -> list[dict]:
