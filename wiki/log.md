@@ -203,3 +203,16 @@ Model RF-DETR Small; ONNX file in a private Supabase Storage bucket, checked by 
 request with the export concurrency limits; accepted items also offered under "My items" in the editor palette;
 confidence threshold 0.4 ("Not sure" below 0.6); only accepted items are stored. Specification first, as its own
 pull request. All await the owner. Pages: [index](index.md).
+
+## [2026-11-26] build | Item detection (contributor's branch)
+Model RF-DETR Small int8 through ONNX Runtime; `owned_items`, the `models` bucket and `append_existing_items`;
+detect and owned-items endpoints; detection dialog and "My items" on the brief page; "My items" in the editor palette;
+publish script for the model. Supabase's 50 MB file limit led to the int8 model (39 MB). Pages:
+[architecture](architecture.md), [decisions](decisions.md), [overview](overview.md).
+
+## [2026-11-26] security | Review of item detection
+Security, database and code reviews by agents; fixes for the model load, the brief overwrite, service-role updates,
+the isolation test, stale dialog answers and error messages. Pages: [security](security.md), [open-items](open-items.md).
+
+## [2026-11-26] test | Item detection verified
+Backend 163 passed, frontend 61 passed, locally with the real model. Pages: [testing](testing.md).

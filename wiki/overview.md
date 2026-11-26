@@ -43,6 +43,11 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - Keyboard (any layout), drag to look, and on-screen buttons. Walls and windows block, doorways let through.
 - Heights are assumed, because the plan stores none ([architecture.md](architecture.md)).
 
+## Proposed: item detection
+
+In a contributor's pull request (`../specs/item-detection.md`): the client photographs furniture they own, the
+server recognises it, and the items the client keeps go to the brief and to "My items" in the editor palette.
+
 ## Not built yet
 
 Renderings, budget, dossier,

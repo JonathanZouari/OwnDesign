@@ -66,6 +66,14 @@ reload; designer sees the client's data; client-side rejections, markup stays te
 visitor; consultant page limits) passes together with `test_e2e.py` (9 browser tests in all). No chat message
 reaches OpenAI in the suite; the real call was checked by hand once.
 
+2026-11-26, item detection (branch `item-detection`): backend 163 passed, frontend 61 passed, locally, with the
+real model in the local `models` bucket. New files: `backend/tests/test_detection.py` (image loading, pre- and
+post-processing, model download and cache checks, the real model on `design/stitch/render-concept-a.jpg` when it is
+cached), `test_detection_api.py` (each role, access refused by project/photo pairing and across studios, Data API
+isolation and no user writes, brief append and limit, items removed when the brief refuses, older brief schema,
+suspended studio, 429, failures), `test_e2e_detection.py` (3 journeys with the real model; skipped when the model is
+not in the bucket, so in CI), `frontend/tests/detection-logic.test.js`.
+
 ## Local setup notes
 
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the
@@ -79,6 +87,10 @@ Real touch devices (pinch zoom), browsers other than Chromium, screen readers, l
 many projects. Code outside `backend/` and `frontend/` is not run by CI.
 
 ## Gotchas
+
+- Item detection needs the model in the `models` bucket of the Supabase project in `backend/.env`:
+  `cd backend && uv run python -m scripts.publish_model --file rfdetr-small-int8.onnx` (see the script's docstring).
+  Without it the detection journeys are skipped and the endpoint answers 503.
 
 - Every run of the backend suite deletes all `*@owndesign-test.example.com` accounts and their studios.
   Do not run it while someone is checking pages by hand with such accounts.
