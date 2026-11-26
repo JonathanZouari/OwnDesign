@@ -255,3 +255,11 @@ session's test run on the same Supabase project, whose teardown deleted this run
 was idle. A visual check found the 2D zoom buttons painted over the phone 3D view and the area wrapping at 320 px, both
 fixed in `2148048`. `security-review` on `e5ae64b`, `2f8c0fb`, `81e0726` and `2148048`: no findings. Pages:
 [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] docs | Pull request #24 presented with screenshots and a video
+At the contributor's request the pull request description now shows a banner, a screenshot grid and a video tour.
+Phone clips were recorded with Playwright from this branch (demo project, `example.com` demo accounts, nothing saved)
+and composed with Remotion 4.0.542 into a 41 s MP4 and a 32 s GIF teaser. The media and the Remotion source live on
+a separate orphan branch, `pr-24-media`, in the contributor's fork; nothing of it is in this branch's diff. Remotion's
+licence is free for individuals and small companies; a company of more than three people needs a paid licence to use it.
+Pages: [log](log.md).
