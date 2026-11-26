@@ -155,3 +155,15 @@ def test_suspended_studio_blocks_chat(api, world, fake, admin):
         assert api.post(url(world.mine), json={"message": "hi"}, headers=world.client.headers).status_code == 403
     finally:
         admin.table("studios").update({"status": "active"}).eq("id", studio_id).execute()
+
+
+def test_message_on_a_project_without_a_studio_and_its_privacy(api, world, fake, make_user):
+    owner, stranger = make_user("solo-c"), make_user("solo-cs")
+    solo = api.post("/v1/projects", json={"name": "Solo", "property_type": "existing"}, headers=owner.headers).json()["data"]
+    assert solo["studio_id"] is None
+    response = api.post(url(solo), json={"message": "Hello"}, headers=owner.headers)
+    assert response.status_code == 201 and response.json()["data"][1]["content"] == fake.reply
+    assert len(api.get(url(solo), headers=owner.headers).json()["data"]) == 2
+    for other in (stranger, world.designer_b):
+        assert api.get(url(solo), headers=other.headers).status_code == 404
+        assert api.post(url(solo), json={"message": "hi"}, headers=other.headers).status_code == 404

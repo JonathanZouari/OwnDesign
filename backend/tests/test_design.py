@@ -286,3 +286,48 @@ def test_parallel_uploads_cannot_exceed_the_quota(api, world, admin):
         codes = list(pool.map(lambda _: upload(api, world.client_a, pid, PNG).status_code, range(6)))
     assert sorted(codes) == [201] * 3 + [409] * 3
     assert len(admin.table("inspiration_assets").select("id").eq("project_id", pid).execute().data) == 30
+
+
+# ---- projects without a studio (homeowner) --------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def solo(api, world, make_user):
+    """A homeowner's project with no studio, a stranger and a member of an unrelated studio."""
+    owner, stranger = make_user("solo-o"), make_user("solo-s")
+    project = api.post("/v1/projects", json={"name": "Solo", "property_type": "existing"}, headers=owner.headers).json()["data"]
+    assert project["studio_id"] is None
+    api.post(f"/v1/projects/{project['id']}/versions", json={"label": "p", "geometry": VALID}, headers=owner.headers)
+    return SimpleNamespace(owner=owner, stranger=stranger, outsider=world.designer_b, pid=project["id"], room=VALID["rooms"][0]["id"])
+
+
+def test_studioless_brief_finishes_assets_and_moodboard(api, solo):
+    h, base = solo.owner.headers, f"/v1/projects/{solo.pid}"
+    assert api.put(f"{base}/brief", json={"adults": 2, "needs": "Desk"}, headers=h).status_code == 200
+    assert api.get(f"{base}/brief", headers=h).json()["data"]["brief"]["needs"] == "Desk"
+    finish = {"selections": [{"room_id": solo.room, "surface": "floor", "material_id": "oak-floor"}]}
+    assert api.put(f"{base}/finishes", json=finish, headers=h).status_code == 200
+    assert len(api.get(f"{base}/finishes", headers=h).json()["data"]) == 1
+    created = upload(api, solo.owner, solo.pid, PNG)
+    assert created.status_code == 201
+    asset_id = created.json()["data"]["id"]
+    assert len(api.get(f"{base}/assets", headers=h).json()["data"]) == 1
+    board = {"items": [{"kind": "style", "ref": "japandi"}, {"kind": "asset", "ref": asset_id}]}
+    assert api.put(f"{base}/moodboard", json=board, headers=h).status_code == 200
+    assert len(api.get(f"{base}/moodboard", headers=h).json()["data"]) == 2
+    assert api.delete(f"{base}/assets/{asset_id}", headers=h).status_code == 200
+    assert api.get(f"{base}/assets", headers=h).json()["data"] == []
+
+
+def test_studioless_project_is_private(api, solo):
+    base = f"/v1/projects/{solo.pid}"
+    asset_id = upload(api, solo.owner, solo.pid, PNG).json()["data"]["id"]
+    for stranger in (solo.stranger, solo.outsider):
+        h = stranger.headers
+        for path in ("brief", "finishes", "assets", "moodboard"):
+            assert api.get(f"{base}/{path}", headers=h).status_code == 404
+        assert api.put(f"{base}/brief", json={"adults": 9}, headers=h).status_code == 404
+        assert api.put(f"{base}/finishes", json={"selections": []}, headers=h).status_code == 404
+        assert api.put(f"{base}/moodboard", json={"items": []}, headers=h).status_code == 404
+        assert upload(api, stranger, solo.pid, PNG).status_code == 404
+        assert api.delete(f"{base}/assets/{asset_id}", headers=h).status_code == 404
