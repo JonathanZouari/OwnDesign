@@ -1,7 +1,7 @@
 // "How we move" for one project (?project=<id>): trace a walking path from a short video in the browser,
 // save it with one still frame, and pin notes on it. The video itself is never uploaded.
 import { api, requireSession, signOut } from "../api.js";
-import { buildPath, personScore, polylinePoints } from "../walk-logic.js";
+import { buildPath, decodeYolo, letterbox, personScore, polylinePoints, toTensorData, YOLO_SIZE } from "../walk-logic.js";
 import { $, formatDate, h, run, showStudio, toast } from "../ui.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,16 +35,36 @@ function loadScript(src) {
 }
 
 let detector = null;
-// The libraries (about 1.5 MB) load only when someone traces a path, not for viewing.
-// shortcut: the model weights (about 18 MB) come from Google's public model storage; vendor them if that host must be avoided.
+const ORT_DIR = "vendor/ort-1.20.1/";
+const MODEL = "vendor/yolov8n.onnx"; // Ultralytics YOLOv8n (AGPL-3.0), exported to ONNX at 640x640
+// The runtime and the model (about 25 MB together) load only when someone traces a path, not for viewing.
 function loadDetector() {
   detector ??= (async () => {
-    if (!globalThis.tf) await loadScript("vendor/tfjs-4.22.0.min.js");
-    if (!globalThis.cocoSsd) await loadScript("vendor/coco-ssd-2.2.3.min.js");
-    return globalThis.cocoSsd.load({ base: "lite_mobilenet_v2" });
+    if (!globalThis.ort) await loadScript(`${ORT_DIR}ort.wasm.min.js`);
+    const { ort } = globalThis;
+    ort.env.wasm.wasmPaths = new URL(ORT_DIR, location.href).href;
+    ort.env.wasm.numThreads = 1; // threads need cross-origin isolation, which this static site does not set
+    const session = await ort.InferenceSession.create(MODEL, { executionProviders: ["wasm"] });
+    const canvas = h("canvas", { width: YOLO_SIZE, height: YOLO_SIZE });
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    return {
+      // Person detections in the source's own pixels, for a frame of width x height.
+      async detect(source, width, height) {
+        const box = letterbox(width, height);
+        context.fillStyle = "rgb(114 114 114)"; // the grey YOLOv8 was trained with for padding
+        context.fillRect(0, 0, YOLO_SIZE, YOLO_SIZE);
+        context.drawImage(source, box.padX, box.padY, box.w, box.h);
+        const pixels = context.getImageData(0, 0, YOLO_SIZE, YOLO_SIZE).data;
+        const input = new ort.Tensor("float32", toTensorData(pixels), [1, 3, YOLO_SIZE, YOLO_SIZE]);
+        const result = await session.run({ [session.inputNames[0]]: input });
+        const output = result[session.outputNames[0]];
+        return decodeYolo(output.data, output.dims[2], box);
+      },
+    };
   })().catch((error) => {
     detector = null; // allow another try
-    throw error;
+    console.error(error);
+    throw new Error("The person detector could not be loaded. Check your connection and try again.");
   });
   return detector;
 }
@@ -87,7 +107,7 @@ async function trace(file, report) {
     for (const [index, time] of times.entries()) {
       report(`Looking for the walker… ${Math.round((index / times.length) * 100)}%`);
       await seek(video, time);
-      const detections = await model.detect(video);
+      const detections = await model.detect(video, width, height);
       frames.push(detections);
       const score = personScore(detections);
       if (score < emptiest) {
