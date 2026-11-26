@@ -101,3 +101,23 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+
+## [2026-11-26] plan | Client tasks
+Approved plan: `project_tasks` table, tasks API, `tasks.html`, open-task counts in the projects list, tests of
+all three kinds. Work on the local branch `client-tasks` (user's request). Pages: [overview](overview.md).
+
+## [2026-11-26] build | Client tasks: designer asks, client marks done
+Migration with RLS, quota and update-guard triggers (reviewed by a database-review agent; its fixes applied, plus
+one correction so deleting a user still works); `backend/app/routes/tasks.py`; `tasks.html` (markup and CSS by a
+UX agent), `task-logic.js`, links from every project page and the projects list. Code review: one E2E timing race
+fixed, a designer's reopen now keeps the client's note; the rest recorded. Commits `03d3331`, `c348d56`,
+`882c5f8`, `077daa2`. Pages: [overview](overview.md), [architecture](architecture.md), [decisions](decisions.md),
+[design](design.md), [open-items](open-items.md).
+
+## [2026-11-26] security | Review of client tasks
+`security-review`: no finding at confidence 8 or above. Pages: [security](security.md).
+
+## [2026-11-26] test | Client tasks, partly verified
+Frontend 37 passed. Backend 22 passed, 98 skipped: no `backend/.env` on this machine and the migration is not
+applied to dev, so `test_tasks.py` and the tasks journey have not run yet. Pages: [testing](testing.md),
+[open-items](open-items.md).

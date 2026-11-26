@@ -19,6 +19,12 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 | `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names) |
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
+| `backend/tests/test_tasks.py` | integration, edge | tasks: roles (only members create/delete, only the client completes), undo and reopen, ordering, isolation through the API and the Data API, inbox, input limits, malformed ids, double and concurrent completion, 200-task quota incl. parallel creates, suspended studio, database guards |
+| `frontend/tests/task-logic.test.js` | unit, edge | task split and order, role actions, form validation, open counts |
+
+`test_e2e.py` also has the tasks journey: designer adds (empty title refused, markup stays text), client sees
+"Tasks (2 open)", completes with a note, reload, 390 px width; designer sees the note, reopens, deletes in two
+clicks; a stranger sees nothing.
 
 ## Required after every change
 
@@ -33,6 +39,11 @@ End to end, regression (both full suites) and edge cases for the change (`CLAUDE
 reload; designer sees the client's data; client-side rejections, markup stays text; stranger and signed-out
 visitor; consultant page limits) passes together with `test_e2e.py` (9 browser tests in all). No chat message
 reaches OpenAI in the suite; the real call was checked by hand once.
+
+2026-11-26, client tasks, on a machine without `backend/.env` and `frontend/js/config.js`: frontend 37 passed;
+backend 22 passed, 98 skipped (every integration and E2E test, including all of `test_tasks.py` and the tasks
+journey, needs those files and the migration applied to dev). `test_consultant.py` cannot even be collected
+without `.env`, because it imports the app at module level. **The tasks tests have not run against Supabase yet.**
 
 ## Local setup notes
 

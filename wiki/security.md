@@ -47,6 +47,16 @@ checks, signed URLs, no IDOR through asset or room ids. Not fixed: see the Phase
 duplicate chat message after a failed answer, unvalidated `?project=`); a security review of the frontend
 commits is still to do.
 
+## Review of client tasks
+
+`security-review` on the branch `client-tasks`: no finding at confidence 8 or above. Checked: only studio members
+create and delete, only the project's client completes; a task is always looked up within the RLS-visible
+project and every service-role write filters on that project id; strict schemas (no mass assignment); the update
+guard trigger stops a task moving between projects; responses leave out user ids; the inbox reads through the
+caller's RLS; task text reaches the DOM as text only; PATCH added to CORS with bearer-token auth (no CSRF).
+A database review before applying the migration added the guard trigger, status consistency checks, a matching
+index and a lighter lock in the quota trigger.
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

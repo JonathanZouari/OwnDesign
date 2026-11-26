@@ -32,6 +32,10 @@ Phase 2 (`supabase/migrations/20261123*`): `project_briefs` (one JSON document p
 `ai_conversations` (unique per project and user), `ai_messages`, `storage_deletions` (queue of files to remove).
 Their SELECT policies go through `projects`, except conversations: only their own user reads them.
 
+Tasks (`supabase/migrations/20261126090000_project_tasks.sql`): `project_tasks` (open or done, client note,
+`done_at`/`done_by`). SELECT through `projects`. Triggers: a 200-per-project cap (done tasks count too) and an
+update guard (a task never changes project, author or creation time; `updated_at` is kept current).
+
 ## Plan geometry
 
 One JSON document per version, validated in `backend/app/schemas.py` and edited by pure functions in
@@ -75,3 +79,10 @@ Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `
   the endpoint answers 503.
 - **Frontend:** `design.html` (brief, materials, moodboard tabs), `consultant.html`; pure logic in
   `frontend/js/design-logic.js`.
+
+Client tasks (`backend/app/routes/tasks.py`): under `/v1/projects/{id}/tasks`: GET (open first, newest first),
+POST (studio members only), `PATCH /{task_id}` with `{status, client_note}` (the client marks done or undoes;
+a member reopens), `DELETE /{task_id}` (members only). `GET /v1/tasks` is the client's inbox: open tasks on
+projects where the caller is the client. A status change is a conditional update on the current status, so
+two simultaneous clicks give one change and one 409. CORS allows PATCH for this. Frontend: `tasks.html`, pure
+logic in `frontend/js/task-logic.js`; the projects list shows "Tasks (n open)".
