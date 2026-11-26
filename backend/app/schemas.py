@@ -227,10 +227,11 @@ class EstimateItem(Strict):
             raise ValueError("quantity must be a number") from None
         if not number.is_finite():
             raise ValueError("quantity must be a finite number")
-        if number != number.quantize(Decimal("0.01")):
-            raise ValueError("quantity can have at most 2 decimal places")
         if not 0 < number <= 10000:
             raise ValueError("quantity must be above 0 and at most 10000")
+        # range first: quantize raises InvalidOperation for huge values
+        if number != number.quantize(Decimal("0.01")):
+            raise ValueError("quantity can have at most 2 decimal places")
         return number
 
     @field_validator("room")
