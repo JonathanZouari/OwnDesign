@@ -53,7 +53,8 @@ Adapted from the desktop Stitch screens; there are no separate mobile screens (u
   - Walls and openings are read-only: the inspector fields are disabled, with a note, and there are no end handles.
   - A drag on anything that cannot move pans the view.
   - A dismissible notice (`#phone-notice`) says this. The dismissal is remembered for the browser session.
-  - The editor's `#account` button lives in the drawer below 1200 px. Crossing the breakpoint, for example by rotating a tablet, rebuilds the rail. A
+  - Below 1200 px, the editor's header tabs and its `#account` button live in the drawer, not in the app bar.
+  - Opening the furniture catalog on a phone closes the inspector sheet, and the action bar hides when none of its buttons applies. Crossing the breakpoint, for example by rotating a tablet, rebuilds the rail. A
   drawing tool falls back to Select, and a wall being drawn is dropped. The inspector is a bottom sheet
   (`#inspector.sheet-open`, toggled by `#sheet-toggle`). It opens when something becomes selected and closes when
   the selection clears, and only on that change, so a sheet closed by hand stays closed during edits.

@@ -36,8 +36,10 @@ reload; designer sees the client's data; client-side rejections, markup stays te
 visitor; consultant page limits) passes together with `test_e2e.py` (9 browser tests in all). No chat message
 reaches OpenAI in the suite; the real call was checked by hand once.
 
-2026-11-26 (branch `mobile-web`, on a contributor's own Supabase project): backend 119 passed, including 19 in
-`test_e2e_mobile.py`; frontend 41 passed. The mobile suite passed on 3 repeated runs.
+2026-11-26 (branch `mobile-web`, on a contributor's own Supabase project): backend 123 passed, including 23 in
+`test_e2e_mobile.py`; frontend 41 passed. The mobile suite passed on 3 repeated runs. A visual check (screenshots at 320,
+390, 768 and 1440 px, viewed by hand) found four layout bugs that the tests had missed. Passing tests do not replace
+looking at the screens.
 
 ## Local setup notes
 

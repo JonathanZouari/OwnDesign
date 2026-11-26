@@ -124,6 +124,17 @@ Backend 119 passed (19 of them in `test_e2e_mobile.py`), frontend 41 passed; the
 ## [2026-11-26] security | Review of the mobile web version
 `security-review` on 9e90834, 89e0e14..321fd81 and 2992a42: no findings. Pages: [security](security.md).
 
+## [2026-11-26] test | Visual check in Chromium
+Screenshots of every page at 390, 320, 768 and 1440 px (touch context for phones), viewed one by one. Found and fixed in
+b164d45:
+- at 768–1199 px the tabs pushed the menu button and the brand out of the app bar (the tabs now live in the drawer);
+- a selected wall on a phone showed an empty action bar;
+- the catalog was squeezed beside an open inspector sheet;
+- disabled fields did not look read-only.
+
+The overflow test had missed the first one because the bar clips instead of scrolling. New tests cover all of them.
+Backend 123 passed, frontend 41 passed. Pages: [design](design.md), [testing](testing.md).
+
 ## [2026-11-26] lint | End of the mobile web phase
 Removed open items that were resolved: the editor had no Phase 2 links at 767 px and below, its sign in/out button was hidden on phones, and the
 dashboard's section links could not be reached below 1200 px. All three are now reachable through the drawer. Updated the breakpoint line in design.md.
