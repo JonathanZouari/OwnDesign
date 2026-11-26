@@ -45,3 +45,12 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 - The coordinate limit is enforced in the editor only by clamping the view.
 - Two adjacent rooms from the wizard produce two overlapping walls.
 - Commit author address in the published history is the user's personal one (published by the user's choice).
+
+## Phase 3 budget
+
+- **Placeholder prices.** `FURNITURE_PRICES_USD`, `MATERIAL_PRICES_USD` and `CURRENCY_FACTOR` in `backend/app/catalog.py` are rough
+  guesses, not benchmarks (PRD open decision 12). They are labelled as estimates in the UI.
+- Walls are estimated at 2.5 m high and cabinets at 3 m2; the plan has no height or cabinet geometry.
+- The budget save is delete-then-insert, not atomic.
+- Migration `20261126090000_phase3_budget.sql` is not applied anywhere; no integration or browser test of the budget has run.
+- The "Dossier & Budget" placeholders remain in `wizard.html` and `studio.html` (no single project to link to).

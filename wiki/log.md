@@ -101,3 +101,10 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+
+## [2026-11-26] build | Phase 3 budget and shopping list (code written, not yet verified against Supabase)
+Table `budget_items` (migration `20261126090000_phase3_budget.sql`, not applied yet), routes `GET/PUT /v1/projects/{id}/budget`
+and `GET .../budget/suggestions` (`backend/app/routes/budget.py`), page `frontend/budget.html`. Default prices are
+placeholders in `backend/app/catalog.py`. Passing: schema unit tests (`test_budget_schema.py`), frontend 41 of 41.
+Written but never run (no Supabase project): `backend/tests/test_budget.py`. Not written: browser E2E for the budget page.
+Security review not run yet. Pages: [architecture](architecture.md), [testing](testing.md), [open-items](open-items.md).
