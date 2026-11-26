@@ -32,6 +32,11 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 
+## Preview only
+
+- Studio branding (`branding.html`): logo and three colours applied to a sample client entry page in the
+  browser. Nothing is saved, nothing reaches real client pages, and the page is not linked from the app.
+
 ## Demo: 3D villa
 
 - `/villa/`, linked from the home page: a stand-alone first-person tour of a two-floor villa (six living and
@@ -43,11 +48,6 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - A first-person walkthrough of the plan, opened from the editor, including unsaved drafts. View only.
 - Keyboard (any layout), drag to look, and on-screen buttons. Walls and windows block, doorways let through.
 - Heights are assumed, because the plan stores none ([architecture.md](architecture.md)).
-
-## Preview only
-
-- Studio branding (`branding.html`): logo and three colours applied to a sample client entry page in the
-  browser. Nothing is saved, nothing reaches real client pages, and the page is not linked from the app.
 
 ## Not built yet
 

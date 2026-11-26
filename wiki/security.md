@@ -47,13 +47,6 @@ checks, signed URLs, no IDOR through asset or room ids. Not fixed: see the Phase
 duplicate chat message after a failed answer, unvalidated `?project=`); a security review of the frontend
 commits is still to do.
 
-## Review of the 3D walkthrough
-
-No security finding: plan values reach only three.js geometry as numbers, the content security policy is
-unchanged, and three.js is served locally. Not checked: that the vendored files match the published release
-byte for byte. The code review found that a crafted plan could freeze the viewer's tab; such plans are now
-refused. The small fix commit that followed was not reviewed separately.
-
 ## CI (GitHub Actions)
 
 Source: `.github/workflows/ci.yml`. The plan and the file were each reviewed by a security-reviewer agent, and
@@ -74,11 +67,20 @@ executes that code with the service key.
 What remains: the CI key is still a service key on the dev project; logs are public and GitHub masks exact
 secret strings only, so a failing test's traceback is visible to everyone. See [open-items.md](open-items.md).
 
-## Review of the villa demo
+## Review of the 3D walkthrough (pull request #14)
 
-No security finding: the download script accepts one host, keeps every file name inside the asset folder and
-writes only model, image and sky types; the page sets text only; its policy allows one import map by hash.
-Not checked: the full vendored addons. The policy does not restrict where images and requests load from.
+Reviewed again here before merging, by reading and by a security-reviewer agent: no critical or high finding.
+Plan values reach only three.js geometry as numbers, the content security policy is unchanged, and three.js is
+served locally. The three vendored files are byte for byte the published npm package `three@0.180.0` (SHA-256
+compared at merge time). The guard against oversized plans counts wall cuts, not boxes: the largest plan the
+server accepts still makes the viewer's own tab sluggish ([open-items.md](open-items.md)).
+
+## Review of the villa demo (contributor's fork)
+
+A security-reviewer agent on the three code commits: no finding. The download script accepts one host, keeps
+every file name inside the asset folder and writes only model, image and sky types; the page sets text only;
+its policy allows one import map by hash. Not checked: the vendored addons beyond targeted searches. The policy
+does not restrict where images and requests load from.
 
 ## Every stage
 

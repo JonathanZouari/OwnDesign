@@ -101,29 +101,6 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
-## [2026-11-26] decision | 3D walkthrough approved
-The user chose a first-person walkthrough, reconsidering PRD 3.3. Pages: [decisions](decisions.md),
-[open-items](open-items.md).
-
-## [2026-11-26] build | 3D walkthrough in the plan editor
-Tests first for the geometry. Commits `5b50e33`, `3a688e3`, `ed51665`. Pages: [overview](overview.md),
-[architecture](architecture.md).
-
-## [2026-11-26] security | Review of the walkthrough, and a code review
-No security finding. Code review: sharp-angle walls could be crossed, oversized plans froze the tab, Ctrl+S
-did not save in 3D. Fixed in `ff3c9bf`, which also fixes the new browser journey (the page's policy blocks
-`wait_for_function`). Pages: [security](security.md).
-
-## [2026-11-26] infra | New dev Supabase project
-Created at the user's request, migrations and auth settings applied. Local backend on port 8001.
-
-## [2026-11-26] test | Walkthrough verified
-Backend 100 passed, frontend 49 passed. Pages: [testing](testing.md).
-
-## [2026-11-26] docs | Walkthrough sent as a pull request
-No write access to the repository, so the work goes from a fork to `dev` as a pull request. The local
-commits were re-authored before publishing, and the hashes above updated. Pages: [log](log.md).
-
 ## [2026-11-26] plan | Tests in GitHub Actions
 Plan approved by the user: everything runs in CI, a separate Supabase key for CI, report only.
 Pages: [decisions](decisions.md).
@@ -170,13 +147,56 @@ the other pages. One medium note on the contrast check and smaller ones are in [
 contributor's code was not changed. On the merged tree: backend 100 passed, frontend 39 passed. No browser journey
 for the page yet. Commits `2552d1d` (merge) and the two that follow it. Pages: [open-items](open-items.md).
 
-## [2026-11-26] docs | Upstream dev merged into the walkthrough branch
-Conflicts only in wiki pages, both sides kept. Commit `f38ece6`.
+The six entries that follow came with pull request #14 and describe work in the contributor's fork. "The user"
+in them was the contributor's own user, and the Supabase project and test run were theirs, not this project's.
 
-## [2026-11-26] build | 3D villa demo
-Stand-alone page, asset download script, home page link, tests. Commits `5ed3396`, `23a8007`, `8b4e691`.
-Added to pull request #14. Pages: [overview](overview.md), [architecture](architecture.md),
-[decisions](decisions.md), [open-items](open-items.md), [testing](testing.md).
+## [2026-11-26] decision | 3D walkthrough chosen (in the contributor's fork)
+The contributor chose a first-person walkthrough, against PRD 3.3. Pages: [decisions](decisions.md),
+[open-items](open-items.md).
 
-## [2026-11-26] security | Review of the villa demo
+## [2026-11-26] build | 3D walkthrough in the plan editor
+Tests first for the geometry. Commits `5b50e33`, `3a688e3`, `ed51665`. Pages: [overview](overview.md),
+[architecture](architecture.md).
+
+## [2026-11-26] security | Review of the walkthrough, and a code review
+No security finding. Code review: sharp-angle walls could be crossed, oversized plans froze the tab, Ctrl+S
+did not save in 3D. Fixed in `ff3c9bf`, which also fixes the new browser journey (the page's policy blocks
+`wait_for_function`). Pages: [security](security.md).
+
+## [2026-11-26] infra | The contributor's own Supabase project
+Created by the contributor for their fork, migrations and auth settings applied. Not this project's database.
+
+## [2026-11-26] test | Walkthrough verified (in the contributor's fork)
+Backend 100 passed, frontend 49 passed, as reported by the contributor. Pages: [testing](testing.md).
+
+## [2026-11-26] docs | Walkthrough sent as a pull request
+No write access to the repository, so the work goes from a fork to `dev` as a pull request. The local
+commits were re-authored before publishing, and the hashes above updated. Pages: [log](log.md).
+
+## [2026-11-26] build | Pull request #14 merged: 3D walkthrough in the plan editor
+First-person, view-only walkthrough opened from the editor; three.js 0.180.0 vendored. Before any of it ran: the
+vendored files compared by SHA-256 with the npm package (identical), the test and editor changes read, then
+code-reviewer and security-reviewer agents: no critical or high finding. One medium and four low notes are in
+[open-items](open-items.md); the contributor's code was not changed. Six wiki conflicts resolved by keeping both
+sides; the contributor's wiki text spoke of "the user", which was re-attributed
+([decisions](decisions.md), "From merged pull requests"). On the merged tree: backend 100 passed, frontend 57
+passed. Commits `5bb03bf` (merge), `5c86f5b`. Pages: [decisions](decisions.md), [security](security.md),
+[testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] test | Pull request #19 reviewed, not merged: version comparison
+Code-reviewer and security-reviewer agents, then its tests on a trial merge onto `dev`: frontend 63 passed, its
+unit and API tests passed, one of its four browser journeys failed (it asserts on text that the stylesheet
+uppercases, and a later step cannot pass). Also confirmed in the code: the details panel renders the text "null",
+and the comparison and the 3D walkthrough can be open at once. No security finding in the code; the endpoint
+reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
+not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
+Nothing of it is on `dev`.
+
+## [2026-11-26] build | 3D villa demo (in the contributor's fork)
+Stand-alone page at `/villa/`, asset download script, home page link, tests. Chosen by the contributor.
+Commits `5ed3396`, `23a8007`, `8b4e691`. Frontend 85 passed; see [testing](testing.md) for the backend run.
+Pages: [overview](overview.md), [architecture](architecture.md), [decisions](decisions.md),
+[open-items](open-items.md).
+
+## [2026-11-26] security | Review of the villa demo (in the contributor's fork)
 No finding. Pages: [security](security.md).

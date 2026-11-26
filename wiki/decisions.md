@@ -16,12 +16,6 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **A separate Supabase secret key for CI**, created and entered by the user, so it can be revoked without breaking local work.
 - **The CI check reports only.** No branch protection for now.
 
-- **A 3D walkthrough in the plan editor.** The user chose it over a rotating or isometric view. This
-  reconsiders PRD 3.3, which excluded interactive 3D navigation.
-
-- **A realistic villa demo**, warm country style, two floors, as a separate page and not a feature of the
-  editor, with free downloaded models. The user chose these.
-- **Villa assets are not committed**; a script downloads them, to keep the repository small. User's choice.
 
 ## By Claude (open to change)
 
@@ -34,8 +28,18 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Consultant memory policy** (PRD 5.4 leaves it open): messages are stored per project and user, private to that user, capped at 30 a day per user. A failed OpenAI call still uses a slot because it may have been billed.
 - **Images go through the backend**, not directly to storage, so type, size, count and access are checked in one place.
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.
-- **three.js, vendored**, for the walkthrough, with controls written here. Its ready-made controls need an
-  import map, which the `script-src 'self'` policy would block as an inline script.
 - **Pull requests never get secrets**; the full suite runs on push to `dev`/`main` only ([testing.md](testing.md)). Came out of the security review of the CI plan.
-- **The villa page allows one inline import map by hash.** This replaces the reason given above for avoiding
-  import maps: a hash permits it without allowing other inline scripts, and keeps vendored files unmodified.
+
+## From merged pull requests
+
+Made by outside contributors in their own forks and accepted when the owner had the pull request merged.
+A pull request's wiki text may say "the user": that is the contributor's own user, never this project's owner.
+Such lines are moved here and reworded when the pull request is merged.
+
+- **A 3D walkthrough in the plan editor** (pull request #14), first person rather than a rotating or isometric
+  view. It goes against PRD 3.3, which excluded interactive 3D navigation; the PRD text has not been updated.
+- **three.js, vendored**, for the walkthrough, with controls written here (pull request #14). Its ready-made
+  controls need an import map, which the `script-src 'self'` policy would block as an inline script.
+- **A realistic villa demo** (contributor's pull request): warm country style, two floors, a separate page and
+  not an editor feature, free downloaded models that a script fetches instead of committing them. It allows one
+  inline import map by hash, which keeps the vendored files unmodified.

@@ -55,18 +55,13 @@ failed in its first step. Not yet seen: a green `backend` run. It waits for the 
 
 ## Last result
 
-2026-11-26, with the villa demo, locally on a separate dev project: frontend 85 passed. Backend: 100 passed
-in the full run, where the new villa journey timed out in a software-drawing browser; it was moved to a
-browser using the graphics card and then passed on its own. The full suite was not run again after that.
+2026-11-26, villa demo, as run by its contributor on their own Supabase project: frontend 85 passed. Backend:
+100 passed in a full run where the new villa journey timed out in a software-drawing browser; the journey was
+moved to a browser using the graphics card and passed on its own. The full suite was not run again after that.
 
-2026-11-26: backend 100 passed (incl. the browser journeys, the guest journey now also walks in 3D), frontend
-49 passed, on a new dev Supabase project. Door crossing, on-screen buttons, phone width, an empty plan and
-a browser without WebGL were checked once in headless Chrome, not part of the suites.
-
-2026-11-23: backend 94 passed (incl. 3 browser journeys), frontend 31 passed. New files:
-
-2026-11-26: backend 100 passed (9 browser tests), frontend 31 passed, locally. On GitHub: `frontend` green,
-`backend` not yet run to the end (see CI).
+2026-11-26, after merging pull requests #9, #8 and #14: backend 100 passed (9 browser tests; the guest journey
+now also walks in 3D), frontend 57 passed, locally. On GitHub: `frontend` green, `backend` not yet run to the
+end (see CI), so the 3D step has not yet run on a Linux runner.
 
 2026-11-23, new files:
 `backend/tests/test_design.py` (brief, finishes, uploads, moodboard, isolation, quota, suspended studio) and
@@ -81,8 +76,7 @@ reaches OpenAI in the suite; the real call was checked by hand once.
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the
 journeys use the second). A system-level `OPENAI_API_KEY` overrides the one in `.env`; unset it before starting the backend.
 
-If port 8000 is taken, run the backend on another port and set `apiUrl` in `frontend/js/config.js`; the
-journeys follow `config.js`. `python -m http.server` can refuse connections on a loaded machine.
+`python -m http.server` can refuse connections on a loaded machine.
 
 ## Not covered
 
