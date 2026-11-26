@@ -68,7 +68,9 @@ reaches OpenAI in the suite; the real call was checked by hand once.
 Supabase), frontend 37 passed. New: `backend/tests/test_diff.py` (17 engine tests: every change kind,
 tolerances, angles, rooms, structure, grouping, empty and 1000-item plans), `test_compare.py` (access, other
 project's version, same version, malformed input, writes nothing), `test_e2e_compare.py` (4 browser journeys),
-`frontend/tests/compare.test.js`. `test_compare.py` and `test_e2e_compare.py` have **not run yet**.
+`frontend/tests/compare.test.js`. Then run in full against a new development database: backend 133 passed
+(browser journeys included), frontend 37 passed. That run caught one bug (the difference view hid version A
+one frame late) and three test mistakes.
 
 ## Local setup notes
 

@@ -148,3 +148,9 @@ Pages: [testing](testing.md).
 
 ## [2026-11-26] security | Review of version comparison
 No high-confidence findings. Pages: [security](security.md).
+
+## [2026-11-26] test | Version comparison on a real database
+Merged `dev` into the branch. Full run against the new development project: backend 133 passed, frontend 37
+passed. Fixed: version A now hides at once in the difference view; three assertions in
+`test_e2e_compare.py`. Pages: [testing](testing.md), [open-items](open-items.md).
+

@@ -42,8 +42,8 @@ def test_client_compares_inspects_and_exits_without_changes(page, api, world):
 
     # Selecting a change shows only what changed.
     page.get_by_role("button", name="Moved Sofa").click()
-    details = page.locator("#cmp-details")
-    assert "Position (centre)" in details.inner_text() and "100, 100 cm" in details.inner_text() and "220, 100 cm" in details.inner_text()
+    details = page.locator("#cmp-details").text_content()  # the text itself; CSS shows the headers in capitals
+    assert "Position (centre)" in details and "100, 100 cm" in details and "220, 100 cm" in details
     assert page.locator("#cmp-svg-a .cmp-focus").count() == 1 and page.locator("#cmp-svg-b .cmp-focus").count() == 1
 
     # Filters.
@@ -55,10 +55,11 @@ def test_client_compares_inspects_and_exits_without_changes(page, api, world):
     page.get_by_role("button", name="Swap versions A and B").click()
     page.get_by_role("button", name="Removed Armchair").wait_for()
     page.get_by_role("button", name="Difference view").click()
+    page.locator("#cmp-svg-b .cmp-gone").wait_for(state="attached")  # drawn on the next frame
     assert page.locator("#cmp-plan-a").is_hidden() and page.locator("#cmp-svg-b .cmp-gone").count() == 1
 
-    # Same version on both sides is refused in the page.
-    page.get_by_label("Version A · baseline").select_option(label="v2 · Moved sofa")
+    # Same version on both sides is refused in the page (after the swap, A is v2).
+    page.get_by_label("Version B · compared").select_option(label="v2 · Moved sofa")
     page.get_by_text("Choose two different versions to compare.").wait_for()
 
     page.get_by_role("button", name="Exit comparison").click()

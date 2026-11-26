@@ -263,6 +263,7 @@ export function mountCompare(root, host) {
     state.mode = mode;
     for (const button of root.querySelectorAll("[data-mode]")) button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
     $("#cmp-plans", root).classList.toggle("single", mode === "diff");
+    $("#cmp-plan-a", root).hidden = mode !== "side";
     captions();
     requestAnimationFrame(paint); // the plan area changed width
   }
