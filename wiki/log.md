@@ -105,8 +105,13 @@ Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 ## [2026-11-26] build | Phone version (branch feature/mobile)
 Touch: items are placed on lift, two fingers pan and zoom. CSS: dynamic viewport height, safe areas, 44 px
 targets, 16 px inputs, hover only on hover devices, visible tabs and sign in/out, landscape editor, stacked
-project table, sticky chat composer. Commits `8381605` to the test commit on `feature/mobile`. Frontend 35
+project table, sticky chat composer (removed the same day, see the next entry). Commits `8381605` to the test commit on `feature/mobile`. Frontend 35
 passed. Pages checked at 360, 390, 740x360 and 1280 px in Chrome emulation (signed-in pages with stubbed API
 data). The backend suite and browser journeys, including the new phone journey, were NOT run: no
 `backend/.env` or `uv` on this machine. Pages: [design](design.md), [testing](testing.md),
 [open-items](open-items.md).
+
+## [2026-11-26] build | Phone review fixes
+Removed the sticky chat composer (it hid replies). Landscape top bar keeps the home link and sign out on
+screen. The wizard disclaimer shows in landscape again. Simplified the tab tap-size rules. Extended the phone
+journey; it has still not been run (no `backend/.env` or `uv`). Checked in Chrome emulation with stubbed API data.

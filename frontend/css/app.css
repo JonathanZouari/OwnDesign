@@ -295,9 +295,13 @@ body.app .appbar { grid-column: 1 / -1; }
 /* Phones held sideways: the height is the scarce side, so the chrome goes to one row and the editor to three columns. */
 @media (max-height: 500px) and (pointer: coarse) {
   .appbar { min-height: 52px; flex-wrap: nowrap; padding-block: 4px; }
-  .appbar .tabs { order: 0; flex: 0 1 auto; }
+  /* Only the tabs give up room (they scroll), so the home link and the buttons stay on screen. */
+  .appbar .group:first-child { flex: none; }
+  .appbar .tabs { order: 0; flex: 0 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .appbar .wide, body.app .appbar .chip.studio { display: none !important; }
+  #save, #account { padding: 0 10px; }
   body.app { grid-template-rows: auto minmax(0, 1fr) auto; }
-  .contextbar, .wizard-head p, .wizard-foot .code { display: none; }
+  .contextbar, .wizard-head p { display: none; }
   .wizard-head, .wizard-foot { padding-block: 4px; }
   .editor { flex-direction: row; }
   .rail { order: 0; width: 60px; flex-direction: column; justify-content: flex-start; padding: 6px; overflow-x: hidden; overflow-y: auto; }
@@ -564,7 +568,6 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .stack-rows tr { display: grid; gap: 4px; padding: 12px 0; border-bottom: 1px solid var(--hairline); }
   .stack-rows td { padding: 0; border: 0; overflow-wrap: anywhere; }
   #context-area { white-space: nowrap; }
-  .composer { position: sticky; bottom: env(safe-area-inset-bottom); z-index: 5; } /* send stays in reach above the keyboard */
 }
 
 /* ==========================================================================
@@ -582,11 +585,7 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .stepper { grid-template-columns: 44px 1fr auto 44px; height: 46px; }
   .room-list button, .color-list button { min-width: 44px; min-height: 44px; }
   .project-nav a, .palette nav > a { min-height: 44px; }
-  .tabs a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
-  .tabs .compact-only { display: none; }
-}
-@media (pointer: coarse) and (max-width: 1199px) {
-  .tabs .compact-only { display: inline-flex; }
+  .tabs a { min-height: 44px; align-content: center; }
 }
 /* Narrow phones: all eight editor tools fit without scrolling. */
 @media (pointer: coarse) and (max-width: 399px) {

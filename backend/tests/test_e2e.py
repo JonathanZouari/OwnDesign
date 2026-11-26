@@ -287,7 +287,8 @@ def test_phone_layout_and_touch(servers, browser, api, make_user):
     page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
     assert not overflows(page)
     assert page.get_by_role("button", name="Sign in").is_visible()
-    assert page.get_by_role("button", name="Redo").bounding_box()["x"] < 360  # every tool fits
+    redo = page.get_by_role("button", name="Redo").bounding_box()
+    assert redo["x"] + redo["width"] <= 360  # every tool fits
 
     furniture = page.locator("#canvas [data-kind=furniture]")
     canvas = page.locator("#canvas")
@@ -323,4 +324,20 @@ def test_phone_layout_and_touch(servers, browser, api, make_user):
     page.set_viewport_size({"width": 740, "height": 360})
     box = canvas.bounding_box()
     assert box["height"] > 150 and box["y"] + box["height"] <= 360
+
+    # A saved project has four tabs: sideways, they must not push the home link or sign out off the screen.
+    client = make_user("e2e-phone-client")
+    project = api.post(
+        "/v1/projects", json={"studio_id": studio["id"], "name": "Phone Project", "property_type": "existing"}, headers=client.headers
+    ).json()["data"]
+    page.set_viewport_size({"width": 844, "height": 390})
+    page.goto(f"{SITE}/auth.html?next=editor.html%3Fproject%3D{project['id']}")
+    page.get_by_label("Email").fill(client.email)
+    page.get_by_label("Password").fill(client.password)
+    page.get_by_role("button", name="Sign in").tap()
+    page.get_by_text("Editing as client").wait_for(state="attached")
+    assert page.evaluate("window.innerWidth") == 844 and not overflows(page)
+    for control in (page.locator("#home-link"), page.get_by_role("button", name="Sign out")):
+        box = control.bounding_box()
+        assert box["width"] > 0 and box["x"] >= 0 and box["x"] + box["width"] <= 844
     context.close()
