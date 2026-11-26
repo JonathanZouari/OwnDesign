@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, StringConstraints
 from app.auth import CurrentUser, current_user
 from app.db import audit, service, settings
 from app.responses import ok
-from app.routes.design import _writable_project
+from app.routes.design import _style_profile, _writable_project
 from app.routes.projects import _project_or_404
 
 log = logging.getLogger(__name__)
@@ -71,6 +71,7 @@ def _context(user: CurrentUser, project: dict) -> str:
         "brief": brief[0]["brief"] if brief else None,
         "finishes": finishes,
         "items_already_in_the_home": items,
+        "inspiration_profile": _style_profile(user, pid),
     }
     # < and > are escaped so user-written text cannot close the tag and pose as instructions.
     data = json.dumps(summary, ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e")

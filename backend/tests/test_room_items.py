@@ -122,6 +122,16 @@ def test_busy_scanner_answers_503(api, world, fake):
     assert scan(api, world.client, world.project["id"]).status_code == 503
 
 
+def test_missing_model_answers_503_and_stores_nothing(api, world, fake):
+    from app.main import app
+
+    pid = world.project["id"]
+    before = len(api.get(f"/v1/projects/{pid}/assets", headers=world.client.headers).json()["data"])
+    app.dependency_overrides[vision.get_detector] = lambda: None
+    assert scan(api, world.client, pid).status_code == 503
+    assert len(api.get(f"/v1/projects/{pid}/assets", headers=world.client.headers).json()["data"]) == before
+
+
 def test_scan_access(api, world, fake):
     pid = world.project["id"]
     assert api.post(f"/v1/projects/{pid}/scans", files={"file": ("r.jpg", ROOM_JPG, "image/jpeg")}).status_code == 401

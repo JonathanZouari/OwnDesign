@@ -4,12 +4,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from app import vision
 from app.auth import CurrentUser, current_user
 from app.catalog import MATERIALS, STYLES, SURFACES
 from app.db import audit, service
 from app.responses import ok
 from app.routes.projects import _project_or_404
 from app.schemas import Brief, FinishesBody, MoodboardBody
+from app.style import style_profile
 
 catalog_router = APIRouter(prefix="/v1/catalog")
 router = APIRouter(prefix="/v1/projects/{project_id}")
@@ -115,7 +117,11 @@ def list_assets(project_id: UUID, user: CurrentUser = Depends(current_user)):
     _project_or_404(user, project_id)
     rows = user.db.table("inspiration_assets").select(f"{ASSET_COLUMNS}, storage_path").eq("project_id", str(project_id)).order("created_at").execute().data
     urls = _signed_urls([row["storage_path"] for row in rows])
-    return ok([{**{k: v for k, v in row.items() if k != "storage_path"}, "url": urls.get(row["storage_path"], "")} for row in rows])
+    analyses = {a["asset_id"]: _analysis_view(a) for a in _analyses(user, str(project_id))}
+    return ok([
+        {**{k: v for k, v in row.items() if k != "storage_path"}, "url": urls.get(row["storage_path"], ""), "analysis": analyses.get(row["id"])}
+        for row in rows
+    ])
 
 
 @router.post("/assets", status_code=201)
@@ -125,10 +131,79 @@ def add_asset(
     kind: Literal["inspiration", "existing_item"] = Form(...),
     caption: str = Form("", max_length=200),
     user: CurrentUser = Depends(current_user),
+    detector=Depends(vision.get_detector),
 ):
     project = _writable_project(user, project_id)
-    row, _ = store_asset(user, project, file, kind, caption)
-    return ok({key: row[key] for key in ASSET_COLUMNS.split(", ")})
+    row, data = store_asset(user, project, file, kind, caption)
+    analysis = None
+    if kind == "inspiration" and detector is not None:
+        try:
+            analysis = _analyse_and_save(user, project, row["id"], data, detector)
+        except (vision.ImageError, vision.DetectorBusy):
+            analysis = None  # the image is kept; it can be analysed later (POST .../analysis)
+    return ok({**{key: row[key] for key in ASSET_COLUMNS.split(", ")}, "analysis": analysis})
+
+
+# ---- inspiration analysis and style profile ----------------------------------------------------------------------
+
+ANALYSIS_MODEL = "yolov8n-coco+palette"
+
+
+def _analyses(user: CurrentUser, project_id: str) -> list[dict]:
+    return user.db.table("asset_analyses").select("asset_id, objects, palette, analysed_at").eq("project_id", project_id).execute().data
+
+
+def _analysis_view(row: dict) -> dict:
+    return {"objects": row["objects"], "palette": row["palette"], "analysed_at": row.get("analysed_at")}
+
+
+def _analyse_and_save(user: CurrentUser, project: dict, asset_id: str, data: bytes, detector) -> dict:
+    result = vision.analyse(data, detector)
+    row = (
+        service()
+        .table("asset_analyses")
+        .upsert(
+            {"asset_id": asset_id, "project_id": project["id"], "objects": result["objects"], "palette": result["palette"],
+             "model": ANALYSIS_MODEL, "analysed_by": user.id},
+            on_conflict="asset_id",
+        )
+        .execute()
+        .data[0]
+    )
+    audit("asset.analysed", user.id, studio_id=project["studio_id"], project_id=project["id"], asset_id=asset_id, objects=len(result["objects"]))
+    return _analysis_view(row)
+
+
+@router.post("/assets/{asset_id}/analysis")
+def analyse_asset(project_id: UUID, asset_id: UUID, user: CurrentUser = Depends(current_user), detector=Depends(vision.get_detector)):
+    """Analyses an inspiration image again, or for the first time if it was uploaded before analysis existed."""
+    project = _writable_project(user, project_id)
+    found = user.db.table("inspiration_assets").select("id, kind, storage_path").eq("project_id", project["id"]).eq("id", str(asset_id)).execute().data
+    if not found:
+        raise HTTPException(404, "Image not found")
+    if found[0]["kind"] != "inspiration":
+        raise HTTPException(422, "Only inspiration images are analysed")
+    if detector is None:
+        raise HTTPException(503, "The image analyser is not available right now.")
+    data = service().storage.from_(BUCKET).download(found[0]["storage_path"])
+    try:
+        return ok(_analyse_and_save(user, project, str(asset_id), data, detector))
+    except vision.ImageError:
+        raise HTTPException(422, "The image could not be read.") from None
+    except vision.DetectorBusy:
+        raise HTTPException(503, "The image analyser is busy. Try again in a moment.") from None
+
+
+@router.get("/style-profile")
+def get_style_profile(project_id: UUID, user: CurrentUser = Depends(current_user)):
+    _project_or_404(user, project_id)
+    return ok(_style_profile(user, str(project_id)))
+
+
+def _style_profile(user: CurrentUser, project_id: str) -> dict:
+    """Shared with the consultant's context. Reads with the caller's JWT, so RLS applies."""
+    total = user.db.table("inspiration_assets").select("id", count="exact").eq("project_id", project_id).eq("kind", "inspiration").limit(1).execute().count or 0
+    return style_profile(_analyses(user, project_id), total)
 
 
 def store_asset(user: CurrentUser, project: dict, file: UploadFile, kind: str, caption: str) -> tuple[dict, bytes]:

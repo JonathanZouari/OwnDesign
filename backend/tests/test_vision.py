@@ -273,14 +273,12 @@ def test_concurrent_first_loads_build_one_session():
 
 
 def test_an_altered_model_file_is_refused(monkeypatch):
-    from fastapi import HTTPException
-
     vision._load.cache_clear()
     monkeypatch.setattr(vision, "MODEL_SHA256", "0" * 64)
     try:
-        with pytest.raises(HTTPException) as error:
-            vision.get_detector()
-        assert error.value.status_code == 503
+        with pytest.raises(RuntimeError):
+            vision.load_detector()
+        assert vision.get_detector() is None  # routes turn this into 503 (scan) or "no analysis" (upload)
     finally:
         vision._load.cache_clear()
 

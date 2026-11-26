@@ -261,15 +261,14 @@ def load_detector() -> Detector:
         return _load()
 
 
-def get_detector() -> Detector:
-    """A FastAPI dependency, so tests can replace the model with a fake. A missing or altered model is a 503."""
-    from fastapi import HTTPException
-
+def get_detector() -> Detector | None:
+    """A FastAPI dependency, so tests can replace the model with a fake. None when the model is missing or altered:
+    a scan then answers 503, and an image upload still succeeds without an analysis."""
     try:
         return load_detector()
     except (OSError, RuntimeError):
-        log.exception("The room scan model could not be loaded")
-        raise HTTPException(503, "The room scanner is not available right now.") from None
+        log.exception("The image model could not be loaded")
+        return None
 
 
 def analyse(data: bytes, detector) -> dict:

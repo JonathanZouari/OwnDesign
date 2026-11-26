@@ -50,6 +50,8 @@ def scan_room(
         stored = user.db.table("inspiration_assets").select("id", count="exact").eq("project_id", project["id"]).limit(1).execute().count or 0
         if stored >= MAX_ASSETS_PER_PROJECT:
             raise HTTPException(409, "This project has reached its limit of images")
+        if detector is None:
+            raise HTTPException(503, "The room scanner is not available right now.")
         try:
             detections = vision.scan(data, detector)
         except vision.ImageError:
