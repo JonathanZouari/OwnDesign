@@ -535,3 +535,6 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 .skip { position: absolute; left: 8px; top: -48px; z-index: 100; padding: 8px 12px; border-radius: 4px; background: var(--inverse); color: var(--on-inverse); font: 600 13px/18px var(--font-body); }
 .skip:focus { top: 8px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+.page-footer { max-width: 1040px; margin: 0 auto; padding: 0 1rem 2rem; font-size: 12px; }
+.statusbar a { color: var(--primary); }
+.todo { background: var(--caution-tint); color: var(--on-caution-tint); padding: 0 4px; border-radius: 4px; }

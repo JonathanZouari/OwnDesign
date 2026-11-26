@@ -18,6 +18,7 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 | `backend/tests/test_api.py` | integration, edge | auth, studios, invites, projects, versions, isolation, quotas, 413 on chunked upload, studio activity (members only) |
 | `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names) |
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
+| `backend/tests/test_a11y.py` | accessibility | axe-core on every page, skip link, 320 px reflow, Hebrew statement links (no Supabase needed) |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
 
 ## Required after every change

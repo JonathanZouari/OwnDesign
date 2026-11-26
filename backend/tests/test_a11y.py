@@ -19,7 +19,7 @@ PORT = 5511
 SITE = f"http://127.0.0.1:{PORT}"
 TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 PAGES = [
-    "index.html", "auth.html", "entry.html", "wizard.html", "editor.html",
+    "accessibility.html", "index.html", "auth.html", "entry.html", "wizard.html", "editor.html",
     "studio.html", "projects.html", "design.html", "consultant.html",
 ]
 
@@ -78,3 +78,17 @@ def test_no_horizontal_scroll_at_320px(site, page, name):
     page.goto(f"{SITE}/{name}")
     page.wait_for_load_state("networkidle")
     assert not page.evaluate("document.documentElement.scrollWidth > window.innerWidth")
+
+
+@pytest.mark.parametrize("name", [p for p in PAGES if p != "accessibility.html"])
+def test_every_page_links_to_the_hebrew_statement(site, page, name):
+    page.goto(f"{SITE}/{name}")
+    page.wait_for_load_state("networkidle")
+    assert page.locator("a[href='accessibility.html'][lang=he]").count() == 1
+
+
+def test_statement_is_hebrew_rtl_and_lists_required_parts(site, page):
+    page.goto(f"{SITE}/accessibility.html")
+    assert page.evaluate("[document.documentElement.lang, document.documentElement.dir]") == ["he", "rtl"]
+    for heading in ("מה הונגש באתר", "חלקים שלא הונגשו במלואם", "פניות בנושא נגישות"):
+        assert page.get_by_role("heading", name=heading).count() == 1
