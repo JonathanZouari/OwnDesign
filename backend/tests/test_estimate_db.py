@@ -63,11 +63,11 @@ def pid(api, make_user, admin):
 
 
 def test_replace_creates_ordered_list_and_replaces_it(admin, pid):
-    replace(admin, pid.id, [item("A"), item("B", unit_price=0), item("C", quantity=0.5, unit="m2", room=None, category=None)],
+    replace(admin, pid.id, [item("A"), item("B", unit_price=0), item("C", quantity=0.5, unit="m2", room=None)],
             user_id=pid.user.id)
     got = rows(admin, pid.id)
     assert [(r["position"], r["name"]) for r in got] == [(0, "A"), (1, "B"), (2, "C")]
-    assert got[2]["room"] is None and got[2]["category"] is None and got[2]["note"] == ""
+    assert got[2]["room"] is None and got[2]["note"] == ""
     head = admin.table("project_estimates").select("*").eq("project_id", pid.id).single().execute().data
     assert head["currency"] == "EUR" and head["updated_by"] == pid.user.id
 
@@ -105,7 +105,7 @@ def test_non_array_or_too_many_items_rejected_and_old_list_kept(admin, pid, item
     [
         {"quantity": 0}, {"quantity": -1}, {"quantity": 10001}, {"unit_price": -1}, {"unit_price": 100000001},
         {"unit_price": 1.5}, {"name": ""}, {"name": "x" * 121}, {"name": None}, {"room": "r" * 61},
-        {"category": "boat"}, {"unit": "kg"}, {"source": "ai"}, {"source": None}, {"note": "n" * 201},
+        {"category": "boat"}, {"category": None}, {"unit": "kg"}, {"unit": None}, {"source": "ai"}, {"source": None}, {"note": "n" * 201},
     ],
 )
 def test_bad_item_rolls_back_the_whole_call(admin, pid, bad):
@@ -114,6 +114,16 @@ def test_bad_item_rolls_back_the_whole_call(admin, pid, bad):
         replace(admin, pid.id, [item("new1"), item("bad", **bad)], currency="GBP")
     assert [r["name"] for r in rows(admin, pid.id)] == ["keep"]
     assert admin.table("project_estimates").select("currency").eq("project_id", pid.id).single().execute().data["currency"] == "USD"
+
+
+@pytest.mark.parametrize("missing", ["category", "unit"])
+def test_missing_category_or_unit_is_rejected(admin, pid, missing):
+    replace(admin, pid.id, [item("keep")], currency="USD")
+    broken = item("bad")
+    del broken[missing]
+    with pytest.raises(Exception):
+        replace(admin, pid.id, [item("new1"), broken], currency="GBP")
+    assert [r["name"] for r in rows(admin, pid.id)] == ["keep"]
 
 
 def test_bad_currency_and_unknown_project_rejected(admin, pid):
@@ -127,9 +137,18 @@ def test_bad_currency_and_unknown_project_rejected(admin, pid):
 def test_parallel_replaces_never_interleave(admin, pid):
     from concurrent.futures import ThreadPoolExecutor
 
+    from supabase import create_client
+
+    from app.db import settings
+
+    def own_client_replace(items):
+        # httpx clients are not safe to share between threads on Windows: one service client per thread.
+        client = create_client(settings().supabase_url, settings().supabase_secret_key)
+        return replace(client, pid.id, items)
+
     lists = [[item(f"{tag}{n}") for n in range(30)] for tag in ("a", "b", "c", "d")]
     with ThreadPoolExecutor(4) as pool:
-        list(pool.map(lambda items: replace(admin, pid.id, items), lists))
+        list(pool.map(own_client_replace, lists))
     names = [r["name"] for r in rows(admin, pid.id)]
     assert names in [[i["name"] for i in items] for items in lists]
 
