@@ -93,7 +93,7 @@ Read-only comparison of two saved versions, inside the editor page (`frontend/js
   moving into another room is reported with the move. Rooms, walls and openings are `structural` with
   `detail` added, removed or changed. Tolerances: 1 cm, 1 degree; rotation is compared as an angle (360 = 0).
   Each change carries `box_a`/`box_b` (where it is in each version) and only the properties that changed.
-  Changes are grouped by room (the box of the room's walls).
+  Changes are grouped by room (the box of the room's walls); a group lists change ids, not copies.
 - **Endpoint:** `POST /v1/projects/{id}/versions/compare` reads both versions through RLS and filtered by the
   project, so a version of another project is a 404. Same version twice is 422, a version that no longer
   validates is 422. It writes nothing.

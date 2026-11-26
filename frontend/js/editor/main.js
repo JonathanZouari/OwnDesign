@@ -119,7 +119,7 @@ function render() {
 
   renderInspector($("#inspector"), editor, { versions: state.versions, onLoadVersion: loadVersion, onCompare: openCompare });
   const comparable = (state.versions?.length ?? 0) >= 2;
-  $("#compare-open").disabled = !comparable;
+  $("#compare-open").disabled = !comparable || Boolean(closeWalk); // one full-screen view at a time
   $("#compare-open").title = comparable ? "Compare two saved versions" : "Save at least two versions to compare them";
 
   for (const button of $("#tools").children) {
@@ -221,6 +221,7 @@ async function openWalk() {
     const { startWalk } = await import("./view3d.js");
     root.hidden = false;
     for (const node of behind) node.inert = true;
+    $("#compare-open").disabled = true; // one full-screen view at a time
     const stop = startWalk(root, editor.plan, () => closeWalk());
     closeWalk = () => {
       stop();
@@ -228,12 +229,14 @@ async function openWalk() {
       root.hidden = true;
       for (const node of behind) node.inert = false;
       button.disabled = false;
+      render(); // restores the compare button's state
       button.focus();
     };
   } catch (error) {
     console.error(error);
     root.hidden = true;
     for (const node of behind) node.inert = false;
+    render(); // re-enables the compare button
     button.disabled = false;
     const reason = error instanceof RangeError ? error.message : "This browser or device may not support WebGL.";
     toast(`The 3D view could not start. ${reason}`, "error");

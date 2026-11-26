@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { changeLine, changeTitle, defaultPair, detailRows, filterGroups, focusBox, marks, versionName } from "../js/compare-logic.js";
+import { changeLine, changeTitle, defaultPair, detailRows, filterGroups, focusBox, marks, resolveGroups, versionName } from "../js/compare-logic.js";
 
 const moved = {
   change_id: "furniture:f1", entity_id: "f1", entity_type: "furniture", furniture_type: "sofa", change_type: "moved", room_id: "r2", room_name: "Bedroom",
@@ -73,4 +73,10 @@ test("marks follow the side: removed only on A, added only on B", () => {
   const all = [moved, added, removed, wall];
   assert.deepEqual(marks(all, "a").map((m) => [m.kind, m.id, m.tone]), [["furniture", "f1", "changed"], ["furniture", "f3", "removed"], ["walls", "w1", "structural"]]);
   assert.deepEqual(marks(all, "b").map((m) => [m.kind, m.id, m.tone]), [["furniture", "f1", "changed"], ["furniture", "f2", "added"], ["walls", "w1", "structural"]]);
+});
+
+test("groups get their changes back from the ids, skipping unknown ids", () => {
+  const groups = resolveGroups([{ room_id: "r1", room_name: "Living room", change_ids: ["furniture:f2", "wall:w1", "gone"] }], [added, wall, moved]);
+  assert.deepEqual(groups, [{ room_id: "r1", room_name: "Living room", changes: [added, wall] }]);
+  assert.deepEqual(resolveGroups([], []), []);
 });

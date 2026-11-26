@@ -11,10 +11,6 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **UI follows the Stitch project** "AI Interior Design Platform" ([design.md](design.md)).
 - **GitHub repository is public.** The user chose to publish with the existing commit author address.
 - **Stitch screens for later phases stay as references** in `design/stitch/`; the two that match Phase 1 (client portal, studio dashboard) are built with real data only.
-- **The app is for customers, not internal designers** (2026-11-26). Features are built for the people using
-  the app on their own projects; version comparison is open to everyone with access to the project. Earlier
-  designer-only rules (the copilot's apply, on its own branch) need revisiting against this.
-- **Version comparison: stages 1 and 2 of its spec together** (2026-11-26); overlay mode and an AI summary wait.
 - **Working rules** in `CLAUDE.md`: plan first, Fable 5.2, three kinds of tests, security review at every stage, commit per finished piece of code, subagents for specialist work, memory in `wiki/`.
 - **Tests run in GitHub Actions**, the Supabase-backed ones included. The three Supabase values are kept as secrets of the GitHub environment `ci`; this is the one approved exception to "secrets only in git-ignored files".
 - **A separate Supabase secret key for CI**, created and entered by the user, so it can be revoked without breaking local work.
@@ -48,3 +44,10 @@ Such lines are moved here and reworded when the pull request is merged.
   view. It goes against PRD 3.3, which excluded interactive 3D navigation; the PRD text has not been updated.
 - **three.js, vendored**, for the walkthrough, with controls written here (pull request #14). Its ready-made
   controls need an import map, which the `script-src 'self'` policy would block as an inline script.
+
+## Proposals (not adopted)
+
+- **Version comparison is open to everyone with access to the project**, clients included. It is read only,
+  so it follows the project's existing read access. Proposed with pull request #19.
+- **Version comparison covers stages 1 and 2 of its spec**; overlay mode and an AI summary wait.
+

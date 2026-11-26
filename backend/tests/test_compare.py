@@ -13,8 +13,9 @@ pytestmark = needs_supabase
 
 @pytest.fixture(scope="module")
 def world(api, make_user):
-    designer, client, stranger = (make_user(p) for p in ("cmpd", "cmpc", "cmps"))
+    designer, client, stranger, other_designer = (make_user(p) for p in ("cmpd", "cmpc", "cmps", "cmpo"))
     studio = api.post("/v1/studios", json={"name": "Compare Studio"}, headers=designer.headers).json()["data"]
+    assert api.post("/v1/studios", json={"name": "Other Studio"}, headers=other_designer.headers).status_code == 201
 
     def project(user):
         body = {"studio_id": studio["id"], "name": "Flat", "property_type": "existing"}
@@ -29,7 +30,7 @@ def world(api, make_user):
 
     v1, v2 = save(client, mine["id"], BASE), save(client, mine["id"], moved)
     other = save(stranger, theirs["id"], BASE)
-    return SimpleNamespace(designer=designer, client=client, stranger=stranger, mine=mine, theirs=theirs, v1=v1, v2=v2, other=other)
+    return SimpleNamespace(designer=designer, other_designer=other_designer, client=client, stranger=stranger, mine=mine, theirs=theirs, v1=v1, v2=v2, other=other)
 
 
 def url(project):
@@ -74,6 +75,11 @@ def test_version_of_another_project_is_not_found(api, world):
 def test_outsiders_are_refused(api, world):
     assert api.post(url(world.mine), json=body(world.v1, world.v2), headers=world.stranger.headers).status_code == 404
     assert api.post(url(world.mine), json=body(world.v1, world.v2)).status_code == 401
+
+
+def test_designer_of_another_studio_is_refused(api, world):
+    response = api.post(url(world.mine), json=body(world.v1, world.v2), headers=world.other_designer.headers)
+    assert response.status_code == 404 and "sofa" not in response.text
 
 
 def test_unknown_version_is_404(api, world):

@@ -2,7 +2,7 @@
 // shared zoom and pan, the server's change list, and before/after details. Read only: nothing here edits or
 // saves a plan. "Continue from" hands a version back to the editor's existing load-version flow.
 import { api } from "../api.js";
-import { changeLine, changeTitle, defaultPair, detailRows, filterGroups, focusBox, KIND_STYLE, KINDS, marks, versionName } from "../compare-logic.js";
+import { changeLine, changeTitle, defaultPair, detailRows, filterGroups, focusBox, KIND_STYLE, KINDS, marks, resolveGroups, versionName } from "../compare-logic.js";
 import * as P from "../plan.js";
 import { $, h } from "../ui.js";
 import { zoomAt } from "./pointer.js";
@@ -182,7 +182,7 @@ export function mountCompare(root, host) {
           h("tbody", {}, rows.map((row) => h("tr", {}, h("th", { scope: "row" }, row.property), h("td", { class: "mono" }, row.a), h("td", { class: "mono" }, row.b)))),
         )
       : null;
-    panel.replaceChildren(title, line, table);
+    panel.replaceChildren(...[title, line, table].filter(Boolean));
   }
 
   function select(changeId) {
@@ -222,6 +222,8 @@ export function mountCompare(root, host) {
     fillSelectors();
     $("#cmp-error", root).textContent = "";
     if (state.a === state.b) {
+      state.request++; // an answer for the previous pair, still on its way, must not repaint it
+      $("#cmp-status", root).textContent = "";
       state.result = null;
       showResult(false);
       $("#cmp-error", root).textContent = "Choose two different versions to compare.";
@@ -236,7 +238,7 @@ export function mountCompare(root, host) {
         geometry(state.b),
       ]);
       if (request !== state.request) return;
-      state.result = { ...result, planA, planB };
+      state.result = { ...result, groups: resolveGroups(result.groups, result.changes), planA, planB };
       if (!state.result.changes.some((change) => change.change_id === state.selected)) state.selected = null;
       showResult(true);
       summary();

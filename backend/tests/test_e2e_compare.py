@@ -3,6 +3,7 @@
 import copy
 
 import pytest
+from playwright.sync_api import expect
 
 from tests.test_e2e_design import servers, sign_in, studio, world  # noqa: F401 (fixtures)
 from tests.test_e2e_design import pytestmark as design_marks
@@ -37,14 +38,15 @@ def test_client_compares_inspects_and_exits_without_changes(page, api, world):
     assert page.get_by_label("Version B · compared").locator("option:checked").inner_text() == "v2 · Moved sofa"
     assert page.locator("#cmp-total").inner_text() == "2 changes detected"
     assert page.locator(".cmp-count").count() == 2  # added and moved
-    assert page.locator("#cmp-svg-b .cmp-mark.cmp-added").count() == 1
-    assert page.locator("#cmp-svg-a .cmp-mark.cmp-added").count() == 0  # an added item does not exist in A
+    expect(page.locator("#cmp-svg-b .cmp-mark.cmp-added")).to_have_count(1)
+    expect(page.locator("#cmp-svg-a .cmp-mark.cmp-added")).to_have_count(0)  # an added item does not exist in A
 
     # Selecting a change shows only what changed.
     page.get_by_role("button", name="Moved Sofa").click()
     details = page.locator("#cmp-details").text_content()  # the text itself; CSS shows the headers in capitals
     assert "Position (centre)" in details and "100, 100 cm" in details and "220, 100 cm" in details
-    assert page.locator("#cmp-svg-a .cmp-focus").count() == 1 and page.locator("#cmp-svg-b .cmp-focus").count() == 1
+    expect(page.locator("#cmp-svg-a .cmp-focus")).to_have_count(1)
+    expect(page.locator("#cmp-svg-b .cmp-focus")).to_have_count(1)
 
     # Filters.
     page.get_by_label("Type").select_option("added")
@@ -55,8 +57,13 @@ def test_client_compares_inspects_and_exits_without_changes(page, api, world):
     page.get_by_role("button", name="Swap versions A and B").click()
     page.get_by_role("button", name="Removed Armchair").wait_for()
     page.get_by_role("button", name="Difference view").click()
-    page.locator("#cmp-svg-b .cmp-gone").wait_for(state="attached")  # drawn on the next frame
-    assert page.locator("#cmp-plan-a").is_hidden() and page.locator("#cmp-svg-b .cmp-gone").count() == 1
+    expect(page.locator("#cmp-plan-a")).to_be_hidden()
+    expect(page.locator("#cmp-svg-b .cmp-gone")).to_have_count(1)  # drawn on the next frame
+
+    # An added or removed item has no before/after table, and nothing like "null" is shown instead.
+    page.get_by_role("button", name="Removed Armchair").click()
+    expect(page.locator("#cmp-details")).to_contain_text("No longer in version B")
+    expect(page.locator("#cmp-details")).not_to_contain_text("null")
 
     # Same version on both sides is refused in the page (after the swap, A is v2).
     page.get_by_label("Version B · compared").select_option(label="v2 · Moved sofa")

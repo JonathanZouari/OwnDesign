@@ -74,6 +74,12 @@ export function detailRows(change, roomName = () => null) {
   return rows;
 }
 
+// The server lists each group's change ids (so a large diff is not sent twice); this puts the changes back in.
+export function resolveGroups(groups, changes) {
+  const byId = new Map(changes.map((change) => [change.change_id, change]));
+  return groups.map(({ change_ids: ids, ...group }) => ({ ...group, changes: ids.map((id) => byId.get(id)).filter(Boolean) }));
+}
+
 // filter: { kind: "all" | one of KINDS, room: "all" | room id | "none" }
 export function filterGroups(groups, { kind = "all", room = "all" } = {}) {
   return groups

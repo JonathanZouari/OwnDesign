@@ -202,5 +202,5 @@ def compare(a: Geometry, b: Geometry) -> dict:
     for room_id in room_order:
         members = [c for c in changes if c["room_id"] == room_id]
         if members:
-            groups.append({"room_id": room_id, "room_name": members[0]["room_name"], "changes": members})
+            groups.append({"room_id": room_id, "room_name": members[0]["room_name"], "change_ids": [c["change_id"] for c in members]})
     return {"summary": summary, "changes": changes, "groups": groups}

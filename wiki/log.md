@@ -192,8 +192,9 @@ reads through RLS. Its wiki recorded "the app is for customers, not internal des
 not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
 Nothing of it is on `dev`.
 
-## [2026-11-26] decision | The app is for customers
-The user: the app is only for customers, not internal designers. Recorded in [decisions](decisions.md).
+## [2026-11-26] plan | Version comparison scope (proposal)
+Proposed with pull request #19: comparison open to everyone with access to the project, stages 1 and 2 of its
+spec. Recorded as proposals in [decisions](decisions.md).
 
 ## [2026-11-26] build | Version comparison
 Diff engine, read-only endpoint, comparison view in the editor, on branch `feature/version-comparison`.
@@ -211,4 +212,11 @@ No high-confidence findings. Pages: [security](security.md).
 Merged `dev` into the branch. Full run against the new development project: backend 133 passed, frontend 37
 passed. Fixed: version A now hides at once in the difference view; three assertions in
 `test_e2e_compare.py`. Pages: [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] build | Review of pull request #19 addressed
+Merged the latest `dev`. Fixed: the details panel no longer shows "null"; the comparison and the 3D walkthrough
+cannot be open together (each button is disabled while the other view is open, and opening the comparison
+closes a walk); a same-version pick cancels an answer still on its way; `groups` lists change ids instead of
+repeating the changes. Tests: another studio's designer is refused; browser checks use `expect`. Backend 134
+passed, frontend 64 passed. Pages: [decisions](decisions.md), [architecture](architecture.md).
 

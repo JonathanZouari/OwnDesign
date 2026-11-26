@@ -139,10 +139,10 @@ def test_changes_are_grouped_by_room_then_type():
         d["furniture"].append({"id": "far", "type": "chair", "x": 5000, "y": 5000, "w": 45, "d": 45, "rotation": 0})
 
     result = compare(geo(), geo(change))
-    assert [(g["room_id"], [c["entity_id"] for c in g["changes"]]) for g in result["groups"]] == [
-        ("r1", ["sofa"]),
-        ("r2", ["bed"]),
-        (None, ["far"]),
+    assert [(g["room_id"], g["change_ids"]) for g in result["groups"]] == [
+        ("r1", ["furniture:sofa"]),
+        ("r2", ["furniture:bed"]),
+        (None, ["furniture:far"]),
     ]
     assert result["groups"][0]["room_name"] == "Living room" and result["groups"][-1]["room_name"] is None
 
