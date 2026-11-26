@@ -497,6 +497,21 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 .asset img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; background: var(--surface-high); }
 .asset .caption { overflow-wrap: anywhere; }
 
+/* Style profile (Moodboard tab): what the analysed inspiration images share, and each image's analysis. */
+.style-body { display: grid; gap: 12px; }
+.style-body h3 { margin: 0; }
+.style-palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; list-style: none; margin: 0; padding: 0; }
+.style-color { display: grid; gap: 2px; justify-items: start; min-width: 0; padding: 8px; border-radius: 8px; background: var(--surface-low); }
+.style-color .style-swatch { width: 100%; height: 40px; margin-bottom: 4px; }
+.style-color-name { font-weight: 600; overflow-wrap: anywhere; text-transform: capitalize; }
+.style-pieces { display: grid; gap: 4px; margin: 0; padding-left: 1.1rem; }
+.style-analysis { display: grid; gap: 6px; justify-self: stretch; justify-items: start; min-width: 0; }
+.style-strip { display: flex; width: 100%; height: 14px; gap: 2px; list-style: none; margin: 0; padding: 0; }
+.style-strip-item { display: flex; flex: 1 1 0; min-width: 6px; }
+.style-strip .style-strip-dot { width: 100%; height: 100%; border-radius: 2px; }
+.style-summary { overflow-wrap: anywhere; }
+.style-analyse { padding: 0 8px; }
+
 /* "In the room" tab: room scan, review of what was found, and the list of items in the home.
    Every class starts with .room- so it cannot collide with the editor's or the wizard's names. */
 .room-layout { display: grid; gap: 1rem; }

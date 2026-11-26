@@ -3,6 +3,7 @@
 import { api, requireSession, signOut } from "../api.js";
 import * as L from "../design-logic.js";
 import * as R from "../room-logic.js";
+import * as S from "../style-logic.js";
 import { $, h, run, showStudio } from "../ui.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,6 +21,8 @@ const state = {
   rooms: [], // rooms of the latest saved plan
   finishes: {}, // finishKey -> material id
   assets: [],
+  profile: null, // style profile built from the analysed inspiration images
+  styleSaving: false, // "Add colours to the brief" is saving
   board: [],
   items: [], // the list of items already in the home
   drafts: [], // scan results waiting to be checked
@@ -155,6 +158,7 @@ function renderBriefColors() {
       ),
     ),
   );
+  renderStyleButton(); // its count depends on the brief colours
 }
 
 function fillBrief(brief) {
@@ -182,24 +186,43 @@ function initBrief() {
   });
   $("#brief-form").addEventListener("submit", (event) => {
     event.preventDefault();
-    const form = event.currentTarget.elements;
-    const { payload, error } = L.buildBriefPayload({
-      styles: state.styles,
-      colors: state.colors,
-      budget_min: form.budget_min.value,
-      budget_max: form.budget_max.value,
-      currency: form.currency.value,
-      adults: form.adults.value,
-      children: form.children.value,
-      pets: form.pets.checked,
-      lifestyle: form.lifestyle.value,
-      needs: form.needs.value,
-      constraints: form.constraints.value,
-      existing_items: form.existing_items.value,
-    });
-    if (error) return setStatus($("#brief-status"), error, "error");
-    busy($("#brief-save"), $("#brief-status"), async () => fillBrief((await api(`${base}/brief`, { method: "PUT", body: payload })).brief), "Brief saved.");
+    saveBrief($("#brief-save"), $("#brief-status"), "Brief saved.");
   });
+}
+
+// Saves the brief form with the chosen styles and colours: used by "Save brief" and by the style
+// profile's "Add colours to the brief". Resolves to true when saved; problems are shown in `status`.
+async function saveBrief(button, status, done, problemPrefix = "") {
+  const form = $("#brief-form").elements;
+  const { payload, error } = L.buildBriefPayload({
+    styles: state.styles,
+    colors: state.colors,
+    budget_min: form.budget_min.value,
+    budget_max: form.budget_max.value,
+    currency: form.currency.value,
+    adults: form.adults.value,
+    children: form.children.value,
+    pets: form.pets.checked,
+    lifestyle: form.lifestyle.value,
+    needs: form.needs.value,
+    constraints: form.constraints.value,
+    existing_items: form.existing_items.value,
+  });
+  if (error) {
+    setStatus(status, problemPrefix + error, "error");
+    return false;
+  }
+  let saved = false;
+  await busy(
+    button,
+    status,
+    async () => {
+      fillBrief((await api(`${base}/brief`, { method: "PUT", body: payload })).brief);
+      saved = true;
+    },
+    done,
+  );
+  return saved;
 }
 
 // ---- finishes ---------------------------------------------------------------------------------------
@@ -381,16 +404,18 @@ function renderAssets() {
             renderAssets();
             renderBoard();
             $("#upload-file").focus();
+            await refreshProfile();
           },
           "Image deleted.",
         );
       });
       return h(
         "li",
-        { class: "asset" },
+        { class: "asset", "data-asset": asset.id },
         url ? h("img", { src: url, alt: name, loading: "lazy" }) : h("div", { class: "preview" }, icon("image")),
         h("span", { class: "chip" }, KIND_LABEL[asset.kind] ?? asset.kind),
         asset.caption && h("span", { class: "small caption" }, asset.caption),
+        asset.kind === "inspiration" && analysisView(asset, name),
         h(
           "div",
           { class: "board-actions" },
@@ -402,7 +427,116 @@ function renderAssets() {
   );
 }
 
+// ---- style profile ----------------------------------------------------------------------------------
+
+// A palette colour: the swatch helper (hex-validated) or the "no colour" pattern for anything else.
+const paletteSwatch = (hex, extra) => {
+  const node = L.swatchColor(hex) === "transparent" ? h("span", { class: "swatch-dot none", "aria-hidden": "true" }) : swatch(hex);
+  node.classList.add(extra);
+  return node;
+};
+
+// Under an inspiration image: its colours as a strip, what was found, or an Analyse button.
+function analysisView(asset, name) {
+  const analysis = asset.analysis;
+  if (!analysis) {
+    const analyse = h("button", { type: "button", class: "style-analyse", "aria-label": `Analyse image ${name}` }, icon("auto_awesome"), "Analyse");
+    analyse.addEventListener("click", () => analyseAsset(asset, analyse));
+    return h("div", { class: "style-analysis" }, h("span", { class: "small muted" }, "Not analysed yet"), analyse);
+  }
+  const palette = Array.isArray(analysis.palette) ? analysis.palette : [];
+  return h(
+    "div",
+    { class: "style-analysis" },
+    palette.length > 0 &&
+      h(
+        "ul",
+        { class: "style-strip", "aria-label": `Colours in image ${name}` },
+        palette.map((color) => {
+          const label = S.swatchLabel({ name: color?.name, hex: color?.hex, share: color?.share });
+          const segment = h("li", { class: "style-strip-item", role: "img", "aria-label": label, title: label }, paletteSwatch(color?.hex, "style-strip-dot"));
+          segment.style.flexGrow = String(Math.max(Number(color?.share) || 0, 0.05)); // a sliver stays visible
+          return segment;
+        }),
+      ),
+    h("span", { class: "small muted style-summary" }, S.analysisSummary(analysis)),
+  );
+}
+
+function analyseAsset(asset, button) {
+  busy(
+    button,
+    $("#upload-status"),
+    async () => {
+      const analysis = await api(`${base}/assets/${encodeURIComponent(asset.id)}/analysis`, { method: "POST" });
+      state.assets = state.assets.map((item) => (item.id === asset.id ? { ...item, analysis } : item));
+      renderAssets();
+      $(`#assets [data-asset="${CSS.escape(asset.id)}"] button:not(:disabled)`)?.focus(); // the Analyse button is gone
+      await refreshProfile();
+    },
+    "Image analysed.",
+  );
+}
+
+// The profile changes when an inspiration image is uploaded, deleted or analysed.
+async function refreshProfile() {
+  try {
+    state.profile = await api(`${base}/style-profile`);
+  } catch {
+    /* the profile on screen stays as it is */
+  }
+  renderStyleProfile();
+}
+
+function renderStyleButton() {
+  const button = $("#style-to-brief");
+  if (!button) return;
+  const view = S.styleButton(state.colors, state.profile?.palette);
+  $("#style-to-brief-text").textContent = view.text;
+  button.disabled = state.styleSaving || view.disabled;
+}
+
+function renderStyleProfile() {
+  const profile = state.profile;
+  const analysed = Number(profile?.analysed) || 0;
+  const total = Number(profile?.total) || 0;
+  $("#style-empty").hidden = analysed > 0;
+  $("#style-empty").textContent =
+    total > 0 ? "None of your inspiration images has been analysed yet. Use the Analyse button under an image." : "Upload inspiration images to see the colours and pieces they share.";
+  $("#style-body").hidden = analysed === 0;
+  const palette = Array.isArray(profile?.palette) ? profile.palette : [];
+  $("#style-palette").replaceChildren(
+    ...palette.map((color) =>
+      h(
+        "li",
+        { class: "style-color" },
+        paletteSwatch(color?.hex, "style-swatch"),
+        h("span", { class: "style-color-name" }, color?.name || color?.hex || "Colour"),
+        h("span", { class: "mono small" }, S.percent(color?.share)),
+        h("span", { class: "small muted" }, S.imagesText(color?.images)),
+      ),
+    ),
+  );
+  const sentences = S.profileSentences(profile);
+  $("#style-pieces").replaceChildren(...(sentences.length ? sentences.map((line) => h("li", {}, line)) : [h("li", { class: "muted" }, "No furniture found in these images.")]));
+  $("#style-basis").textContent = S.basisText(profile);
+  renderStyleButton();
+}
+
+function addPaletteToBrief() {
+  const { colors, added } = S.paletteToBriefColors(state.colors, state.profile?.palette);
+  if (added.length === 0) return renderStyleButton();
+  state.colors = colors;
+  state.styleSaving = true;
+  renderBriefColors();
+  saveBrief($("#style-to-brief"), $("#style-status"), S.addedMessage(added.length), "The colours were added to the brief but it was not saved: ").finally(() => {
+    state.styleSaving = false;
+    renderStyleButton();
+  });
+}
+
 function initMoodboard() {
+  $("#style-to-brief").addEventListener("click", addPaletteToBrief);
   $("#board-save").addEventListener("click", () =>
     busy(
       $("#board-save"),
@@ -426,17 +560,29 @@ function initMoodboard() {
     body.append("file", file);
     body.append("kind", form.kind.value);
     body.append("caption", form.caption.value.trim());
+    let created = null;
     busy(
       $("#upload-send"),
       $("#upload-status"),
       async () => {
-        await api(`${base}/assets`, { method: "POST", body });
+        const answer = await api(`${base}/assets`, { method: "POST", body });
         form.reset(); // the upload worked; a failed list refresh below must not invite a duplicate upload
         state.assets = await api(`${base}/assets`); // the upload answer has no link; the list carries signed links
         renderAssets();
+        await refreshProfile();
+        created = answer;
       },
-      "Image uploaded. Use its Board button to add it to the moodboard.",
-    );
+      "",
+    ).then(() => {
+      if (!created) return; // the upload or the list refresh failed; busy() shows why
+      const unanalysed = created.kind === "inspiration" && !created.analysis;
+      setStatus(
+        $("#upload-status"),
+        unanalysed
+          ? "Image uploaded, but it could not be analysed. Use its Analyse button to try again."
+          : "Image uploaded. Use its Board button to add it to the moodboard.",
+      );
+    });
   });
 }
 
@@ -789,7 +935,7 @@ run(async () => {
   await requireSession();
   $("#sign-out").addEventListener("click", signOut);
 
-  const [project, catalog, brief, versions, finishes, assets, board, items] = await Promise.all([
+  const [project, catalog, brief, versions, finishes, assets, board, items, profile] = await Promise.all([
     api(base),
     api("/v1/catalog"),
     api(`${base}/brief`),
@@ -798,6 +944,7 @@ run(async () => {
     api(`${base}/assets`),
     api(`${base}/moodboard`),
     api(`${base}/items`),
+    api(`${base}/style-profile`).catch(() => null), // optional: the page works without it
   ]);
   state.catalog = catalog;
   state.rooms = versions.length ? (await api(`${base}/versions/latest`)).geometry.rooms : [];
@@ -805,6 +952,7 @@ run(async () => {
   state.assets = assets;
   state.board = board;
   state.items = items;
+  state.profile = profile;
 
   const query = `?project=${encodeURIComponent(projectId)}`;
   document.title = `${project.name} · Brief & materials`;
@@ -827,6 +975,7 @@ run(async () => {
   renderBoard();
   renderBoardSources();
   renderAssets();
+  renderStyleProfile();
   renderItems();
   $("#design").hidden = false;
 });

@@ -183,6 +183,22 @@
         </div>
 
         <div class="stack">
+          <section class="card style-profile" id="style-profile" aria-labelledby="style-title">
+            <h2 id="style-title">Style profile</h2>
+            <p class="muted small" id="style-empty">Upload inspiration images to see the colours and pieces they share.</p>
+            <div class="style-body" id="style-body" hidden>
+              <h3 class="label" id="style-palette-title">Shared colours</h3>
+              <ul class="style-palette" id="style-palette" aria-labelledby="style-palette-title"></ul>
+              <h3 class="label" id="style-pieces-title">Pieces they share</h3>
+              <ul class="style-pieces" id="style-pieces" aria-labelledby="style-pieces-title"></ul>
+              <p class="muted small" id="style-basis"></p>
+              <div class="savebar">
+                <button type="button" id="style-to-brief"><span class="icon" aria-hidden="true">palette</span><span id="style-to-brief-text">Add colours to the brief</span></button>
+                <p class="status" id="style-status" role="status" aria-live="polite"></p>
+              </div>
+            </div>
+          </section>
+
           <section class="card" aria-labelledby="images-title">
             <h2 id="images-title">Your images <span id="asset-count" class="mono muted small"></span></h2>
             <form id="upload-form" class="stack" novalidate>
