@@ -625,7 +625,14 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 
   /* Editor: canvas on top, then the inspector sheet, then the tool rail as a bottom bar. */
   .contextbar { overflow: hidden; }
-  .contextbar > .group:last-child { display: none; }
+  /* The bar's chips are .wide (hidden here); the 3D walkthrough button stays, icon only, its text kept as the name. */
+  #walk-open { flex: none; min-width: 44px; padding: 0 10px; font-size: 0; gap: 0; }
+  #walk-open .icon { font-size: 20px; }
+  /* The 3D view gets the whole stage: the sheet, the tool bar and the notice step aside while it is open. */
+  .editor:has(#walk:not([hidden])) :is(.sheet-handle, .inspector, .rail, #phone-notice) { display: none !important; }
+  #walk-close { top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); min-height: 44px; }
+  #walk-hint { top: calc(max(8px, env(safe-area-inset-top, 0px)) + 52px); left: 8px; right: 8px; max-width: none; }
+  #walk-pad { bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
   .editor { flex-direction: column; }
   .stage { order: 1; flex: 1; min-height: 0; overflow: hidden; }
   .sheet-handle { order: 2; }
@@ -674,6 +681,11 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 }
 @media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
   .sheet-handle .icon { transition: transform 0.15s; }
+}
+
+/* The narrowest phones: the studio chip would shrink to a letter; the menu drawer still names the studio. */
+@media (max-width: 359px) {
+  .appbar #studio-brand { display: none; }
 }
 
 /* Inserted by the editor at the top of the canvas on phones. */

@@ -118,7 +118,7 @@ function keepDraft() {
   store(KEYS.draft, state.draft);
 }
 
-let sheetFollows = false; // whether the last selection change opened the sheet
+let sheetFor = ""; // the selected item the phone's sheet last opened for ("kind:id"), "" for none
 
 const isDirty = () => state.project && state.history.present !== state.saved;
 
@@ -138,12 +138,12 @@ function render() {
   }
 
   renderInspector($("#inspector"), editor, { versions: state.versions, onLoadVersion: loadVersion });
-  // The phone's bottom sheet opens when something gets selected and closes when the selection clears.
-  // Only on that change, so a sheet the user opened or closed by hand stays that way while editing.
-  const hasSelection = Boolean(state.selection);
-  if (hasSelection !== sheetFollows) {
-    sheetFollows = hasSelection;
-    setSheetOpen(hasSelection);
+  // The phone's bottom sheet opens for each newly selected item and closes when the selection clears.
+  // Only on such a change, so a sheet closed by hand stays closed while the same item is edited.
+  const selected = state.selection ? `${state.selection.kind}:${state.selection.id}` : "";
+  if (selected !== sheetFor) {
+    sheetFor = selected;
+    setSheetOpen(Boolean(selected));
   }
 
   for (const button of $("#tools").children) {

@@ -350,6 +350,78 @@ def test_menu_button_is_hidden_on_a_large_screen(servers, page, world):
     drawer(page).wait_for(state="hidden")
 
 
+SHEET_OPEN = re.compile(r"\bsheet-open\b")
+
+
+def test_inspector_sheet_reopens_when_a_different_item_is_selected(servers, phone, world):
+    page = phone
+    open_editor(page, world.client, world.pid)
+    sheet = page.locator("#inspector")
+    page.locator("#canvas [data-kind=furniture]").first.tap()
+    expect(sheet).to_have_class(SHEET_OPEN)
+    page.locator("#sheet-toggle").tap()
+    expect(sheet).not_to_have_class(SHEET_OPEN)
+    # Another item: the sheet opens for it, although it was closed by hand a moment ago.
+    page.locator("#canvas [data-kind=walls]").first.focus()
+    expect(sheet).to_have_class(SHEET_OPEN)
+    expect(page.locator("#locked-note")).to_be_visible()
+    # Closed by hand again; selecting the same item again leaves it closed.
+    page.locator("#sheet-toggle").tap()
+    page.locator("#canvas [data-kind=walls]").first.focus()
+    page.wait_for_timeout(200)
+    expect(sheet).not_to_have_class(SHEET_OPEN)
+
+
+def test_phone_opens_the_3d_walkthrough_and_returns(servers, phone, world):
+    page = phone
+    open_editor(page, world.client, world.pid)
+    page.get_by_role("button", name="3D walkthrough").tap()
+    page.locator("#walk canvas[data-position]").wait_for()
+
+    # The 3D view gets the screen: no sheet handle, tool bar or notice under it, nothing sideways.
+    for selector in ("#sheet-toggle", ".rail", "#phone-notice"):
+        expect(page.locator(selector)).to_be_hidden()
+    for selector in ("#walk-pad", "#walk-close", "#walk-hint"):
+        box = page.locator(selector).bounding_box()
+        assert box, selector
+        assert box["x"] >= 0 and box["x"] + box["width"] <= PHONE["width"] + 0.5, selector
+        assert box["y"] >= 0 and box["y"] + box["height"] <= PHONE["height"] + 0.5, selector
+    assert not overflows(page)
+
+    # The on-screen pad walks: holding "Walk back" moves the viewer (on this plan it starts facing a wall).
+    start = page.locator("#walk canvas").get_attribute("data-position")
+    back = page.get_by_role("button", name="Walk back")
+    box = back.bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.mouse.down()
+    expect(page.locator("#walk canvas")).not_to_have_attribute("data-position", start)
+    page.mouse.up()
+
+    page.get_by_role("button", name="Back to 2D plan").tap()
+    expect(page.locator("#walk")).to_be_hidden()
+    expect(page.locator(".rail")).to_be_visible()
+    assert rail(page) == PHONE_TOOLS
+    assert page.locator("#status-save").inner_text() == "Saved · v1"
+
+
+@pytest.mark.parametrize(("width", "visible"), [(320, False), (359, False), (360, True), (390, True)])
+def test_studio_chip_hides_below_360_px_but_stays_in_the_menu(servers, browser, world, width, visible):
+    context = browser.new_context(viewport={"width": width, "height": 740}, has_touch=True, is_mobile=True)
+    page = context.new_page()
+    try:
+        open_editor(page, world.client, world.pid)
+        chip = page.locator(".appbar #studio-brand")
+        if visible:
+            expect(chip).to_be_visible()
+        else:
+            expect(chip).to_be_hidden()
+        page.get_by_role("button", name="Open menu").tap()
+        expect(drawer(page).get_by_text("Design E2E Studio")).to_be_visible()
+        assert not overflows(page)
+    finally:
+        context.close()
+
+
 def test_inspector_sheet_follows_the_selection_and_stays_as_the_user_left_it(servers, phone, world):
     page = phone
     open_editor(page, world.client, world.pid)
