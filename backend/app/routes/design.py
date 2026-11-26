@@ -127,6 +127,12 @@ def add_asset(
     user: CurrentUser = Depends(current_user),
 ):
     project = _writable_project(user, project_id)
+    row, _ = store_asset(user, project, file, kind, caption)
+    return ok({key: row[key] for key in ASSET_COLUMNS.split(", ")})
+
+
+def store_asset(user: CurrentUser, project: dict, file: UploadFile, kind: str, caption: str) -> tuple[dict, bytes]:
+    """Checks and stores one image of a writable project; returns the new row and the bytes. Shared with the room scan."""
     data = file.file.read(MAX_ASSET_BYTES + 1)
     if not data:
         raise HTTPException(422, "The file is empty")
@@ -155,7 +161,7 @@ def add_asset(
             raise HTTPException(409, "This project has reached its limit of images") from None
         raise
     audit("asset.added", user.id, studio_id=project["studio_id"], project_id=project["id"], asset_id=row["id"])
-    return ok({key: row[key] for key in ASSET_COLUMNS.split(", ")})
+    return row, data
 
 
 @router.delete("/assets/{asset_id}")

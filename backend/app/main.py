@@ -7,11 +7,11 @@ from fastapi.responses import JSONResponse
 
 from app.db import settings
 from app.responses import fail, ok
-from app.routes import consultant, design, projects, studios
+from app.routes import consultant, design, projects, room, studios
 
 log = logging.getLogger(__name__)
 MAX_BODY_BYTES = 2_000_000  # a full 1000-item plan is well under this
-MAX_UPLOAD_BODY_BYTES = 6_000_000  # a 5 MB image plus multipart overhead; only POST .../assets
+MAX_UPLOAD_BODY_BYTES = 6_000_000  # a 5 MB image plus multipart overhead; only POST .../assets and .../scans
 
 app = FastAPI(title="OwnDesign API", version="1")
 app.add_middleware(
@@ -25,6 +25,7 @@ app.include_router(projects.router)
 app.include_router(design.catalog_router)
 app.include_router(design.router)
 app.include_router(consultant.router)
+app.include_router(room.router)
 
 
 class BodyLimit:
@@ -42,7 +43,7 @@ class BodyLimit:
         if scope["type"] != "http":
             return await self.inner(scope, receive, send)
         received = 0
-        is_upload = scope["method"] == "POST" and scope["path"].endswith("/assets")
+        is_upload = scope["method"] == "POST" and scope["path"].endswith(("/assets", "/scans"))
         limit = MAX_UPLOAD_BODY_BYTES if is_upload else MAX_BODY_BYTES
 
         async def capped_receive():

@@ -54,6 +54,14 @@ failed in its first step. Not yet seen: a green `backend` run. It waits for the 
 
 ## Last result
 
+2026-11-26, room scan (branch `feature/room-scan`): `test_vision.py` 35 passed (real model on
+`tests/fixtures/room.jpg`, a CC0 photo, plus decoding, post-processing, colour, slots and checksum edges);
+frontend 40 passed (new `frontend/tests/room-logic.test.js`). **Not run yet:** `test_room_items.py` (scan and
+item API, validation, isolation, Data API denial, quota race, suspended studio, consultant context; fake
+detector) and the three new browser journeys in `test_e2e_design.py` (real model), because the local
+`backend/.env` keys are empty and the `room_items` migration is not applied to the dev project. With empty keys
+the integration modules error at fixture setup instead of skipping.
+
 2026-11-26, after merging pull requests #9, #8 and #14: backend 100 passed (9 browser tests; the guest journey
 now also walks in 3D), frontend 57 passed, locally. On GitHub: `frontend` green, `backend` not yet run to the
 end (see CI), so the 3D step has not yet run on a Linux runner.

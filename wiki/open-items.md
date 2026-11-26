@@ -44,6 +44,19 @@ line is rewritten on every colour-picker move; a chosen logo has no pixel-size l
   reported as "no WebGL"; if closing the view throws, the editor behind it stays inert; a furniture type named
   `constructor` gives a broken box (`Object.hasOwn` fixes it).
 
+## Room scan
+
+- **To finish:** apply `20261126090000_room_items.sql` to the dev project, refill `backend/.env`, run
+  `test_room_items.py` and the room journeys, then merge `feature/room-scan` into `dev`.
+- **Licence.** YOLOv8 (code and weights) is AGPL-3.0. Fine while the repository is public; a closed hosted
+  product needs an Ultralytics licence or another model.
+- **Coverage.** COCO knows about 18 home classes: no lamp, rug, wardrobe, shelf or curtain. A model fine-tuned on
+  interior photos would fix this.
+- **No per-user scan limit** beyond the 30-image quota and the 2-slot limit per process.
+- `needs_supabase` skips only when `backend/.env` is missing, not when its keys are empty.
+- **Next (decided):** characterise inspiration images the same way (objects, categories, palette) to help build
+  the design style.
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in
