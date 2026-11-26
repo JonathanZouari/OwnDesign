@@ -13,9 +13,9 @@ RESEND_URL = "https://api.resend.com/emails"
 TEMPLATE = Template((Path(__file__).parent / "invite_email.html").read_text(encoding="utf-8"))
 
 
-def logo_url() -> str:
-    # A PNG on the public frontend: Gmail and Outlook show neither SVG nor data: images.
-    return f"{settings().app_url.rstrip('/')}/img/logo-mark.png"
+def hero_url() -> str:
+    # A JPEG on the public frontend: Gmail and Outlook show neither SVG nor data: images.
+    return f"{settings().app_url.rstrip('/')}/img/email-hero.jpg"
 
 
 def invite_url(token: str) -> str:
@@ -38,10 +38,11 @@ def invite_message(to: str, client_name: str, studio_name: str, url: str) -> dic
         "to": [to],
         "subject": _one_line(f"{studio_name} invited you to your design project"),
         "text": f"Hi {client_name},\n\n{studio_name} invited you to plan your home with them.\n"
-        f"\nOpen your personal link:\n{url}\n\n"
+        "Your space, your style. Let's design it together.\n\n"
+        f"Open your personal link:\n{url}\n\n"
         "This link is for you only. Do not forward it.",
         # Every value is HTML-escaped (names come from users); substitute() fails loudly on a missing one.
-        "html": TEMPLATE.substitute(name=escape(client_name), studio=escape(studio_name), url=escape(url), logo=escape(logo_url())),
+        "html": TEMPLATE.substitute(name=escape(client_name), studio=escape(studio_name), url=escape(url), hero=escape(hero_url())),
     }
 
 
