@@ -51,3 +51,9 @@ commits is still to do.
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add
 the outcome here and to [log.md](log.md).
+
+## Version comparison (2026-11-26)
+
+Reviewed on branch `feature/version-comparison`, no high-confidence findings. The endpoint reads both versions
+with the caller's RLS client and the project filter; ids are typed UUIDs; nothing is written. All names and
+labels reach the page as text.

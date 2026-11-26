@@ -48,7 +48,8 @@ One JSON document per version, validated in `backend/app/schemas.py` and edited 
 ## Editor
 
 `frontend/js/editor/`: `main.js` (state, tools, keyboard, save), `render.js` (SVG), `pointer.js`
-(drag, draw, pan, pinch, wheel), `panel.js` (inspector and versions). The whole canvas is redrawn on
+(drag, draw, pan, pinch, wheel), `panel.js` (inspector and versions), `compare.js` (version comparison,
+pure helpers in `frontend/js/compare-logic.js`). The whole canvas is redrawn on
 each change; the plan object is never mutated.
 
 ## API
@@ -59,7 +60,8 @@ Quotas: 20 projects per client per studio, 500 versions per project.
 
 Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `backend/app/catalog.py`):
 `GET /v1/catalog`; under `/v1/projects/{id}`: `brief`, `finishes`, `assets`, `moodboard`
-(GET and PUT, assets POST and DELETE), `consultant/messages` (GET, POST). Every write goes through
+(GET and PUT, assets POST and DELETE), `consultant/messages` (GET, POST).
+Version comparison: `POST /v1/projects/{id}/versions/compare` with `version_a_id` and `version_b_id`. Every write goes through
 `_writable_project`, which refuses a suspended studio.
 
 - **Images:** private bucket `project-assets`, no storage policies. The backend checks the file's bytes
@@ -75,3 +77,22 @@ Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `
   the endpoint answers 503.
 - **Frontend:** `design.html` (brief, materials, moodboard tabs), `consultant.html`; pure logic in
   `frontend/js/design-logic.js`.
+
+## Version comparison
+
+Read-only comparison of two saved versions, inside the editor page (`frontend/js/editor/compare.js`).
+
+- **Engine:** `backend/app/diff.py`. Matches rooms, walls, openings and furniture by id. Furniture changes are
+  `added`, `removed`, `moved`, `rotated`, `resized`, or `modified` (more than one of those, or a type change);
+  moving into another room is reported with the move. Rooms, walls and openings are `structural` with
+  `detail` added, removed or changed. Tolerances: 1 cm, 1 degree; rotation is compared as an angle (360 = 0).
+  Each change carries `box_a`/`box_b` (where it is in each version) and only the properties that changed.
+  Changes are grouped by room (the box of the room's walls).
+- **Endpoint:** `POST /v1/projects/{id}/versions/compare` reads both versions through RLS and filtered by the
+  project, so a version of another project is a 404. Same version twice is 422, a version that no longer
+  validates is 422. It writes nothing.
+- **View:** side by side (one shared view box, so zoom and pan stay in step) or a difference view (version B
+  with removed elements dashed). Summary, filters by type and room, a list by room, before/after details.
+  Selecting a change zooms both plans to it. Exit returns to the editor untouched; unsaved edits stay.
+- **Styles:** the plan's drawing rules apply to `#canvas` and `.cmp-plan svg` alike. Tones: green added, red
+  removed, amber changed, blue structural, always with an icon and a word.

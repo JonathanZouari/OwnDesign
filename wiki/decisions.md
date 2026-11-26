@@ -11,6 +11,10 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **UI follows the Stitch project** "AI Interior Design Platform" ([design.md](design.md)).
 - **GitHub repository is public.** The user chose to publish with the existing commit author address.
 - **Stitch screens for later phases stay as references** in `design/stitch/`; the two that match Phase 1 (client portal, studio dashboard) are built with real data only.
+- **The app is for customers, not internal designers** (2026-11-26). Features are built for the people using
+  the app on their own projects; version comparison is open to everyone with access to the project. Earlier
+  designer-only rules (the copilot's apply, on its own branch) need revisiting against this.
+- **Version comparison: stages 1 and 2 of its spec together** (2026-11-26); overlay mode and an AI summary wait.
 - **Working rules** in `CLAUDE.md`: plan first, Fable 5.2, three kinds of tests, security review at every stage, commit per finished piece of code, subagents for specialist work, memory in `wiki/`.
 
 ## By Claude (open to change)
@@ -23,4 +27,8 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Phase 2 data model:** the brief is one JSON document per project; finishes and the moodboard are saved as a whole set (delete then insert, not atomic, saving again recovers).
 - **Consultant memory policy** (PRD 5.4 leaves it open): messages are stored per project and user, private to that user, capped at 30 a day per user. A failed OpenAI call still uses a slot because it may have been billed.
 - **Images go through the backend**, not directly to storage, so type, size, count and access are checked in one place.
+- **Version diff is deterministic and server-side** (`backend/app/diff.py`), matched by stable ids with 1 cm and
+  1 degree tolerances. No cache: versions are immutable and a diff of a residential plan takes milliseconds.
+- **"Continue from" a version reuses the editor's load-version flow**: it loads as an unsaved edit, Undo goes
+  back, saving adds a new version. No separate restore logic.
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.

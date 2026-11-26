@@ -19,6 +19,14 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
 - The editor has no link to the Phase 2 pages at 767 px and below.
 
+## Version comparison gaps
+
+- **Overlay mode** (two versions on one canvas with opacity) and an **AI summary** of changes are not built.
+- **Room grouping** uses the box of a room's walls, so an L-shaped room claims its whole bounding box.
+- A room whose walls lie on one line has no area, so its furniture is grouped under "Outside any room".
+- **Not checked in a real browser yet.** `backend/tests/test_e2e_compare.py` and `test_compare.py` need the
+  Supabase keys and have not run.
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in

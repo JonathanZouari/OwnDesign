@@ -34,6 +34,12 @@ reload; designer sees the client's data; client-side rejections, markup stays te
 visitor; consultant page limits) passes together with `test_e2e.py` (9 browser tests in all). No chat message
 reaches OpenAI in the suite; the real call was checked by hand once.
 
+2026-11-26 (version comparison, on a machine without `backend/.env`): backend 39 passed, 79 skipped (need
+Supabase), frontend 37 passed. New: `backend/tests/test_diff.py` (17 engine tests: every change kind,
+tolerances, angles, rooms, structure, grouping, empty and 1000-item plans), `test_compare.py` (access, other
+project's version, same version, malformed input, writes nothing), `test_e2e_compare.py` (4 browser journeys),
+`frontend/tests/compare.test.js`. `test_compare.py` and `test_e2e_compare.py` have **not run yet**.
+
 ## Local setup notes
 
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the

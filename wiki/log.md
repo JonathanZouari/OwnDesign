@@ -101,3 +101,17 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+## [2026-11-26] decision | The app is for customers
+The user: the app is only for customers, not internal designers. Recorded in [decisions](decisions.md).
+
+## [2026-11-26] build | Version comparison
+Diff engine, read-only endpoint, comparison view in the editor, on branch `feature/version-comparison`.
+Commits `deaa797`, `4248058`, `a0185df`, `03411b4`. Pages: [architecture](architecture.md),
+[decisions](decisions.md), [open-items](open-items.md).
+
+## [2026-11-26] test | Version comparison
+Backend 39 passed, 79 skipped (no Supabase keys), frontend 37 passed. API and browser tests written, not run.
+Pages: [testing](testing.md).
+
+## [2026-11-26] security | Review of version comparison
+No high-confidence findings. Pages: [security](security.md).
