@@ -48,3 +48,22 @@ export async function api(path, { method = "GET", body } = {}) {
   }
   return payload.data;
 }
+
+// A file from the API (plan export): errors still arrive as the JSON envelope, success as the file itself.
+export async function apiDownload(path, body) {
+  const session = await getSession();
+  const headers = { "Content-Type": "application/json", ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) };
+  let response;
+  try {
+    response = await fetch(config.apiUrl + path, { method: "POST", headers, body: JSON.stringify(body) });
+  } catch {
+    throw new Error("Cannot reach the server. Check your connection and try again.");
+  }
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    const error = new Error(payload?.error ?? `Request failed (${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
+  return response.blob();
+}

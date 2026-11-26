@@ -30,6 +30,10 @@ test("activity rows read as sentences", () => {
   assert.equal(activityText({ action: "project.created", metadata: {}, project: { name: "Flat A" } }), "Project created · Flat A");
   assert.equal(activityText({ action: "invite.accepted", metadata: null, project: null }), "Invite accepted by the client");
   assert.equal(activityText({ action: "something.new", metadata: {}, project: null }), "something.new");
+  const exported = { action: "plan.exported", metadata: { version_no: 2, format: "dxf", actor_role: "designer" }, project: { name: "Flat A" } };
+  assert.equal(activityText(exported), "Version 2 exported as DXF by the designer · Flat A");
+  assert.equal(activityText({ ...exported, metadata: { version_no: 1, format: "pdf", actor_role: "client" } }), "Version 1 exported as PDF by the client · Flat A");
+  assert.equal(activityText({ ...exported, metadata: {} }), "Version ? exported by a studio member · Flat A");
 });
 
 test("projects are filtered by name or client email, ignoring case and outer spaces", () => {

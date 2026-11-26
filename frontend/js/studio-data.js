@@ -16,6 +16,7 @@ export function studioMetrics(projects, invites, now = new Date()) {
 }
 
 const ROLE = { client: "the client", designer: "the designer" };
+const FORMAT = { pdf: "PDF", png: "PNG", dxf: "DXF" };
 const SENTENCE = {
   "studio.created": () => "Studio created",
   "invite.created": () => "Invite link created",
@@ -23,6 +24,8 @@ const SENTENCE = {
   "project.created": () => "Project created",
   "plan_version.created": (metadata) =>
     `Version ${metadata.version_no ?? "?"} saved by ${ROLE[metadata.author_role] ?? "a studio member"}`,
+  "plan.exported": (metadata) =>
+    `Version ${metadata.version_no ?? "?"} exported${FORMAT[metadata.format] ? ` as ${FORMAT[metadata.format]}` : ""} by ${ROLE[metadata.actor_role] ?? "a studio member"}`,
 };
 
 // One audit row as a sentence, e.g. "Version 2 saved by the designer · Flat A".
