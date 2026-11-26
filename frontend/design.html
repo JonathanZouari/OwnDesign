@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
-  <title>Brief &amp; materials · Atelier</title>
+  <title>בריף וחומרים · ATELIER</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -17,33 +17,33 @@
       <span class="chip studio" id="studio-brand" hidden></span>
       <div class="crumb">
         <span class="icon" aria-hidden="true">folder_open</span>
-        <strong id="crumb-name"></strong><span aria-hidden="true">•</span><span>Design brief</span>
+        <strong id="crumb-name"></strong><span aria-hidden="true">•</span><span>בריף העיצוב</span>
       </div>
     </div>
-    <nav aria-label="Account">
-      <button id="sign-out" type="button">Sign out</button>
+    <nav aria-label="חשבון">
+      <button id="sign-out" type="button">התנתקות</button>
     </nav>
   </header>
 
   <main class="page design" id="design" hidden>
-    <nav class="project-nav" aria-label="Project">
-      <a id="nav-projects" href="projects.html"><span class="icon" aria-hidden="true">arrow_back</span>All projects</a>
-      <a id="nav-editor" href="editor.html"><span class="icon" aria-hidden="true">architecture</span>2D canvas</a>
-      <a id="nav-design" href="design.html" aria-current="page"><span class="icon" aria-hidden="true">palette</span>Brief &amp; materials</a>
-      <a id="nav-consultant" href="consultant.html"><span class="icon" aria-hidden="true">forum</span>Design consultant</a>
-      <a id="nav-budget" href="budget.html"><span class="icon" aria-hidden="true">receipt_long</span>Budget</a>
+    <nav class="project-nav" aria-label="פרויקט">
+      <a id="nav-projects" href="projects.html"><span class="icon" aria-hidden="true">arrow_forward</span>כל הפרויקטים</a>
+      <a id="nav-editor" href="editor.html"><span class="icon" aria-hidden="true">architecture</span>קנבס דו־ממדי</a>
+      <a id="nav-design" href="design.html" aria-current="page"><span class="icon" aria-hidden="true">palette</span>בריף וחומרים</a>
+      <a id="nav-consultant" href="consultant.html"><span class="icon" aria-hidden="true">forum</span>יועץ AI</a>
+      <a id="nav-budget" href="budget.html"><span class="icon" aria-hidden="true">receipt_long</span>תקציב</a>
     </nav>
 
     <header class="design-head">
-      <span class="label accent">Design brief</span>
+      <span class="label accent">בריף העיצוב</span>
       <h1 id="project-name"></h1>
-      <p class="muted">Tell the studio how you live and what you like. Nothing here changes your floor plan.</p>
+      <p class="muted">ספרו לסטודיו איך אתם חיים ומה אתם אוהבים. שום דבר כאן לא משנה את תוכנית הקומה.</p>
     </header>
 
-    <div class="tablist" role="tablist" aria-label="Design sections">
-      <button type="button" role="tab" id="tab-brief" aria-controls="panel-brief" aria-selected="true">Brief</button>
-      <button type="button" role="tab" id="tab-finishes" aria-controls="panel-finishes" aria-selected="false" tabindex="-1">Styles &amp; materials</button>
-      <button type="button" role="tab" id="tab-moodboard" aria-controls="panel-moodboard" aria-selected="false" tabindex="-1">Moodboard</button>
+    <div class="tablist" role="tablist" aria-label="חלקי העיצוב">
+      <button type="button" role="tab" id="tab-brief" aria-controls="panel-brief" aria-selected="true">בריף</button>
+      <button type="button" role="tab" id="tab-finishes" aria-controls="panel-finishes" aria-selected="false" tabindex="-1">סגנונות וחומרים</button>
+      <button type="button" role="tab" id="tab-moodboard" aria-controls="panel-moodboard" aria-selected="false" tabindex="-1">לוח השראה</button>
     </div>
 
     <!-- Brief -->
@@ -51,37 +51,37 @@
       <form id="brief-form" class="stack" novalidate>
         <div class="card">
           <fieldset>
-            <legend>Styles <span id="style-count" class="mono"></span></legend>
-            <p class="muted small">Choose up to 5 styles you feel at home with.</p>
+            <legend>סגנונות <span id="style-count" class="mono"></span></legend>
+            <p class="muted small">בחרו עד 5 סגנונות שאתם מרגישים איתם בבית.</p>
             <div class="style-chips" id="brief-styles"></div>
           </fieldset>
         </div>
 
         <div class="card">
           <fieldset>
-            <legend>Colours <span id="color-count" class="mono"></span></legend>
-            <p class="muted small">Add up to 8 colours you would like to see in your home.</p>
-            <ul class="color-list" id="brief-colors" aria-label="Chosen colours"></ul>
+            <legend>צבעים <span id="color-count" class="mono"></span></legend>
+            <p class="muted small">הוסיפו עד 8 צבעים שתרצו לראות בבית.</p>
+            <ul class="color-list" id="brief-colors" aria-label="צבעים שנבחרו"></ul>
             <div class="row">
-              <label for="color-pick">Pick a colour
+              <label for="color-pick">בחירת צבע
                 <input type="color" id="color-pick" value="#bf542c">
               </label>
-              <button type="button" id="color-add">Add colour</button>
+              <button type="button" id="color-add">הוספת צבע</button>
             </div>
           </fieldset>
         </div>
 
         <div class="card">
           <fieldset>
-            <legend>Budget</legend>
+            <legend>תקציב</legend>
             <div class="form-grid three">
-              <label for="budget-min">Minimum
+              <label for="budget-min">מינימום
                 <input id="budget-min" name="budget_min" type="number" inputmode="numeric" min="0" max="100000000" step="1">
               </label>
-              <label for="budget-max">Maximum
+              <label for="budget-max">מקסימום
                 <input id="budget-max" name="budget_max" type="number" inputmode="numeric" min="0" max="100000000" step="1">
               </label>
-              <label for="currency">Currency
+              <label for="currency">מטבע
                 <select id="currency" name="currency">
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
@@ -90,23 +90,23 @@
                 </select>
               </label>
             </div>
-            <p class="hint field-hint">A rough range for the whole project. Leave empty if you do not know yet.</p>
+            <p class="hint field-hint">טווח משוער לפרויקט כולו. אם עדיין לא ידוע, השאירו ריק.</p>
           </fieldset>
         </div>
 
         <div class="card">
           <fieldset>
-            <legend>Household</legend>
+            <legend>בני הבית</legend>
             <div class="form-grid three">
-              <label for="adults">Adults
+              <label for="adults">מבוגרים
                 <input id="adults" name="adults" type="number" inputmode="numeric" min="0" max="20" step="1">
               </label>
-              <label for="children">Children
+              <label for="children">ילדים
                 <input id="children" name="children" type="number" inputmode="numeric" min="0" max="20" step="1">
               </label>
               <label class="check" for="pets">
                 <input id="pets" name="pets" type="checkbox">
-                Pets live here
+                יש חיות מחמד בבית
               </label>
             </div>
           </fieldset>
@@ -115,34 +115,34 @@
         <div class="card">
           <div class="form-grid">
             <div class="stack-tight">
-              <label for="lifestyle">Lifestyle
+              <label for="lifestyle">אורח חיים
                 <textarea id="lifestyle" name="lifestyle" maxlength="1000" rows="4" aria-describedby="lifestyle-hint"></textarea>
               </label>
-              <p class="hint" id="lifestyle-hint">How you use your home: work, cooking, guests, hobbies.</p>
+              <p class="hint" id="lifestyle-hint">איך אתם משתמשים בבית: עבודה, בישול, אירוח, תחביבים.</p>
             </div>
             <div class="stack-tight">
-              <label for="needs">Needs
+              <label for="needs">צרכים
                 <textarea id="needs" name="needs" maxlength="1000" rows="4" aria-describedby="needs-hint"></textarea>
               </label>
-              <p class="hint" id="needs-hint">What the design must provide: storage, a desk, a guest bed.</p>
+              <p class="hint" id="needs-hint">מה העיצוב חייב לתת: אחסון, שולחן עבודה, מיטה לאורחים.</p>
             </div>
             <div class="stack-tight">
-              <label for="constraints">Constraints
+              <label for="constraints">מגבלות
                 <textarea id="constraints" name="constraints" maxlength="1000" rows="4" aria-describedby="constraints-hint"></textarea>
               </label>
-              <p class="hint" id="constraints-hint">What cannot change, allergies, accessibility, rental rules.</p>
+              <p class="hint" id="constraints-hint">מה אי אפשר לשנות, אלרגיות, נגישות, תנאי שכירות.</p>
             </div>
             <div class="stack-tight">
-              <label for="existing-items">Existing items
+              <label for="existing-items">פריטים קיימים
                 <textarea id="existing-items" name="existing_items" maxlength="1000" rows="4" aria-describedby="existing-hint"></textarea>
               </label>
-              <p class="hint" id="existing-hint">Furniture or art you are keeping, with rough sizes.</p>
+              <p class="hint" id="existing-hint">רהיטים או יצירות אמנות שנשארים אתכם, עם מידות משוערות.</p>
             </div>
           </div>
         </div>
 
         <div class="savebar">
-          <button class="primary" type="submit" id="brief-save"><span class="icon" aria-hidden="true">save</span>Save brief</button>
+          <button class="primary" type="submit" id="brief-save"><span class="icon" aria-hidden="true">save</span>שמירת הבריף</button>
           <p class="status" id="brief-status" role="status" aria-live="polite"></p>
         </div>
       </form>
@@ -151,15 +151,15 @@
     <!-- Styles & materials -->
     <section role="tabpanel" id="panel-finishes" aria-labelledby="tab-finishes" tabindex="0" hidden>
       <div class="card inset" id="finishes-empty" hidden>
-        <h2>No saved plan yet</h2>
-        <p class="muted">Materials are chosen room by room, so this project needs a saved floor plan with at least one room first.</p>
-        <a class="button primary" id="finishes-editor-link" href="editor.html"><span class="icon" aria-hidden="true">architecture</span>Open the 2D canvas</a>
+        <h2>עדיין לא נשמרה תוכנית</h2>
+        <p class="muted">את החומרים בוחרים חדר אחר חדר, ולכן צריך קודם לשמור תוכנית קומה עם חדר אחד לפחות.</p>
+        <a class="button primary" id="finishes-editor-link" href="editor.html"><span class="icon" aria-hidden="true">architecture</span>פתיחת הקנבס הדו־ממדי</a>
       </div>
       <div id="finishes-body" class="stack" hidden>
-        <p class="muted">Pick one material per surface in each room. Only materials suitable for a surface are offered.</p>
+        <p class="muted">בחרו חומר אחד לכל משטח בכל חדר. מוצעים רק חומרים שמתאימים למשטח.</p>
         <div id="finishes-rooms" class="stack"></div>
         <div class="savebar">
-          <button class="primary" type="button" id="finishes-save"><span class="icon" aria-hidden="true">save</span>Save materials</button>
+          <button class="primary" type="button" id="finishes-save"><span class="icon" aria-hidden="true">save</span>שמירת החומרים</button>
           <p class="status" id="finishes-status" role="status" aria-live="polite"></p>
         </div>
       </div>
@@ -171,12 +171,12 @@
         <div class="stack">
           <section class="card" aria-labelledby="board-title">
             <div class="row between">
-              <h2 id="board-title">Your board <span id="board-count" class="mono muted small"></span></h2>
+              <h2 id="board-title">הלוח שלכם <span id="board-count" class="mono muted small"></span></h2>
             </div>
-            <p class="muted" id="board-empty" hidden>The board is empty. Add styles, materials or your own images from the lists on this page.</p>
+            <p class="muted" id="board-empty" hidden>הלוח ריק. הוסיפו סגנונות, חומרים או תמונות שלכם מהרשימות בעמוד הזה.</p>
             <ol class="board" id="board"></ol>
             <div class="savebar">
-              <button class="primary" type="button" id="board-save"><span class="icon" aria-hidden="true">save</span>Save moodboard</button>
+              <button class="primary" type="button" id="board-save"><span class="icon" aria-hidden="true">save</span>שמירת לוח ההשראה</button>
               <p class="status" id="board-status" role="status" aria-live="polite"></p>
             </div>
           </section>
@@ -184,38 +184,38 @@
 
         <div class="stack">
           <section class="card" aria-labelledby="images-title">
-            <h2 id="images-title">Your images <span id="asset-count" class="mono muted small"></span></h2>
+            <h2 id="images-title">התמונות שלכם <span id="asset-count" class="mono muted small"></span></h2>
             <form id="upload-form" class="stack" novalidate>
-              <label for="upload-file">Image (JPEG, PNG or WebP, up to 5 MB)
+              <label for="upload-file">תמונה (JPEG, PNG או WebP, עד 5 מ״ב)
                 <input id="upload-file" name="file" type="file" accept="image/jpeg,image/png,image/webp">
               </label>
               <div class="form-grid">
-                <label for="upload-kind">This image shows
+                <label for="upload-kind">מה רואים בתמונה
                   <select id="upload-kind" name="kind">
-                    <option value="inspiration">Inspiration</option>
-                    <option value="existing_item">An item I already own</option>
+                    <option value="inspiration">השראה</option>
+                    <option value="existing_item">פריט שכבר יש לי</option>
                   </select>
                 </label>
-                <label for="upload-caption">Caption (optional)
+                <label for="upload-caption">כיתוב (לא חובה)
                   <input id="upload-caption" name="caption" maxlength="200">
                 </label>
               </div>
               <div class="savebar">
-                <button type="submit" id="upload-send"><span class="icon" aria-hidden="true">upload</span>Upload image</button>
+                <button type="submit" id="upload-send"><span class="icon" aria-hidden="true">upload</span>העלאת תמונה</button>
                 <p class="status" id="upload-status" role="status" aria-live="polite"></p>
               </div>
             </form>
-            <p class="muted small" id="assets-empty" hidden>No images uploaded yet.</p>
+            <p class="muted small" id="assets-empty" hidden>עדיין לא הועלו תמונות.</p>
             <ul class="asset-grid" id="assets"></ul>
           </section>
 
           <section class="card" aria-labelledby="add-styles-title">
-            <h2 id="add-styles-title">Add a style</h2>
+            <h2 id="add-styles-title">הוספת סגנון</h2>
             <div class="swatches" id="board-styles"></div>
           </section>
 
           <section class="card" aria-labelledby="add-materials-title">
-            <h2 id="add-materials-title">Add a material</h2>
+            <h2 id="add-materials-title">הוספת חומר</h2>
             <div class="swatches" id="board-materials"></div>
           </section>
         </div>

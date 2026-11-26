@@ -1,24 +1,25 @@
 // Design consultant chat for one saved project (?project=<id>). Only messages returned by the API are shown.
 import { api, requireSession, signOut } from "../api.js";
 import { messageState } from "../design-logic.js";
+import { CONSULTANT } from "../strings.js";
 import { planThumbnail } from "../thumbnail.js";
-import { $, formatDate, h, run, showStudio } from "../ui.js";
+import { $, formatDate, h, run, showStudio, userMessage } from "../ui.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const requested = new URLSearchParams(location.search).get("project");
 const projectId = UUID.test(requested ?? "") ? requested : null; // anything else (like "..") is not used in an API path
 const base = `/v1/projects/${encodeURIComponent(projectId)}`;
-const WHO = { user: "You", assistant: "Design consultant" };
 
 // Message text is user and model output: it is set with textContent only, and CSS keeps its line breaks.
 function messageNode(message) {
   const role = message.role === "user" ? "user" : "assistant";
   const who = h("span", { class: "who" });
-  who.textContent = WHO[role];
+  who.textContent = CONSULTANT.who[role];
   const when = h("time", { class: "code" });
   when.dateTime = message.created_at ?? "";
   when.textContent = message.created_at ? formatDate(message.created_at) : "";
   const text = h("p", { class: "msg-text" });
+  text.dir = "auto"; // a question or answer in another language keeps its own direction
   text.textContent = message.content;
   return h("li", { class: `msg ${role}` }, h("div", { class: "msg-head" }, who, when), text);
 }
@@ -49,15 +50,15 @@ async function send() {
   box.readOnly = true;
   refreshComposer();
   $("#chat-error").textContent = "";
-  $("#chat-status").textContent = "The consultant is writing a reply…";
+  $("#chat-status").textContent = CONSULTANT.writing;
   try {
     append(await api(`${base}/consultant/messages`, { method: "POST", body: { message: box.value.trim() } }));
     box.value = "";
   } catch (error) {
-    // 429 / 502 / 503 carry a friendly sentence. After a 429 nothing was stored, so the typed text stays.
+    // 429 / 502 / 503 have their own sentence. After a 429 nothing was stored, so the typed text stays.
     // After any other server error the question is already stored (a failed answer may have been billed),
     // so the thread is reloaded to show it and the box is cleared, instead of sending a duplicate.
-    $("#chat-error").textContent = error.message || "Something went wrong.";
+    $("#chat-error").textContent = CONSULTANT.errors[error.status] ?? userMessage(error);
     if (error.status === 502) {
       await reloadThread().catch(() => {});
       box.value = "";
@@ -77,7 +78,7 @@ run(async () => {
 
   const [project, versions, messages] = await Promise.all([api(base), api(`${base}/versions`), api(`${base}/consultant/messages`)]);
   const query = `?project=${encodeURIComponent(projectId)}`;
-  document.title = `${project.name} · Design consultant`;
+  document.title = `${project.name} · ${CONSULTANT.pageTitle}`;
   $("#project-name").textContent = project.name;
   $("#crumb-name").textContent = project.name;
   if (project.studio) showStudio(project.studio.name);
@@ -91,10 +92,10 @@ run(async () => {
     const latest = await api(`${base}/versions/latest`);
     const rooms = latest.geometry.rooms.length;
     const items = latest.geometry.furniture.length;
-    $("#plan-figure").replaceChildren(planThumbnail(latest.geometry, `Floor plan of ${project.name}`));
-    $("#plan-summary").textContent = `Version ${latest.version_no} · ${rooms} ${rooms === 1 ? "room" : "rooms"} · ${items} furniture ${items === 1 ? "item" : "items"}`;
+    $("#plan-figure").replaceChildren(planThumbnail(latest.geometry, CONSULTANT.planLabel(project.name)));
+    $("#plan-summary").textContent = CONSULTANT.planSummary(latest.version_no, rooms, items);
   } else {
-    $("#plan-summary").textContent = "No saved plan yet. The consultant can still discuss your brief.";
+    $("#plan-summary").textContent = CONSULTANT.noPlan;
   }
 
   append(messages);

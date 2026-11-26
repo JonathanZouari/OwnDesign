@@ -16,7 +16,7 @@ test("every exported string is non-empty", () => {
 });
 
 test("user-facing strings are Hebrew, not leftover English", () => {
-  for (const group of [strings.AUTH, strings.API_ERRORS, strings.EDITOR, strings.PANEL, strings.WIZARD, strings.IMPORT, strings.EDITOR_UNDERLAY, strings.WIZARD_IMPORT]) {
+  for (const group of [strings.AUTH, strings.API_ERRORS, strings.EDITOR, strings.PANEL, strings.WIZARD, strings.IMPORT, strings.EDITOR_UNDERLAY, strings.WIZARD_IMPORT, strings.DESIGN, strings.CONSULTANT, strings.STUDIO.memberRoles]) {
     const leaves = [];
     (function walk(v) {
       if (typeof v === "string") leaves.push(v);
@@ -38,4 +38,25 @@ test("room kinds: unique names, known types", () => {
   assert.equal(names.length, 16);
   for (const k of strings.ROOM_KINDS) assert.ok(types.has(k.type), `${k.name} has unknown type ${k.type}`);
   for (const t of types) assert.ok(strings.ROOM_KINDS.some((k) => k.type === t), `no kind for type ${t}`);
+});
+
+test("design strings cover every surface and image kind", () => {
+  assert.deepEqual(Object.keys(strings.DESIGN.surfaces).sort(), ["cabinets", "ceiling", "floor", "walls"]);
+  assert.deepEqual(Object.keys(strings.DESIGN.imageKinds).sort(), ["existing_item", "inspiration"]);
+});
+
+test("consultant plan summary handles zero, one and many", () => {
+  const { planSummary } = strings.CONSULTANT;
+  assert.equal(planSummary(1, 1, 1), "גרסה 1 · חדר אחד · פריט ריהוט אחד");
+  assert.equal(planSummary(3, 0, 0), "גרסה 3 · 0 חדרים · 0 פריטי ריהוט");
+  assert.equal(planSummary(2, 4, 7), "גרסה 2 · 4 חדרים · 7 פריטי ריהוט");
+});
+
+test("statuses with their own meaning have Hebrew messages", () => {
+  for (const status of [429, 502, 503]) assert.match(strings.CONSULTANT.errors[status], /[֐-׿]/);
+  for (const status of [415, 429]) assert.ok(strings.API_ERRORS[status]);
+});
+
+test("both studio membership roles have a Hebrew label", () => {
+  assert.deepEqual(Object.keys(strings.STUDIO.memberRoles).sort(), ["designer", "owner"]);
 });

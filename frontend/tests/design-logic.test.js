@@ -84,22 +84,22 @@ test("buildBriefPayload: empty form gives the schema defaults", () => {
 test("buildBriefPayload: boundaries of budget and household", () => {
   assert.equal(L.buildBriefPayload({ ...BRIEF, budget_min: "0", budget_max: "100000000", adults: "20", children: "20" }).error, undefined);
   assert.equal(L.buildBriefPayload({ ...BRIEF, budget_min: "500", budget_max: "500" }).payload.budget_max, 500);
-  assert.match(L.buildBriefPayload({ ...BRIEF, budget_max: "100000001" }).error, /Maximum budget/);
-  assert.match(L.buildBriefPayload({ ...BRIEF, budget_min: "-1" }).error, /Minimum budget/);
-  assert.match(L.buildBriefPayload({ ...BRIEF, budget_min: "12.5" }).error, /whole number/);
-  assert.match(L.buildBriefPayload({ ...BRIEF, budget_min: "abc" }).error, /whole number/);
-  assert.match(L.buildBriefPayload({ ...BRIEF, budget_min: "900", budget_max: "100" }).error, /must not exceed/);
-  assert.match(L.buildBriefPayload({ ...BRIEF, adults: "21" }).error, /Adults/);
-  assert.match(L.buildBriefPayload({ ...BRIEF, children: "-2" }).error, /Children/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, budget_max: "100000001" }).error, /תקציב המקסימום/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, budget_min: "-1" }).error, /תקציב המינימום/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, budget_min: "12.5" }).error, /מספר שלם/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, budget_min: "abc" }).error, /מספר שלם/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, budget_min: "900", budget_max: "100" }).error, /לא יכול להיות גבוה/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, adults: "21" }).error, /מבוגרים/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, children: "-2" }).error, /ילדים/);
 });
 
 test("buildBriefPayload: too many styles or colours, bad colour, bad currency, long text", () => {
-  assert.match(L.buildBriefPayload({ ...BRIEF, styles: ["a", "b", "c", "d", "e", "f"] }).error, /at most 5 styles/);
-  assert.match(L.buildBriefPayload({ ...BRIEF, colors: Array.from({ length: 9 }, (_, i) => `#00000${i}`) }).error, /at most 8 colours/);
-  assert.match(L.buildBriefPayload({ ...BRIEF, colors: ["red"] }).error, /hex/);
-  assert.match(L.buildBriefPayload({ ...BRIEF, currency: "JPY" }).error, /currency/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, styles: ["a", "b", "c", "d", "e", "f"] }).error, /עד 5 סגנונות/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, colors: Array.from({ length: 9 }, (_, i) => `#00000${i}`) }).error, /עד 8 צבעים/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, colors: ["red"] }).error, /קוד צבע/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, currency: "JPY" }).error, /מטבע/);
   assert.equal(L.buildBriefPayload({ ...BRIEF, needs: "x".repeat(1000) }).error, undefined);
-  assert.match(L.buildBriefPayload({ ...BRIEF, needs: "x".repeat(1001) }).error, /Needs/);
+  assert.match(L.buildBriefPayload({ ...BRIEF, needs: "x".repeat(1001) }).error, /צרכים/);
   assert.equal(L.buildBriefPayload({ ...BRIEF, needs: ` ${"x".repeat(1000)} ` }).payload.needs.length, 1000);
 });
 
@@ -163,12 +163,12 @@ test("validateImageFile checks presence, type and the 5 MB limit", () => {
   assert.equal(L.validateImageFile({ type: "image/png", size: 1 }), null);
   assert.equal(L.validateImageFile({ type: "image/jpeg", size: MB5 }), null);
   assert.equal(L.validateImageFile({ type: "image/webp", size: 10 }), null);
-  assert.match(L.validateImageFile({ type: "image/png", size: MB5 + 1 }), /5 MB/);
-  assert.match(L.validateImageFile({ type: "image/png", size: 0 }), /empty/);
-  assert.match(L.validateImageFile({ type: "image/gif", size: 10 }), /JPEG, PNG and WebP/);
-  assert.match(L.validateImageFile({ type: "image/svg+xml", size: 10 }), /JPEG, PNG and WebP/);
-  assert.match(L.validateImageFile({ type: "", size: 10 }), /JPEG, PNG and WebP/);
-  assert.match(L.validateImageFile(undefined), /Choose an image/);
+  assert.match(L.validateImageFile({ type: "image/png", size: MB5 + 1 }), /5 מ״ב/);
+  assert.match(L.validateImageFile({ type: "image/png", size: 0 }), /ריק/);
+  assert.match(L.validateImageFile({ type: "image/gif", size: 10 }), /JPEG, PNG ו-WebP/);
+  assert.match(L.validateImageFile({ type: "image/svg+xml", size: 10 }), /JPEG, PNG ו-WebP/);
+  assert.match(L.validateImageFile({ type: "", size: 10 }), /JPEG, PNG ו-WebP/);
+  assert.match(L.validateImageFile(undefined), /בחרו תמונה/);
 });
 
 test("safeImageUrl loads http(s) links only", () => {
@@ -186,4 +186,31 @@ test("messageState counts characters and allows 1 to 2000 non-blank characters",
   assert.equal(L.messageState("x".repeat(2000)).canSend, true);
   assert.equal(L.messageState("x".repeat(2001)).canSend, false);
   assert.equal(L.messageState("x".repeat(2001)).counter, "2001 / 2000");
+});
+
+test("every brief and upload error is Hebrew text", () => {
+  const errors = [
+    { ...BRIEF, budget_min: "-1" },
+    { ...BRIEF, budget_min: "2", budget_max: "1" },
+    { ...BRIEF, styles: ["a", "b", "c", "d", "e", "f"] },
+    { ...BRIEF, colors: ["red"] },
+    { ...BRIEF, currency: "" },
+    { ...BRIEF, existing_items: "x".repeat(1001) },
+    { ...BRIEF, lifestyle: "x".repeat(1001) },
+    { ...BRIEF, constraints: "x".repeat(1001) },
+  ].map((values) => L.buildBriefPayload(values).error);
+  errors.push(L.validateImageFile(undefined), L.validateImageFile({ type: "text/plain", size: 1 }));
+  for (const error of errors) {
+    assert.match(error, /[֐-׿]/);
+    assert.doesNotMatch(error.replace(/JPEG|PNG|WebP/g, ""), /[A-Za-z]{2,}/);
+  }
+});
+
+test("tabStep: in a right-to-left tab list the left arrow goes forward", () => {
+  assert.equal(L.tabStep("ArrowLeft", 0, 3), 1);
+  assert.equal(L.tabStep("ArrowRight", 0, 3), 2);
+  assert.equal(L.tabStep("ArrowLeft", 2, 3), 0);
+  assert.equal(L.tabStep("Home", 2, 3), 0);
+  assert.equal(L.tabStep("End", 0, 3), 2);
+  assert.equal(L.tabStep("Enter", 0, 3), null);
 });

@@ -11,7 +11,7 @@ import { svg, visibleArea } from "../editor/render.js";
 import { zoomAt } from "../editor/pointer.js";
 import { IMPORT, UNITS, ltr } from "../strings.js";
 import { KEYS, load, save } from "../store.js";
-import { $, h, showStudio, toast } from "../ui.js";
+import { $, h, showStudio, toast, userMessage } from "../ui.js";
 
 // The PDF reader (pdf.js) is loaded only when a file is chosen.
 let reader = null;
@@ -636,7 +636,7 @@ async function proceed() {
     if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
     location.assign("editor.html");
   } catch (error) {
-    toast(error.message || IMPORT.errors.generic, "error");
+    toast(userMessage(error), "error");
     button.disabled = false;
   }
 }

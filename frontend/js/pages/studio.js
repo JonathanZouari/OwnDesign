@@ -150,8 +150,8 @@ function showIdentity(studio, email, role) {
   document.title = STUDIO.title(studio.name);
   $("#studio-url").value = pageUrl(`entry.html?studio=${studio.slug}`);
   $("#copy-studio-url").addEventListener("click", () => copyText($("#studio-url").value));
-  $("#role").textContent = role ?? "";
-  $("#role-readout").hidden = !role;
+  $("#role").textContent = STUDIO.memberRoles[role] ?? "";
+  $("#role-readout").hidden = !STUDIO.memberRoles[role];
 }
 
 async function showDashboard(studio, email, role) {

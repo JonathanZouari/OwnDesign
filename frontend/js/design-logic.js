@@ -1,5 +1,8 @@
 // Pure helpers for the design pages (brief, finishes, moodboard, consultant). No DOM, no network:
 // the limits mirror backend/app/schemas.py so a mistake is reported before the request is sent.
+import { DESIGN } from "./strings.js";
+
+const { errors: E, fields: F } = DESIGN;
 
 export const MAX_STYLES = 5;
 export const MAX_COLORS = 8;
@@ -14,6 +17,14 @@ export const MAX_MESSAGE = 2000;
 export const CURRENCIES = ["USD", "EUR", "GBP", "ILS"];
 
 const HEX = /^#[0-9a-f]{6}$/;
+
+// ---- tabs -----------------------------------------------------------------------------------------
+
+// The tab to move to for a key press, or null. The page is right to left, so "next" is the left arrow.
+export function tabStep(key, current, count) {
+  const next = { ArrowLeft: current + 1, ArrowRight: current - 1, Home: 0, End: count - 1 }[key];
+  return next === undefined ? null : (next + count) % count;
+}
 
 // ---- catalog --------------------------------------------------------------------------------------
 
@@ -41,7 +52,7 @@ function wholeNumber(raw, label, max, fallback) {
   const text = String(raw ?? "").trim();
   if (text === "") return fallback;
   const value = Number(text);
-  if (!Number.isInteger(value) || value < 0 || value > max) throw new Error(`${label} must be a whole number from 0 to ${max.toLocaleString("en-US")}.`);
+  if (!Number.isInteger(value) || value < 0 || value > max) throw new Error(E.wholeNumber(label, max.toLocaleString("en-US")));
   return value;
 }
 
@@ -49,17 +60,17 @@ function wholeNumber(raw, label, max, fallback) {
 export function buildBriefPayload(values) {
   try {
     const styles = [...new Set(values.styles ?? [])];
-    if (styles.length > MAX_STYLES) throw new Error(`Choose at most ${MAX_STYLES} styles.`);
+    if (styles.length > MAX_STYLES) throw new Error(E.tooManyStyles(MAX_STYLES));
     const colors = [...new Set((values.colors ?? []).map((color) => String(color).trim().toLowerCase()))];
-    if (colors.some((color) => !HEX.test(color))) throw new Error("Colours must be hex values such as #9f3c16.");
-    if (colors.length > MAX_COLORS) throw new Error(`Choose at most ${MAX_COLORS} colours.`);
-    const budget_min = wholeNumber(values.budget_min, "Minimum budget", MAX_MONEY, null);
-    const budget_max = wholeNumber(values.budget_max, "Maximum budget", MAX_MONEY, null);
-    if (budget_min !== null && budget_max !== null && budget_min > budget_max) throw new Error("Minimum budget must not exceed maximum budget.");
-    if (!CURRENCIES.includes(values.currency)) throw new Error("Choose a currency.");
+    if (colors.some((color) => !HEX.test(color))) throw new Error(E.badColor);
+    if (colors.length > MAX_COLORS) throw new Error(E.tooManyColors(MAX_COLORS));
+    const budget_min = wholeNumber(values.budget_min, F.budgetMin, MAX_MONEY, null);
+    const budget_max = wholeNumber(values.budget_max, F.budgetMax, MAX_MONEY, null);
+    if (budget_min !== null && budget_max !== null && budget_min > budget_max) throw new Error(E.budgetOrder);
+    if (!CURRENCIES.includes(values.currency)) throw new Error(E.currency);
     const text = (key, label) => {
       const value = String(values[key] ?? "").trim();
-      if (value.length > MAX_TEXT) throw new Error(`${label} can be at most ${MAX_TEXT} characters.`);
+      if (value.length > MAX_TEXT) throw new Error(E.textTooLong(label, MAX_TEXT));
       return value;
     };
     return {
@@ -69,13 +80,13 @@ export function buildBriefPayload(values) {
         budget_min,
         budget_max,
         currency: values.currency,
-        adults: wholeNumber(values.adults, "Adults", MAX_PEOPLE, 1),
-        children: wholeNumber(values.children, "Children", MAX_PEOPLE, 0),
+        adults: wholeNumber(values.adults, F.adults, MAX_PEOPLE, 1),
+        children: wholeNumber(values.children, F.children, MAX_PEOPLE, 0),
         pets: Boolean(values.pets),
-        lifestyle: text("lifestyle", "Lifestyle"),
-        needs: text("needs", "Needs"),
-        constraints: text("constraints", "Constraints"),
-        existing_items: text("existing_items", "Existing items"),
+        lifestyle: text("lifestyle", F.lifestyle),
+        needs: text("needs", F.needs),
+        constraints: text("constraints", F.constraints),
+        existing_items: text("existing_items", F.existingItems),
       },
     };
   } catch (error) {
@@ -134,10 +145,10 @@ export const boardPayload = (items) => ({
 
 // Returns a message for the user, or null when the file may be sent. The server checks the bytes again.
 export function validateImageFile(file) {
-  if (!file) return "Choose an image first.";
-  if (!IMAGE_TYPES.includes(file.type)) return "Only JPEG, PNG and WebP images are accepted.";
-  if (file.size === 0) return "The file is empty.";
-  if (file.size > MAX_IMAGE_BYTES) return "Images can be at most 5 MB.";
+  if (!file) return E.noImage;
+  if (!IMAGE_TYPES.includes(file.type)) return E.imageType;
+  if (file.size === 0) return E.emptyFile;
+  if (file.size > MAX_IMAGE_BYTES) return E.imageTooBig;
   return null;
 }
 

@@ -25,12 +25,15 @@ export function toast(message, kind = "info") {
   setTimeout(() => note.remove(), kind === "error" ? 8000 : 4000);
 }
 
+// Only our own (Hebrew) messages are shown; a browser or library exception text is replaced.
+export const userMessage = (error) => (/[֐-׿]/.test(error?.message ?? "") ? error.message : COMMON.somethingWentWrong);
+
 // Runs a page's async entry point and surfaces any failure to the user instead of failing silently.
 export async function run(main) {
   try {
     await main();
   } catch (error) {
-    toast(error.message || COMMON.somethingWentWrong, "error");
+    toast(userMessage(error), "error");
   }
 }
 
@@ -42,7 +45,7 @@ export const action = (handler) => async (event) => {
   try {
     await handler(event);
   } catch (error) {
-    toast(error.message || COMMON.somethingWentWrong, "error");
+    toast(userMessage(error), "error");
   } finally {
     control.disabled = false;
   }

@@ -1,14 +1,13 @@
 // Design brief, finishes and moodboard for one saved project (?project=<id>). Everything shown comes from the API.
 import { api, requireSession, signOut } from "../api.js";
 import * as L from "../design-logic.js";
-import { $, h, run, showStudio } from "../ui.js";
+import { COMMON, DESIGN, ROOM_TYPE_LABELS } from "../strings.js";
+import { $, h, run, showStudio, userMessage } from "../ui.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const requested = new URLSearchParams(location.search).get("project");
 const projectId = UUID.test(requested ?? "") ? requested : null; // anything else (like "..") is not used in an API path
 const base = `/v1/projects/${encodeURIComponent(projectId)}`;
-const SURFACE_LABEL = { floor: "Floor", walls: "Walls", ceiling: "Ceiling", cabinets: "Cabinets" };
-const KIND_LABEL = { inspiration: "Inspiration", existing_item: "Item I own" };
 const TABS = ["brief", "finishes", "moodboard"];
 
 const state = {
@@ -31,12 +30,12 @@ function setStatus(node, message, kind = "ok") {
 // Runs a save / upload: the button is disabled while busy and the outcome is announced beside it.
 async function busy(button, status, work, done) {
   button.disabled = true;
-  setStatus(status, "Working…");
+  setStatus(status, COMMON.working);
   try {
     await work();
     setStatus(status, done);
   } catch (error) {
-    setStatus(status, error.message || "Something went wrong.", "error");
+    setStatus(status, userMessage(error), "error");
   } finally {
     button.disabled = false;
   }
@@ -82,10 +81,10 @@ function initTabs() {
   for (const tab of TABS) $(`#tab-${tab}`).addEventListener("click", () => showTab(tab));
   $(".tablist").addEventListener("keydown", (event) => {
     const current = TABS.findIndex((tab) => $(`#tab-${tab}`).getAttribute("aria-selected") === "true");
-    const next = { ArrowRight: current + 1, ArrowLeft: current - 1, Home: 0, End: TABS.length - 1 }[event.key];
-    if (next === undefined) return;
+    const next = L.tabStep(event.key, current, TABS.length);
+    if (next === null) return;
     event.preventDefault();
-    showTab(TABS[(next + TABS.length) % TABS.length], true);
+    showTab(TABS[next], true);
   });
   const wanted = location.hash.slice(1);
   showTab(TABS.includes(wanted) ? wanted : "brief");
@@ -136,7 +135,7 @@ function renderBriefColors() {
           {
             type: "button",
             class: "ghost",
-            "aria-label": `Remove colour ${color}`,
+            "aria-label": DESIGN.removeColor(color),
             onclick: () => {
               state.colors = state.colors.filter((item) => item !== color);
               renderBriefColors();
@@ -169,7 +168,7 @@ function fillBrief(brief) {
 function initBrief() {
   $("#color-add").addEventListener("click", () => {
     const next = L.addColor(state.colors, $("#color-pick").value);
-    setStatus($("#brief-status"), next === state.colors ? "That colour is already in the list." : "");
+    setStatus($("#brief-status"), next === state.colors ? DESIGN.colorExists : "");
     state.colors = next;
     renderBriefColors();
   });
@@ -191,7 +190,7 @@ function initBrief() {
       existing_items: form.existing_items.value,
     });
     if (error) return setStatus($("#brief-status"), error, "error");
-    busy($("#brief-save"), $("#brief-status"), async () => fillBrief((await api(`${base}/brief`, { method: "PUT", body: payload })).brief), "Brief saved.");
+    busy($("#brief-save"), $("#brief-status"), async () => fillBrief((await api(`${base}/brief`, { method: "PUT", body: payload })).brief), DESIGN.briefSaved);
   });
 }
 
@@ -211,7 +210,7 @@ function surfacePicker(room, surface) {
         checked: (state.finishes[key] ?? "") === value,
         onchange: () => {
           state.finishes = { ...state.finishes, [key]: value };
-          setStatus($("#finishes-status"), "Unsaved changes.");
+          setStatus($("#finishes-status"), COMMON.unsaved);
         },
       }),
       color === null ? h("span", { class: "swatch-dot none", "aria-hidden": "true" }) : swatch(color),
@@ -220,8 +219,8 @@ function surfacePicker(room, surface) {
   return h(
     "fieldset",
     { class: "surface" },
-    h("legend", {}, SURFACE_LABEL[surface] ?? surface),
-    h("div", { class: "swatches" }, option("", "Not chosen", null), L.materialsForSurface(state.catalog.materials, surface).map((material) => option(material.id, material.label, material.color))),
+    h("legend", {}, DESIGN.surfaces[surface] ?? surface),
+    h("div", { class: "swatches" }, option("", DESIGN.notChosen, null), L.materialsForSurface(state.catalog.materials, surface).map((material) => option(material.id, material.label, material.color))),
   );
 }
 
@@ -233,8 +232,8 @@ function renderFinishes() {
     ...state.rooms.map((room) =>
       h(
         "section",
-        { class: "card room-finishes", "aria-label": `Materials for ${room.name}` },
-        h("div", { class: "row between" }, h("h2", {}, room.name), room.type && h("span", { class: "chip" }, room.type.replaceAll("_", " "))),
+        { class: "card room-finishes", "aria-label": DESIGN.roomMaterials(room.name) },
+        h("div", { class: "row between" }, h("h2", {}, room.name), room.type && h("span", { class: "chip" }, ROOM_TYPE_LABELS[room.type] ?? ROOM_TYPE_LABELS.other)),
         h("div", { class: "surfaces" }, state.catalog.surfaces.map((surface) => surfacePicker(room, surface))),
       ),
     ),
@@ -250,14 +249,14 @@ function initFinishes() {
         const selections = L.finishSelections(state.rooms, state.catalog.surfaces, state.catalog.materials, state.finishes);
         state.finishes = L.finishesToMap(await api(`${base}/finishes`, { method: "PUT", body: { selections } }));
       },
-      "Materials saved.",
+      DESIGN.materialsSaved,
     ),
   );
 }
 
 // ---- moodboard --------------------------------------------------------------------------------------
 
-function boardChanged(message = "Unsaved changes.") {
+function boardChanged(message = COMMON.unsaved) {
   renderBoard();
   renderBoardSources();
   renderAssets();
@@ -267,18 +266,18 @@ function boardChanged(message = "Unsaved changes.") {
 function boardView(item) {
   if (item.kind === "style") {
     const style = styleById(item.ref);
-    return { title: style?.label ?? item.ref, kind: "Style", preview: h("div", { class: "preview" }, icon("style")) };
+    return { title: style?.label ?? item.ref, kind: DESIGN.boardKinds.style, preview: h("div", { class: "preview" }, icon("style")) };
   }
   if (item.kind === "material") {
     const material = materialById(item.ref);
     const preview = h("div", { class: "preview" });
     preview.style.backgroundColor = L.swatchColor(material?.color);
-    return { title: material?.label ?? item.ref, kind: "Material", preview };
+    return { title: material?.label ?? item.ref, kind: DESIGN.boardKinds.material, preview };
   }
   const asset = assetById(item.ref);
   const url = L.safeImageUrl(item.url || asset?.url);
-  const title = asset?.caption || KIND_LABEL[asset?.kind] || "Image";
-  return { title, kind: "Image", preview: url ? h("img", { class: "preview", src: url, alt: "", loading: "lazy" }) : h("div", { class: "preview" }, icon("image")) };
+  const title = asset?.caption || DESIGN.imageKinds[asset?.kind] || DESIGN.image;
+  return { title, kind: DESIGN.boardKinds.asset, preview: url ? h("img", { class: "preview", src: url, alt: "", loading: "lazy" }) : h("div", { class: "preview" }, icon("image")) };
 }
 
 function renderBoard() {
@@ -290,7 +289,7 @@ function renderBoard() {
       const noteId = `note-${index}`;
       const move = (delta) => () => {
         state.board = L.moveItem(state.board, index, delta);
-        boardChanged(`${view.title} moved to position ${index + delta + 1} of ${state.board.length}. Unsaved changes.`);
+        boardChanged(DESIGN.moved(view.title, index + delta + 1, state.board.length));
         // Keep the keyboard on the moved item; at either end the pressed button is disabled, so use the other one.
         const row = $("#board").children[index + delta];
         (row.querySelector(`[data-move="${delta}"]:not(:disabled)`) ?? row.querySelector("[data-move]:not(:disabled)"))?.focus();
@@ -303,32 +302,32 @@ function renderBoard() {
           "div",
           { class: "board-text" },
           h("div", { class: "row between" }, h("strong", {}, view.title), h("span", { class: "chip" }, view.kind)),
-          h("label", { for: noteId, class: "sr-only" }, `Note for ${view.title}`),
+          h("label", { for: noteId, class: "sr-only" }, DESIGN.noteFor(view.title)),
           h("input", {
             id: noteId,
             value: item.note ?? "",
             maxLength: L.MAX_NOTE,
-            placeholder: "Add a note",
+            placeholder: DESIGN.notePlaceholder,
             oninput: (event) => {
               state.board = L.setBoardNote(state.board, item.kind, item.ref, event.target.value);
-              setStatus($("#board-status"), "Unsaved changes.");
+              setStatus($("#board-status"), COMMON.unsaved);
             },
           }),
         ),
         h(
           "div",
           { class: "board-actions" },
-          h("button", { type: "button", "data-move": "-1", disabled: index === 0, "aria-label": `Move ${view.title} up`, onclick: move(-1) }, icon("arrow_upward")),
-          h("button", { type: "button", "data-move": "1", disabled: index === state.board.length - 1, "aria-label": `Move ${view.title} down`, onclick: move(1) }, icon("arrow_downward")),
+          h("button", { type: "button", "data-move": "-1", disabled: index === 0, "aria-label": DESIGN.moveUp(view.title), onclick: move(-1) }, icon("arrow_upward")),
+          h("button", { type: "button", "data-move": "1", disabled: index === state.board.length - 1, "aria-label": DESIGN.moveDown(view.title), onclick: move(1) }, icon("arrow_downward")),
           h(
             "button",
             {
               type: "button",
               class: "danger",
-              "aria-label": `Remove ${view.title} from the board`,
+              "aria-label": DESIGN.removeFromBoard(view.title),
               onclick: () => {
                 state.board = L.removeBoardItem(state.board, item.kind, item.ref);
-                boardChanged(`${view.title} removed. Unsaved changes.`);
+                boardChanged(DESIGN.removed(view.title));
                 $("#board-save").focus();
               },
             },
@@ -342,14 +341,14 @@ function renderBoard() {
 
 function addToBoard(kind, ref, title) {
   const next = L.addBoardItem(state.board, kind, ref);
-  if (next === state.board) return setStatus($("#board-status"), `The board holds at most ${L.MAX_BOARD_ITEMS} items.`, "error");
+  if (next === state.board) return setStatus($("#board-status"), DESIGN.boardFull(L.MAX_BOARD_ITEMS), "error");
   state.board = next;
-  boardChanged(`${title} added to the board. Unsaved changes.`);
+  boardChanged(DESIGN.added(title));
 }
 
 function renderBoardSources() {
   const source = (kind, ref, label, lead) =>
-    h("button", { type: "button", class: "swatch", disabled: L.onBoard(state.board, kind, ref), "aria-label": `Add ${label} to the board`, onclick: () => addToBoard(kind, ref, label) }, lead, label);
+    h("button", { type: "button", class: "swatch", disabled: L.onBoard(state.board, kind, ref), "aria-label": DESIGN.addToBoard(label), onclick: () => addToBoard(kind, ref, label) }, lead, label);
   $("#board-styles").replaceChildren(...state.catalog.styles.map((style) => source("style", style.id, style.label, icon("add"))));
   $("#board-materials").replaceChildren(...state.catalog.materials.map((material) => source("material", material.id, material.label, swatch(material.color))));
 }
@@ -359,11 +358,11 @@ function renderAssets() {
   $("#assets-empty").hidden = state.assets.length > 0;
   $("#assets").replaceChildren(
     ...state.assets.map((asset) => {
-      const name = asset.caption || KIND_LABEL[asset.kind] || "Image";
+      const name = asset.caption || DESIGN.imageKinds[asset.kind] || DESIGN.image;
       const url = L.safeImageUrl(asset.url);
-      const remove = h("button", { type: "button", class: "danger", "aria-label": `Delete image ${name}` }, icon("delete"));
+      const remove = h("button", { type: "button", class: "danger", "aria-label": DESIGN.deleteImage(name) }, icon("delete"));
       remove.addEventListener("click", () => {
-        if (!confirm(`Delete the image "${name}"? This cannot be undone.`)) return;
+        if (!confirm(DESIGN.confirmDelete(name))) return;
         busy(
           remove,
           $("#upload-status"),
@@ -375,19 +374,19 @@ function renderAssets() {
             renderBoard();
             $("#upload-file").focus();
           },
-          "Image deleted.",
+          DESIGN.imageDeleted,
         );
       });
       return h(
         "li",
         { class: "asset" },
         url ? h("img", { src: url, alt: name, loading: "lazy" }) : h("div", { class: "preview" }, icon("image")),
-        h("span", { class: "chip" }, KIND_LABEL[asset.kind] ?? asset.kind),
+        h("span", { class: "chip" }, DESIGN.imageKinds[asset.kind] ?? DESIGN.image),
         asset.caption && h("span", { class: "small caption" }, asset.caption),
         h(
           "div",
           { class: "board-actions" },
-          h("button", { type: "button", disabled: L.onBoard(state.board, "asset", asset.id), "aria-label": `Add image ${name} to the board`, onclick: () => addToBoard("asset", asset.id, name) }, icon("add"), "Board"),
+          h("button", { type: "button", disabled: L.onBoard(state.board, "asset", asset.id), "aria-label": DESIGN.addImageToBoard(name), onclick: () => addToBoard("asset", asset.id, name) }, icon("add"), DESIGN.boardButton),
           remove,
         ),
       );
@@ -406,7 +405,7 @@ function initMoodboard() {
         renderBoardSources();
         renderAssets();
       },
-      "Moodboard saved.",
+      DESIGN.boardSaved,
     ),
   );
   $("#upload-form").addEventListener("submit", (event) => {
@@ -428,7 +427,7 @@ function initMoodboard() {
         state.assets = await api(`${base}/assets`); // the upload answer has no link; the list carries signed links
         renderAssets();
       },
-      "Image uploaded. Use its Board button to add it to the moodboard.",
+      DESIGN.imageUploaded,
     );
   });
 }
@@ -456,7 +455,7 @@ run(async () => {
   state.board = board;
 
   const query = `?project=${encodeURIComponent(projectId)}`;
-  document.title = `${project.name} · Brief & materials`;
+  document.title = `${project.name} · ${DESIGN.pageTitle}`;
   $("#project-name").textContent = project.name;
   $("#crumb-name").textContent = project.name;
   if (project.studio) showStudio(project.studio.name);

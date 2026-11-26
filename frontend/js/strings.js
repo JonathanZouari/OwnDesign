@@ -12,6 +12,8 @@ export const COMMON = {
   copyFailed: "ההעתקה נכשלה. סמנו את הקישור והעתיקו אותו ידנית.",
   open: "פתיחה",
   copyLink: "העתקת קישור",
+  working: "רק רגע…",
+  unsaved: "יש שינויים שלא נשמרו.",
 };
 
 // Shown for API failures, chosen by HTTP status. The server's own (English) text is never displayed.
@@ -22,6 +24,8 @@ export const API_ERRORS = {
   404: "הפריט המבוקש לא נמצא.",
   409: "הפעולה לא התאפשרה: הגעתם למגבלה או שיש התנגשות עם נתונים קיימים.",
   413: "הקובץ או התוכנית גדולים מדי.",
+  415: "סוג הקובץ אינו נתמך.",
+  429: "בוצעו יותר מדי בקשות. המתינו מעט ונסו שוב.",
   422: "הנתונים שהוזנו אינם תקינים. בדקו ונסו שוב.",
   generic: "אירעה תקלה בשרת. נסו שוב בעוד רגע.",
 };
@@ -133,6 +137,7 @@ export const BUDGET = {
 export const STUDIO = {
   accepted: "אושר",
   pending: "ממתין",
+  memberRoles: { owner: "בעלים", designer: "מעצב" },
   copyLink: COMMON.copyLink,
   title: (name) => `${name} · סטודיו`,
   copyLinkShort: "העתקת קישור",
@@ -413,3 +418,73 @@ export const EDITOR_UNDERLAY = {
 };
 
 export const WIZARD_IMPORT = { link: "ייבוא משרטוט PDF" };
+
+export const DESIGN = {
+  pageTitle: "בריף וחומרים",
+  surfaces: { floor: "רצפה", walls: "קירות", ceiling: "תקרה", cabinets: "ארונות" },
+  imageKinds: { inspiration: "השראה", existing_item: "פריט שכבר יש לי" },
+  boardKinds: { style: "סגנון", material: "חומר", asset: "תמונה" },
+  image: "תמונה",
+  errors: {
+    wholeNumber: (label, max) => `${label}: יש להזין מספר שלם בין 0 ל-${max}.`,
+    budgetOrder: "תקציב המינימום לא יכול להיות גבוה מתקציב המקסימום.",
+    tooManyStyles: (max) => `אפשר לבחור עד ${max} סגנונות.`,
+    badColor: "כל צבע חייב להיות קוד צבע תקין בן שש ספרות.",
+    tooManyColors: (max) => `אפשר לבחור עד ${max} צבעים.`,
+    currency: "בחרו מטבע.",
+    textTooLong: (label, max) => `${label}: אפשר להזין עד ${max} תווים.`,
+    noImage: "בחרו תמונה קודם.",
+    imageType: "אפשר להעלות רק תמונות JPEG, PNG ו-WebP.",
+    emptyFile: "הקובץ ריק.",
+    imageTooBig: "גודל התמונה יכול להגיע עד 5 מ״ב.",
+  },
+  fields: {
+    budgetMin: "תקציב המינימום",
+    budgetMax: "תקציב המקסימום",
+    adults: "מבוגרים",
+    children: "ילדים",
+    lifestyle: "אורח חיים",
+    needs: "צרכים",
+    constraints: "מגבלות",
+    existingItems: "פריטים קיימים",
+  },
+  colorExists: "הצבע הזה כבר ברשימה.",
+  removeColor: (color) => `הסרת הצבע ${ltr(color)}`,
+  briefSaved: "הבריף נשמר.",
+  notChosen: "לא נבחר",
+  roomMaterials: (room) => `חומרים עבור ${room}`,
+  materialsSaved: "החומרים נשמרו.",
+  moved: (title, position, total) => `${title} הועבר למקום ${position} מתוך ${total}. יש שינויים שלא נשמרו.`,
+  noteFor: (title) => `הערה על ${title}`,
+  notePlaceholder: "הוספת הערה",
+  moveUp: (title) => `הזזת ${title} למעלה`,
+  moveDown: (title) => `הזזת ${title} למטה`,
+  removeFromBoard: (title) => `הסרת ${title} מהלוח`,
+  removed: (title) => `${title} הוסר מהלוח. יש שינויים שלא נשמרו.`,
+  boardFull: (max) => `אפשר להוסיף ללוח עד ${max} פריטים.`,
+  added: (title) => `${title} נוסף ללוח. יש שינויים שלא נשמרו.`,
+  addToBoard: (title) => `הוספת ${title} ללוח`,
+  deleteImage: (name) => `מחיקת התמונה ${name}`,
+  confirmDelete: (name) => `למחוק את התמונה "${name}"? אי אפשר לבטל את הפעולה.`,
+  imageDeleted: "התמונה נמחקה.",
+  addImageToBoard: (name) => `הוספת התמונה ${name} ללוח`,
+  boardButton: "ללוח",
+  boardSaved: "לוח ההשראה נשמר.",
+  imageUploaded: "התמונה הועלתה. לחצו על הכפתור ״ללוח״ שלה כדי להוסיף אותה ללוח ההשראה.",
+};
+
+export const CONSULTANT = {
+  pageTitle: "יועץ העיצוב",
+  who: { user: "אתם", assistant: "יועץ העיצוב" },
+  writing: "היועץ כותב תשובה…",
+  planLabel: (name) => `תוכנית קומה של ${name}`,
+  planSummary: (version, rooms, items) =>
+    `גרסה ${version} · ${rooms === 1 ? "חדר אחד" : `${rooms} חדרים`} · ${items === 1 ? "פריט ריהוט אחד" : `${items} פריטי ריהוט`}`,
+  noPlan: "עדיין לא נשמרה תוכנית. היועץ יכול לדון בבריף שלכם גם בלעדיה.",
+  // Statuses whose meaning on this page differs from the general API message.
+  errors: {
+    429: "הגעתם למגבלת ההודעות היומית. חזרו מחר.",
+    502: "היועץ לא הצליח לענות. נסו שוב.",
+    503: "יועץ העיצוב אינו זמין כרגע.",
+  },
+};
