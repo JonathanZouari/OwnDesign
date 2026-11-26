@@ -139,3 +139,10 @@ Pages: [index](index.md).
 text colours with a contrast check, live preview. Browser only, nothing saved. Frontend 39 passed; manual
 check in Chrome. Backend integration and browser journeys not run (Supabase not configured).
 Pages: [overview](overview.md), [design](design.md), [open-items](open-items.md).
+
+## [2026-11-26] build | Pull request #8 merged: studio branding preview
+Browser-only preview page (`frontend/branding.html`); nothing saved or sent. Static read, then code-reviewer and
+security-reviewer agents: no critical or high finding; nine files, no network, storage or dynamic code; CSP as on
+the other pages. One medium note on the contrast check and smaller ones are in [open-items](open-items.md); the
+contributor's code was not changed. On the merged tree: backend 100 passed, frontend 39 passed. No browser journey
+for the page yet. Commits `2552d1d` (merge) and the two that follow it. Pages: [open-items](open-items.md).
