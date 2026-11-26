@@ -94,7 +94,10 @@ def detect_items(project_id: UUID, asset_id: UUID, user: CurrentUser = Depends(c
             raise HTTPException(429, "Many photos are being analysed right now. Please try again in a moment.", headers=BUSY)
         try:
             detector = loader()
-            data = service().storage.from_(BUCKET).download(asset["storage_path"])
+            try:
+                data = service().storage.from_(BUCKET).download(asset["storage_path"])
+            except Exception:
+                raise HTTPException(503, "The photo could not be loaded right now. Please try again.") from None
             found = detector.detect(data)
         except ModelUnavailable:
             raise HTTPException(503, "Item detection is not available right now. Please try again later.") from None
@@ -133,20 +136,21 @@ def add_owned_items(project_id: UUID, body: OwnedItemsBody, user: CurrentUser = 
     if len(stored) + len(body.items) > MAX_ITEMS_PER_PROJECT:
         raise HTTPException(409, "This project has reached its limit of owned items. Remove some, then try again.")
 
-    # The line goes into the brief first, in one database statement that cannot overwrite a brief saved at the
-    # same moment; it refuses a result over the brief's limit, and then nothing is stored.
+    rows = [{"project_id": project["id"], "item_class": i.item_class, "quantity": i.quantity, "source_asset_id": source,
+             "created_by": user.id} for i in body.items]
+    inserted = service().table("owned_items").insert(rows).execute().data
+    # The line is appended in one database statement, so it cannot overwrite a brief saved at the same moment. If the
+    # brief cannot take it, the items just stored are removed again, so the two never disagree.
     try:
         brief = service().rpc("append_existing_items", {
             "p_project": project["id"], "p_line": brief_line(body.items), "p_user": user.id,
             "p_max": EXISTING_ITEMS_LIMIT, "p_default": Brief().model_dump(),
         }).execute().data
-    except APIError as error:
-        if error.code == "P0001":
+    except Exception as error:
+        service().table("owned_items").delete().in_("id", [row["id"] for row in inserted]).execute()
+        if isinstance(error, APIError) and error.code == "P0001":
             raise HTTPException(422, f"The brief's existing items would pass {EXISTING_ITEMS_LIMIT} characters. Shorten them, then try again.") from None
         raise
-    rows = [{"project_id": project["id"], "item_class": i.item_class, "quantity": i.quantity, "source_asset_id": source,
-             "created_by": user.id} for i in body.items]
-    inserted = service().table("owned_items").insert(rows).execute().data
     audit("items.accepted", user.id, studio_id=project["studio_id"], project_id=project["id"], count=sum(i.quantity for i in body.items))
     items = [_with_labels({key: row[key] for key in ITEM_COLUMNS.split(", ")}) for row in inserted]
     return ok({"items": items, "brief": brief})

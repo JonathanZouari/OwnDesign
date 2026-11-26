@@ -326,3 +326,35 @@ def test_the_brief_function_is_not_callable_by_users(world):
     with pytest.raises(Exception, match="permission denied"):
         data_api.rpc("append_existing_items", {"p_project": world.mine["id"], "p_line": "x", "p_user": world.client.id,
                                                "p_max": 99999, "p_default": {}}).execute()
+
+
+def test_items_can_be_added_to_a_brief_from_an_older_schema(api, world, admin):
+    """A stored brief with a key the current schema no longer has must not block adding items."""
+    admin.table("project_briefs").upsert({"project_id": world.mine["id"], "brief": {"room_notes": "old", "existing_items": ""}}).execute()
+    response = api.post(items_url(world.mine), json={"items": [{"item_class": "tv", "quantity": 1}]}, headers=world.client.headers)
+    assert response.status_code == 201, response.text
+    assert response.json()["data"]["brief"]["existing_items"] == "From a photo: TV"
+
+
+def test_items_are_removed_again_when_the_brief_cannot_take_the_line(api, world, admin):
+    admin.table("project_briefs").upsert({"project_id": world.mine["id"], "brief": {"existing_items": "y" * 995}}).execute()
+    before = {row["id"] for row in stored(admin, world.mine)}
+    response = api.post(items_url(world.mine), json={"items": [{"item_class": "oven", "quantity": 1}]}, headers=world.client.headers)
+    assert response.status_code == 422
+    assert {row["id"] for row in stored(admin, world.mine)} == before
+    admin.table("project_briefs").upsert({"project_id": world.mine["id"], "brief": {"existing_items": ""}}).execute()
+
+
+def test_photo_that_cannot_be_loaded_is_a_clear_error(api, world, fake, monkeypatch):
+    from app.routes import detection
+
+    class Broken:
+        def from_(self, _):
+            raise RuntimeError("storage down")
+
+    class Service:
+        storage = Broken()
+
+    monkeypatch.setattr(detection, "service", lambda: Service())
+    response = api.post(detect_url(world.mine, world.photo), headers=world.client.headers)
+    assert response.status_code == 503 and "could not be loaded" in response.json()["error"]

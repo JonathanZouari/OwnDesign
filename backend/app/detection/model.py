@@ -50,7 +50,10 @@ class Detection:
 
 def load_image(data: bytes) -> Image.Image:
     try:
-        image = Image.open(io.BytesIO(data), formats=["JPEG", "PNG", "WEBP"])  # what uploads accept
+        try:
+            image = Image.open(io.BytesIO(data), formats=["JPEG", "PNG", "WEBP"])  # what uploads accept
+        except Image.DecompressionBombError:
+            raise ImageError("This image is too large to analyse") from None
         width, height = image.size
         if width * height > MAX_PIXELS:
             raise ImageError("This image is too large to analyse")
@@ -61,6 +64,10 @@ def load_image(data: bytes) -> Image.Image:
         raise
     except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as error:
         raise ImageError("This image cannot be read") from error
+    if image.mode in ("RGBA", "LA", "PA") or (image.mode == "P" and "transparency" in image.info):
+        background = Image.new("RGB", image.size, "white")  # transparent parts as white paper, not black
+        background.paste(image.convert("RGBA"), mask=image.convert("RGBA").getchannel("A"))
+        return background
     return image.convert("RGB")
 
 
@@ -71,7 +78,11 @@ def preprocess(image: Image.Image) -> np.ndarray:
 
 
 def postprocess(boxes: np.ndarray, logits: np.ndarray, threshold: float = MIN_CONFIDENCE) -> list[Detection]:
-    """boxes: (queries, 4) centre x, centre y, width, height, relative. logits: (queries, classes)."""
+    """boxes: (queries, 4) centre x, centre y, width, height, relative. logits: (queries, classes).
+
+    Each query keeps only its strongest class (not RF-DETR's top-k over every class), so a query that scores a
+    person above a sofa is dropped rather than reported as a weaker sofa.
+    """
     probabilities = 1 / (1 + np.exp(-logits.astype(np.float64)))
     found = []
     for query in range(probabilities.shape[0]):
@@ -81,6 +92,8 @@ def postprocess(boxes: np.ndarray, logits: np.ndarray, threshold: float = MIN_CO
         if item is None or confidence < threshold:
             continue
         cx, cy, w, h = (float(v) for v in boxes[query])
+        if not all(np.isfinite((cx, cy, w, h))):
+            continue
         left, top = max(0.0, cx - w / 2), max(0.0, cy - h / 2)
         right, bottom = min(1.0, cx + w / 2), min(1.0, cy + h / 2)
         if right <= left or bottom <= top:
@@ -167,7 +180,11 @@ def load_detector() -> Detector:
             if time.monotonic() - _failed_at < RETRY_AFTER_FAILURE:
                 raise ModelUnavailable("The detection model failed to load a moment ago")
             try:
-                _detector = Detector(_session(_model_bytes()))
+                model = _model_bytes()
+                try:
+                    _detector = Detector(_session(model))
+                except Exception as error:  # a file ONNX Runtime cannot load is as unusable as a missing one
+                    raise ModelUnavailable("The detection model could not be loaded") from error
             except ModelUnavailable:
                 _failed_at = time.monotonic()
                 raise

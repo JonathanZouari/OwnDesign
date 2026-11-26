@@ -119,6 +119,17 @@ def test_postprocess_clamps_boxes_to_the_image():
     assert (x, y) == pytest.approx((0.0, 0.88)) and x + w <= 1 and y + h <= 1 and w > 0 and h > 0
 
 
+def test_postprocess_drops_boxes_that_are_not_numbers():
+    found = M.postprocess(boxes_for([(float("nan"), 0.5, 0.2, 0.2)]), logits_for([(COUCH, 0.9)]))
+    assert found == []
+
+
+def test_transparent_png_is_put_on_white():
+    out = io.BytesIO()
+    Image.new("RGBA", (8, 8), (0, 0, 0, 0)).save(out, "PNG")
+    assert M.load_image(out.getvalue()).getpixel((0, 0)) == (255, 255, 255)
+
+
 def test_postprocess_of_nothing_is_empty():
     assert M.postprocess(boxes_for([]), logits_for([])) == []
 
@@ -252,3 +263,14 @@ def test_real_model_finds_living_room_furniture(monkeypatch):
     detector = M.load_detector()
     found = {d.item_class for d in detector.detect((STITCH / "render-concept-a.jpg").read_bytes())}
     assert {"couch", "chair", "dining table"} <= found
+
+
+def test_unloadable_model_is_unavailable_and_not_retried_at_once(monkeypatch, fresh):
+    data = b"not an onnx file"
+    pin(monkeypatch, data)
+    calls = []
+    monkeypatch.setattr(M, "_download", lambda: calls.append(1) or data)
+    for _ in range(2):
+        with pytest.raises(M.ModelUnavailable):
+            M.load_detector()
+    assert len(calls) == 1

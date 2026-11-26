@@ -400,7 +400,7 @@ function renderAssets() {
 
 // ---- existing-item detection: the server runs the model; nothing is kept until the user chooses ------------------
 
-let detection = { asset: null, groups: [] };
+let detection = { token: null, asset: null, groups: [] }; // token: one per opening, so a late answer for an earlier one is ignored
 
 function openDetect(asset, name) {
   const dialog = $("#detect-dialog");
@@ -410,15 +410,13 @@ function openDetect(asset, name) {
   $("#detect-list").replaceChildren();
   $("#detect-choices").hidden = true;
   $("#detect-accept").disabled = true;
-  detection = { asset, groups: [] };
+  const token = {};
+  detection = { token, asset, groups: [] };
   setStatus($("#detect-status"), "Looking for items…");
   dialog.showModal();
   api(`${base}/assets/${encodeURIComponent(asset.id)}/detect`, { method: "POST" })
-    .then(({ items }) => {
-      if (detection.asset !== asset) return; // the dialog was closed and opened for another photo
-      showDetections(items);
-    })
-    .catch((error) => setStatus($("#detect-status"), error.message || "Something went wrong.", "error"));
+    .then(({ items }) => detection.token === token && showDetections(items))
+    .catch((error) => detection.token === token && setStatus($("#detect-status"), error.message || "Something went wrong.", "error"));
 }
 
 function showDetections(items) {
@@ -436,9 +434,9 @@ function showDetections(items) {
   $("#detect-list").replaceChildren(
     ...detection.groups.map((group) => {
       const id = `keep-${group.item_class.replace(/\W/g, "-")}`;
-      const tick = h("input", { type: "checkbox", id, checked: group.sure, "data-class": group.item_class });
+      const tick = h("input", { type: "checkbox", id, checked: group.sure, "data-class": group.item_class, ...(group.sure ? {} : { "aria-describedby": `${id}-unsure` }) });
       const quantity = h("input", { type: "number", min: 1, max: 20, step: 1, value: group.quantity, "aria-label": `How many: ${group.label}`, "data-quantity": group.item_class });
-      return h("li", {}, tick, h("label", { for: id, class: "plain" }, group.label), quantity, !group.sure && h("span", { class: "chip" }, "Not sure"));
+      return h("li", {}, tick, h("label", { for: id, class: "plain" }, group.label), quantity, !group.sure && h("span", { class: "chip", id: `${id}-unsure` }, "Not sure"));
     }),
   );
   $("#detect-choices").hidden = false;
@@ -479,7 +477,7 @@ function renderOwned() {
 function initDetection() {
   const dialog = $("#detect-dialog");
   $("#detect-cancel").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("close", () => (detection = { asset: null, groups: [] }));
+  dialog.addEventListener("close", () => (detection = { token: null, asset: null, groups: [] }));
   $("#detect-list").addEventListener("change", syncDetectAccept);
   $("#detect-list").addEventListener("input", syncDetectAccept);
   $("#detect-accept").addEventListener("click", () =>
@@ -551,7 +549,7 @@ run(async () => {
     api(`${base}/finishes`),
     api(`${base}/assets`),
     api(`${base}/moodboard`),
-    api(`${base}/owned-items`),
+    api(`${base}/owned-items`).catch(() => []), // the page works without them
   ]);
   state.catalog = catalog;
   state.rooms = versions.length ? (await api(`${base}/versions/latest`)).geometry.rooms : [];
