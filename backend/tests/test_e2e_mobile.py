@@ -113,6 +113,7 @@ def test_phone_editor_offers_view_and_light_edits(servers, phone, api, world):
 def test_phone_shows_walls_and_openings_read_only(servers, phone, world, kind):
     page = phone
     open_editor(page, world.client, world.pid)
+    page.get_by_role("button", name="Dismiss notice").tap()  # it covers the top of the small canvas
     element = page.locator(f"#canvas [data-kind={kind}]").first
     element.focus()  # selects it; a straight wall has no height for Playwright to tap
 
@@ -402,6 +403,37 @@ def test_phone_opens_the_3d_walkthrough_and_returns(servers, phone, world):
     expect(page.locator(".rail")).to_be_visible()
     assert rail(page) == PHONE_TOOLS
     assert page.locator("#status-save").inner_text() == "Saved · v1"
+
+
+def test_phone_walkthrough_closes_an_open_catalog_first(servers, phone, world):
+    page = phone
+    open_editor(page, world.client, world.pid)
+    page.locator("#canvas [data-kind=furniture]").first.tap()
+    page.locator("#tools button[data-tool=furniture]").tap()
+    expect(page.locator("#catalog")).to_be_visible()
+    page.get_by_role("button", name="3D walkthrough").tap()
+    page.locator("#walk canvas[data-position]").wait_for()
+    # Nothing of the 2D editor paints over the 3D view and its walking pad.
+    expect(page.locator("#catalog")).to_be_hidden()
+    expect(page.locator("#actions")).to_be_hidden()
+    expect(page.locator("#walk-pad")).to_be_visible()
+    pad = page.locator("#walk-pad").bounding_box()
+    hit = page.evaluate("([x, y]) => document.elementFromPoint(x, y)?.closest('#walk-pad') !== null", [pad["x"] + pad["width"] / 2, pad["y"] + 8])
+    assert hit, "the walking pad is covered"
+
+
+def test_selecting_another_item_with_the_catalog_open_keeps_the_sheet_closed(servers, phone, world):
+    page = phone
+    open_editor(page, world.client, world.pid)
+    page.locator("#canvas [data-kind=furniture]").first.tap()
+    expect(page.locator("#inspector")).to_have_class(SHEET_OPEN)
+    page.locator("#tools button[data-tool=furniture]").tap()
+    expect(page.locator("#inspector")).not_to_have_class(SHEET_OPEN)
+    page.locator("#canvas [data-kind=walls]").first.focus()  # another item while the catalog is open
+    page.wait_for_timeout(200)
+    expect(page.locator("#inspector")).not_to_have_class(SHEET_OPEN)
+    catalog = page.locator("#catalog").bounding_box()
+    assert catalog["height"] >= 280  # still the whole sheet, not squeezed beside the inspector
 
 
 @pytest.mark.parametrize(("width", "visible"), [(320, False), (359, False), (360, True), (390, True)])

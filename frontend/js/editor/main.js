@@ -143,7 +143,8 @@ function render() {
   const selected = state.selection ? `${state.selection.kind}:${state.selection.id}` : "";
   if (selected !== sheetFor) {
     sheetFor = selected;
-    setSheetOpen(Boolean(selected));
+    // On a phone the open catalog keeps the screen; the sheet would squeeze it (pickTool closes it too).
+    setSheetOpen(Boolean(selected) && !(phone.matches && state.catalogOpen));
   }
 
   for (const button of $("#tools").children) {
@@ -244,6 +245,11 @@ async function openWalk() {
   const root = $("#walk");
   const behind = [...root.parentElement.children].filter((node) => node !== root);
   button.disabled = true;
+  // The catalog floats above the stage on phones; it would cover the 3D view and its walking pad.
+  if (state.catalogOpen) {
+    state.catalogOpen = false;
+    render();
+  }
   try {
     const { startWalk } = await import("./view3d.js");
     root.hidden = false;
