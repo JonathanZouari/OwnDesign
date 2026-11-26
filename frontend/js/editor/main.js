@@ -5,6 +5,7 @@ import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
 import * as P from "../plan.js";
 import { KEYS, load, save as store } from "../store.js";
 import { $, action, h, run, showStudio, toast } from "../ui.js";
+import { mountCompare } from "./compare.js";
 import { renderInspector } from "./panel.js";
 import { attachPointer, zoomAt } from "./pointer.js";
 import { draw, visibleArea } from "./render.js";
@@ -38,6 +39,7 @@ const state = {
   versions: null,
   signedIn: false,
 };
+let compare = null;
 
 const editor = {
   get plan() {
@@ -115,7 +117,10 @@ function render() {
     (node ?? canvas).focus({ preventScroll: true });
   }
 
-  renderInspector($("#inspector"), editor, { versions: state.versions, onLoadVersion: loadVersion });
+  renderInspector($("#inspector"), editor, { versions: state.versions, onLoadVersion: loadVersion, onCompare: openCompare });
+  const comparable = (state.versions?.length ?? 0) >= 2;
+  $("#compare-open").disabled = !comparable;
+  $("#compare-open").title = comparable ? "Compare two saved versions" : "Save at least two versions to compare them";
 
   for (const button of $("#tools").children) {
     const { tool } = button.dataset;
@@ -206,6 +211,7 @@ function placeAtCentre() {
 }
 
 function onKey(event) {
+  if (!$("#compare").hidden) return; // the comparison handles its own keys and never edits the plan
   if (event.target.closest("input, select, textarea, dialog")) return;
   if (state.live || state.previewLine) return; // mid-drag: the drag would overwrite a keyboard edit
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
@@ -287,6 +293,34 @@ async function savePlan(label) {
   state.versions = [version, ...state.versions];
   render();
   toast(`Saved as v${version.version_no}`);
+}
+
+function openCompare(pair) {
+  if (!compare.open(pair)) return;
+  $(".editor").hidden = true;
+}
+
+function closeCompare() {
+  compare.close();
+  $(".editor").hidden = false;
+  render();
+  $("#compare-open").focus();
+}
+
+function setupCompare() {
+  compare = mountCompare($("#compare"), {
+    projectId: state.project.id,
+    versions: () => state.versions,
+    isDirty,
+    exit: closeCompare,
+    async continueFrom(version) {
+      if (!version) return;
+      closeCompare();
+      await loadVersion(version); // the editor's own flow: loads as an unsaved edit, Undo goes back
+    },
+  });
+  $("#compare-open").hidden = false;
+  $("#compare-open").addEventListener("click", () => openCompare());
 }
 
 function buildChrome(name, role) {
@@ -387,6 +421,7 @@ run(async () => {
   state.history = P.history.start(plan);
   state.saved = plan;
   buildChrome(name, role);
+  if (state.project) setupCompare();
   fit();
   if (params.get("save") && state.draft && state.signedIn) openSave();
 });
