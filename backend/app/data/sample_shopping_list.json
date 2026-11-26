@@ -1,0 +1,256 @@
+{
+ "currency": "ILS",
+ "name": "Synthetic shopping list",
+ "items": [
+  {
+   "category": "furniture",
+   "name": "Three-seat sofa",
+   "room": "Living room",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 6800,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "Armchair",
+   "room": "Living room",
+   "quantity": 2,
+   "unit": "unit",
+   "unit_price": 2400,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "Coffee table",
+   "room": "Living room",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 1200,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "TV cabinet",
+   "room": "Living room",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 2200,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "Dining table",
+   "room": "Living room",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 3900,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "Dining chair",
+   "room": "Living room",
+   "quantity": 6,
+   "unit": "unit",
+   "unit_price": 450,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "Double bed",
+   "room": "Bedroom",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 3500,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "Double mattress",
+   "room": "Bedroom",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 4200,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "Sliding-door wardrobe",
+   "room": "Bedroom",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 7500,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "Desk",
+   "room": "Study",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 1500,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "finish",
+   "name": "Oak parquet floor",
+   "room": "Living room",
+   "quantity": 32,
+   "unit": "m2",
+   "unit_price": 280,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "finish",
+   "name": "Porcelain tiles",
+   "room": "Kitchen",
+   "quantity": 14,
+   "unit": "m2",
+   "unit_price": 190,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "finish",
+   "name": "Wall paint",
+   "room": "Living room",
+   "quantity": 120,
+   "unit": "m2",
+   "unit_price": 45,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "finish",
+   "name": "Lime plaster",
+   "room": "Bedroom",
+   "quantity": 18,
+   "unit": "m2",
+   "unit_price": 160,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "lighting",
+   "name": "Pendant lamps over the dining table",
+   "room": "Living room",
+   "quantity": 3,
+   "unit": "unit",
+   "unit_price": 650,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "lighting",
+   "name": "Recessed spotlight set",
+   "room": "Kitchen",
+   "quantity": 1,
+   "unit": "set",
+   "unit_price": 1800,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "textile",
+   "name": "Curtains",
+   "room": "Living room",
+   "quantity": 6,
+   "unit": "m",
+   "unit_price": 420,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "textile",
+   "name": "Rug",
+   "room": "Living room",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 2600,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "appliance",
+   "name": "Refrigerator",
+   "room": "Kitchen",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 5900,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "appliance",
+   "name": "Built-in oven",
+   "room": "Kitchen",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 3200,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "appliance",
+   "name": "Dishwasher",
+   "room": "Kitchen",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 3400,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "Kitchen countertop",
+   "room": "Kitchen",
+   "quantity": 4.5,
+   "unit": "m",
+   "unit_price": 2100,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "furniture",
+   "name": "Bathroom vanity with basin",
+   "room": "Bathroom",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 2800,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "other",
+   "name": "Mirror",
+   "room": "Bathroom",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 750,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  },
+  {
+   "category": "lighting",
+   "name": "Wall lamp",
+   "room": "Bedroom",
+   "quantity": 2,
+   "unit": "unit",
+   "unit_price": 380,
+   "source": "synthetic",
+   "note": "Synthetic price for illustration"
+  }
+ ]
+}
