@@ -58,6 +58,34 @@ Checked:
 
 The phone limits on the editor (walls, openings, room moves) are about UX, not security: the backend still validates every saved plan.
 
+## CI (GitHub Actions)
+
+Source: `.github/workflows/ci.yml`. The plan and the file were each reviewed by a security-reviewer agent, and
+`security-review` ran on the commits. No critical finding. Two high findings on the plan, both built in:
+
+- Secrets live in the environment `ci`, limited to `dev` and `main`, not at repository level. A fork, another
+  branch or an edited workflow cannot get them (tried: refused).
+- CI uses its own Supabase secret key, not the one from `backend/.env`.
+
+Also in place: pull requests run in jobs with no secrets and never with `pull_request_target`; secrets reach
+single steps, not the job; actions pinned to commit hashes and uv to a version; no cache, no artifacts
+(Playwright traces hold tokens and the repository is public); read-only token.
+
+**Before merging a pull request from a fork, read its diff of `backend/tests/`, `uv.lock`, `pyproject.toml`,
+`frontend/package.json` and `.github/`.** Its green check ran without secrets; after the merge, the push run
+executes that code with the service key.
+
+What remains: the CI key is still a service key on the dev project; logs are public and GitHub masks exact
+secret strings only, so a failing test's traceback is visible to everyone. See [open-items.md](open-items.md).
+
+## Review of the 3D walkthrough (pull request #14)
+
+Reviewed again here before merging, by reading and by a security-reviewer agent: no critical or high finding.
+Plan values reach only three.js geometry as numbers, the content security policy is unchanged, and three.js is
+served locally. The three vendored files are byte for byte the published npm package `three@0.180.0` (SHA-256
+compared at merge time). The guard against oversized plans counts wall cuts, not boxes: the largest plan the
+server accepts still makes the viewer's own tab sluggish ([open-items.md](open-items.md)).
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add
