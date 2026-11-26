@@ -32,6 +32,12 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 
+## Built: product catalog MVP (`catalog_mvp.md`)
+
+- `catalog.html`: 24 mock products in 4 categories; category, price and colour filters; price sorting.
+- Favorites, a shopping list with colour, size and quantity, estimated totals, CSV export, PDF through print.
+- Draft / Approved status; the client approves. Everything is stored in the browser only.
+
 ## Not built yet
 
 Renderings, budget, dossier,

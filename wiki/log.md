@@ -101,3 +101,8 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+## [2026-11-26] build | Product catalog MVP
+Catalog page, mock data, shopping list, export and approval. Frontend 42 passed, geometry 22 passed, two
+stubbed browser journeys passed; integration and real E2E suites not run (no `backend/.env`). Security
+review inline: no high or medium findings. Commits 3233bda, 6806410, 6348a01, 6d76bbb. Updated overview,
+architecture, testing, design, decisions, open-items.
