@@ -51,10 +51,11 @@ const SPEC = {
 let built = { key: null, versions: null };
 let syncers = [];
 
-function fieldNode(spec, editor) {
+function fieldNode(spec, editor, locked) {
   const control = spec.options
     ? h("select", { "aria-label": spec.label }, spec.options.map(([value, label]) => h("option", { value }, label)))
     : h("input", spec.text ? { "aria-label": spec.label, maxLength: 80 } : { "aria-label": spec.label, type: "number", min: spec.min, max: spec.max, step: spec.step, inputMode: "decimal" });
+  control.disabled = locked;
   control.addEventListener("change", () => {
     const { selection, plan } = editor;
     const value = spec.options || spec.text ? control.value : Number(control.value);
@@ -107,7 +108,9 @@ function versionsNode(versions, onLoad) {
 export function renderInspector(root, editor, { versions, onLoadVersion }) {
   const { selection, plan } = editor;
   const item = selection ? plan[selection.kind].find((candidate) => candidate.id === selection.id) : null;
-  const key = item ? `${selection.kind}:${selection.id}` : "none";
+  const locked = Boolean(item) && editor.locks(selection.kind);
+  // Crossing the phone breakpoint changes whether walls and openings are editable, so it rebuilds too.
+  const key = item ? `${selection.kind}:${selection.id}:${locked}` : "none";
   if (key !== built.key || versions !== built.versions) {
     built = { key, versions };
     syncers = [];
@@ -120,7 +123,8 @@ export function renderInspector(root, editor, { versions, onLoadVersion }) {
         spec
           ? [
               h("div", { class: "selection" }, h("span", { class: "label" }, "Active selection"), title),
-              h("div", { class: "stack" }, h("span", { class: "label" }, "Dimensions"), h("div", { class: "fields" }, spec.fields.map((field) => fieldNode(field, editor)))),
+              h("div", { class: "stack" }, h("span", { class: "label" }, "Dimensions"), h("div", { class: "fields" }, spec.fields.map((field) => fieldNode(field, editor, locked)))),
+              locked && h("p", { class: "muted small", id: "locked-note" }, "Walls, doors and windows can be changed on a tablet or computer."),
               spec.review(item) && h("p", { class: "note" }, REVIEW_NOTE),
             ]
           : summaryNode(),

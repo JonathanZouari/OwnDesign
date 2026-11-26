@@ -1,8 +1,11 @@
 import { ROOM_TYPES } from "../catalog.js";
+import { initNavDrawer } from "../nav-drawer.js";
 import { emptyPlan, fromRooms, metres, planBox, roomBox } from "../plan.js";
 import { svg } from "../editor/render.js";
 import { KEYS, load, save } from "../store.js";
 import { $, action, h, showStudio } from "../ui.js";
+
+initNavDrawer();
 
 const MAX_ROOMS = 30;
 const MIN_CM = 50;

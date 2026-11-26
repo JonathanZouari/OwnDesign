@@ -18,7 +18,20 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Orphaned image files.** Files of a deleted project or user are queued in `storage_deletions` and removed only the next time an asset is deleted. Needs a scheduled drain.
 - **Delete-then-insert saves** of finishes and the moodboard are not atomic.
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
-- The editor has no link to the Phase 2 pages at 767 px and below.
+
+## Mobile web gaps
+
+- **Not tested on real devices** or in Safari/WebKit. Pinch zoom and touch drag are covered only by Chromium emulation.
+- On a short phone with the inspector sheet open, the canvas keeps only about 200 px, and the zoom buttons are hidden then (pinch still zooms).
+- The drawer is on the design and consultant pages, although their project nav and sign-out are already visible there. It adds only the studio name.
+- Same-page links in the drawer (`studio.html#clients`) scroll to the section, but focus returns to the menu button, not to the section.
+- On phones the editor's visual order (canvas, sheet, rail at the bottom) differs from its focus order (rail first). This matters for keyboard and switch access.
+- After crossing the phone breakpoint, focus on a rebuilt rail button is lost, and a wall being drawn keeps its preview line until the pointer lifts (it is then dropped).
+- Disabled later-phase items in the drawer are plain spans with a `title`, which touch screens never show.
+- Precision editing on phones (walls, doors, windows) is not offered. Revisit after user testing (PRD §155).
+- Duplicate reopens the inspector sheet each time, because the copy is a newly selected item. Making several copies means closing it each time.
+- The phone notice covers the top of a small canvas until it is dismissed.
+- Not measured: on a short phone in landscape (under 768 px wide), the 3D hint and the walking pad may overlap. Frame rate of the 3D view on real phones is unmeasured (see the 3D walkthrough gaps).
 
 ## Studio branding
 
@@ -67,14 +80,12 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 
 ## Smaller
 
-- Below 1200 px the sidebar is hidden, so the dashboard's in-page section links are not reachable there.
 - The wizard replaces an unsaved draft after a notice only; the portal's blank canvas asks first.
 - The dashboard lists every project of the studio on one page; there is no paging yet.
 - The dashboard's "no match" message is shown by un-hiding it, which some screen readers announce unreliably.
 - `.area`, `.version` and `.wide` are global classes in `app.css` and are easy to collide with.
 - Audit event ids are one sequence across all studios, so a member can infer overall event volume.
 - Fonts load from Google, which exposes the visitor's IP address to Google.
-- The editor's sign in/out button is hidden on phones.
 - The coordinate limit is enforced in the editor only by clamping the view.
 - Two adjacent rooms from the wizard produce two overlapping walls.
 - Commit author address in the published history is the user's personal one (published by the user's choice).

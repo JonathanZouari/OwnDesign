@@ -101,6 +101,49 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+The entries from here to the lint entry come with pull request #24 and describe work in the contributor's fork.
+"The user" in them is the contributor's own user, and the Supabase project is the contributor's.
+
+## [2026-11-26] decision | Mobile web version scoped
+The user chose view and light edits for the editor on phones, layouts adapted from the existing Stitch screens, and a
+fork plus pull request because they have no write access to the original repository. Pages: [decisions](decisions.md).
+
+## [2026-11-26] infra | Separate Supabase project for development
+The CLI created a new project. `supabase db push --remote` applied the six migrations and `supabase config push` set the auth settings.
+The local `.env` and `config.js` were filled in; both are git-ignored. Pages: [testing](testing.md), [decisions](decisions.md).
+
+## [2026-11-26] build | Mobile web version
+Editor phone mode (9e90834), navigation drawer and phone layouts for every page (89e0e14), inspector bottom sheet
+(0c8b959), mobile browser tests (321fd81). A code review found that on a phone walls and openings could still be edited
+through the inspector, and dragging a room moved its walls. Fixed in 2992a42, together with a dismissible notice, the
+sheet height on short phones, the editor menu before and after a failed load, the drawer copying links from hidden
+sections, and 768 px overflow. The review's remaining low items were moved to [open-items](open-items.md). Pages:
+[design](design.md), [overview](overview.md).
+
+## [2026-11-26] test | Mobile web version verified
+Backend 119 passed (19 of them in `test_e2e_mobile.py`), frontend 41 passed; the mobile suite passed 3 times in a row. Pages:
+[testing](testing.md).
+
+## [2026-11-26] security | Review of the mobile web version
+`security-review` on 9e90834, 89e0e14..321fd81 and 2992a42: no findings. Pages: [security](security.md).
+
+## [2026-11-26] test | Visual check in Chromium
+Screenshots of every page at 390, 320, 768 and 1440 px (touch context for phones), viewed one by one. Found and fixed in
+b164d45:
+- at 768–1199 px the tabs pushed the menu button and the brand out of the app bar (the tabs now live in the drawer);
+- a selected wall on a phone showed an empty action bar;
+- the catalog was squeezed beside an open inspector sheet;
+- disabled fields did not look read-only.
+
+The overflow test had missed the first one because the bar clips instead of scrolling. New tests cover all of them.
+Backend 123 passed, frontend 41 passed. Pages: [design](design.md), [testing](testing.md).
+
+## [2026-11-26] lint | End of the mobile web phase
+Removed open items that were resolved: the editor had no Phase 2 links at 767 px and below, its sign in/out button was hidden on phones, and the
+dashboard's section links could not be reached below 1200 px. All three are now reachable through the drawer. Updated the breakpoint line in design.md.
+No new pages, so the index is unchanged. The subagents named in `CLAUDE.md` (ux-ui-designer, code-reviewer, e2e-runner) are not installed
+in this environment; `general-purpose` with a narrow brief stood in for them.
+
 ## [2026-11-26] plan | Tests in GitHub Actions
 Plan approved by the user: everything runs in CI, a separate Supabase key for CI, report only.
 Pages: [decisions](decisions.md).
@@ -191,3 +234,32 @@ and the comparison and the 3D walkthrough can be open at once. No security findi
 reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
 not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
 Nothing of it is on `dev`.
+
+The entries below also come with pull request #24 (contributor's fork), after it caught up with `dev`.
+
+## [2026-11-26] build | Mobile web branch merged with dev
+`dev` merged into `mobile-web` (`e5ae64b`). Conflicts in `app.css` and four wiki pages, resolved by keeping both
+sides. On the merged tree: backend 123 passed, frontend 67 passed, walkthrough tests included. Pages: [log](log.md).
+
+## [2026-11-26] build | 3D walkthrough on phones, review answers
+The phone CSS hid the context-bar group that holds the merged walkthrough's button. It now shows icon-only, and the
+3D view takes the whole stage (`2f8c0fb`). From the user's review of the screenshots: the inspector sheet reopens for
+each newly selected item, and the studio chip hides below 360 px. A code review then found that the phone catalog
+painted over the 3D view and its pad, and that the sheet could reopen beside the open catalog. Both fixed in `81e0726`,
+together with safe-area padding that was counted twice and the chip rule, now limited to pages with the drawer.
+Pages: [design](design.md), [decisions](decisions.md).
+
+## [2026-11-26] test | Merged mobile branch verified
+Backend 131 passed (31 in `test_e2e_mobile.py`), frontend 67 passed. Two full runs were broken partway by another
+session's test run on the same Supabase project, whose teardown deleted this run's accounts; rerun when that session
+was idle. A visual check found the 2D zoom buttons painted over the phone 3D view and the area wrapping at 320 px, both
+fixed in `2148048`. `security-review` on `e5ae64b`, `2f8c0fb`, `81e0726` and `2148048`: no findings. Pages:
+[testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] docs | Pull request #24 presented with screenshots and a video
+At the contributor's request the pull request description now shows a banner, a screenshot grid and a video tour.
+Phone clips were recorded with Playwright from this branch (demo project, `example.com` demo accounts, nothing saved)
+and composed with Remotion 4.0.542 into a 41 s MP4 and a 32 s GIF teaser. The media and the Remotion source live on
+a separate orphan branch, `pr-24-media`, in the contributor's fork; nothing of it is in this branch's diff. Remotion's
+licence is free for individuals and small companies; a company of more than three people needs a paid licence to use it.
+Pages: [log](log.md).

@@ -17,6 +17,8 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 | `backend/tests/test_geometry.py` | unit, edge | geometry validation: bounds, duplicates, openings outside walls |
 | `backend/tests/test_api.py` | integration, edge | auth, studios, invites, projects, versions, isolation, quotas, 413 on chunked upload, studio activity (members only) |
 | `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names) |
+| `backend/tests/test_e2e_mobile.py` | end to end, edge | phone context (390 px, touch). Phone editor journey (tap select, rotate, undo, drag, furniture, save, reload). Walls and openings read only, room rename without moving walls. Notice dismissal. 767/768 boundary and crossing it mid-draw. Drawer navigation, sign-out and closing (Esc, backdrop, button). Menu after a failed load. Inspector sheet. No sideways scroll at 320/390/767/768 px. Long names and markup at 320 px |
+| `frontend/tests/tools.test.js` | unit, edge | editor tools per screen size, `isAllowed`, `isLocked`, `canMove` |
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
 | `frontend/tests/plan3d.test.js` | unit, edge | 3D wall boxes, doors, windows, overlapping walls, collision, sharp corners, oversized plans |
@@ -66,7 +68,25 @@ reload; designer sees the client's data; client-side rejections, markup stays te
 visitor; consultant page limits) passes together with `test_e2e.py` (9 browser tests in all). No chat message
 reaches OpenAI in the suite; the real call was checked by hand once.
 
+2026-11-26 (branch `mobile-web`, merged with `dev`, on a contributor's own Supabase project): backend 131 passed,
+including 31 in `test_e2e_mobile.py` (among them the 3D walkthrough on a phone); frontend 67 passed. A visual check
+(screenshots at 320, 390, 768 and 1440 px, viewed by hand) has twice found layout bugs that the tests had missed.
+Passing tests do not replace looking at the screens.
+
+Two developers on one Supabase project break each other's runs: each run's teardown deletes every
+`*@owndesign-test.example.com` account, including those of a run still in progress. Run the suite only when no other
+run is active (the CI open item asks for a separate project for this reason).
+
 ## Local setup notes
+
+- On a Windows machine with Application Control, `.venv\Scripts\pytest.exe` can be blocked; `uv run python -m pytest`
+  works.
+- Do not use `page.wait_for_function("<string>")`: when it has to poll, Playwright evaluates the string, which the pages'
+  `script-src 'self'` CSP blocks, and the test fails intermittently. Use `expect(locator)` instead.
+- A fresh Supabase project for development: `supabase projects create`, `supabase link`, `supabase db push --remote`, and
+  `supabase config push`. The last one turns email confirmation off and sets the redirect URLs from
+  `supabase/config.toml`, which the browser tests need. Then fill `backend/.env` and `frontend/js/config.js` from their
+  `.example` files.
 
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the
 journeys use the second). A system-level `OPENAI_API_KEY` overrides the one in `.env`; unset it before starting the backend.
@@ -75,7 +95,7 @@ journeys use the second). A system-level `OPENAI_API_KEY` overrides the one in `
 
 ## Not covered
 
-Real touch devices (pinch zoom), browsers other than Chromium, screen readers, load, a studio with
+Real touch devices (pinch zoom and touch drag are covered only by Chromium emulation), browsers other than Chromium (no Safari/WebKit), screen readers, load, a studio with
 many projects. Code outside `backend/` and `frontend/` is not run by CI.
 
 ## Gotchas

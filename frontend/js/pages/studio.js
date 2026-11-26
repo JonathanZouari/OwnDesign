@@ -1,9 +1,12 @@
 import { api, requireSession, signOut } from "../api.js";
+import { initNavDrawer } from "../nav-drawer.js";
 import { isPlan, planArea } from "../plan.js";
 import { KEYS, save } from "../store.js";
 import { activityText, matchesProject, studioMetrics } from "../studio-data.js";
 import { planThumbnail } from "../thumbnail.js";
 import { $, action, copyText, formatDate, h, pageUrl, run, showStudio } from "../ui.js";
+
+initNavDrawer();
 
 const TYPE_LABEL = { existing: "Existing home", new_build: "New build" };
 const UNKNOWN = "—";
