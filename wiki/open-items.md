@@ -32,7 +32,9 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
   the brief's own default is USD.
 - The studio dashboard does not link to the budget, and the editor header still shows "Dossier & Budget" as coming later.
 - **The migration must be applied** to each Supabase project (the CI one included) before the budget tests can pass there.
-- No security review or code review of this change yet.
+- The ported diff had no code review of its own: the code was reviewed in its source form before porting.
+- CSV import drops an apostrophe that stands before `= + - @` at the start of a value or after a `;`, tab or line
+  break (for example `x;'=1` comes back as `x;=1`): it cannot be told apart from the export's formula guard.
 
 ## Studio branding
 
