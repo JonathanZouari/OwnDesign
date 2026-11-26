@@ -32,6 +32,12 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 
+## Built: 3D walkthrough
+
+- A first-person walkthrough of the plan, opened from the editor, including unsaved drafts. View only.
+- Keyboard (any layout), drag to look, and on-screen buttons. Walls and windows block, doorways let through.
+- Heights are assumed, because the plan stores none ([architecture.md](architecture.md)).
+
 ## Not built yet
 
 Renderings, budget, dossier,

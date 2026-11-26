@@ -47,6 +47,13 @@ checks, signed URLs, no IDOR through asset or room ids. Not fixed: see the Phase
 duplicate chat message after a failed answer, unvalidated `?project=`); a security review of the frontend
 commits is still to do.
 
+## Review of the 3D walkthrough
+
+No security finding: plan values reach only three.js geometry as numbers, the content security policy is
+unchanged, and three.js is served locally. Not checked: that the vendored files match the published release
+byte for byte. The code review found that a crafted plan could freeze the viewer's tab; such plans are now
+refused. The small fix commit that followed was not reviewed separately.
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

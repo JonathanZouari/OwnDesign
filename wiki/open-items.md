@@ -8,6 +8,7 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Invites** never expire and are not bound to the invited email address.
 - **Product name.** "ATELIER" comes from Stitch; the PRD says undecided.
 - **PRD text** still says "no paid API", which the OpenAI decision overrides.
+- **PRD 3.3** still excludes interactive 3D navigation, which the walkthrough decision overrides.
 
 ## Phase 2 gaps
 
@@ -18,6 +19,14 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Delete-then-insert saves** of finishes and the moodboard are not atomic.
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
 - The editor has no link to the Phase 2 pages at 767 px and below.
+
+## 3D walkthrough gaps
+
+- No collision with furniture, no ceiling, no catalog materials or colours.
+- Each box is its own draw call; the largest plans the server accepts may be slow, especially on phones.
+  Instancing would fix it. Frame rate on real phones is unmeasured.
+- A lost WebGL context is not handled: leave the view and open it again.
+- Possibly stuck walking on macOS if a key is released while Cmd is held (unverified).
 
 ## Later phases with a Stitch screen waiting
 

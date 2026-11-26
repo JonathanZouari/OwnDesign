@@ -13,6 +13,9 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Stitch screens for later phases stay as references** in `design/stitch/`; the two that match Phase 1 (client portal, studio dashboard) are built with real data only.
 - **Working rules** in `CLAUDE.md`: plan first, Fable 5.2, three kinds of tests, security review at every stage, commit per finished piece of code, subagents for specialist work, memory in `wiki/`.
 
+- **A 3D walkthrough in the plan editor.** The user chose it over a rotating or isometric view. This
+  reconsiders PRD 3.3, which excluded interactive 3D navigation.
+
 ## By Claude (open to change)
 
 - **FastAPI**, managed with `uv`; **no-build frontend** with plain ES modules. Smallest stack that meets the PRD's "Python backend, HTML/CSS frontend".
@@ -24,3 +27,5 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Consultant memory policy** (PRD 5.4 leaves it open): messages are stored per project and user, private to that user, capped at 30 a day per user. A failed OpenAI call still uses a slot because it may have been billed.
 - **Images go through the backend**, not directly to storage, so type, size, count and access are checked in one place.
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.
+- **three.js, vendored**, for the walkthrough, with controls written here. Its ready-made controls need an
+  import map, which the `script-src 'self'` policy would block as an inline script.
