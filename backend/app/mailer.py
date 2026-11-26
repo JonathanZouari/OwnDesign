@@ -2,12 +2,20 @@
 
 import logging
 from html import escape
+from pathlib import Path
+from string import Template
 from urllib.parse import quote
 
 from app.db import _http, settings
 
 log = logging.getLogger(__name__)
 RESEND_URL = "https://api.resend.com/emails"
+TEMPLATE = Template((Path(__file__).parent / "invite_email.html").read_text(encoding="utf-8"))
+
+
+def logo_url() -> str:
+    # A PNG on the public frontend: Gmail and Outlook show neither SVG nor data: images.
+    return f"{settings().app_url.rstrip('/')}/img/logo-mark.png"
 
 
 def invite_url(token: str) -> str:
@@ -25,16 +33,15 @@ def _one_line(text: str) -> str:
 
 
 def invite_message(to: str, client_name: str, studio_name: str, url: str) -> dict:
-    name, studio = escape(client_name), escape(studio_name)
     return {
         "from": settings().email_from,
         "to": [to],
         "subject": _one_line(f"{studio_name} invited you to your design project"),
         "text": f"Hi {client_name},\n\n{studio_name} invited you to plan your home with them.\n"
-        f"Open your personal link:\n{url}\n\nThis link is for you only. Do not forward it.",
-        "html": f"<p>Hi {name},</p><p>{studio} invited you to plan your home with them.</p>"
-        f'<p><a href="{escape(url)}">Open your personal invitation</a></p>'
-        "<p>This link is for you only. Do not forward it.</p>",
+        f"We're happy to design with you.\n\nOpen your personal link:\n{url}\n\n"
+        "This link is for you only. Do not forward it.",
+        # Every value is HTML-escaped (names come from users); substitute() fails loudly on a missing one.
+        "html": TEMPLATE.substitute(name=escape(client_name), studio=escape(studio_name), url=escape(url), logo=escape(logo_url())),
     }
 
 

@@ -41,6 +41,15 @@ def test_names_are_escaped_and_subject_is_one_line(configured):
     assert "&amp;b=2" in message["html"]
     assert "\n" not in message["subject"] and "\r" not in message["subject"]
     assert message["to"] == ["a@x.com"] and message["from"] == CONFIG.email_from
+    assert "$" not in message["html"]  # every template placeholder was filled
+
+
+def test_message_has_greeting_line_and_logo(configured):
+    message = mailer.invite_message("a@x.com", "Dana", "Studio", "https://app.example.com/entry.html?invite=t")
+    for body in (message["text"], message["html"]):
+        assert "happy to design with you" in body
+    assert 'src="https://app.example.com/img/logo-mark.png"' in message["html"]
+    assert 'href="https://app.example.com/entry.html?invite=t"' in message["html"]
 
 
 def test_send_posts_to_resend_with_key(configured):
