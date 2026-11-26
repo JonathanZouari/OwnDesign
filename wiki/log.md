@@ -133,3 +133,9 @@ A document only (`specs/plan-export.md`, 145 lines), read in full: no code, no s
 decisions" are the contributor's; the index line now says so. Conflict in this log resolved by keeping both
 sides. Frontend 31 passed; the backend suite was not run for a document. Commits `3a7a741`, `b63440f`.
 Pages: [index](index.md).
+
+## [2026-11-26] build | Studio branding preview
+`branding.html`: logo upload (PNG, JPG, WebP, 2 MB), four colour presets, custom primary, background and
+text colours with a contrast check, live preview. Browser only, nothing saved. Frontend 39 passed; manual
+check in Chrome. Backend integration and browser journeys not run (Supabase not configured).
+Pages: [overview](overview.md), [design](design.md), [open-items](open-items.md).
