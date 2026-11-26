@@ -9,6 +9,8 @@ import { renderInspector } from "./panel.js";
 import { attachPointer, zoomAt } from "./pointer.js";
 import { draw, visibleArea } from "./render.js";
 import { PHONE_QUERY, TOOLS, isAllowed, toolsFor } from "./tools.js";
+import { initNavDrawer } from "../nav-drawer.js";
+import { initSheet, setSheetOpen } from "./sheet.js";
 
 const phone = matchMedia(PHONE_QUERY);
 const PHONE_NOTICE = "Drawing walls, doors and windows needs a tablet or computer. On a phone you can view the plan, move, rotate and resize items, and add furniture.";
@@ -97,6 +99,8 @@ function keepDraft() {
   store(KEYS.draft, state.draft);
 }
 
+let sheetFollows = false; // whether the last selection change opened the sheet
+
 const isDirty = () => state.project && state.history.present !== state.saved;
 
 function render() {
@@ -115,6 +119,10 @@ function render() {
   }
 
   renderInspector($("#inspector"), editor, { versions: state.versions, onLoadVersion: loadVersion });
+  // The phone's bottom sheet opens when something gets selected and closes when the selection clears.
+  // Only on that change, so a sheet the user opened or closed by hand stays that way while editing.
+  const hasSelection = Boolean(state.selection);
+  if (hasSelection !== sheetFollows) setSheetOpen((sheetFollows = hasSelection));
 
   for (const button of $("#tools").children) {
     const { tool } = button.dataset;
@@ -298,6 +306,7 @@ function buildRail() {
     ),
   );
   $("#phone-notice").hidden = !phone.matches;
+  $(".rail").setAttribute("aria-orientation", phone.matches ? "horizontal" : "vertical");
 }
 
 // Crossing the phone breakpoint (rotating a tablet, resizing a window) rebuilds the rail. A drawing tool
@@ -314,6 +323,10 @@ function buildChrome(name, role) {
   $(".stage").prepend(h("p", { class: "phone-notice", id: "phone-notice", role: "note" }, PHONE_NOTICE));
   buildRail();
   phone.addEventListener("change", onPhoneChange);
+  initNavDrawer();
+  initSheet();
+  // Opening the phone's sheet resizes the stage without a window resize; redraw so the view follows.
+  new ResizeObserver(() => render()).observe($(".stage"));
   const groups = [...new Set(FURNITURE.map((item) => item.group))];
   $("#catalog").replaceChildren(
     ...groups.flatMap((group) => [
