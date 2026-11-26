@@ -191,3 +191,9 @@ and the comparison and the 3D walkthrough can be open at once. No security findi
 reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
 not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
 Nothing of it is on `dev`.
+
+## [2026-11-26] docs | Existing-item detection specification drafted
+A contributor's draft at `specs/item-detection.md`: detect furniture in "Item I own" photos and add accepted items
+to the brief. YOLOv8 set aside for its AGPL-3.0 licence; RF-DETR (Apache 2.0) through ONNX Runtime instead.
+Local CPU trial on the two Stitch interior images: Nano 0.12 s, Small 0.23 s per image, sofa, chairs and table
+found; the ONNX file (116-123 MB) is over GitHub's file limit. Open decisions in section 13. Pages: [index](index.md).
