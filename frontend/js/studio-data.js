@@ -5,12 +5,18 @@ const sameMonth = (iso, now) => {
   return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
 };
 
+// accepted, expired (the link no longer works; resending renews it) or pending.
+export function inviteState(invite, now = new Date()) {
+  if (invite.accepted_at) return "accepted";
+  return invite.expires_at && new Date(invite.expires_at) <= now ? "expired" : "pending";
+}
+
 export function studioMetrics(projects, invites, now = new Date()) {
   const emails = projects.flatMap((project) => (project.client_email ? [project.client_email.toLowerCase()] : []));
   return {
     projects: projects.length,
     clients: new Set(emails).size,
-    pendingInvites: invites.filter((invite) => !invite.accepted_at).length,
+    pendingInvites: invites.filter((invite) => inviteState(invite, now) === "pending").length,
     thisMonth: projects.filter((project) => sameMonth(project.created_at, now)).length,
   };
 }
@@ -20,6 +26,7 @@ const SENTENCE = {
   "studio.created": () => "Studio created",
   "invite.created": () => "Invite link created",
   "invite.emailed": () => "Invite emailed to the client",
+  "invite.revoked": () => "Invite cancelled",
   "invite.accepted": () => "Invite accepted by the client",
   "project.created": () => "Project created",
   "plan_version.created": (metadata) =>

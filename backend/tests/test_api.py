@@ -17,11 +17,13 @@ pytestmark = needs_supabase
 
 
 @pytest.fixture(scope="module")
-def world(api, make_user):
+def world(api, make_user, admit):
     """Studio A (designer + client with a saved plan) and an unrelated Studio B."""
     designer_a, client_a, designer_b, client_b = (make_user(p) for p in ("designer-a", "client-a", "designer-b", "client-b"))
     studio_a = api.post("/v1/studios", json={"name": "Studio A"}, headers=designer_a.headers).json()["data"]
     studio_b = api.post("/v1/studios", json={"name": "Studio B"}, headers=designer_b.headers).json()["data"]
+    admit(studio_a["id"], client_a)
+    admit(studio_b["id"], client_b)
     project_a = api.post(
         "/v1/projects",
         json={"studio_id": studio_a["id"], "name": "Flat A", "property_type": "existing"},
@@ -169,7 +171,7 @@ def test_invite_flow(api, world):
     assert api.post(f"/v1/invites/{token}/accept", headers=world.client_a.headers).status_code == 200  # idempotent
     assert api.post(f"/v1/invites/{token}/accept", headers=world.client_b.headers).status_code == 409
     listed = api.get(f"/v1/studios/{world.studio_a['id']}/invites", headers=world.designer_a.headers).json()["data"]
-    assert len(listed) == 1 and listed[0]["accepted_at"] is not None
+    assert [invite["accepted_at"] is not None for invite in listed if invite["token"] == token] == [True]
 
 
 def test_changes_are_audited(world):

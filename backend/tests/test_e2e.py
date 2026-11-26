@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 
 import pytest
+from playwright.sync_api import expect
 
 from tests.conftest import needs_supabase, unique_email
 
@@ -72,10 +73,14 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     walls = page.locator("#canvas [data-kind=walls]")
     furniture = page.locator("#canvas [data-kind=furniture]")
 
-    # Guest arrives through the studio link and sees the studio's name.
-    page.goto(f"{SITE}/entry.html?studio={studio['slug']}")
-    page.get_by_role("heading", name="Plan your home with E2E Studio.").wait_for()
-    assert page.locator("#entry-kind").inner_text() == "Studio link"
+    invite = api.post(
+        f"/v1/studios/{studio['id']}/invites", json={"client_email": client_email, "client_name": "Eden"}, headers=designer.headers
+    ).json()["data"]
+
+    # Guest arrives through their personal invite and is greeted with the studio's name.
+    page.goto(f"{SITE}/entry.html?invite={invite['token']}")
+    page.get_by_role("heading", name="Hi Eden, plan your home with E2E Studio.").wait_for()
+    assert page.locator("#entry-kind").inner_text() == "Personal invitation"
     page.get_by_role("link", name="Start designing").click()
 
     # Wizard: two default rooms -> eight walls on the canvas.
@@ -146,7 +151,7 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     assert latest["walls"] == first["walls"]
 
 
-def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, api, make_user):
+def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, api, make_user, admit):
     from tests.test_geometry import VALID
 
     # A new designer signs up through the UI and gets a studio with its own link.
@@ -170,10 +175,32 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
     page.get_by_role("button", name="Send invite").click()
     page.get_by_role("cell", name="Pending").wait_for()
     assert metric(page, "pending-invites") == "1"
+    # Inviting the same client again keeps one row; email is off here, so the designer is told and gets the link.
+    page.get_by_label("Client name").fill("Dana Client")
+    page.get_by_label("Client email").fill("DANA@example.com")
+    send = page.get_by_role("button", name="Send invite", exact=True)
+    send.click()
+    expect(send).to_be_enabled()  # the button is disabled until its request has finished
+    expect(page.locator("#invites tr")).to_have_count(1)
+    resend = page.get_by_role("button", name="Resend email to Dana Client")
+    resend.click()
+    expect(resend).to_be_enabled()
+    page.get_by_text("The email could not be sent").first.wait_for()
+    # A second client is invited and then cancelled: the row and its count go away.
+    page.get_by_label("Client name").fill("Eli Client")
+    page.get_by_label("Client email").fill("eli@example.com")
+    send.click()
+    page.get_by_role("button", name="Cancel invite for Eli Client").wait_for()
+    assert metric(page, "pending-invites") == "2"
+    page.get_by_role("button", name="Cancel invite for Eli Client").click()
+    page.get_by_text("Invite for Eli Client cancelled").wait_for()
+    assert page.get_by_role("button", name="Cancel invite for Eli Client").count() == 0
+    assert metric(page, "pending-invites") == "1"
 
     # A client of this studio saves a plan (through the API, as the editor would).
     client = make_user("e2e-invited")
     studio = api.get(f"/v1/studios/by-slug/{slug}").json()["data"]
+    admit(studio["id"], client)
     project = api.post(
         "/v1/projects", json={"studio_id": studio["id"], "name": "Dana's flat", "property_type": "new_build"}, headers=client.headers
     ).json()["data"]

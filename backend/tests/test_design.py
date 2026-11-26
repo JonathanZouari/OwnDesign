@@ -10,12 +10,13 @@ pytestmark = needs_supabase
 
 
 @pytest.fixture(scope="module")
-def world(api, make_user):
+def world(api, make_user, admit):
     designer_a, client_a, other_client_a, designer_b = (make_user(p) for p in ("d-a", "c-a", "c2-a", "d-b"))
     studio_a = api.post("/v1/studios", json={"name": "Design A"}, headers=designer_a.headers).json()["data"]
     api.post("/v1/studios", json={"name": "Design B"}, headers=designer_b.headers)
 
     def project(user, name):
+        admit(studio_a["id"], user)
         body = {"studio_id": studio_a["id"], "name": name, "property_type": "existing"}
         return api.post("/v1/projects", json=body, headers=user.headers).json()["data"]
 
