@@ -27,6 +27,7 @@ run(async () => {
             h("a", { class: "button", href: `editor.html?project=${project.id}`, "aria-label": PROJECTS.openLabel(project.name) }, PROJECTS.open),
             h("a", { class: "button", href: `design.html?project=${project.id}`, "aria-label": PROJECTS.briefLabel(project.name) }, PROJECTS.brief),
             h("a", { class: "button", href: `consultant.html?project=${project.id}`, "aria-label": PROJECTS.consultantLabel(project.name) }, PROJECTS.consultant),
+            h("a", { class: "button", href: `budget.html?project=${project.id}`, "aria-label": PROJECTS.budgetLabel(project.name) }, PROJECTS.budget),
           ),
         ),
       ),

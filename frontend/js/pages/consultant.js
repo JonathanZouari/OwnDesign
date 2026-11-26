@@ -85,6 +85,7 @@ run(async () => {
   for (const id of ["#nav-editor", "#plan-link"]) $(id).href = `editor.html${query}`;
   for (const id of ["#nav-design", "#brief-link"]) $(id).href = `design.html${query}`;
   $("#nav-consultant").href = `consultant.html${query}`;
+  $("#nav-budget").href = `budget.html${query}`;
 
   if (versions.length) {
     const latest = await api(`${base}/versions/latest`);

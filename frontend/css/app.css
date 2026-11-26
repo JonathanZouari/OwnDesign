@@ -591,3 +591,42 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .board-item .board-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .msg { max-width: 100%; }
 }
+
+/* Budget and shopping list */
+.budget .disclaimer { display: flex; align-items: flex-start; gap: 8px; margin: 0.5rem 0 0; padding: 8px 12px; border-radius: 4px; background: var(--caution-tint); color: var(--on-caution-tint); font: 500 13px/20px var(--font-body); }
+.budget .compare-text { margin: 0.75rem 0 0.25rem; font: 600 16px/24px var(--font-body); }
+.budget .card h2 { margin: 0; overflow-wrap: anywhere; }
+.subtotals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 1rem; }
+.subtotals .card { margin: 0; padding: 1rem; }
+.subtotals .card.total { background: var(--inverse); color: var(--on-inverse); }
+.subtotals .card .label { display: block; margin-bottom: 4px; }
+.subtotals .card.total .label { color: var(--on-inverse); }
+.subtotals .amount { font: 500 20px/28px var(--font-mono); overflow-wrap: anywhere; }
+.num { unicode-bidi: isolate; direction: ltr; text-align: end; font-family: var(--font-mono); white-space: nowrap; }
+.strong { font-weight: 600; }
+.toolbar { align-items: end; }
+.currency-pick { min-width: 9rem; }
+.budget-table { margin-top: 1rem; max-width: 100%; }
+.budget-table table { min-width: 760px; }
+.budget-table th, .budget-table td { padding: 6px 4px; text-align: start; vertical-align: top; }
+.budget-table td.num, .budget-table th.num { text-align: end; }
+.budget-table td input, .budget-table td select { min-width: 5rem; }
+.budget-table td:first-child input { min-width: 11rem; }
+.budget-table input[aria-invalid="true"] { border-color: var(--error); }
+.field-error { margin: 2px 0 0; font-size: 12px; line-height: 16px; color: var(--error); }
+.budget-table tfoot th, .budget-table tfoot td { padding-top: 12px; border-top: 1px solid var(--hairline-strong); }
+.confirm { margin: 0.75rem 0; padding: 1rem; border-radius: 8px; background: var(--surface-low); border: 1px solid var(--hairline-strong); }
+.confirm p { margin: 4px 0 12px; }
+@media (max-width: 767px) { .toolbar { width: 100%; } .toolbar > * { flex: 1 1 auto; } }
+@media print {
+  .appbar, .project-nav, .no-print, #toasts, .confirm { display: none !important; }
+  body { background: #fff; }
+  .page { max-width: none; padding: 0; }
+  .card { box-shadow: none; border-color: #999; break-inside: avoid; }
+  .subtotals .card.total { background: #fff; color: #000; border: 2px solid #000; }
+  .subtotals .card.total .label { color: #000; }
+  .budget-table { overflow: visible; }
+  .budget-table table { min-width: 0; font-size: 11px; }
+  .budget-table input, .budget-table select { border: 0; background: none; padding: 0; height: auto; appearance: none; -webkit-appearance: none; }
+  .budget-table .field-error { display: none; }
+}
