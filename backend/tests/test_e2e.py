@@ -167,7 +167,7 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
     # Personal invite: appears as pending, and its link resolves publicly to this studio.
     page.get_by_label("Client name").fill("Dana Client")
     page.get_by_label("Client email").fill("dana@example.com")
-    page.get_by_role("button", name="Create invite link").click()
+    page.get_by_role("button", name="Send invite").click()
     page.get_by_role("cell", name="Pending").wait_for()
     assert metric(page, "pending-invites") == "1"
 

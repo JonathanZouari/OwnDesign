@@ -19,6 +19,7 @@ const ROLE = { client: "the client", designer: "the designer" };
 const SENTENCE = {
   "studio.created": () => "Studio created",
   "invite.created": () => "Invite link created",
+  "invite.emailed": () => "Invite emailed to the client",
   "invite.accepted": () => "Invite accepted by the client",
   "project.created": () => "Project created",
   "plan_version.created": (metadata) =>

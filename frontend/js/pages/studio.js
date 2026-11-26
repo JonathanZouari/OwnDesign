@@ -3,7 +3,7 @@ import { isPlan, planArea } from "../plan.js";
 import { KEYS, save } from "../store.js";
 import { activityText, matchesProject, studioMetrics } from "../studio-data.js";
 import { planThumbnail } from "../thumbnail.js";
-import { $, action, copyText, formatDate, h, pageUrl, run, showStudio } from "../ui.js";
+import { $, action, copyText, formatDate, h, pageUrl, run, showStudio, toast } from "../ui.js";
 
 const TYPE_LABEL = { existing: "Existing home", new_build: "New build" };
 const UNKNOWN = "—";
@@ -137,7 +137,8 @@ function wireInvites(studio, projects, initialInvites) {
       showInvites(invites);
       showMetrics(projects, invites);
       run(() => loadActivity(studio));
-      await copyText(inviteUrl(invite));
+      if (invite.emailed) toast(`Invite emailed to ${invite.client_email}`);
+      else await copyText(inviteUrl(invite)); // email off, over the daily cap or failed: the designer sends the link
     }),
   );
 }

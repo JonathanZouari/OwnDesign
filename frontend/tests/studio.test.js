@@ -29,6 +29,7 @@ test("activity rows read as sentences", () => {
   assert.equal(activityText({ ...version, metadata: { version_no: 1, author_role: "client" }, project: null }), "Version 1 saved by the client");
   assert.equal(activityText({ action: "project.created", metadata: {}, project: { name: "Flat A" } }), "Project created · Flat A");
   assert.equal(activityText({ action: "invite.accepted", metadata: null, project: null }), "Invite accepted by the client");
+  assert.equal(activityText({ action: "invite.emailed", metadata: {}, project: null }), "Invite emailed to the client");
   assert.equal(activityText({ action: "something.new", metadata: {}, project: null }), "something.new");
 });
 

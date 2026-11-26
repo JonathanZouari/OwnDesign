@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     allowed_origins: str = "http://localhost:5500"
     openai_api_key: str = ""  # empty: the consultant answers 503
     openai_model: str = "gpt-5-mini"
+    resend_api_key: str = ""  # empty: invites are not emailed, the designer copies the link
+    email_from: str = ""  # e.g. "Atelier <invites@your-domain.com>", a sender verified in Resend
+    app_url: str = ""  # public frontend base URL; invite links in emails point here
 
 
 @lru_cache

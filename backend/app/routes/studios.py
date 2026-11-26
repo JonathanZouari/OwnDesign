@@ -1,10 +1,11 @@
 import re
 import secrets
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path
 
+from app import mailer
 from app.auth import CurrentUser, current_user
 from app.db import audit, service
 from app.responses import ok
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/v1")
 Slug = Path(pattern=r"^[a-z0-9-]{3,60}$")
 Token = Path(pattern=r"^[A-Za-z0-9_-]{20,64}$")
 ACTIVITY_METADATA = ("version_no", "author_role")  # the only audit metadata the dashboard is given
+EMAILS_PER_DAY = 20  # per studio: keeps a compromised designer account from using us to spam
 
 
 def _slug(name: str) -> str:
@@ -22,11 +24,28 @@ def _slug(name: str) -> str:
     return f"{base}-{secrets.token_hex(3)}"
 
 
-def _require_member(user: CurrentUser, studio_id: UUID) -> None:
+def _require_member(user: CurrentUser, studio_id: UUID) -> dict:
     # RLS-scoped: only a member can see the studio row at all, and a suspended studio is treated the same.
-    rows = user.db.table("studio_memberships").select("role, studio:studios(status)").eq("studio_id", str(studio_id)).execute().data
+    rows = user.db.table("studio_memberships").select("role, studio:studios(status, name)").eq("studio_id", str(studio_id)).execute().data
     if not rows or rows[0]["studio"]["status"] != "active":
         raise HTTPException(403, "You are not a member of an active studio with this id")
+    return rows[0]["studio"]
+
+
+def _emails_today(studio_id: UUID) -> int:
+    since = (datetime.now(UTC) - timedelta(days=1)).isoformat()
+    query = service().table("audit_events").select("id", count="exact").eq("studio_id", str(studio_id))
+    return query.eq("action", "invite.emailed").gte("created_at", since).limit(1).execute().count or 0
+
+
+def _email_invite(user: CurrentUser, studio_id: UUID, studio_name: str, invite: dict) -> bool:
+    # shortcut: the count-then-send cap can be overshot by a few parallel requests; move it into SQL if that matters.
+    if not mailer.enabled() or _emails_today(studio_id) >= EMAILS_PER_DAY:
+        return False
+    sent = mailer.send_invite(invite["client_email"], invite["client_name"], studio_name, invite["token"])
+    if sent:
+        audit("invite.emailed", user.id, studio_id=str(studio_id), invite_id=invite["id"])
+    return sent
 
 
 @router.get("/me")
@@ -63,7 +82,7 @@ def studio_by_slug(slug: str = Slug):
 
 @router.post("/studios/{studio_id}/invites", status_code=201)
 def create_invite(studio_id: UUID, body: InviteCreate, user: CurrentUser = Depends(current_user)):
-    _require_member(user, studio_id)
+    studio = _require_member(user, studio_id)
     invite = (
         service()
         .table("studio_invites")
@@ -80,7 +99,7 @@ def create_invite(studio_id: UUID, body: InviteCreate, user: CurrentUser = Depen
         .data[0]
     )
     audit("invite.created", user.id, studio_id=str(studio_id), invite_id=invite["id"])
-    return ok(invite)
+    return ok({**invite, "emailed": _email_invite(user, studio_id, studio["name"], invite)})
 
 
 @router.get("/studios/{studio_id}/invites")
