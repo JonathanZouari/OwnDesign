@@ -201,7 +201,7 @@ body.app .appbar { grid-column: 1 / -1; }
 .rail button[aria-pressed="true"] { background: var(--inverse); color: var(--on-inverse); }
 .rail button[aria-pressed="true"]::after { content: ""; position: absolute; right: -4px; top: 8px; width: 4px; height: 12px; border-radius: 4px; background: var(--primary); }
 .rail hr { width: 24px; border: 0; border-top: 1px solid var(--surface-high); margin: 4px 0; }
-.stage { flex: 1; min-width: 0; position: relative; background: var(--surface-low); }
+.stage { flex: 1; min-width: 0; min-height: 0; position: relative; background: var(--surface-low); }
 .floating { position: absolute; z-index: 4; background: rgb(255 255 255 / 0.94); backdrop-filter: blur(12px); border: 1px solid rgb(36 37 35 / 0.12); border-radius: 8px; box-shadow: var(--shadow-2); }
 #catalog { left: 8px; top: 8px; bottom: 8px; width: 216px; padding: 10px; overflow-y: auto; }
 #catalog .label { display: block; margin: 10px 0 6px; }
@@ -288,6 +288,23 @@ body.app .appbar { grid-column: 1 / -1; }
   /* Left aligned so it never covers the zoom buttons. */
   #actions { left: 8px; transform: none; bottom: 8px; }
   .contextbar .group:last-child { display: none; }
+  #actions button { padding: 0 8px; }
+  .wizard-foot { gap: 6px; padding-block: 6px; }
+}
+
+/* Phones held sideways: the height is the scarce side, so the chrome goes to one row and the editor to three columns. */
+@media (max-height: 500px) and (pointer: coarse) {
+  .appbar { min-height: 52px; flex-wrap: nowrap; padding-block: 4px; }
+  .appbar .tabs { order: 0; flex: 0 1 auto; }
+  body.app { grid-template-rows: auto minmax(0, 1fr) auto; }
+  .contextbar, .wizard-head p, .wizard-foot .code { display: none; }
+  .wizard-head, .wizard-foot { padding-block: 4px; }
+  .editor { flex-direction: row; }
+  .rail { order: 0; width: 60px; flex-direction: column; justify-content: flex-start; padding: 6px; overflow-x: hidden; overflow-y: auto; }
+  .rail .tools { grid-auto-flow: row; }
+  .stage { order: 0; }
+  .inspector { order: 0; width: 240px; max-height: none; }
+  #zoom { display: flex; align-items: center; top: 8px; bottom: auto; }
 }
 
 /* ==========================================================================
@@ -563,4 +580,10 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 }
 @media (pointer: coarse) and (max-width: 1199px) {
   .tabs .compact-only { display: inline-flex; }
+}
+/* Narrow phones: all eight editor tools fit without scrolling. */
+@media (pointer: coarse) and (max-width: 399px) {
+  .rail { gap: 2px; padding-inline: 4px; }
+  .rail .tools { gap: 2px; }
+  .rail button { width: 40px; }
 }
