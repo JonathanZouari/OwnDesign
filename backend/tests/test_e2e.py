@@ -55,6 +55,7 @@ def servers():
     for process in started:
         if process:
             process.terminate()
+            process.wait(timeout=10)  # or the next module could find the dying server still listening
 
 
 def metric(page, name: str) -> str:
