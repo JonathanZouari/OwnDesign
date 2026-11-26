@@ -7,3 +7,5 @@ supabase/.temp/
 supabase/.branches/
 frontend/js/config.js
 test-results/
+# Item detection model, built by backend/scripts/publish_model.py; kept in Supabase Storage, not in git.
+*.onnx

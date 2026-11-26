@@ -44,6 +44,17 @@ line is rewritten on every colour-picker move; a chosen logo has no pixel-size l
   reported as "no WebGL"; if closing the view throws, the editor behind it stays inert; a furniture type named
   `constructor` gives a broken box (`Object.hasOwn` fixes it).
 
+## Item detection (proposed)
+
+- **The owner must upload the model** to each Supabase project (dev, CI, production) with `backend/scripts/publish_model.py`, using one built file: a rebuild gives different bytes and a different SHA-256.
+- **Not measured on Railway**: time per image and memory (the model and one decoded photo take a few hundred MB).
+- **Photo-to-project link is checked by the backend only**; a composite foreign key could enforce it in the database.
+- **Accepting the same photo twice stores the items twice**; the user can remove them.
+- **Removing an item leaves its line in the brief text**; the user edits the text.
+- **Limits are per process**, like plan export.
+- **Retention and consent** for photos and accepted items follow the consultant item above.
+- **Only 14 COCO classes**; wardrobes, lamps, rugs and desks need fine-tuning.
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in

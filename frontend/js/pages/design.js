@@ -1,6 +1,7 @@
 // Design brief, finishes and moodboard for one saved project (?project=<id>). Everything shown comes from the API.
 import { api, requireSession, signOut } from "../api.js";
 import * as L from "../design-logic.js";
+import * as D from "../detection-logic.js";
 import { $, h, run, showStudio } from "../ui.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -19,6 +20,7 @@ const state = {
   finishes: {}, // finishKey -> material id
   assets: [],
   board: [],
+  owned: [], // items the user accepted from photos
 };
 
 const icon = (name) => h("span", { class: "icon", "aria-hidden": "true" }, name);
@@ -388,10 +390,109 @@ function renderAssets() {
           "div",
           { class: "board-actions" },
           h("button", { type: "button", disabled: L.onBoard(state.board, "asset", asset.id), "aria-label": `Add image ${name} to the board`, onclick: () => addToBoard("asset", asset.id, name) }, icon("add"), "Board"),
+          asset.kind === "existing_item" && h("button", { type: "button", "aria-label": `Detect items in image ${name}`, onclick: () => openDetect(asset, name) }, icon("center_focus_strong"), "Detect items"),
           remove,
         ),
       );
     }),
+  );
+}
+
+// ---- existing-item detection: the server runs the model; nothing is kept until the user chooses ------------------
+
+let detection = { token: null, asset: null, groups: [] }; // token: one per opening, so a late answer for an earlier one is ignored
+
+function openDetect(asset, name) {
+  const dialog = $("#detect-dialog");
+  const frame = $("#detect-frame");
+  const url = L.safeImageUrl(asset.url);
+  frame.replaceChildren(url ? h("img", { src: url, alt: name }) : h("div", { class: "preview" }, icon("image")));
+  $("#detect-list").replaceChildren();
+  $("#detect-choices").hidden = true;
+  $("#detect-accept").disabled = true;
+  const token = {};
+  detection = { token, asset, groups: [] };
+  setStatus($("#detect-status"), "Looking for items…");
+  dialog.showModal();
+  api(`${base}/assets/${encodeURIComponent(asset.id)}/detect`, { method: "POST" })
+    .then(({ items }) => detection.token === token && showDetections(items))
+    .catch((error) => detection.token === token && setStatus($("#detect-status"), error.message || "Something went wrong.", "error"));
+}
+
+function showDetections(items) {
+  for (const item of items) {
+    const box = h("div", { class: `detect-box${item.confidence >= D.SURE ? "" : " unsure"}`, "aria-hidden": "true" }, h("span", {}, item.label));
+    Object.assign(box.style, D.boxStyle(item.box));
+    $("#detect-frame").append(box);
+  }
+  detection.groups = D.groupDetections(items);
+  if (detection.groups.length === 0) {
+    setStatus($("#detect-status"), "No furniture was recognised in this photo.");
+    return;
+  }
+  setStatus($("#detect-status"), `Found ${detection.groups.length} kind${detection.groups.length === 1 ? "" : "s"} of item. Tick the ones you are keeping.`);
+  $("#detect-list").replaceChildren(
+    ...detection.groups.map((group) => {
+      const id = `keep-${group.item_class.replace(/\W/g, "-")}`;
+      const tick = h("input", { type: "checkbox", id, checked: group.sure, "data-class": group.item_class, ...(group.sure ? {} : { "aria-describedby": `${id}-unsure` }) });
+      const quantity = h("input", { type: "number", min: 1, max: 20, step: 1, value: group.quantity, "aria-label": `How many: ${group.label}`, "data-quantity": group.item_class });
+      return h("li", {}, tick, h("label", { for: id, class: "plain" }, group.label), quantity, !group.sure && h("span", { class: "chip", id: `${id}-unsure` }, "Not sure"));
+    }),
+  );
+  $("#detect-choices").hidden = false;
+  syncDetectAccept();
+}
+
+function chosenItems() {
+  const chosen = new Map();
+  for (const tick of $("#detect-list").querySelectorAll("input[type=checkbox]:checked")) {
+    const quantity = $("#detect-list").querySelector(`[data-quantity="${CSS.escape(tick.dataset.class)}"]`);
+    chosen.set(tick.dataset.class, Number(quantity.value));
+  }
+  return chosen;
+}
+
+function syncDetectAccept() {
+  $("#detect-accept").disabled = chosenItems().size === 0;
+}
+
+function renderOwned() {
+  $("#owned-block").hidden = state.owned.length === 0;
+  $("#owned-items").replaceChildren(
+    ...state.owned.map((item) => {
+      const name = item.quantity > 1 ? `${item.label} × ${item.quantity}` : item.label;
+      const remove = h("button", { type: "button", class: "danger", "aria-label": `Remove ${name} from my items` }, icon("close"));
+      remove.addEventListener("click", () =>
+        busy(remove, $("#brief-status"), async () => {
+          await api(`${base}/owned-items/${encodeURIComponent(item.id)}`, { method: "DELETE" });
+          state.owned = state.owned.filter((other) => other.id !== item.id);
+          renderOwned();
+        }, `Removed ${name} from my items. The brief text is unchanged.`),
+      );
+      return h("li", {}, h("span", {}, name), remove);
+    }),
+  );
+}
+
+function initDetection() {
+  const dialog = $("#detect-dialog");
+  $("#detect-cancel").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("close", () => (detection = { token: null, asset: null, groups: [] }));
+  $("#detect-list").addEventListener("change", syncDetectAccept);
+  $("#detect-list").addEventListener("input", syncDetectAccept);
+  $("#detect-accept").addEventListener("click", () =>
+    busy($("#detect-accept"), $("#detect-status"), async () => {
+      const body = D.acceptBody(detection.groups, chosenItems(), detection.asset.id);
+      const result = await api(`${base}/owned-items`, { method: "POST", body });
+      // The server already saved the line. Add it to the field as it is now, so text typed but not yet saved stays.
+      const field = $("#existing-items");
+      const line = result.brief.existing_items.split("\n").at(-1);
+      field.value = field.value.trim() ? `${field.value.trimEnd()}\n${line}` : line;
+      state.owned = [...state.owned, ...result.items];
+      renderOwned();
+      dialog.close();
+      setStatus($("#upload-status"), "Added to your brief and to “My items”.");
+    }, "Added."),
   );
 }
 
@@ -440,7 +541,7 @@ run(async () => {
   await requireSession();
   $("#sign-out").addEventListener("click", signOut);
 
-  const [project, catalog, brief, versions, finishes, assets, board] = await Promise.all([
+  const [project, catalog, brief, versions, finishes, assets, board, owned] = await Promise.all([
     api(base),
     api("/v1/catalog"),
     api(`${base}/brief`),
@@ -448,12 +549,14 @@ run(async () => {
     api(`${base}/finishes`),
     api(`${base}/assets`),
     api(`${base}/moodboard`),
+    api(`${base}/owned-items`).catch(() => []), // the page works without them
   ]);
   state.catalog = catalog;
   state.rooms = versions.length ? (await api(`${base}/versions/latest`)).geometry.rooms : [];
   state.finishes = L.finishesToMap(finishes);
   state.assets = assets;
   state.board = board;
+  state.owned = owned;
 
   const query = `?project=${encodeURIComponent(projectId)}`;
   document.title = `${project.name} · Brief & materials`;
@@ -470,7 +573,9 @@ run(async () => {
   initBrief();
   initFinishes();
   initMoodboard();
+  initDetection();
   fillBrief(brief.brief);
+  renderOwned();
   renderFinishes();
   renderBoard();
   renderBoardSources();

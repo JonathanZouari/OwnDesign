@@ -14,7 +14,7 @@ router = APIRouter(prefix="/v1")
 
 Slug = Path(pattern=r"^[a-z0-9-]{3,60}$")
 Token = Path(pattern=r"^[A-Za-z0-9_-]{20,64}$")
-ACTIVITY_METADATA = ("version_no", "author_role")  # the only audit metadata the dashboard is given
+ACTIVITY_METADATA = ("version_no", "author_role", "count")  # the only audit metadata the dashboard is given
 
 
 def _slug(name: str) -> str:

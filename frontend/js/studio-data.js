@@ -23,6 +23,10 @@ const SENTENCE = {
   "project.created": () => "Project created",
   "plan_version.created": (metadata) =>
     `Version ${metadata.version_no ?? "?"} saved by ${ROLE[metadata.author_role] ?? "a studio member"}`,
+  "items.detected": (metadata) => `Items detected in a photo${Number.isInteger(metadata.count) ? ` (${metadata.count} found)` : ""}`,
+  "items.accepted": (metadata) =>
+    Number.isInteger(metadata.count) ? `${metadata.count} owned item${metadata.count === 1 ? "" : "s"} added to the brief` : "Owned items added to the brief",
+  "items.removed": () => "An owned item removed",
 };
 
 // One audit row as a sentence, e.g. "Version 2 saved by the designer · Flat A".

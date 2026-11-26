@@ -40,3 +40,13 @@ Such lines are moved here and reworded when the pull request is merged.
   view. It goes against PRD 3.3, which excluded interactive 3D navigation; the PRD text has not been updated.
 - **three.js, vendored**, for the walkthrough, with controls written here (pull request #14). Its ready-made
   controls need an import map, which the `script-src 'self'` policy would block as an inline script.
+
+## Proposed in the item detection pull requests (awaiting the owner)
+
+From `specs/item-detection.md`, section 13; they become decisions only when the owner accepts them.
+
+- **RF-DETR Small (Apache 2.0) instead of YOLOv8**, whose AGPL-3.0 licence would require releasing the whole system or buying a licence.
+- **int8 ONNX file in a private Supabase bucket, pinned by SHA-256.** The full file (123 MB) passes both GitHub's and Supabase's per-file limits; int8 is 39 MB and finds the same items.
+- **Detection runs in the request**, about 0.1 s per image locally, with the plan-export concurrency limits.
+- **Only accepted items are stored**; they go to the brief and to "My items" in the editor palette, never onto the plan by themselves.
+- **Confidence threshold 0.4**, "Not sure" below 0.6.

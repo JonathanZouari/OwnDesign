@@ -75,6 +75,16 @@ served locally. The three vendored files are byte for byte the published npm pac
 compared at merge time). The guard against oversized plans counts wall cuts, not boxes: the largest plan the
 server accepts still makes the viewer's own tab sluggish ([open-items.md](open-items.md)).
 
+## Review of item detection (proposed)
+
+Security-reviewer, database-reviewer and code-reviewer agents, and `security-review` on the commits. Fixed: the model
+was hashed and then loaded again from disk (now built from the checked bytes, cache in a private folder written
+through `mkstemp`); the brief was read and written whole, so a concurrent save could be lost (now
+`append_existing_items`); service role could update accepted items (revoked); the isolation test could pass on an
+empty table (now inserts its own row and checks owner, designer, strangers and every write). Checked, no finding:
+asset/project and item/project pairing, the `models` bucket (no policies, so users cannot list or read it), error
+messages, frontend text handling. Not fixed: see "Item detection" in [open-items.md](open-items.md).
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

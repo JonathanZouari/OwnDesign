@@ -135,7 +135,12 @@
               <label for="existing-items">Existing items
                 <textarea id="existing-items" name="existing_items" maxlength="1000" rows="4" aria-describedby="existing-hint"></textarea>
               </label>
-              <p class="hint" id="existing-hint">Furniture or art you are keeping, with rough sizes.</p>
+              <p class="hint" id="existing-hint">Furniture or art you are keeping, with rough sizes. You can also upload a photo of an item you own on the Moodboard tab and choose “Detect items”.</p>
+              <div class="stack-tight" id="owned-block" hidden>
+                <span class="label" id="owned-title">My items from photos</span>
+                <ul class="owned-list" id="owned-items" aria-labelledby="owned-title"></ul>
+                <p class="hint">These also appear under “My items” in the plan editor’s palette.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -221,6 +226,23 @@
       </div>
     </section>
   </main>
+
+  <dialog id="detect-dialog" aria-labelledby="detect-title">
+    <form method="dialog" class="stack">
+      <h2 id="detect-title">Items in this photo</h2>
+      <div class="detect-photo"><div class="detect-frame" id="detect-frame"></div></div>
+      <p class="status" id="detect-status" role="status" aria-live="polite"></p>
+      <fieldset id="detect-choices" hidden>
+        <legend>Keep these items</legend>
+        <ul class="detect-list" id="detect-list"></ul>
+      </fieldset>
+      <p class="muted small" style="margin: 0">Detection only suggests: nothing is added until you choose. It does not measure sizes.</p>
+      <div class="dialog-actions">
+        <button type="button" id="detect-cancel">Cancel</button>
+        <button class="primary" type="button" id="detect-accept" disabled>Add to brief</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/design.js"></script>

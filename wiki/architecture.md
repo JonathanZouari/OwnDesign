@@ -32,6 +32,10 @@ Phase 2 (`supabase/migrations/20261123*`): `project_briefs` (one JSON document p
 `ai_conversations` (unique per project and user), `ai_messages`, `storage_deletions` (queue of files to remove).
 Their SELECT policies go through `projects`, except conversations: only their own user reads them.
 
+Item detection (`supabase/migrations/20261126120000_owned_items.sql`, proposed): `owned_items` (accepted items only;
+SELECT through `projects`; service role may insert and delete but not update), the private bucket `models`, and the
+function `append_existing_items` (service role only).
+
 ## Plan geometry
 
 One JSON document per version, validated in `backend/app/schemas.py` and edited by pure functions in
@@ -81,3 +85,23 @@ Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `
   the endpoint answers 503.
 - **Frontend:** `design.html` (brief, materials, moodboard tabs), `consultant.html`; pure logic in
   `frontend/js/design-logic.js`.
+
+## Item detection (proposed)
+
+Spec: `../specs/item-detection.md`. Code: `backend/app/detection/` (model, classes), `backend/app/routes/detection.py`,
+`backend/scripts/publish_model.py`; frontend `frontend/js/detection-logic.js`, `design.js` (dialog, "My items" in
+the brief) and the editor palette.
+
+- `POST /v1/projects/{id}/assets/{asset_id}/detect`: the project and the "Item I own" photo are read through RLS,
+  the stored photo is decoded (JPEG/PNG/WebP only, at most 40 MP, EXIF rotation applied) and the model returns
+  boxes, classes and confidences. Nothing is stored. Allowed in a suspended studio (a read).
+- `GET/POST /owned-items`, `DELETE /owned-items/{item_id}`: accepted items. POST stores them, then appends one line to
+  the brief's existing items through `append_existing_items` (one statement under a row lock, so a brief saved at
+  the same moment is not overwritten); if the brief cannot take the line, the items are removed again.
+- Model: RF-DETR Small (Apache 2.0) exported to ONNX and quantized to int8 (39 MB), run by ONNX Runtime on CPU. It is
+  downloaded once from the bucket, accepted only if its SHA-256 matches `MODEL_SHA256`, and the session is built
+  from those same bytes. The cache is a folder only the server user owns. A failed load is not retried for 60 s.
+- Only 14 COCO classes are kept (`classes.py`); each maps to an editor furniture type where one exists. The
+  browser shows results under 0.6 as "Not sure".
+- Two detections at a time per process, one per user; beyond that 429 with `Retry-After`. Same pattern as plan
+  export (pull request #26); to be shared once one of them is merged.

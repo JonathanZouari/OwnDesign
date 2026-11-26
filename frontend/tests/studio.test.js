@@ -30,6 +30,11 @@ test("activity rows read as sentences", () => {
   assert.equal(activityText({ action: "project.created", metadata: {}, project: { name: "Flat A" } }), "Project created · Flat A");
   assert.equal(activityText({ action: "invite.accepted", metadata: null, project: null }), "Invite accepted by the client");
   assert.equal(activityText({ action: "something.new", metadata: {}, project: null }), "something.new");
+  assert.equal(activityText({ action: "items.detected", metadata: { count: 5 }, project: { name: "Flat A" } }), "Items detected in a photo (5 found) · Flat A");
+  assert.equal(activityText({ action: "items.accepted", metadata: { count: 1 }, project: null }), "1 owned item added to the brief");
+  assert.equal(activityText({ action: "items.accepted", metadata: { count: 3 }, project: null }), "3 owned items added to the brief");
+  assert.equal(activityText({ action: "items.accepted", metadata: {}, project: null }), "Owned items added to the brief");
+  assert.equal(activityText({ action: "items.removed", metadata: {}, project: null }), "An owned item removed");
 });
 
 test("projects are filtered by name or client email, ignoring case and outer spaces", () => {

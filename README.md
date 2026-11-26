@@ -52,6 +52,20 @@ First E2E run needs `uv run playwright install chromium`.
 GitHub Actions runs both suites on every push to `dev` and `main`; a pull request runs the frontend tests and
 the backend tests that need no secrets (`.github/workflows/ci.yml`, `wiki/testing.md`).
 
+## Item detection model
+
+"Detect items" on the brief page runs RF-DETR Small (Apache 2.0) on the server. The model file (int8 ONNX, about
+39 MB) is not in git: it lives in the private Supabase bucket `models`, and the backend refuses any file whose
+SHA-256 differs from `MODEL_SHA256` in `backend/app/detection/model.py`. Without it, detection answers 503 and the
+rest of the app works.
+
+```sh
+cd backend
+uv run python -m scripts.publish_model --file rfdetr-small-int8.onnx   # upload the pinned file to this project
+```
+
+To build the file, and for why every environment gets the same file, see `backend/scripts/publish_model.py`.
+
 ## Database and auth settings
 
 ```sh

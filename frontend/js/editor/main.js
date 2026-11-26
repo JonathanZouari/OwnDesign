@@ -2,6 +2,7 @@
 // Two modes: a saved project (?project=<id>, needs sign-in) or a local draft (guest or not yet saved).
 import { api, getSession, requireSession, signOut } from "../api.js";
 import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
+import { paletteItems } from "../detection-logic.js";
 import * as P from "../plan.js";
 import { KEYS, load, save as store } from "../store.js";
 import { $, action, h, run, showStudio, toast } from "../ui.js";
@@ -36,6 +37,7 @@ const state = {
   project: null,
   draft: null,
   versions: null,
+  owned: [], // items the client accepted from photos of what they own (specs/item-detection.md)
   signedIn: false,
 };
 
@@ -331,7 +333,22 @@ function buildChrome(name, role) {
     ),
   );
   const groups = [...new Set(FURNITURE.map((item) => item.group))];
+  // The client's own items come first: placed like any catalog item, at the catalog's default size.
+  const mine = paletteItems(state.owned).filter((item) => FURNITURE_BY_TYPE.has(item.type));
   $("#catalog").replaceChildren(
+    ...(mine.length
+      ? [
+          h("span", { class: "label", id: "my-items-label" }, "My items"),
+          h("div", { class: "items", role: "group", "aria-labelledby": "my-items-label" },
+            mine.map((item) =>
+              h("button", { type: "button", "data-type": item.type, "aria-label": `My ${item.label.toLowerCase()}${item.quantity > 1 ? `, ${item.quantity} owned` : ""}`, onclick: () => chooseTool(`furniture:${item.type}`) },
+                item.label,
+                h("span", { class: "code" }, item.quantity > 1 ? `× ${item.quantity} owned` : "owned"),
+              ),
+            ),
+          ),
+        ]
+      : []),
     ...groups.flatMap((group) => [
       h("span", { class: "label" }, group),
       h("div", { class: "items" },
@@ -393,7 +410,11 @@ run(async () => {
     await requireSession();
     state.signedIn = true;
     const base = `/v1/projects/${encodeURIComponent(projectId)}`;
-    [state.project, state.versions] = await Promise.all([api(base), api(`${base}/versions`)]);
+    [state.project, state.versions, state.owned] = await Promise.all([
+      api(base),
+      api(`${base}/versions`),
+      api(`${base}/owned-items`).catch(() => []), // the editor works without them
+    ]);
     plan = state.versions.length ? (await api(`${base}/versions/latest`)).geometry : P.emptyPlan();
     name = state.project.name;
     role = `Editing as ${state.project.my_role}`;

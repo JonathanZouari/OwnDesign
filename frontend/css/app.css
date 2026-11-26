@@ -490,7 +490,7 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 .board-text strong { overflow-wrap: anywhere; }
 .preview { display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 3; border-radius: 4px; border: 1px solid var(--hairline); background: var(--surface-high); color: var(--outline); object-fit: cover; }
 .preview .icon { font-size: 28px; }
-.board-actions { display: flex; gap: 4px; }
+.board-actions { display: flex; flex-wrap: wrap; gap: 4px; max-width: 100%; }
 .board-actions button { padding: 0 8px; }
 .asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; list-style: none; margin: 0; padding: 0; }
 .asset { display: grid; gap: 6px; align-content: start; justify-items: start; padding: 8px; border-radius: 8px; background: var(--surface-low); min-width: 0; }
@@ -561,3 +561,20 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .branding-layout { grid-template-columns: minmax(0, 1fr); }
   .theme-preview { position: static; }
 }
+
+/* Existing-item detection (design.html) */
+#detect-dialog { width: min(94vw, 44rem); }
+.detect-photo { text-align: center; background: var(--surface-high); border-radius: 8px; }
+.detect-frame { position: relative; display: inline-block; max-width: 100%; line-height: 0; }
+.detect-frame img { display: block; max-width: 100%; max-height: 55vh; width: auto; height: auto; }
+.detect-box { position: absolute; border: 2px solid var(--primary-bright); border-radius: 4px; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.7); }
+.detect-box span { position: absolute; top: 0; left: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; background: var(--primary-bright); color: #fff; font: 600 11px/16px var(--font-body); padding: 0 4px; border-radius: 0 0 3px 0; white-space: nowrap; }
+.detect-box.unsure { border-style: dashed; border-color: var(--outline); }
+.detect-box.unsure span { background: var(--outline); }
+.detect-list, .owned-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.detect-list li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.detect-list input[type="checkbox"] { width: auto; height: auto; accent-color: var(--primary); }
+.detect-list input[type="number"] { width: 4.5rem; height: 30px; }
+.detect-list label.plain, .owned-list li > span { font: 400 14px/20px var(--font-body); letter-spacing: 0; text-transform: none; color: var(--ink); min-width: 8ch; }
+.owned-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; border-radius: 6px; background: var(--surface-low); }
+.owned-list button { min-height: 28px; padding: 0 6px; }

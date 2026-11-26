@@ -191,3 +191,28 @@ and the comparison and the 3D walkthrough can be open at once. No security findi
 reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
 not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
 Nothing of it is on `dev`.
+
+## [2026-11-26] docs | Existing-item detection specification drafted
+A contributor's draft at `specs/item-detection.md`: detect furniture in "Item I own" photos and add accepted items
+to the brief. YOLOv8 set aside for its AGPL-3.0 licence; RF-DETR (Apache 2.0) through ONNX Runtime instead.
+Local CPU trial on the two Stitch interior images: Nano 0.12 s, Small 0.23 s per image, sofa, chairs and table
+found; the ONNX file (116-123 MB) is over GitHub's file limit. Open decisions in section 13. Pages: [index](index.md).
+
+## [2026-11-26] decision | Existing-item detection: the contributor's choices
+Model RF-DETR Small; ONNX file in a private Supabase Storage bucket, checked by sha256; detection runs in the
+request with the export concurrency limits; accepted items also offered under "My items" in the editor palette;
+confidence threshold 0.4 ("Not sure" below 0.6); only accepted items are stored. Specification first, as its own
+pull request. All await the owner. Pages: [index](index.md).
+
+## [2026-11-26] build | Item detection (contributor's branch)
+Model RF-DETR Small int8 through ONNX Runtime; `owned_items`, the `models` bucket and `append_existing_items`;
+detect and owned-items endpoints; detection dialog and "My items" on the brief page; "My items" in the editor palette;
+publish script for the model. Supabase's 50 MB file limit led to the int8 model (39 MB). Pages:
+[architecture](architecture.md), [decisions](decisions.md), [overview](overview.md).
+
+## [2026-11-26] security | Review of item detection
+Security, database and code reviews by agents; fixes for the model load, the brief overwrite, service-role updates,
+the isolation test, stale dialog answers and error messages. Pages: [security](security.md), [open-items](open-items.md).
+
+## [2026-11-26] test | Item detection verified
+Backend 163 passed, frontend 61 passed, locally with the real model. Pages: [testing](testing.md).
