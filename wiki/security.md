@@ -55,6 +55,11 @@ finding (confidence 8 or more) in any of the three passes. Checked: tenant isola
 CSV import cannot reach object keys or markup, no secrets in the new commits. The reviews were run by subagents
 following the `security-review` method. A code review found a crash (500) on huge quantities; fixed.
 
+CSV formula injection (Medium, found 2026-11-26, fixed in `725b428`): the guard covered only the first character,
+so `x;=1+1;y` could become a formula in a spreadsheet with a `;` list separator. `csvCell` now also defuses
+`= + - @` after a `;`, tab or line break and quotes values containing `;` or tab; the import reverses it
+(`frontend/js/budget-logic.js`).
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add
