@@ -73,5 +73,20 @@ Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `
   system prompt. A failed call keeps its slot. The OpenAI client is a FastAPI dependency (`get_openai`)
   so tests replace it. `OPENAI_API_KEY` and `OPENAI_MODEL` are read from `backend/.env`; without a key
   the endpoint answers 503.
+- **Consultant sessions and streaming (realtime-consultant branch):** a user holds several sessions per
+  project (`ai_conversations` is the session table; migration `20261126090000`). `POST
+  .../consultant/sessions/{id}/messages` streams Server-Sent Events (`message_start`, `status`, `token`,
+  `message_complete`, `error`). Order: validate everything (project, session ownership, plan source, scope
+  ids), then the one-stream-per-user and global in-flight limits, then reserve the daily slot, then stream.
+  `ai_messages` is insert-only for the service role, so the assistant message is inserted once at the end of
+  the stream with `status` complete, interrupted or error; a closed connection keeps the partial text.
+  The legacy `GET/POST .../consultant/messages` still work on the user's latest session.
+  Modules: `consultant_context.py` (room outline, area and objects derived from walls: rooms have no
+  outline in the plan model; unknown outline means no area is given), `consultant_prompt.py`,
+  `consultant_stream.py`. The plan source is either a saved version id or the editor's unsaved working
+  plan, validated with `Geometry` and treated as data only.
 - **Frontend:** `design.html` (brief, materials, moodboard tabs), `consultant.html`; pure logic in
-  `frontend/js/design-logic.js`.
+  `frontend/js/design-logic.js`. The editor has a Consultant side panel (`js/editor/consultant-panel.js`)
+  that reads selection, plan and saved version and never changes the plan. Pure modules:
+  `consultant-logic.js`, `consultant-stream.js` (fetch plus stream reader: `EventSource` cannot POST or send
+  a Bearer token), `markdown.js` (safe subset, DOM built from text only).

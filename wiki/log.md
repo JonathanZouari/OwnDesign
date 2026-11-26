@@ -101,3 +101,13 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+## [2026-11-26] build | Realtime consultant, phase 1
+Contextual streaming chat: sessions migration, context builder, prompt module, SSE endpoint, editor side panel,
+safe markdown. Commits `339edaa`, `0779e50`, `914c56d`, `2919f37`, `0728349`, `d980326`, `ea3b9eb` on
+`realtime-consultant`. Pages: [architecture](architecture.md), [decisions](decisions.md), [testing](testing.md).
+
+## [2026-11-26] test | Realtime consultant verified (without Supabase)
+Runnable backend suites 102 passed, panel browser journeys 14 passed, frontend 60 passed. Supabase-backed suites could not run (no `backend/.env`).
+
+## [2026-11-26] security | Realtime consultant review
+No finding at confidence 8 or above; see [security](security.md).

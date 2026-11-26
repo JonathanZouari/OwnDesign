@@ -1,6 +1,7 @@
 // Design consultant chat for one saved project (?project=<id>). Only messages returned by the API are shown.
 import { api, requireSession, signOut } from "../api.js";
 import { messageState } from "../design-logic.js";
+import { renderMarkdown } from "../markdown.js";
 import { planThumbnail } from "../thumbnail.js";
 import { $, formatDate, h, run, showStudio } from "../ui.js";
 
@@ -10,7 +11,7 @@ const projectId = UUID.test(requested ?? "") ? requested : null; // anything els
 const base = `/v1/projects/${encodeURIComponent(projectId)}`;
 const WHO = { user: "You", assistant: "Design consultant" };
 
-// Message text is user and model output: it is set with textContent only, and CSS keeps its line breaks.
+// Message text is user and model output: it is set with textContent (or the safe markdown renderer), never as HTML.
 function messageNode(message) {
   const role = message.role === "user" ? "user" : "assistant";
   const who = h("span", { class: "who" });
@@ -18,8 +19,10 @@ function messageNode(message) {
   const when = h("time", { class: "code" });
   when.dateTime = message.created_at ?? "";
   when.textContent = message.created_at ? formatDate(message.created_at) : "";
-  const text = h("p", { class: "msg-text" });
-  text.textContent = message.content;
+  // Replies may use short markdown; the renderer builds DOM nodes from text only, so nothing is interpreted as HTML.
+  const text = h("div", { class: "msg-text" });
+  if (role === "assistant") text.append(renderMarkdown(message.content));
+  else text.textContent = message.content;
   return h("li", { class: `msg ${role}` }, h("div", { class: "msg-head" }, who, when), text);
 }
 

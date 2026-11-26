@@ -40,3 +40,4 @@ there lists the Stitch screen ids. Pulled 2026-11-19.
   is left out until the phase that builds it ([decisions.md](decisions.md)).
 - Entries for later phases may appear in navigation as disabled items titled "Coming in a later phase".
 - Check whether a screen changed in Stitch before building from the stored copy: re-pull and compare.
+- The editor's Consultant side panel has no Stitch screen; it follows the existing design tokens and the wireframe in `Consultant_Realtime_Spec.md`.

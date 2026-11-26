@@ -51,3 +51,12 @@ commits is still to do.
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add
 the outcome here and to [log.md](log.md).
+
+## Realtime consultant (2026-11-26)
+
+`security-review` over the branch's seven commits: no finding at confidence 8 or above. Checked: session and
+version reads go through the caller's RLS client and are filtered by project; the working plan is validated
+data and grants nothing; context is escaped and kept out of the system prompt; replies are rendered from text
+only (browser test with `<img onerror>`, `<script>` and `javascript:` links). Not run here for lack of a
+Supabase configuration: `backend/tests/test_consultant_sessions.py` (RLS and tenant isolation of sessions).
+Run it against a real project before merging.
