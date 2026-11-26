@@ -122,7 +122,7 @@ RETRY_AFTER_FAILURE = 60  # seconds before a missing or wrong model is downloade
 
 _lock = threading.Lock()
 _detector: Detector | None = None
-_failed_at = 0.0
+_failed_at: float | None = None  # monotonic time of the last failed load; None = no failure yet
 
 
 def _download() -> bytes:
@@ -177,7 +177,7 @@ def load_detector() -> Detector:
     global _detector, _failed_at
     with _lock:
         if _detector is None:
-            if time.monotonic() - _failed_at < RETRY_AFTER_FAILURE:
+            if _failed_at is not None and time.monotonic() - _failed_at < RETRY_AFTER_FAILURE:
                 raise ModelUnavailable("The detection model failed to load a moment ago")
             try:
                 model = _model_bytes()

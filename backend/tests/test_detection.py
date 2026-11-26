@@ -163,7 +163,7 @@ def fresh(monkeypatch, tmp_path):
     cache = tmp_path / "models"
     monkeypatch.setattr(M, "CACHE_DIR", cache)
     monkeypatch.setattr(M, "_detector", None)
-    monkeypatch.setattr(M, "_failed_at", 0.0)
+    monkeypatch.setattr(M, "_failed_at", None)
     return cache
 
 
@@ -238,7 +238,7 @@ def test_missing_model_is_not_downloaded_again_at_once(monkeypatch, fresh):
         with pytest.raises(M.ModelUnavailable):
             M.load_detector()
     assert len(calls) == 1
-    monkeypatch.setattr(M, "_failed_at", -10_000.0)  # a minute later it tries again
+    monkeypatch.setattr(M, "_failed_at", M._failed_at - M.RETRY_AFTER_FAILURE - 1)  # a minute later it tries again
     with pytest.raises(M.ModelUnavailable):
         M.load_detector()
     assert len(calls) == 2
@@ -274,3 +274,13 @@ def test_unloadable_model_is_unavailable_and_not_retried_at_once(monkeypatch, fr
         with pytest.raises(M.ModelUnavailable):
             M.load_detector()
     assert len(calls) == 1
+
+
+def test_first_load_right_after_the_machine_starts(monkeypatch, fresh):
+    """time.monotonic() counts from boot: on a machine up for under a minute the first load must still run."""
+    data = b"pretend model"
+    pin(monkeypatch, data)
+    monkeypatch.setattr(M.time, "monotonic", lambda: 5.0)
+    monkeypatch.setattr(M, "_download", lambda: data)
+    monkeypatch.setattr(M, "_session", lambda model: FakeSession(boxes_for([]), logits_for([])))
+    assert M.load_detector() is not None
