@@ -9,6 +9,7 @@ import hashlib
 import io
 import logging
 import threading
+import time
 from functools import lru_cache
 from pathlib import Path
 
@@ -34,6 +35,8 @@ BUSY_SECONDS = 1  # a caller waits this long for a slot, then gets 503 (keeps th
 log = logging.getLogger(__name__)
 _slots = threading.BoundedSemaphore(MAX_PARALLEL)
 _load_lock = threading.Lock()
+LOAD_RETRY_SECONDS = 60
+_failed_at = 0.0  # when loading the model last failed (time.monotonic), 0 when it has not
 
 CATEGORIES = ROOM_ITEM_CATEGORIES
 
@@ -200,7 +203,8 @@ def palette(img: Image.Image, colours: int = 5) -> list[dict]:
     by_name: dict[str, dict] = {}  # shades with one name (e.g. edges blurred by resizing) count as one colour
     for count, index in counts:  # largest first, so the first shade of a name represents it
         rgb = tuple(entries[index * 3 : index * 3 + 3])
-        entry = by_name.setdefault(_nearest_name(rgb), {"hex": _hex(rgb), "name": _nearest_name(rgb), "count": 0})
+        name = _nearest_name(rgb)
+        entry = by_name.setdefault(name, {"hex": _hex(rgb), "name": name, "count": 0})
         entry["count"] += count
     merged = sorted(by_name.values(), key=lambda c: -c["count"])
     result = [{"hex": c["hex"], "name": c["name"], "share": round(c["count"] / total, 2)} for c in merged]
@@ -264,11 +268,17 @@ def load_detector() -> Detector:
 def get_detector() -> Detector | None:
     """A FastAPI dependency, so tests can replace the model with a fake. None when the model is missing or altered:
     a scan then answers 503, and an image upload still succeeds without an analysis."""
+    global _failed_at
+    if _failed_at and time.monotonic() - _failed_at < LOAD_RETRY_SECONDS:
+        return None  # do not re-read and re-hash the model on every request while it is broken
     try:
-        return load_detector()
+        detector = load_detector()
     except (OSError, RuntimeError):
-        log.exception("The image model could not be loaded")
+        log.exception("The image model could not be loaded; retrying in %s s", LOAD_RETRY_SECONDS)
+        _failed_at = time.monotonic()
         return None
+    _failed_at = 0.0
+    return detector
 
 
 def analyse(data: bytes, detector) -> dict:

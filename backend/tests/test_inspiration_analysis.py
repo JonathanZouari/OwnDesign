@@ -120,6 +120,11 @@ def test_reanalysis_replaces_the_previous_result_and_parallel_runs_keep_one_row(
     pid = world.project_fn(world.client, "Again")["id"]
     asset_id = upload(api, world.client, pid).json()["data"]["id"]
     fake.found = [PLANT]
+    # Within the cooldown the stored result comes back and the model is not run again.
+    calls = fake.calls
+    assert reanalyse(api, world.client, pid, asset_id).json()["data"]["objects"][0]["label"] == "Sofa"
+    assert fake.calls == calls
+    admin.table("asset_analyses").update({"analysed_at": "2026-01-01T00:00:00Z"}).eq("asset_id", asset_id).execute()
     with ThreadPoolExecutor(4) as pool:
         codes = list(pool.map(lambda _: reanalyse(api, world.client, pid, asset_id).status_code, range(4)))
     assert set(codes) <= {200, 503} and 200 in codes

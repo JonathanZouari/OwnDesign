@@ -1,8 +1,11 @@
+import logging
 import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from postgrest.exceptions import APIError
 
 from app import vision
 from app.auth import CurrentUser, current_user
@@ -13,6 +16,7 @@ from app.routes.projects import _project_or_404
 from app.schemas import Brief, FinishesBody, MoodboardBody
 from app.style import style_profile
 
+log = logging.getLogger(__name__)
 catalog_router = APIRouter(prefix="/v1/catalog")
 router = APIRouter(prefix="/v1/projects/{project_id}")
 
@@ -141,12 +145,18 @@ def add_asset(
             analysis = _analyse_and_save(user, project, row["id"], data, detector)
         except (vision.ImageError, vision.DetectorBusy):
             analysis = None  # the image is kept; it can be analysed later (POST .../analysis)
+        except Exception:
+            # Best effort: the image is already stored, so a failed analysis must not turn the upload into an
+            # error the client would retry (and so upload the image twice).
+            log.exception("Analysis of a new inspiration image failed")
+            analysis = None
     return ok({**{key: row[key] for key in ASSET_COLUMNS.split(", ")}, "analysis": analysis})
 
 
 # ---- inspiration analysis and style profile ----------------------------------------------------------------------
 
 ANALYSIS_MODEL = "yolov8n-coco+palette"
+REANALYSIS_COOLDOWN_SECONDS = 10
 
 
 def _analyses(user: CurrentUser, project_id: str) -> list[dict]:
@@ -185,13 +195,28 @@ def analyse_asset(project_id: UUID, asset_id: UUID, user: CurrentUser = Depends(
         raise HTTPException(422, "Only inspiration images are analysed")
     if detector is None:
         raise HTTPException(503, "The image analyser is not available right now.")
-    data = service().storage.from_(BUCKET).download(found[0]["storage_path"])
+    # A result from the last few seconds is returned as it is: repeated clicks or loops do not re-run the model.
+    recent = (
+        user.db.table("asset_analyses").select("asset_id, objects, palette, analysed_at").eq("asset_id", str(asset_id))
+        .gte("analysed_at", (datetime.now(UTC) - timedelta(seconds=REANALYSIS_COOLDOWN_SECONDS)).isoformat()).execute().data
+    )
+    if recent:
+        return ok(_analysis_view(recent[0]))
+    try:
+        data = service().storage.from_(BUCKET).download(found[0]["storage_path"])
+    except Exception:
+        log.exception("Stored image missing for an analysis")
+        raise HTTPException(404, "Image not found") from None
     try:
         return ok(_analyse_and_save(user, project, str(asset_id), data, detector))
     except vision.ImageError:
         raise HTTPException(422, "The image could not be read.") from None
     except vision.DetectorBusy:
         raise HTTPException(503, "The image analyser is busy. Try again in a moment.") from None
+    except APIError as error:
+        if error.code in ("23503", "P0001"):  # the image was deleted while it was being analysed
+            raise HTTPException(404, "Image not found") from None
+        raise
 
 
 @router.get("/style-profile")

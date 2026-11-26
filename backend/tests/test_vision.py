@@ -279,7 +279,15 @@ def test_an_altered_model_file_is_refused(monkeypatch):
         with pytest.raises(RuntimeError):
             vision.load_detector()
         assert vision.get_detector() is None  # routes turn this into 503 (scan) or "no analysis" (upload)
+        # While broken, the file is not read again on every request.
+        calls = []
+        monkeypatch.setattr(vision, "load_detector", lambda: calls.append(1))
+        assert vision.get_detector() is None and calls == []
+        vision._failed_at -= vision.LOAD_RETRY_SECONDS + 1  # set directly: monkeypatch would restore it afterwards
+        vision.get_detector()
+        assert calls == [1]  # retried after the wait
     finally:
+        vision._failed_at = 0.0
         vision._load.cache_clear()
 
 
