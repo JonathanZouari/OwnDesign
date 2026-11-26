@@ -28,3 +28,6 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Client projects need an accepted invite** to that studio (user, 2026-11-26). The public studio link still shows the studio, but a stranger cannot start a project through it. Studio members are exempt.
 - **Invites expire after 14 days; a resend carries the same link and renews it; a pending invite can be cancelled** (user, 2026-11-26).
 - **Invite emails go through Resend's HTTP API** with the existing httpx client, so no new dependency. The link comes from `APP_URL`, never from the request.
+- **Invite history and address correction sit in the "Clients & invites" panel** (user, 2026-11-26), because invites belong to a studio and a project card exists only after acceptance. Project cards show a read-only line about the invite that brought the client in.
+- **Correcting an address cancels the original invite and creates a new one with a new link**, both kept in the history and linked by `replaced_by`. One database function does it in one transaction, so a retry returns the same new invite.
+- **History statuses show only what the system can verify.** "Client entered the project" needs a project opened by the account that accepted that invite.

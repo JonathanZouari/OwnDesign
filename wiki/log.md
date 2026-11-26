@@ -133,3 +133,28 @@ it is on; invite email text comes from user-controlled names. Pages: [security](
 ## [2026-11-26] test | Invites verified on a fresh test project
 New Supabase project for tests (all 7 migrations applied). Backend 122 passed (9 browser journeys included),
 frontend 33 passed. New: `backend/tests/test_invites.py` (11), `test_invite_email.py`. Pages: [testing](testing.md).
+
+## [2026-11-26] decision | Invite history lives in the Clients & invites panel
+Invites belong to a studio, not a project, and a project card exists only after the client accepted. The user
+chose: full history and the address correction in the dashboard's "Clients & invites" panel; each project card
+shows a read-only line naming the invite that brought its client in. Pages: [decisions](decisions.md).
+
+## [2026-11-26] build | Invite history and correct-address-and-resend
+Migration `20261126110000_invite_delivery_and_correction.sql` (send status per invite, `replaced_by`, function
+`correct_invite` in one transaction). `POST .../invites/{id}/correct`; every send recorded and claimed first so a
+double click or parallel request sends once; history includes cancelled and replaced invites; `EMAIL_REDIRECT_TO`
+for dev. The history is a list, not a table: the panel is a narrow column at every width and a table cut its
+buttons off (seen on screenshots at 1280 and 390 px). Commit `a592b7f`. Pages: [architecture](architecture.md),
+[security](security.md), [open-items](open-items.md).
+
+## [2026-11-26] security | Review of invite history and correction
+No critical or high finding. `correct_invite` is `security definer`; a test proves anonymous and signed-in callers
+cannot run it through the Data API (commit `6e59891`). Pages: [security](security.md).
+
+## [2026-11-26] docs | PR overview for the reviewer
+`docs/pr-overview.html`: a self-contained Hebrew (RTL) page that explains every change in the PR, how to see and
+test it, the real test results and what still needs checking. Sample data only.
+
+## [2026-11-26] test | History and correction verified
+Backend 131 passed (9 browser journeys included), frontend 37 passed, on the dev test project. Pages:
+[testing](testing.md).

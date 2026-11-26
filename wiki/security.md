@@ -64,3 +64,13 @@ the outcome here and to [log.md](log.md).
   log only the error type. 20 emails per studio a day; one email per invite per minute.
 - Open: the identity check is only as strong as email confirmation, which is off in the dev settings
   ([open-items.md](open-items.md)).
+
+## Review of invite history and correction (2026-11-26)
+
+- Correction, resend, cancel and the history need membership of the studio the invite belongs to; another
+  studio's invite answers 404 and a non-member 403.
+- `public.correct_invite` is `security definer` and executable by `service_role` only; a test calls it as an
+  anonymous user, the studio's designer and another user through the Data API, and all are refused.
+- A send is claimed with a conditional update before Resend is called, so parallel requests send once.
+- `EMAIL_REDIRECT_TO` sends every invite email to one inbox. It must stay empty in production, or that inbox
+  receives every client's link ([open-items.md](open-items.md)).

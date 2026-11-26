@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>סקירת PR: הזמנות במייל</title>
+<style>
+  :root {
+    --bg: #fbf9f6; --panel: #ffffff; --soft: #f5f3f0; --line: #e4e2df;
+    --ink: #1b1c1a; --ink-soft: #57423b; --muted: #8a726a;
+    --primary: #9f3c16; --primary-tint: #ffdbcf; --ok: #304d38; --ok-tint: #c6e8cc;
+    --warn: #2b1700; --warn-tint: #ffddb9; --err: #ba1a1a; --err-tint: #ffdad6;
+    --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.7 system-ui, "Segoe UI", Arial, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+  header.top { border-bottom: 3px solid var(--primary); padding-bottom: 16px; margin-bottom: 24px; }
+  .eyebrow { color: var(--primary); font-weight: 700; font-size: 13px; letter-spacing: .04em; }
+  h1 { font-size: clamp(26px, 5vw, 34px); line-height: 1.25; margin: 4px 0 8px; }
+  h2 { font-size: 22px; margin: 40px 0 12px; padding-top: 8px; border-top: 1px solid var(--line); }
+  h3 { font-size: 18px; margin: 0 0 8px; }
+  p { margin: 0 0 12px; }
+  code, .mono { font-family: var(--mono); font-size: .88em; direction: ltr; unicode-bidi: isolate; overflow-wrap: anywhere; }
+  code { background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+  pre { direction: ltr; text-align: left; background: #30312f; color: #f2f1ed; padding: 14px; border-radius: 10px; overflow-x: auto; font: 13px/1.6 var(--mono); }
+  a { color: var(--primary); }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .tag { background: var(--soft); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 13px; }
+  .summary { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .summary ul { margin: 8px 0 0; padding-inline-start: 20px; }
+  nav.toc { background: var(--soft); border-radius: 12px; padding: 12px 16px; margin: 20px 0; font-size: 15px; }
+  nav.toc ol { margin: 6px 0 0; padding-inline-start: 22px; columns: 2 240px; }
+  .flow { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10px; counter-reset: step; }
+  .flow li { counter-increment: step; position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; padding-inline-start: 56px; }
+  .flow li::before { content: counter(step); position: absolute; inset-inline-start: 14px; top: 12px; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+  .flow li.alt::before { background: var(--muted); }
+  .flow .who { font-size: 13px; color: var(--muted); display: block; }
+  .feature { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin: 14px 0; }
+  .new { font-size: 12px; font-weight: 700; color: var(--primary); background: var(--primary-tint); padding: 1px 8px; border-radius: 999px; margin-inline-start: 6px; vertical-align: middle; }
+  .grid3 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 10px; }
+  .grid3 > div { background: var(--soft); border-radius: 10px; padding: 10px 12px; }
+  .grid3 h4 { margin: 0 0 4px; font-size: 13px; color: var(--ink-soft); }
+  .grid3 ul, .grid3 ol { margin: 0; padding-inline-start: 18px; font-size: 15px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: start; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--soft); font-size: 13px; color: var(--ink-soft); }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  .chip { display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 13px; white-space: nowrap; }
+  .ok { background: var(--ok-tint); color: var(--ok); }
+  .warn { background: var(--warn-tint); color: var(--warn); }
+  .err { background: var(--err-tint); color: var(--err); }
+  .callout { border-inline-start: 4px solid var(--err); background: var(--err-tint); padding: 12px 16px; border-radius: 8px; margin: 14px 0; }
+  .callout.info { border-color: var(--primary); background: var(--primary-tint); }
+  figure { margin: 12px 0; }
+  .shots { display: grid; gap: 12px; grid-template-columns: 2fr 1fr; align-items: start; }
+  .shots img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); }
+  figcaption { font-size: 13px; color: var(--muted); }
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+  @media (max-width: 560px) {
+    body { font-size: 15px; }
+    .shots { grid-template-columns: 1fr; }
+    .feature, .summary { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<header class="top">
+  <div class="eyebrow">סקירת Pull Request · OwnDesign / Atelier</div>
+  <h1>הזמנות במייל, ורק הלקוח המוזמן נכנס</h1>
+  <p>מסמך הסבר ליונתן: כל מה שנכלל ב-PR, איפה רואים כל שינוי ואיך בודקים אותו.</p>
+  <div class="meta">
+    <span class="tag">PR <span class="mono">#12</span></span>
+    <span class="tag">ענף <span class="mono">feat/email-invites</span> ← <span class="mono">dev</span></span>
+    <span class="tag">10 קומיטים · 34 קבצים</span>
+    <span class="tag">2026-11-26</span>
+  </div>
+</header>
+
+<section class="summary" aria-labelledby="sum">
+  <h2 id="sum" style="border:0;margin-top:0;padding-top:0">תקציר</h2>
+  <p>עד היום המעצב יצר קישור הזמנה והעתיק אותו ידנית. כל מי שהחזיק בקישור יכול היה לקבל את ההזמנה, וכל משתמש יכול היה לפתוח פרויקט בכל סטודיו.</p>
+  <p>ה-PR הזה משנה שלושה דברים:</p>
+  <ul>
+    <li><strong>המערכת שולחת ללקוח מייל</strong> עם הקישור האישי, בעיצוב של Atelier.</li>
+    <li><strong>רק הלקוח שהוזמן נכנס.</strong> השרת בודק שכתובת המייל של החשבון מאושרת ושווה לכתובת שהוזמנה. רק לקוח עם הזמנה שהתקבלה יכול לפתוח פרויקט.</li>
+    <li><strong>המעצב מנהל את ההזמנות:</strong> היסטוריה עם סטטוס אמיתי, שליחה חוזרת, ביטול, ותיקון כתובת שגויה.</li>
+  </ul>
+</section>
+
+<nav class="toc" aria-label="תוכן">
+  <strong>תוכן</strong>
+  <ol>
+    <li><a href="#flow">זרימת שימוש לדוגמה</a></li>
+    <li><a href="#f1">שליחת הזמנה במייל</a></li>
+    <li><a href="#f2">עיצוב המייל</a></li>
+    <li><a href="#f3">רק הלקוח המוזמן נכנס</a></li>
+    <li><a href="#f4">פרויקט דורש הזמנה</a></li>
+    <li><a href="#f5">תוקף, שליחה חוזרת וביטול</a></li>
+    <li><a href="#f6">היסטוריית הזמנות</a></li>
+    <li><a href="#f7">תיקון כתובת ושליחה מחדש</a></li>
+    <li><a href="#f8">לחיצה כפולה וכשל בשליחה</a></li>
+    <li><a href="#f9">הפרדה בין dev ל-production</a></li>
+    <li><a href="#tech">שינויים טכניים לסקירה</a></li>
+    <li><a href="#tests">תוצאות בדיקות</a></li>
+    <li><a href="#manual">תסריט בדיקה ידני</a></li>
+    <li><a href="#open">מה עדיין דורש אימות</a></li>
+  </ol>
+</nav>
+
+<h2 id="flow">זרימת שימוש לדוגמה</h2>
+<p>נתוני דוגמה בלבד: הסטודיו <strong>Studio Noa</strong>, הלקוחה <strong>Dana Cohen</strong>.</p>
+<ol class="flow">
+  <li><span class="who">מעצבת</span>בלוח הסטודיו, באזור "Clients &amp; invites", ממלאת שם וכתובת: <code>dana@example.com</code>, ולוחצת <strong>Send invite</strong>.</li>
+  <li><span class="who">מערכת</span>שומרת הזמנה עם קישור אישי לתוקף 14 יום, ושולחת את המייל. בהיסטוריה מופיע <span class="chip ok">Sent</span>.</li>
+  <li class="alt"><span class="who">מעצבת</span>שמה לב שהכתובת שגויה. לוחצת <strong>Correct address</strong>, מקלידה <code>dana.cohen@example.com</code>, רואה את שתי הכתובות ומאשרת.</li>
+  <li class="alt"><span class="who">מערכת</span>הקישור הישן מפסיק לעבוד. כתובת מתוקנת מקבלת קישור חדש. בהיסטוריה: <span class="chip">Replaced: address corrected</span> ומעליו הזמנה חדשה.</li>
+  <li><span class="who">לקוחה</span>פותחת את הקישור, רואה "Hi Dana Cohen, plan your home with Studio Noa", נרשמת עם <code>dana.cohen@example.com</code> ומאשרת את הכתובת.</li>
+  <li><span class="who">מערכת</span>מוודאת שהכתובת מאושרת ותואמת. ההזמנה מתקבלת, והלקוחה יכולה לפתוח פרויקט.</li>
+  <li><span class="who">מעצבת</span>רואה בהיסטוריה <span class="chip ok">Client entered the project</span>, ובכרטיס הפרויקט: "Joined through the invite to dana.cohen@example.com".</li>
+</ol>
+
+<h2 id="f1">1. שליחת הזמנה במייל</h2>
+<div class="feature">
+  <p>יצירת הזמנה שולחת ללקוח מייל עם הקישור האישי, דרך ה-HTTP API של Resend. השליחה משתמשת בלקוח <code>httpx</code> שכבר קיים בפרויקט, בלי ספרייה חדשה.</p>
+  <div class="grid3">
+    <div><h4>מה השתנה</h4><ul>
+      <li>קובץ חדש <code>backend/app/mailer.py</code>.</li>
+      <li>הגדרות חדשות: <code>RESEND_API_KEY</code>, <code>EMAIL_FROM</code>, <code>APP_URL</code>. בלי שלושתן לא נשלח מייל, והקישור מועתק למעצב כמו קודם.</li>
+      <li>הקישור נבנה מ-<code>APP_URL</code> ולא מהבקשה, כך שאי אפשר להפנות אותו לשרת אחר.</li>
+      <li>עד 20 מיילים ביום לכל סטודיו.</li>
+    </ul></div>
+    <div><h4>איפה רואים</h4><ul>
+      <li><code>studio.html</code>: הכפתור נקרא עכשיו <strong>Send invite</strong>.</li>
+      <li>הודעה: "Invite emailed to …", או "The email could not be sent. The link is copied".</li>
+    </ul></div>
+    <div><h4>איך בודקים</h4><ol>
+      <li>הגדר את שלושת המשתנים ב-<code>backend/.env</code>.</li>
+      <li>שלח הזמנה לכתובת בדיקה.</li>
+      <li>בלי המשתנים: ודא שהקישור מועתק.</li>
+    </ol></div>
+  </div>
+</div>
+
+<h2 id="f2">2. עיצוב המייל</h2>
+<div class="feature">
+  <p>מייל בעיצוב "כרטיס הזמנה": תמונת סלון עם הלוגו על הקצה התחתון שלה, הכותרת "Your space, your style. Let's design it together.", שלושה צעדים, וכפתור רחב. המייל בנוי מטבלאות וסגנון inline, כדי שיעבוד ב-Gmail וב-Outlook. נשלחת גם גרסת טקסט.</p>
+  <div class="shots">
+    <figure>
+      <img src="https://github.com/ofra-mt/OwnDesign/blob/4fdb942/design/email/invite-email-desktop.png?raw=true" alt="המייל במחשב: תמונת סלון, לוגו, כותרת, שלושה צעדים וכפתור Let's design together" loading="lazy">
+      <figcaption>מחשב, 680px (נתוני דוגמה)</figcaption>
+    </figure>
+    <figure>
+      <img src="https://github.com/ofra-mt/OwnDesign/blob/4fdb942/design/email/invite-email-phone.png?raw=true" alt="אותו מייל ברוחב טלפון" loading="lazy">
+      <figcaption>טלפון, 375px</figcaption>
+    </figure>
+  </div>
+  <div class="grid3">
+    <div><h4>מה השתנה</h4><ul>
+      <li><code>backend/app/invite_email.html</code>: התבנית. כל ערך עובר escaping.</li>
+      <li><code>frontend/img/email-hero.jpg</code>: התמונה עם הלוגו כקובץ אחד, כי Gmail ו-Outlook לא תומכים בהנחת אלמנט על אלמנט.</li>
+      <li><code>frontend/img/logo-mark.svg</code>: סמל חדש (קשת של פתח דלת). לחברה לא היה לוגו.</li>
+    </ul></div>
+    <div><h4>איפה רואים</h4><ul>
+      <li>בתיבת המייל של הלקוח.</li>
+      <li>צילומי מסך: <code>design/email/</code>.</li>
+    </ul></div>
+    <div><h4>שים לב</h4><ul>
+      <li>התמונה נטענת מ-<code>APP_URL/img/email-hero.jpg</code>. מ-<code>localhost</code> הנמען לא יראה אותה.</li>
+      <li>אם מחליפים לוגו, צריך להפיק את התמונה מחדש.</li>
+    </ul></div>
+  </div>
+</div>
+
+<h2 id="f3">3. רק הלקוח המוזמן נכנס</h2>
+<div class="feature">
+  <p>קבלת הזמנה (<code>POST /v1/invites/{token}/accept</code>) דורשת חשבון מחובר. השרת קורא את כתובת המייל מ-Supabase Auth, לא מהטוקן. הכתובת חייבת להיות <strong>מאושרת</strong> ושווה לכתובת שהוזמנה (בלי הבדל בין אותיות גדולות וקטנות).</p>
+  <div class="grid3">
+    <div><h4>מה השתנה</h4><ul>
+      <li>כתובת אחרת: 403, בלי לחשוף את הכתובת שהוזמנה.</li>
+      <li>קישור שהועבר לאחר לא "נשרף". הלקוח האמיתי עדיין יכול להיכנס אחר כך.</li>
+      <li><code>auth.js</code>: קישור האישור במייל של Supabase מחזיר עם הטוקן, כך שזה עובד גם ממכשיר אחר. סירוב מוצג ללקוח, והוא מנותק כדי להתחבר עם הכתובת הנכונה.</li>
+    </ul></div>
+    <div><h4>איפה רואים</h4><ul>
+      <li><code>entry.html?invite=…</code> ואז <code>auth.html</code>.</li>
+      <li>הודעה: "This invitation was sent to a different email address".</li>
+    </ul></div>
+    <div><h4>איך בודקים</h4><ol>
+      <li>הזמן כתובת א'.</li>
+      <li>פתח את הקישור והתחבר עם כתובת ב': סירוב.</li>
+      <li>התחבר עם כתובת א': ההזמנה מתקבלת.</li>
+    </ol></div>
+  </div>
+  <div class="callout"><strong>חשוב:</strong> הבדיקה אמיתית רק כשאישור מייל פעיל ב-Supabase. ב-<code>supabase/config.toml</code> (הגדרות dev) האישור כבוי, ואז Supabase מסמן כל כתובת חדשה כמאושרת. לפני production צריך SMTP (למשל של Resend) ו-<code>enable_confirmations = true</code>.</div>
+</div>
+
+<h2 id="f4">4. פרויקט דורש הזמנה</h2>
+<div class="feature">
+  <p><code>create_project</code> מאשר ללקוח לפתוח פרויקט רק בסטודיו שהזמנה שלו התקבלה. חברי צוות הסטודיו פטורים.</p>
+  <div class="grid3">
+    <div><h4>מה השתנה</h4><ul><li><code>backend/app/routes/projects.py</code>: בדיקה חדשה, 403 עם הסבר.</li><li>הקישור הציבורי של הסטודיו עדיין מציג את הסטודיו, אבל זר לא יכול לשמור דרכו פרויקט.</li></ul></div>
+    <div><h4>איפה רואים</h4><ul><li>שמירה בעורך בלי הזמנה: "Only invited clients can start a project with this studio".</li></ul></div>
+    <div><h4>שים לב</h4><ul><li>לקוחות שנכנסו דרך הקישור הציבורי לפני השינוי שומרים את הפרויקטים שלהם, אבל צריכים הזמנה לפרויקט חדש.</li></ul></div>
+  </div>
+</div>
+
+<h2 id="f5">5. תוקף, שליחה חוזרת וביטול</h2>
+<div class="feature">
+  <ul>
+    <li><strong>תוקף:</strong> 14 יום. הזמנה שפגה (ולא התקבלה) מחזירה 404, והלקוח רואה "This link is not valid".</li>
+    <li><strong>שליחה חוזרת</strong> (<code>POST …/invites/{id}/send</code>): אותו קישור, התוקף מתחדש.</li>
+    <li><strong>ביטול</strong> (<code>DELETE …/invites/{id}</code>): הקישור מפסיק לעבוד מיד. הזמנה שהתקבלה לא ניתנת לביטול (409).</li>
+    <li><strong>הזמנה פתוחה אחת לכל כתובת:</strong> הזמנה חוזרת לאותה כתובת מחזירה את אותה הזמנה. אינדקס ייחודי חלקי מבטיח זאת גם בבקשות מקבילות.</li>
+  </ul>
+</div>
+
+<h2 id="f6">6. היסטוריית הזמנות <span class="new">חדש</span></h2>
+<div class="feature">
+  <p>באזור "Clients &amp; invites" בלוח הסטודיו: כל ההזמנות, מהחדשה לישנה, כולל הזמנות שבוטלו והוחלפו. לכל הזמנה: שם, כתובת, סטטוס, ומועד ניסיון השליחה האחרון.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>סטטוס</th><th>מתי מוצג (רק מה שהמערכת יכולה לאמת)</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip ok">Sent</span></td><td>Resend קיבל את המייל.</td></tr>
+      <tr><td><span class="chip err">Sending failed</span></td><td>השליחה נכשלה. אפשר ללחוץ Resend מאותו מסך.</td></tr>
+      <tr><td><span class="chip warn">Not sent: email is off</span></td><td>אין הגדרות מייל. הקישור הועתק למעצב.</td></tr>
+      <tr><td><span class="chip warn">Not sent: daily email limit</span></td><td>הסטודיו הגיע ל-20 מיילים ביממה.</td></tr>
+      <tr><td><span class="chip warn">Expired</span></td><td>עברו 14 יום. שליחה חוזרת מחדשת.</td></tr>
+      <tr><td><span class="chip">Cancelled</span></td><td>המעצב ביטל.</td></tr>
+      <tr><td><span class="chip">Replaced: address corrected</span></td><td>הכתובת תוקנה, והזמנה חדשה החליפה את זו.</td></tr>
+      <tr><td><span class="chip ok">Client signed in, no project yet</span></td><td>הלקוח קיבל את ההזמנה עם כתובת מאומתת.</td></tr>
+      <tr><td><span class="chip ok">Client entered the project</span></td><td>החשבון שקיבל את <em>ההזמנה הזו</em> פתח פרויקט בסטודיו.</td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:12px"><strong>בכרטיס הפרויקט:</strong> שורה לקריאה בלבד, "Joined through the invite to … · תאריך". ההזמנה שייכת לסטודיו ולא לפרויקט, והכרטיס נוצר רק אחרי שהלקוח קיבל אותה. לכן הפעולות נמצאות בהיסטוריה, לא בכרטיס.</p>
+  <p><strong>הרשאות:</strong> רק חבר צוות של הסטודיו רואה את ההיסטוריה ומנהל הזמנות (<code>_require_member</code> ו-RLS). מעצב מסטודיו אחר מקבל 403.</p>
+</div>
+
+<h2 id="f7">7. תיקון כתובת ושליחה מחדש <span class="new">חדש</span></h2>
+<div class="feature">
+  <p>ליד כל הזמנה פתוחה: <strong>Correct address</strong>. חלון בשני שלבים מציג את הכתובת המקורית ואת המתוקנת לפני האישור.</p>
+  <div class="grid3">
+    <div><h4>מה קורה באישור</h4><ol>
+      <li>ההזמנה המקורית מבוטלת, והקישור שלה מפסיק לעבוד לכולם.</li>
+      <li>נוצרת הזמנה חדשה עם קישור חדש לכתובת המתוקנת.</li>
+      <li>ההזמנה המקורית מצביעה על החדשה (<code>replaced_by</code>). שתיהן נשארות בהיסטוריה.</li>
+      <li>המייל נשלח לכתובת המתוקנת.</li>
+    </ol></div>
+    <div><h4>איך זה בנוי</h4><ul>
+      <li><code>POST …/invites/{id}/correct</code>.</li>
+      <li>פונקציית SQL אחת, <code>public.correct_invite</code>, בטרנזקציה אחת עם נעילת שורה.</li>
+      <li>רק ה-API יכול להפעיל אותה (<code>service_role</code>). נבדק שמשתמשים לא יכולים לקרוא לה ישירות.</li>
+    </ul></div>
+    <div><h4>מגבלת "קישור משותף"</h4><ul>
+      <li>לא קיימת: לכל הזמנה טוקן ייחודי משלה. ביטול הזמנה אחת לא משפיע על אחרות.</li>
+      <li>רק הזמנה פתוחה ניתנת לתיקון. הזמנה שהתקבלה או בוטלה: 409.</li>
+    </ul></div>
+  </div>
+</div>
+
+<h2 id="f8">8. לחיצה כפולה וכשל בשליחה <span class="new">חדש</span></h2>
+<div class="feature">
+  <ul>
+    <li><strong>לחיצה כפולה על תיקון:</strong> הפונקציה נועלת את ההזמנה המקורית. קריאה חוזרת עם אותה כתובת מחזירה את אותה הזמנה חדשה. נבדק עם 5 בקשות במקביל: הזמנה אחת, מייל אחד.</li>
+    <li><strong>לחיצה כפולה על שליחה:</strong> לפני שליחה השרת "תופס" את ההזמנה בעדכון מותנה. בקשה שנייה בתוך דקה מהצלחה לא שולחת שוב.</li>
+    <li><strong>כשל זמני:</strong> אחרי כשל התפיסה משתחררת, ו-Resend שולח שוב את <em>אותו</em> קישור. לא נוצרת הזמנה חדשה.</li>
+    <li><strong>בדפדפן:</strong> כל כפתור מנוטרל עד שהבקשה שלו מסתיימת.</li>
+  </ul>
+</div>
+
+<h2 id="f9">9. הפרדה בין dev ל-production</h2>
+<div class="feature">
+  <ul>
+    <li><strong><code>EMAIL_REDIRECT_TO</code></strong> (חדש, ל-dev ובדיקות בלבד): כל מייל הזמנה נשלח לתיבת בדיקה אחת, למשל <code>delivered@resend.dev</code>. הכתובת המקורית מופיעה בנושא: <code>[dev, for dana@example.com] …</code>. ב-production משאירים ריק.</li>
+    <li>ב-Railway, לכל סביבה ערכים משלה: פרויקט Supabase, <code>RESEND_API_KEY</code>, <code>EMAIL_FROM</code>, <code>APP_URL</code>. מייל מ-dev לא יכול להצביע על production, כי הקישור נבנה מ-<code>APP_URL</code> של אותה סביבה.</li>
+    <li>החלוקה בין frontend ל-backend נשמרה: הדפדפן לא מדבר עם Resend ולא כותב ישירות לבסיס הנתונים.</li>
+  </ul>
+</div>
+
+<h2 id="tech">שינויים טכניים לסקירה</h2>
+<h3>מיגרציות (לפי הסדר)</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>קובץ</th><th>מה עושה</th><th>לשים לב</th></tr></thead>
+  <tbody>
+    <tr><td><code>20261126100000_invite_lifecycle.sql</code></td><td><code>expires_at</code>, <code>revoked_at</code>, כתובות באותיות קטנות, אינדקס ייחודי להזמנה פתוחה לכל כתובת.</td><td>מבטל כפילויות ישנות של הזמנות פתוחות (שומר את החדשה) לפני יצירת האינדקס.</td></tr>
+    <tr><td><code>20261126110000_invite_delivery_and_correction.sql</code></td><td><code>last_send_at</code>, <code>last_send_status</code>, <code>replaced_by</code>, והפונקציה <code>correct_invite</code>.</td><td><code>security definer</code>; ההרשאה הוסרה מ-<code>public</code>, <code>anon</code>, <code>authenticated</code>.</td></tr>
+  </tbody>
+</table></div>
+
+<h3>נקודות קצה</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Endpoint</th><th>מי</th><th>שינוי</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /v1/studios/{id}/invites</code></td><td>חבר צוות</td><td>שולח מייל, משתמש מחדש בהזמנה פתוחה לאותה כתובת.</td></tr>
+    <tr><td><code>GET /v1/studios/{id}/invites</code></td><td>חבר צוות</td><td>כל ההיסטוריה, כולל מבוטלות, עם סטטוס שליחה.</td></tr>
+    <tr><td><code>POST …/invites/{id}/send</code></td><td>חבר צוות</td><td>חדש: שליחה חוזרת, אותו קישור.</td></tr>
+    <tr><td><code>POST …/invites/{id}/correct</code></td><td>חבר צוות</td><td>חדש: תיקון כתובת.</td></tr>
+    <tr><td><code>DELETE …/invites/{id}</code></td><td>חבר צוות</td><td>חדש: ביטול.</td></tr>
+    <tr><td><code>GET /v1/invites/{token}</code></td><td>ציבורי</td><td>404 להזמנה מבוטלת או שפגה. עדיין לא מחזיר כתובת.</td></tr>
+    <tr><td><code>POST /v1/invites/{token}/accept</code></td><td>מחובר</td><td>בודק כתובת מאומתת ותואמת.</td></tr>
+    <tr><td><code>POST /v1/projects</code></td><td>מחובר</td><td>דורש הזמנה שהתקבלה, או חברות בסטודיו.</td></tr>
+  </tbody>
+</table></div>
+
+<h3>בדיקות קיימות ששונו</h3>
+<p>כל בדיקה שבה לקוח פותח פרויקט צריכה עכשיו הזמנה. נוסף fixture בשם <code>admit</code> ב-<code>conftest.py</code>, שמסמן לקוח כמוזמן. בדיקת הדפדפן של האורח מגיעה עכשיו דרך הזמנה אישית ולא דרך הקישור הציבורי.</p>
+
+<h3>אבטחה</h3>
+<ul>
+  <li>אין ממצא קריטי או גבוה בסקירת האבטחה.</li>
+  <li>שמות ממשתמשים עוברים escaping במייל ובמסך (צמתי טקסט בלבד). נושא המייל בלי שורות חדשות.</li>
+  <li>סירוב לא חושף את הכתובת שהוזמנה. רישומי שגיאה מכילים רק סוג שגיאה, בלי כתובות ובלי מפתחות.</li>
+  <li>פתוח: שם סטודיו בסגנון פישינג עדיין יגיע ללקוח מהשולח שלנו (escaped, אבל קריא). רשום ב-<code>wiki/open-items.md</code>.</li>
+</ul>
+
+<h2 id="tests">תוצאות בדיקות</h2>
+<p>הורצו בפועל, על פרויקט Supabase חדש (<span class="mono">owndesign-dev</span>) עם כל המיגרציות:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>חבילה</th><th>תוצאה</th></tr></thead>
+  <tbody>
+    <tr><td><code>cd backend &amp;&amp; uv run pytest</code></td><td><span class="chip ok">131 עברו</span> כולל 9 מסלולי דפדפן (E2E)</td></tr>
+    <tr><td><code>cd frontend &amp;&amp; npm test</code></td><td><span class="chip ok">37 עברו</span></td></tr>
+    <tr><td><code>backend/tests/test_invites.py</code></td><td>19 בדיקות: כתובת שגויה, קישור שהועבר, אותיות, כתובת לא מאושרת, תוקף, ביטול, תיקון, מקביליות, כשל שליחה, הרשאות, קריאה ישירה לפונקציה.</td></tr>
+    <tr><td>תצוגה</td><td>נבדק ב-1280px וב-390px: אין גלילה אופקית, אין כפתור שחורג מהרשימה.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="manual">תסריט בדיקה ידני (dev)</h2>
+<p>הכנה ב-<code>backend/.env</code>:</p>
+<pre>RESEND_API_KEY=re_...            # test key
+EMAIL_FROM=Atelier &lt;invites@your-test-domain&gt;
+APP_URL=http://localhost:5500
+EMAIL_REDIRECT_TO=delivered@resend.dev</pre>
+<ol class="flow">
+  <li>התחבר כמעצב, פתח את <code>studio.html</code>, והזמן את <code>dana@example.com</code>. ודא שבהיסטוריה מופיע <span class="chip ok">Sent</span> ומועד שליחה.</li>
+  <li>לחץ <strong>Send invite</strong> פעמיים מהר לאותה כתובת. ודא שיש שורה אחת ומייל אחד בתיבת הבדיקה.</li>
+  <li>העתק את הקישור (Copy link) ושמור אותו בצד. זה "הקישור הישן".</li>
+  <li>לחץ <strong>Correct address</strong>, הקלד כתובת בדיקה שלך, ובדוק שבשלב האישור מופיעות שתי הכתובות. אשר.</li>
+  <li>ודא בהיסטוריה: השורה הישנה <span class="chip">Replaced: address corrected</span>, ומעליה הזמנה חדשה.</li>
+  <li>חלון גלישה בסתר: פתח את הקישור הישן. מצופה: "This link is not valid".</li>
+  <li>חלון גלישה בסתר חדש: פתח את הקישור החדש (מתיבת הבדיקה). מצופה: "Hi Dana…, plan your home with &lt;studio&gt;".</li>
+  <li>באותו חלון: התחבר עם כתובת אחרת. מצופה: סירוב. התחבר עם הכתובת המתוקנת. מצופה: הגעה לרשימת הפרויקטים, ואפשר לפתוח פרויקט.</li>
+  <li>חזור למעצב ורענן. מצופה: "Client signed in", ואחרי פתיחת פרויקט "Client entered the project", ושורה בכרטיס הפרויקט.</li>
+  <li>כשל: שנה זמנית את <code>RESEND_API_KEY</code> לערך שגוי, הפעל מחדש ולחץ Resend. מצופה: <span class="chip err">Sending failed</span>. החזר את המפתח ולחץ Resend שוב: <span class="chip ok">Sent</span>, אותו קישור.</li>
+</ol>
+
+<h2 id="open">מה עדיין דורש אימות</h2>
+<ul class="checklist">
+  <li>☐ <strong>שליחה אמיתית דרך Resend.</strong> לא בוצעה: אין עדיין מפתח. בבדיקות Resend מוחלף בגרסה מדומה.</li>
+  <li>☐ <strong>אישור מייל + SMTP ב-Supabase.</strong> בלי זה בדיקת הזהות לא אמיתית (ראה סעיף 3).</li>
+  <li>☐ <strong>תצוגת המייל ב-Gmail, Outlook ובטלפון אמיתי.</strong> נבדק רק בדפדפן (Chromium).</li>
+  <li>☐ <strong>התסריט הידני בחלון גלישה בסתר על ידי אדם.</strong> אותו מסלול נבדק אוטומטית בהקשרי דפדפן נקיים, אבל לא ידנית.</li>
+  <li>☐ <strong>המיגרציות על בסיס הנתונים שלך.</strong> הראשונה מבטלת כפילויות ישנות של הזמנות פתוחות.</li>
+  <li>☐ <strong>Railway:</strong> הגדרת המשתנים לכל סביבה, ו-<code>EMAIL_REDIRECT_TO</code> ריק ב-production.</li>
+  <li>☐ <strong>לקוחות קיימים</strong> שנכנסו דרך הקישור הציבורי: יצטרכו הזמנה לפרויקט חדש.</li>
+</ul>
+
+<footer>
+  נוצר עבור PR #12 ב-<span class="mono">JonathanZouari/OwnDesign</span>. כל הכתובות והשמות במסמך הם נתוני דוגמה. אין במסמך קישורי הזמנה פעילים או מפתחות.
+</footer>
+
+</main>
+</body>
+</html>

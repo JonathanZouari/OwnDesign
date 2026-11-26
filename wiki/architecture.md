@@ -55,7 +55,9 @@ each change; the plan object is never mutated.
 
 Studios, invites, studio activity (`GET /v1/studios/{id}/audit`, the latest 10 audit events, members
 only): `backend/app/routes/studios.py`. Invites: create (reuses the open invite for the same address and emails
-it), `POST .../invites/{id}/send` (same token, expiry renewed), `DELETE .../invites/{id}` (cancel), public
+it), `POST .../invites/{id}/send` (same token, expiry renewed), `POST .../invites/{id}/correct` (cancels it and
+invites the corrected address with a new link, through `public.correct_invite`), `DELETE .../invites/{id}`
+(cancel), `GET .../invites` (the whole history, newest first, with the last send attempt), public
 `GET /v1/invites/{token}`, and `POST /v1/invites/{token}/accept` (the confirmed address must match). Invites
 expire after 14 days. Emails: `backend/app/mailer.py` and `invite_email.html`. `create_project` needs an
 accepted invite to the studio unless the caller is a member. Projects, versions: `backend/app/routes/projects.py`.

@@ -26,6 +26,13 @@ End to end, regression (both full suites) and edge cases for the change (`CLAUDE
 
 ## Last result
 
+2026-11-26 (history and correction): backend 131 passed, frontend 37 passed. `test_invites.py` grew to 19 tests
+(correction kills the old link and keeps both in history, 5 parallel corrections give one invite and one email,
+failed send recorded and retried with the same token, only open invites, reuse of an open invite, membership and
+malformed input, direct calls to `correct_invite` refused). The designer journey corrects an address in the dialog
+and checks both links in fresh browser contexts. Screens checked at 1280 and 390 px.
+
+Earlier the same day, 
 2026-11-26: backend 122 passed (9 browser journeys included), frontend 33 passed, on a fresh Supabase test
 project. New: `backend/tests/test_invites.py` (who may accept, forwards, letter case, unconfirmed address,
 expiry and renewal, one open invite per address with 5 parallel requests, cancel rules, double-send guard,

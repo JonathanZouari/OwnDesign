@@ -47,3 +47,4 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 - Clients who joined through the studio link before 2026-11-26 keep their projects but need a personal invite to start a new one.
 - Invite email text includes the studio and client names, which users choose. They are escaped, but a phishing-style studio name would still reach the client from our sender. Consider a subject without the studio name, or reviewing studio names.
 - The email hero image (`frontend/img/email-hero.jpg`) bakes in the logo; regenerate it if the logo or photo changes.
+- `EMAIL_REDIRECT_TO` must be empty in production (Railway): when set, every invite link goes to that one inbox.
