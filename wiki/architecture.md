@@ -8,6 +8,17 @@ backend/    FastAPI, Python 3.13, uv
 supabase/   migrations and managed auth settings
 ```
 
+## Environments
+
+- **Dev Supabase project `owndesign-dev`**, in the user's own organisation, region eu-central-1 (Frankfurt), free
+  plan, created 2026-11-26 with the Supabase CLI. All migrations in `supabase/migrations/` applied with
+  `supabase db push --remote`; auth settings from `supabase/config.toml` applied with `supabase config push --remote`.
+  The repository is linked to it (`supabase/.temp`, git-ignored).
+- Local config: `backend/.env` (URL, publishable and secret keys, allowed origins, OpenAI settings, and
+  `SUPABASE_DB_PASSWORD` for the CLI only) and `frontend/js/config.js` (URL and publishable key). Both git-ignored.
+- The consultant has no OpenAI key in this environment yet, so its endpoint answers 503 until one is added.
+- Hosted CLI commands need `--remote`, and creating or changing hosted resources needs `--yes` when run by an agent.
+
 ## Request path
 
 1. The browser signs in with supabase-js (`frontend/js/api.js`). That is its only direct use of Supabase.

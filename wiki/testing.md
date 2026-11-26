@@ -40,10 +40,9 @@ reload; designer sees the client's data; client-side rejections, markup stays te
 visitor; consultant page limits) passes together with `test_e2e.py` (9 browser tests in all). No chat message
 reaches OpenAI in the suite; the real call was checked by hand once.
 
-2026-11-26, client tasks, on a machine without `backend/.env` and `frontend/js/config.js`: frontend 37 passed;
-backend 22 passed, 98 skipped (every integration and E2E test, including all of `test_tasks.py` and the tasks
-journey, needs those files and the migration applied to dev). `test_consultant.py` cannot even be collected
-without `.env`, because it imports the app at module level. **The tasks tests have not run against Supabase yet.**
+2026-11-26, client tasks, against the new `owndesign-dev` project ([architecture.md](architecture.md)): backend
+135 passed, 0 skipped, 0 failed (incl. all of `test_tasks.py` and 10 browser journeys); frontend 37 passed.
+Without `backend/.env`, `test_consultant.py` cannot be collected, because it imports the app at module level.
 
 ## Local setup notes
 

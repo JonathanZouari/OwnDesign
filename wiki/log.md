@@ -121,3 +121,12 @@ fixed, a designer's reopen now keeps the client's note; the rest recorded. Commi
 Frontend 37 passed. Backend 22 passed, 98 skipped: no `backend/.env` on this machine and the migration is not
 applied to dev, so `test_tasks.py` and the tasks journey have not run yet. Pages: [testing](testing.md),
 [open-items](open-items.md).
+
+## [2026-11-26] infra | Own dev Supabase project
+Created `owndesign-dev` in the user's organisation (eu-central-1, free plan) with the Supabase CLI, after the user
+chose organisation, region and name. Applied all 7 migrations and the auth settings, wrote `backend/.env` and
+`frontend/js/config.js` from the project's keys without printing them. Pages: [architecture](architecture.md).
+
+## [2026-11-26] test | Client tasks verified against Supabase
+Backend 135 passed, 0 skipped (incl. `test_tasks.py` and the tasks browser journey, run for the first time);
+frontend 37 passed. Pages: [testing](testing.md), [open-items](open-items.md).

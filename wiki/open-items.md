@@ -21,7 +21,6 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 
 ## Client tasks gaps
 
-- **Not yet verified against Supabase.** The migration `20261126090000_project_tasks.sql` must be applied to dev (`supabase link`, `supabase db push`) and the backend suite run with `backend/.env`.
 - **Branch not pushed.** `client-tasks` exists only locally; the GitHub account in use has no write access to the repository (403).
 - No notification when a task is created or completed; the client finds tasks through the projects list.
 - A studio member who is also the project's client sees the designer view only, so cannot mark done in the page (the API allows it).
