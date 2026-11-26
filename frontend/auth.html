@@ -11,8 +11,9 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+  <a class="skip" href="#main">Skip to main content</a>
   <header class="appbar"><a class="brand" href="index.html">ATELIER</a></header>
-  <main class="page narrow">
+  <main class="page narrow" id="main" tabindex="-1">
     <h1 id="title">Sign in</h1>
     <p class="muted" id="subtitle"></p>
     <form id="auth-form" class="card stack">
@@ -27,7 +28,7 @@
       </label>
       <button class="primary" id="submit">Sign in</button>
     </form>
-    <p><button class="link" id="switch" type="button"></button></p>
+    <p><button class="link" id="switch" type="button">Create an account</button></p>
   </main>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/auth.js"></script>

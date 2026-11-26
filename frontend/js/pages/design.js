@@ -475,5 +475,5 @@ run(async () => {
   renderBoard();
   renderBoardSources();
   renderAssets();
-  $("#design").hidden = false;
+  $("#main").hidden = false;
 });

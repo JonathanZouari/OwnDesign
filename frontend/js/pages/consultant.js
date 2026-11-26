@@ -109,6 +109,6 @@ run(async () => {
     send();
   });
   refreshComposer();
-  $("#consult").hidden = false;
+  $("#main").hidden = false;
   $("#composer").scrollIntoView({ block: "nearest" });
 });

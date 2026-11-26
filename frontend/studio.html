@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="app">
+  <a class="skip" href="#main">Skip to main content</a>
   <header class="appbar">
     <div class="group"><a class="brand" href="studio.html">ATELIER</a><span class="chip studio" id="studio-brand" hidden></span></div>
     <nav aria-label="Account"><button id="sign-out" type="button">Sign out</button></nav>
@@ -33,7 +34,7 @@
     </div>
   </aside>
 
-  <main class="workspace">
+  <main class="workspace" id="main" tabindex="-1">
     <div class="dash">
       <form id="create-studio" class="card stack dash-narrow" hidden>
         <h2>Create your studio</h2>
