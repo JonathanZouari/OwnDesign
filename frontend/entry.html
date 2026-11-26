@@ -11,8 +11,9 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+  <a class="skip" href="#main">Skip to main content</a>
   <header class="appbar"><div class="group"><span class="brand">ATELIER</span><span class="chip studio" id="studio-brand" hidden></span></div></header>
-  <main class="page portal">
+  <main class="page portal" id="main" tabindex="-1">
     <div id="welcome" class="portal-flow" hidden>
       <div class="portal-strip">
         <span class="portal-studio" id="portal-studio"></span>
@@ -127,5 +128,7 @@
   </main>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/entry.js"></script>
+  <footer class="page-footer"><a lang="he" href="accessibility.html">הצהרת נגישות</a></footer>
+  <script type="module" src="js/a11y-widget.js"></script>
 </body>
 </html>

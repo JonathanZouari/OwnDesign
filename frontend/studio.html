@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="app">
+  <a class="skip" href="#main">Skip to main content</a>
   <header class="appbar">
     <div class="group"><a class="brand" href="studio.html">ATELIER</a><span class="chip studio" id="studio-brand" hidden></span></div>
     <nav aria-label="Account"><button id="sign-out" type="button">Sign out</button></nav>
@@ -33,7 +34,7 @@
     </div>
   </aside>
 
-  <main class="workspace">
+  <main class="workspace" id="main" tabindex="-1">
     <div class="dash">
       <form id="create-studio" class="card stack dash-narrow" hidden>
         <h2>Create your studio</h2>
@@ -53,6 +54,8 @@
             <a class="button primary" href="wizard.html" id="new-project"><span class="icon" aria-hidden="true">add</span>Create new project</a>
           </div>
         </header>
+
+        <nav class="section-links" aria-label="Page sections"><a href="#projects">Projects</a><a href="#clients">Clients &amp; invites</a></nav>
 
         <dl class="metrics" aria-label="Studio totals">
           <div class="card metric"><dt class="label">Projects</dt><dd><span class="value" data-metric="projects"></span><span class="code">In this studio</span></dd></div>
@@ -124,8 +127,10 @@
   <footer class="statusbar">
     <span>Areas in m², approximate</span>
     <span class="wide">Projects are visible only to your studio and each project's client</span>
+    <a lang="he" href="accessibility.html">הצהרת נגישות</a>
   </footer>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/studio.js"></script>
+  <script type="module" src="js/a11y-widget.js"></script>
 </body>
 </html>

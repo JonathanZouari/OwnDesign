@@ -17,6 +17,7 @@ Project memory for Atelier. Rules for maintaining it are in [`../CLAUDE.md`](../
 ## Design
 
 - [design.md](design.md): the Stitch design system, the eight screens and their state, rules for turning a screen into a page.
+- [accessibility.md](accessibility.md): WCAG 2.2 AA target, Israeli standard notes, what is done and what is not.
 
 ## History
 

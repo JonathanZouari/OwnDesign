@@ -103,7 +103,7 @@ def image(name="tiny.png", mime="image/png", data=PNG) -> dict:
 
 
 def no_script_ran(page) -> bool:
-    return page.evaluate("window.__xss === undefined") and page.locator("#design img[src='x'], #design b, #design script").count() == 0
+    return page.evaluate("window.__xss === undefined") and page.locator("#main img[src='x'], #main b, #main script").count() == 0
 
 
 def test_client_fills_brief_materials_and_moodboard(servers, page, api, world):

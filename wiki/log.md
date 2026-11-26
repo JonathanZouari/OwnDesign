@@ -101,3 +101,14 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+
+## [2026-11-26] build | Accessibility: tests, fixes and Hebrew statement
+Branch `accessibility`. axe-core tests first (18b4bd0), then skip links, labels, contrast, reduced motion (a8060e1),
+`test_consultant.py` skips without Supabase (05518df), Hebrew statement page. test_a11y 40 passed, frontend 31 passed,
+backend 49 passed / 64 skipped (no Supabase config). Pages: [accessibility](accessibility.md), [open-items](open-items.md), [testing](testing.md).
+
+## [2026-11-26] build | Accessibility: responsive navigation
+Section links on the studio dashboard below 1200 px; workspace tabs row and Sign in/out button on phones; axe on phone viewport. Backend 70 passed / 64 skipped (no Supabase config), frontend 31 passed. Pages: [accessibility](accessibility.md), [open-items](open-items.md).
+
+## [2026-11-26] build | Accessibility options widget
+Floating button with display options on every page, `forced-colors` support. Caught and fixed a bug where Reset left classes behind. backend 103 passed / 64 skipped (no Supabase config), frontend 31 passed. Pages: [accessibility](accessibility.md), [testing](testing.md).

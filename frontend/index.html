@@ -11,11 +11,12 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+  <a class="skip" href="#main">Skip to main content</a>
   <header class="appbar">
     <a class="brand" href="index.html">ATELIER</a>
     <nav><a class="button" href="auth.html">Sign in</a></nav>
   </header>
-  <main class="page">
+  <main class="page" id="main" tabindex="-1">
     <section class="hero">
       <h1>Plan your home before you meet your designer.</h1>
       <p class="muted">Draw your floor plan, try layouts and furniture, and hand your interior designer a clear starting point instead of a blank page.</p>
@@ -34,5 +35,7 @@
     </div>
     <p class="muted small">Plans made here are conceptual. They are not architectural, structural or construction documents.</p>
   </main>
+  <footer class="page-footer"><a lang="he" href="accessibility.html">הצהרת נגישות</a></footer>
+  <script type="module" src="js/a11y-widget.js"></script>
 </body>
 </html>

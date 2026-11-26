@@ -4,10 +4,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.main import app
-from app.routes.consultant import DAILY_MESSAGE_CAP, get_openai
-from tests.conftest import needs_supabase
+from tests.conftest import HAS_SUPABASE, needs_supabase
 from tests.test_geometry import VALID
+
+# Importing the app builds Settings(), which fails without Supabase config: skip before that import.
+if not HAS_SUPABASE:
+    pytest.skip("Supabase is not configured (backend/.env missing)", allow_module_level=True)
+
+from app.main import app  # noqa: E402
+from app.routes.consultant import DAILY_MESSAGE_CAP, get_openai  # noqa: E402
 
 pytestmark = needs_supabase
 

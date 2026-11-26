@@ -10,10 +10,8 @@ from types import SimpleNamespace
 
 import pytest
 
-needs_supabase = pytest.mark.skipif(
-    not (os.getenv("SUPABASE_URL") or Path(".env").exists()),
-    reason="Supabase is not configured (backend/.env missing)",
-)
+HAS_SUPABASE = bool(os.getenv("SUPABASE_URL") or Path(".env").exists())
+needs_supabase = pytest.mark.skipif(not HAS_SUPABASE, reason="Supabase is not configured (backend/.env missing)")
 
 TEST_EMAIL_DOMAIN = "owndesign-test.example.com"
 

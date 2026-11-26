@@ -17,7 +17,6 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Orphaned image files.** Files of a deleted project or user are queued in `storage_deletions` and removed only the next time an asset is deleted. Needs a scheduled drain.
 - **Delete-then-insert saves** of finishes and the moodboard are not atomic.
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
-- The editor has no link to the Phase 2 pages at 767 px and below.
 
 ## Later phases with a Stitch screen waiting
 
@@ -32,16 +31,20 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 - Railway deployment files and environments.
 - Sign-out does not invalidate an already issued token before it expires.
 
+## Accessibility
+
+- **Statement contact details.** The coordinator is named (Yonatan Zuari) but the email (`accessibility@example.com`) and phone (`000-000-0000`) in `frontend/accessibility.html` are invented and labelled as such on the page. Replace them before publishing.
+- **Legal review.** The statement follows Kol Zchut's summary; the text of the 2013 regulations was not read.
+- **Not done yet:** the dashboard's "no match" message is still un-hidden rather than announced through a live region, signed-in axe runs, axe on signed-in pages, a screen-reader pass.
+
 ## Smaller
 
-- Below 1200 px the sidebar is hidden, so the dashboard's in-page section links are not reachable there.
 - The wizard replaces an unsaved draft after a notice only; the portal's blank canvas asks first.
 - The dashboard lists every project of the studio on one page; there is no paging yet.
 - The dashboard's "no match" message is shown by un-hiding it, which some screen readers announce unreliably.
 - `.area`, `.version` and `.wide` are global classes in `app.css` and are easy to collide with.
 - Audit event ids are one sequence across all studios, so a member can infer overall event volume.
 - Fonts load from Google, which exposes the visitor's IP address to Google.
-- The editor's sign in/out button is hidden on phones.
 - The coordinate limit is enforced in the editor only by clamping the view.
 - Two adjacent rooms from the wizard produce two overlapping walls.
 - Commit author address in the published history is the user's personal one (published by the user's choice).
