@@ -18,7 +18,7 @@ router = APIRouter(prefix="/v1/projects/{project_id}")
 def _writable_project(user: CurrentUser, project_id: UUID) -> dict:
     # Every service-role write path goes through here: nothing is written for a suspended studio.
     project = _project_or_404(user, project_id)
-    if project["studio"]["status"] != "active":
+    if project["studio"] is not None and project["studio"]["status"] != "active":
         raise HTTPException(403, "This studio is not active")
     return project
 
