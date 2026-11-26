@@ -8,3 +8,4 @@ supabase/.branches/
 frontend/js/config.js
 test-results/
 .claude/worktrees/
+*.pt
