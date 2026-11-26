@@ -43,6 +43,7 @@
       <button type="button" role="tab" id="tab-brief" aria-controls="panel-brief" aria-selected="true">Brief</button>
       <button type="button" role="tab" id="tab-finishes" aria-controls="panel-finishes" aria-selected="false" tabindex="-1">Styles &amp; materials</button>
       <button type="button" role="tab" id="tab-moodboard" aria-controls="panel-moodboard" aria-selected="false" tabindex="-1">Moodboard</button>
+      <button type="button" role="tab" id="tab-room" aria-controls="panel-room" aria-selected="false" tabindex="-1">In the room</button>
     </div>
 
     <!-- Brief -->
@@ -218,6 +219,77 @@
             <div class="swatches" id="board-materials"></div>
           </section>
         </div>
+      </div>
+    </section>
+
+    <!-- In the room -->
+    <section role="tabpanel" id="panel-room" aria-labelledby="tab-room" tabindex="0" hidden>
+      <div class="room-layout">
+        <section class="card" aria-labelledby="scan-title">
+          <h2 id="scan-title">Scan a room</h2>
+          <p class="muted">Take a photo of the room. We find furniture and objects, you check the list, then add them.</p>
+          <form id="scan-form" class="stack" novalidate>
+            <div class="form-grid">
+              <label for="scan-file">Photo of the room
+                <input id="scan-file" name="file" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" aria-describedby="scan-hint">
+              </label>
+              <label for="scan-room">Room in the photo
+                <select id="scan-room" name="room_id"></select>
+              </label>
+            </div>
+            <p class="hint" id="scan-hint">JPEG, PNG or WebP, up to 5 MB. The photo is kept with your images.</p>
+            <div class="savebar">
+              <button class="primary" type="submit" id="scan-send"><span class="icon" aria-hidden="true">photo_camera</span>Scan photo</button>
+              <p class="status" id="scan-status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" id="review" aria-labelledby="review-title" hidden>
+          <h2 id="review-title" tabindex="-1">Check what we found</h2>
+          <p class="muted">Untick anything that is wrong, fix names and categories, then add the rest to the list.</p>
+          <div class="room-review">
+            <div class="room-photo" id="review-photo"></div>
+            <div class="stack">
+              <p class="muted" id="review-empty" hidden>Nothing recognisable was found. Add items by hand.</p>
+              <ol class="room-drafts" id="review-list" aria-label="Items found in the photo"></ol>
+            </div>
+          </div>
+          <div class="savebar">
+            <button class="primary" type="button" id="review-add"><span class="icon" aria-hidden="true">playlist_add</span><span id="review-add-text">Add 0 items</span></button>
+            <button type="button" id="review-discard">Discard</button>
+            <p class="status" id="review-status" role="status" aria-live="polite"></p>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="items-title">
+          <h2 id="items-title" tabindex="-1">Items in the home <span id="items-count" class="mono muted small"></span></h2>
+          <p class="muted" id="items-empty" hidden>No items listed yet. Scan a photo of a room or add an item by hand.</p>
+          <div class="stack" id="items-groups"></div>
+          <p class="status" id="items-status" role="status" aria-live="polite"></p>
+
+          <form id="manual-form" class="room-manual stack" novalidate aria-labelledby="manual-title">
+            <h3 id="manual-title">Add item by hand</h3>
+            <div class="form-grid">
+              <label for="manual-name">Name
+                <input id="manual-name" name="label" maxlength="80" autocomplete="off">
+              </label>
+              <label for="manual-category">Category
+                <select id="manual-category" name="category"></select>
+              </label>
+              <label for="manual-room">Room
+                <select id="manual-room" name="room_id"></select>
+              </label>
+              <label for="manual-note">Note (optional)
+                <input id="manual-note" name="note" maxlength="200" autocomplete="off">
+              </label>
+            </div>
+            <div class="savebar">
+              <button type="submit" id="manual-add"><span class="icon" aria-hidden="true">add</span>Add item</button>
+              <p class="status" id="manual-status" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+        </section>
       </div>
     </section>
   </main>
