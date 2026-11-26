@@ -113,3 +113,8 @@ Security review not run yet. Pages: [architecture](architecture.md), [testing](t
 Branch `budget-calculation` (from `dev`), nothing pushed. Frontend 43 of 43 passing. Download CSV has a BOM and a guard against
 spreadsheet formulas; it and Print use the last saved budget. Not checked in a browser. Still blocked on a Supabase project:
 migration, integration tests, browser E2E and security review. Decided with the user: no new Supabase project, no push for now.
+
+## [2026-11-26] docs | Budget branch made merge-ready for the main Supabase project
+The branch holds no keys, no `.env`, no `config.js` and no demo files. After a merge the main project connects through its
+own `backend/.env` and `frontend/js/config.js`; only the migration `20261126090000_phase3_budget.sql` has to be applied
+(`supabase db push`, before starting the new backend). Steps added to the README. Nothing was applied or pushed.
