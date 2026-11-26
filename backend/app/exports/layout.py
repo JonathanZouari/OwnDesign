@@ -141,6 +141,15 @@ def opening_symbol(wall: Wall, opening: Opening) -> Symbol:
     )
 
 
+def arc_points(arc: Arc, steps: int = 16) -> list[Point]:
+    """Points along the arc from its start to its end, the short way round (a quarter turn)."""
+    cx, cy = arc.centre
+    a0 = math.atan2(arc.start[1] - cy, arc.start[0] - cx)
+    a1 = math.atan2(arc.end[1] - cy, arc.end[0] - cx)
+    sweep = (a1 - a0 + math.pi) % (2 * math.pi) - math.pi
+    return [(cx + arc.radius * math.cos(a0 + sweep * i / steps), cy + arc.radius * math.sin(a0 + sweep * i / steps)) for i in range(steps + 1)]
+
+
 def _room_box(geometry: Geometry, room_id: str) -> Box | None:
     points = [(w.x1, w.y1) for w in geometry.walls if w.roomId == room_id] + [
         (w.x2, w.y2) for w in geometry.walls if w.roomId == room_id
@@ -180,12 +189,15 @@ def dimension_labels(geometry: Geometry) -> list[DimensionLabel]:
 
 
 def plan_bounds(geometry: Geometry) -> Box:
-    """Everything drawn: walls at their thickness and furniture at any rotation."""
+    """Everything drawn: walls with their square caps at any angle, door swings on either side, furniture at any rotation."""
     points = []
     for wall in geometry.walls:
         half = wall.thickness / 2
-        for x, y in ((wall.x1, wall.y1), (wall.x2, wall.y2)):
-            points += [(x - half, y - half), (x + half, y + half)]
+        points += outline(wall, -half, wall_length(wall) + half)
+    walls = {wall.id: wall for wall in geometry.walls}
+    for opening in geometry.openings:
+        if opening.type == "door":  # the leaf and its swing may reach outside the walls
+            points += arc_points(opening_symbol(walls[opening.wallId], opening).arc)
     for item in geometry.furniture:
         reach = math.hypot(item.w, item.d) / 2
         points += [(item.x - reach, item.y - reach), (item.x + reach, item.y + reach)]

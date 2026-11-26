@@ -173,3 +173,42 @@ def test_single_straight_wall_does_not_divide_by_zero():
 ])
 def test_file_name_is_ascii_and_safe(name, expected):
     assert L.file_name(name, 3, "pdf") == f"{expected}-v3.pdf"
+
+
+def ccw_room_with_outward_door(raw):
+    """Walls drawn counter-clockwise, so the editor's door normal (-uy, ux) points out of the room."""
+    empty(raw)
+    for i, ((x1, y1), (x2, y2)) in enumerate([((500, 0), (0, 0)), ((0, 0), (0, 400)), ((0, 400), (500, 400)), ((500, 400), (500, 0))]):
+        raw["walls"].append({"id": f"w{i}", "x1": x1, "y1": y1, "x2": x2, "y2": y2, "thickness": 20, "kind": "exterior"})
+    raw["openings"] = [{"id": "d", "wallId": "w0", "type": "door", "offset": 200, "width": 90}]
+
+
+@pytest.mark.parametrize("paper", ["a4", "a3"])
+def test_every_drawn_point_is_inside_the_drawing_area(paper):
+    def mutate(raw):
+        ccw_room_with_outward_door(raw)
+        raw["walls"].append({"id": "diag", "x1": 0, "y1": 0, "x2": 300, "y2": 300, "thickness": 40, "kind": "exterior"})
+    geometry = plan(mutate)
+    page = L.sheet(geometry, paper)
+    walls = {wall.id: wall for wall in geometry.walls}
+    points = [p for piece in L.wall_pieces(geometry) for p in L.outline(piece.wall, piece.start, piece.end)]
+    for opening in geometry.openings:
+        symbol = L.opening_symbol(walls[opening.wallId], opening)
+        points += [p for line in symbol.lines for p in line]
+        if symbol.arc:
+            points += [symbol.arc.start, symbol.arc.end]
+    assert min(y for _, y in points) < -80  # the door really does swing outside the room
+    for x, y in points:
+        px, py = page.to_page(x, y)
+        assert page.area.x - 0.01 <= px <= page.area.x + page.area.w + 0.01
+        assert page.area.y - 0.01 <= py <= page.area.y + page.area.h + 0.01
+
+
+@pytest.mark.parametrize("offset, width, expected", [
+    (0, 100, [(100, 410)]),  # opening at the very start: no cap there, the gap starts at the wall end
+    (300, 100, [(-10, 300)]),  # opening ending exactly at the wall end
+    (100, 50, [(-10, 100), (150, 410)]),
+])
+def test_wall_pieces_at_the_wall_ends(offset, width, expected):
+    geometry = plan(lambda raw: raw["openings"][0].update(offset=offset, width=width))
+    assert [(round(p.start), round(p.end)) for p in L.wall_pieces(geometry) if p.wall.id == "w1"] == expected

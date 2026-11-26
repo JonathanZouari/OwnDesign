@@ -26,7 +26,8 @@ def render_png(geometry: Geometry, info: ExportInfo, paper: str) -> bytes:
             image = page.render(scale=DPI / 72, fill_color=(255, 255, 255, 255)).to_pil()
         finally:
             document.close()
-    image = image.convert("RGB")
+    if image.mode != "RGB":
+        image = image.convert("RGB")
     if image.size != size:  # pdfium rounds up (2481 wide for A4): trim the extra pixel, or pad with white
         image = image.crop((0, 0, *size))
     out = io.BytesIO()

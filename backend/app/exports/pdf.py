@@ -5,7 +5,6 @@ Hebrew is put into display order with python-bidi before drawing; Heebo covers H
 """
 
 import io
-import math
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -64,14 +63,6 @@ def _polygon(pdf: canvas.Canvas, page: L.Sheet, points: list[L.Point], fill: boo
     pdf.drawPath(path, stroke=1, fill=1 if fill else 0)
 
 
-def _arc_points(arc: L.Arc) -> list[L.Point]:
-    cx, cy = arc.centre
-    a0 = math.atan2(arc.start[1] - cy, arc.start[0] - cx)
-    a1 = math.atan2(arc.end[1] - cy, arc.end[0] - cx)
-    sweep = (a1 - a0 + math.pi) % (2 * math.pi) - math.pi  # the short way round: a quarter turn
-    return [(cx + arc.radius * math.cos(a0 + sweep * i / ARC_STEPS), cy + arc.radius * math.sin(a0 + sweep * i / ARC_STEPS)) for i in range(ARC_STEPS + 1)]
-
-
 def _drawing(pdf: canvas.Canvas, page: L.Sheet, geometry: Geometry) -> None:
     walls = {wall.id: wall for wall in geometry.walls}
     # Same order as the editor: furniture under the walls, openings over them, labels on top.
@@ -95,7 +86,7 @@ def _drawing(pdf: canvas.Canvas, page: L.Sheet, geometry: Geometry) -> None:
             pdf.line(*page.to_page(*start), *page.to_page(*end))
         if symbol.arc:
             pdf.setDash(2, 2)
-            points = [page.to_page(*point) for point in _arc_points(symbol.arc)]
+            points = [page.to_page(*point) for point in L.arc_points(symbol.arc, ARC_STEPS)]
             for start, end in zip(points, points[1:]):
                 pdf.line(*start, *end)
             pdf.setDash()
@@ -131,16 +122,17 @@ def _labels(pdf: canvas.Canvas, page: L.Sheet, geometry: Geometry) -> None:
 
 
 def _footer(pdf: canvas.Canvas, page: L.Sheet, info: ExportInfo) -> None:
-    left = page.area.x
-    width = page.area.w
-    top = page.area.y - 6
+    left = page.area.x - L.LABEL_GUTTER_PT
+    width = page.area.w + 2 * L.LABEL_GUTTER_PT
+    top = page.area.y - L.LABEL_GUTTER_PT  # below the gutter that wall-length labels may use
     pdf.setStrokeColorRGB(*MUTED)
     pdf.setLineWidth(0.4)
     pdf.line(left, top, left + width, top)
 
     pdf.setFillColorRGB(*INK)
     pdf.setFont(FONT, 11)
-    pdf.drawString(left, top - 16, _shown(_fit(info.project_name, 11, width), "L"))
+    # The name alone takes its own direction, so a shortened Hebrew name keeps the ellipsis at its end.
+    pdf.drawString(left, top - 16, _shown(_fit(info.project_name, 11, width)))
 
     version = f"Version {info.version_no}"
     if info.version_label:

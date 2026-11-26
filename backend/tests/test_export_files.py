@@ -222,3 +222,25 @@ def test_dxf_of_a_rotated_negative_coordinate_plan():
     xs = [p[0] for p in item.get_points("xy")]
     assert max(xs) - min(xs) == pytest.approx(160)
     assert all(math.isfinite(c) for e in doc.modelspace() if e.dxftype() == "LWPOLYLINE" for p in e.get_points("xy") for c in p)
+
+
+@pytest.mark.parametrize("start, end", [((0, 0), (400, 0)), ((400, 0), (0, 0)), ((0, 0), (0, 400)), ((0, 400), (0, 0))])
+def test_dxf_door_arc_is_a_quarter_turn_from_leaf_to_opening_end_in_every_wall_direction(start, end):
+    def mutate(raw):
+        empty(raw)
+        raw["walls"] = [{"id": "w", "x1": start[0], "y1": start[1], "x2": end[0], "y2": end[1], "thickness": 20, "kind": "exterior"}]
+        raw["openings"] = [{"id": "d", "type": "door", "wallId": "w", "offset": 100, "width": 90}]
+    geometry = plan(mutate)
+    symbol = L.opening_symbol(geometry.walls[0], geometry.openings[0])
+    arc, = on(read_dxf(render_dxf(geometry)), "OPENINGS", "ARC")
+    assert (arc.dxf.end_angle - arc.dxf.start_angle) % 360 == pytest.approx(90)
+    got = {(round(p.x, 6), round(p.y, 6)) for p in (arc.start_point, arc.end_point)}
+    want = {(round(x, 6), round(-y, 6) + 0.0) for x, y in (symbol.arc.start, symbol.arc.end)}
+    assert got == want
+
+
+def test_shortened_hebrew_project_name_keeps_the_ellipsis_at_its_end():
+    from app.exports.pdf import _fit, _shown
+
+    shown = _shown(_fit("סלון גדול מאוד " * 10, 11, 100))
+    assert shown.startswith("…")  # displayed right to left: the end of the name is at the visual left
