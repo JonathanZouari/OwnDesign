@@ -28,7 +28,8 @@ designer work on the same floor plan. AI assistance comes in later phases.
   through short-lived signed URLs, and a moodboard of images, styles and materials with notes and order.
 - AI consultant (`consultant.html`): OpenAI `gpt-5-mini`, answers from the project's brief, finishes and
   plan summary, recommends only and never edits the plan. One private conversation per user and project,
-  30 messages per user per day.
+  30 messages per user per day. The editor also has a Consultant side panel (several sessions per project,
+  streamed markdown replies, context: whole plan, a room or the selected object, saved or unsaved plan).
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 

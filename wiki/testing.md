@@ -39,6 +39,18 @@ reaches OpenAI in the suite; the real call was checked by hand once.
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the
 journeys use the second). A system-level `OPENAI_API_KEY` overrides the one in `.env`; unset it before starting the backend.
 
+## Realtime consultant
+
+- `backend/tests/test_consultant_context.py`, `_prompt.py`, `_stream.py`, `_wiring.py`: pure, no database or
+  network (88 tests, with `test_geometry.py`).
+- `backend/tests/test_consultant_sessions.py`: sessions, isolation, cap, streaming against real Supabase
+  (needs `backend/.env`; written but not yet run).
+- `backend/tests/test_e2e_consultant.py`: the editor panel in Chromium with the API mocked (14 tests, no
+  Supabase needed; it creates a temporary `frontend/js/config.js` if none exists).
+- `frontend/tests/consultant.test.js`: SSE parser, markdown, panel logic (60 frontend tests in total).
+- Not verified: real OpenAI streaming (event types were taken from the SDK), SSE through the Railway proxy,
+  answer quality on real plans.
+
 ## Not covered
 
 Real touch devices (pinch zoom), browsers other than Chromium, screen readers, load, a studio with

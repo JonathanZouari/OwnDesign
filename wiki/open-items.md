@@ -9,6 +9,15 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Product name.** "ATELIER" comes from Stitch; the PRD says undecided.
 - **PRD text** still says "no paid API", which the OpenAI decision overrides.
 
+## Realtime consultant
+
+- Run `test_consultant_sessions.py` and the existing Supabase suites against a real project; apply migration `20261126090000`.
+- Spikes still open: SSE delivery through Railway, and one real OpenAI streaming call.
+- Conversations still have no retention rule, delete action or consent notice; more plan data now reaches OpenAI.
+- The editor's app bar overflows horizontally at 375 px (not caused by the panel).
+- `consultant.html` and the legacy endpoints are kept until the panel has parity; retire them later.
+- Phases 2 to 4 (geometry tools, action proposals, retrieval) are not started.
+
 ## Phase 2 gaps
 
 - **Consultant retention and consent.** Conversations are kept without an expiry or a delete action; the brief and plan text go to OpenAI. A privacy notice and a retention rule are needed before production.
