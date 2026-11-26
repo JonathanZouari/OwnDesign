@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import * as B from "../js/budget-logic.js";
+import { BUDGET } from "../js/strings.js";
 
 const item = (over = {}) => ({ category: "furniture", name: "ספה", room: "סלון", quantity: 1, unit: "unit", unit_price: 1000, source: "user", note: null, ...over });
 const raw = (over = {}) => ({ name: "ספה", category: "furniture", room: "", quantity: "1", unit: "unit", unit_price: "1000", source: "user", note: "", ...over });
@@ -136,4 +138,169 @@ test("toCsv handles 200 maximal rows exactly", () => {
   const csv = B.toCsv(items, "USD", LABELS);
   assert.equal(csv.slice(1).split("\r\n").length, 200 + 3);
   assert.ok(csv.includes(`,${200 * 1_000_000_000_000},`));
+});
+
+// ---- CSV import --------------------------------------------------------------------------------------
+
+const IMPORT = {
+  columns: BUDGET.columns,
+  total: BUDGET.csvTotal,
+  categories: BUDGET.categories,
+  units: BUDGET.units,
+};
+const HEADER = "פריט,קטגוריה,חדר,כמות,יחידה,מחיר ליחידה,סכום (ILS),הערה";
+const GOOD = "ספה,רהיטים,סלון,1,יחידה,1000,1000,";
+const imp = (text) => B.importItems(B.parseCsv(text), IMPORT);
+const csvOf = (...lines) => lines.join("\r\n");
+const errorsOf = (...lines) => imp(csvOf(...lines)).errors;
+
+test("parseCsv: quotes, escaped quotes, newlines in quotes, line numbers", () => {
+  const rows = B.parseCsv('﻿a,b,c\r\n"1,2","say ""hi""","l1\r\nl2"\n,x,\n');
+  assert.deepEqual(rows.map((r) => r.cells), [["a", "b", "c"], ["1,2", 'say "hi"', "l1\r\nl2"], ["", "x", ""]]);
+  assert.deepEqual(rows.map((r) => r.line), [1, 2, 4]);
+});
+
+test("parseCsv: empty text, no trailing newline, CR only, quote inside an unquoted cell", () => {
+  assert.deepEqual(B.parseCsv(""), []);
+  assert.deepEqual(B.parseCsv("﻿"), []);
+  assert.deepEqual(B.parseCsv('a,b\rמ"ר,""').map((r) => r.cells), [["a", "b"], ['מ"ר', ""]]);
+});
+
+test("parseCsv: delimiter detected from the header, ignoring quoted text", () => {
+  assert.deepEqual(B.parseCsv("a;b;c\n1,5;2;3")[1].cells, ["1,5", "2", "3"]);
+  assert.deepEqual(B.parseCsv("a\tb\n1;2\t3")[1].cells, ["1;2", "3"]);
+  assert.deepEqual(B.parseCsv('"x;y;z",b\n1;2,3')[1].cells, ["1;2", "3"]);
+  assert.deepEqual(B.parseCsv("\r\na;b\n1;2")[2].cells, ["1", "2"]);
+});
+
+test("parseCsv flags broken quoting", () => {
+  assert.equal(B.parseCsv('a,b\n"open,1\n2,3').at(-1).error, "unterminatedQuote");
+  assert.equal(B.parseCsv('a,b\n"x"y,1')[1].error, "badQuote");
+});
+
+test("round trip: export then import reproduces the items", () => {
+  const items = [
+    item({ name: 'שולחן, "גדול"; 1,000', room: "סלון\tראשי", note: "שורה1\nשורה2", quantity: 2.35 }),
+    item({ name: "=HYPERLINK(1)", room: "@x", note: "-5", category: "lighting", unit: "m2", quantity: 10000, unit_price: 100_000_000 }),
+    item({ name: "+1", room: null, note: null, category: "other", unit: "set", quantity: 0.01, unit_price: 0 }),
+    item({ name: "'מצוטט'", category: "textile", unit: "m", room: null }),
+    item({ name: BUDGET.csvTotal, category: "appliance" }),
+    ...B.CATEGORIES.map((category) => item({ category, name: category })),
+  ];
+  const result = imp(B.toCsv(items, "USD", IMPORT));
+  assert.deepEqual(result.errors, undefined);
+  assert.deepEqual(result.items, items);
+  assert.equal(result.currency, "USD");
+});
+
+test("import strips the formula guard only before a formula character", () => {
+  const names = ["'=a", "'+a", "'-a", "'@a", "'a", "''=a", "a'=b"];
+  const result = imp(csvOf(HEADER, ...names.map((n) => `${n},רהיטים,,1,יחידה,1,1,`)));
+  assert.deepEqual(result.items.map((i) => i.name), ["=a", "+a", "-a", "@a", "'a", "''=a", "a'=b"]);
+});
+
+test("import accepts semicolons, tabs, a BOM, LF endings and a trailing blank line", () => {
+  for (const sep of [";", "\t", ","]) {
+    const text = `﻿${[HEADER, GOOD].map((l) => l.split(",").join(sep)).join("\n")}\n\n`;
+    assert.deepEqual(imp(text).items, [item()], JSON.stringify(sep));
+  }
+});
+
+test("import matches columns by name: reordered, extra, optional missing", () => {
+  const result = imp(csvOf("מחיר ליחידה, יחידה ,ספק,כמות,קטגוריה,פריט", "1000,unit,whatever,2,furniture,ספה"));
+  assert.deepEqual(result.items, [item({ quantity: 2, room: null })]);
+  assert.equal(result.currency, null);
+});
+
+test("import: currency comes from the amount header only when it is a known code", () => {
+  assert.equal(imp(csvOf(HEADER, GOOD)).currency, "ILS");
+  assert.equal(imp(csvOf(HEADER.replace("ILS", "XYZ"), GOOD)).currency, null);
+  assert.equal(imp(csvOf(HEADER.replace(" (ILS)", ""), GOOD)).currency, null);
+});
+
+test("import accepts hand-typed ASCII quotes in labels and keys in any case", () => {
+  const result = imp(csvOf(HEADER, 'אריח,FINISH,,3,"מ""ר",10,,', 'סה"כ,,,,,,30,'));
+  assert.deepEqual(result.items, [item({ name: "אריח", category: "finish", room: null, quantity: 3, unit: "m2", unit_price: 10 })]);
+});
+
+test("import skips blank lines and the total row", () => {
+  const result = imp(csvOf("", HEADER, ",,,,,,,", GOOD, "   ", "סה״כ,,,,,,1000,", ""));
+  assert.equal(result.items.length, 1);
+});
+
+test("import reports every missing required column and duplicates", () => {
+  assert.deepEqual(errorsOf("חדר,הערה", "a,b"), [0, 1, 3, 4, 5].map((i) => ({ line: 1, key: "missingColumn", column: BUDGET.columns[i] })));
+  assert.deepEqual(errorsOf(`${HEADER},פריט`, GOOD), [{ line: 1, key: "duplicateColumn", column: "פריט" }]);
+});
+
+test("import: bad rows are reported with line numbers and nothing is imported", () => {
+  const result = imp(
+    csvOf(HEADER, GOOD, ",רהיטים,,1,יחידה,1,,", 'x,צעצועים,,0,ק״ג,1.5,,"a\nb"', `${"א".repeat(121)},רהיטים,,1.234,יחידה,100000001,,`),
+  );
+  assert.equal(result.items, undefined);
+  assert.deepEqual(
+    result.errors.map((e) => `${e.line}:${e.key}`),
+    ["3:nameRequired", "4:quantityInvalid", "4:priceInvalid", "4:categoryInvalid", "4:unitInvalid", "6:nameTooLong", "6:quantityDecimals", "6:priceRange"],
+  );
+});
+
+test("import: room and note limits, short rows, extra cells, prototype names", () => {
+  assert.deepEqual(errorsOf(HEADER, `x,רהיטים,${"ח".repeat(61)},1,יחידה,1,,${"ה".repeat(201)}`).map((e) => e.key), ["roomTooLong", "noteTooLong"]);
+  assert.deepEqual(errorsOf(HEADER, "x").map((e) => e.key), ["quantityInvalid", "priceInvalid", "categoryInvalid", "unitInvalid"]);
+  assert.deepEqual(errorsOf(HEADER, `${GOOD},200`), [{ line: 2, key: "extraCells" }]);
+  assert.equal(imp(csvOf(HEADER, `${GOOD},,`)).items.length, 1); // empty extra cells are harmless
+  assert.deepEqual(errorsOf(HEADER, "x,constructor,,1,__proto__,1,,").map((e) => e.key), ["categoryInvalid", "unitInvalid"]);
+  assert.deepEqual(errorsOf(HEADER, '"x,רהיטים'), [{ line: 2, key: "unterminatedQuote" }]);
+});
+
+test("import: empty file, header only, 200 versus 201 rows", () => {
+  assert.deepEqual(errorsOf(""), [{ line: 1, key: "emptyFile" }]);
+  assert.deepEqual(errorsOf("\r\n,,,\r\n"), [{ line: 1, key: "emptyFile" }]);
+  assert.deepEqual(errorsOf(HEADER), [{ line: 1, key: "noItems" }]);
+  assert.deepEqual(errorsOf(HEADER, "סה״כ,,,,,,0,"), [{ line: 1, key: "noItems" }]);
+  const many = (n) => csvOf(HEADER, ...Array(n).fill(GOOD), "סה״כ,,,,,,0,");
+  assert.equal(imp(many(200)).items.length, 200);
+  assert.deepEqual(imp(many(201)).errors, [{ line: 202, key: "tooManyRows" }]);
+});
+
+test("import: thousands separators only when unambiguous", () => {
+  const row = (quantity, price) => csvOf(HEADER.replaceAll(",", ";"), `x;רהיטים;;${quantity};יחידה;${price};;`);
+  assert.equal(imp(row("1,000", "1,200")).items[0].quantity, 1000);
+  assert.equal(imp(row("1,000", "1,200")).items[0].unit_price, 1200);
+  assert.equal(imp(row("2,500.5", "100,000,000")).items[0].quantity, 2500.5);
+  assert.equal(imp(row("1", "100,000,000")).items[0].unit_price, 100_000_000);
+  assert.equal(imp(csvOf(HEADER, 'x,רהיטים,,1,יחידה,"1,200",,')).items[0].unit_price, 1200);
+  for (const bad of ["2,5", "0,500", "1,00", "12,34,567", "1,0000", ",100", "100,"]) {
+    assert.deepEqual(imp(row(bad, "1")).errors, [{ line: 2, key: "quantityInvalid" }], bad);
+    assert.deepEqual(imp(row("1", bad)).errors, [{ line: 2, key: "priceInvalid" }], bad);
+  }
+});
+
+test("every import error key has a Hebrew message", () => {
+  for (const key of ["tooLarge", "notText", "unreadable", "emptyFile", "noItems", "missingColumn", "duplicateColumn", "tooManyRows", "unterminatedQuote", "badQuote", "extraCells"]) {
+    const message = BUDGET.importErrors[key];
+    assert.match(typeof message === "function" ? message("x") : message, /[֐-׿]/, key);
+  }
+});
+
+test("decodeCsv: UTF-8 with BOM, windows-1255 fallback, binary and size limits", () => {
+  assert.deepEqual(B.decodeCsv(new TextEncoder().encode("﻿פריט")), { text: "פריט" });
+  // "פריט ״" in windows-1255
+  assert.deepEqual(B.decodeCsv(Uint8Array.from([0xf4, 0xf8, 0xe9, 0xe8, 0x20, 0xd8])), { text: "פריט ״" });
+  assert.deepEqual(B.decodeCsv(Uint8Array.from([0x50, 0x4b, 3, 4, 0, 0])), { error: "notText" });
+  assert.deepEqual(B.decodeCsv(new Uint8Array(B.MAX_CSV_BYTES + 1).fill(97)), { error: "tooLarge" });
+  assert.equal(B.decodeCsv(new Uint8Array(B.MAX_CSV_BYTES).fill(97)).text.length, B.MAX_CSV_BYTES);
+  assert.deepEqual(B.decodeCsv(new Uint8Array(0)), { text: "" });
+});
+
+test("the sample file for users imports cleanly", () => {
+  const bytes = readFileSync(new URL("../samples/shopping-list-example.csv", import.meta.url));
+  assert.deepEqual([...bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf]);
+  const { text } = B.decodeCsv(bytes);
+  const result = imp(text);
+  assert.deepEqual(result.errors, undefined);
+  assert.equal(result.items.length, 6);
+  assert.equal(result.currency, "ILS");
+  for (const entry of result.items) assert.match(entry.name, /[א-ת]/);
+  assert.doesNotMatch(text, /פנטהאוז|מגדל העמק/);
 });
