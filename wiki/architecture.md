@@ -103,3 +103,25 @@ Sources: `backend/app/vision.py`, `backend/app/routes/room.py`, `supabase/migrat
   at most 2 scans decode or infer at once per process, a caller waits 1 s for a slot, then 503. A project with no
   image slot left gets 409 before the model runs. The upload body cap (6 MB) covers `POST .../scans` too.
 - The consultant receives the item list as part of the escaped project context.
+
+## Inspiration analysis and style profile
+
+Sources: `backend/app/vision.py` (`palette`, `analyse`), `backend/app/style.py`, `backend/app/routes/design.py`,
+`supabase/migrations/20261126120000_asset_analyses.sql`, `frontend/js/style-logic.js`, the Moodboard tab.
+
+- **Table `asset_analyses`:** one row per inspiration image (`asset_id` primary key, composite foreign key to
+  `inspiration_assets (id, project_id)` with cascade): `objects` (label, category, confidence) and `palette`
+  (1 to 5 colours: hex, name, share). A trigger allows only `inspiration` images and dates every re-analysis.
+  SELECT through `projects`.
+- **When:** an inspiration upload is analysed in the same request (YOLOv8 + palette, best effort: a failure leaves
+  `analysis: null`, never fails the upload). `POST /assets/{asset_id}/analysis` analyses again from the stored
+  file; a result younger than 10 s is returned without running the model.
+- **Palette:** the whole image quantised to 5 colours at 96 px; shades with the same name are merged, shares are
+  rounded to 0.01 and add up to 1.
+- **Style profile:** `GET /style-profile` merges the analyses by colour name, weighted by share (each image weighs
+  the same; up to 6 colours; their shares are of all colours, so the top 6 need not add up to 1) and counts in how
+  many images each category appears. No style name is guessed. The consultant receives it.
+- **Model availability:** `get_detector` returns `None` when the model file is missing or altered and does not
+  retry for 60 s; a scan then answers 503, an upload has no analysis.
+- **Frontend:** the "Style profile" card on the Moodboard tab; "Add N colours to the brief" merges the palette into
+  the brief's colours (up to 8) and saves the brief through the brief's own save path.

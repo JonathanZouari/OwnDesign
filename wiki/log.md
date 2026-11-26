@@ -218,3 +218,21 @@ Upstream `dev` merged into `feature/room-scan` (wiki conflicts kept both sides; 
 imports `app.main` at module level, so collection works without secrets). Without secrets: backend 57 passed,
 123 skipped; frontend 66 passed. Pull request #30 to `dev` of the upstream repository, noting the overlap with
 pull request #28 (a spec that prefers RF-DETR for licence reasons) and the tests not yet run.
+
+## [2026-11-26] plan | Inspiration analysis and style profile
+Approved plan: YOLOv8 objects plus a colour palette per inspiration image, a style profile on the Moodboard tab,
+branch `feature/inspiration-analysis` on top of `feature/room-scan`.
+
+## [2026-11-26] build | Inspiration analysis and the "Style profile" card
+Commits in `git log feature/room-scan..feature/inspiration-analysis`: table
+`asset_analyses`, analysis on upload and on demand, `GET /style-profile`, the card and "Add colours to the brief",
+consultant context. Pages: [architecture](architecture.md), [overview](overview.md), [decisions](decisions.md),
+[open-items](open-items.md).
+
+## [2026-11-26] security | Review of the inspiration analysis
+Database and code reviews, findings fixed; `security-review`: no High or Medium finding. Pages:
+[security](security.md).
+
+## [2026-11-26] test | Inspiration analysis, partly verified
+Unit 47 passed, frontend 93 passed, CI-like run 69 passed / 138 skipped. Integration and browser tests not run
+(empty keys, migrations not applied). Pages: [testing](testing.md).

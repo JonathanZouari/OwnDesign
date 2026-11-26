@@ -54,8 +54,16 @@ line is rewritten on every colour-picker move; a chosen logo has no pixel-size l
   interior photos would fix this.
 - **No per-user scan limit** beyond the 30-image quota and the 2-slot limit per process.
 - `needs_supabase` skips only when `backend/.env` is missing, not when its keys are empty.
-- **Next (decided):** characterise inspiration images the same way (objects, categories, palette) to help build
-  the design style.
+
+## Inspiration analysis
+
+- **To finish:** apply `20261126120000_asset_analyses.sql` (after the room scan's migration), run
+  `test_inspiration_analysis.py` and the new browser journeys with dev keys.
+- Analysis runs inside the upload request and shares the 2 slots with room scans: several uploads at once, or
+  a scan at the same time, can leave images unanalysed (the person then uses "Analyse"). A background job would fix it.
+- The palette names come from a 12-colour list; fine shades (sage, terracotta) are not named.
+- "Add colours to the brief" saves the whole brief form as it stands, including unsaved edits on the Brief tab.
+- Images uploaded before this feature have no analysis until someone presses "Analyse".
 
 ## Later phases with a Stitch screen waiting
 

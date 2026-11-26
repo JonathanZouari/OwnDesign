@@ -90,3 +90,14 @@ dependent tests). `security-review` on the branch's commits: no High or Medium f
 of every route (RLS-scoped check, then service writes filtered by id and project), composite foreign key,
 file signature plus format allow list before decoding, fixed model path with checksum, no `innerHTML` in the tab,
 hex-only colours, http(s)-only image URLs, no `storage_path` in responses.
+
+## Review of the inspiration analysis (2026-11-26)
+
+Database review of `asset_analyses` (fixed: re-analysis kept the old date; array checks could error instead of
+failing). Code review (fixed: an analysis failure after the image was stored returned 500, so a retry uploaded
+the image twice; a missing stored file or an image deleted mid-analysis returned 500; a broken model file was
+re-read on every request; re-analysis could be looped, now a 10 s cooldown). `security-review`: no High or Medium
+finding. Checked: re-analysis only after an RLS-scoped lookup of the image by id and project; `storage_path` comes
+from the database, never from the request; the composite foreign key and trigger stop an analysis pointing at
+another project's or a non-inspiration image; the cooldown and profile queries run with the user's JWT; the new
+UI uses no `innerHTML` and hex-validated colours only.

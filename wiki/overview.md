@@ -50,6 +50,12 @@ designer work on the same floor plan. AI assistance comes in later phases.
   added by hand, edited and deleted, grouped by room, and the consultant sees them
   ([architecture.md](architecture.md#room-scan-and-item-list)).
 
+## Built: inspiration analysis (branch `feature/inspiration-analysis`, on top of the room scan)
+
+- Each inspiration image is analysed with YOLOv8 and a colour palette. The Moodboard tab shows a "Style profile":
+  the colours the images share, the kinds of furniture that keep appearing, and a button that adds the palette to
+  the brief's colours ([architecture.md](architecture.md#inspiration-analysis-and-style-profile)).
+
 ## Not built yet
 
 Renderings, budget, dossier,

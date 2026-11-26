@@ -54,6 +54,12 @@ failed in its first step. Not yet seen: a green `backend` run. It waits for the 
 
 ## Last result
 
+2026-11-26, inspiration analysis (branch `feature/inspiration-analysis`): `test_vision.py` and `test_style.py`
+47 passed; frontend 93 passed (new `frontend/tests/style-logic.test.js`); without secrets, as CI runs it: backend
+69 passed, 138 skipped, 0 errors. **Not run yet:** `test_inspiration_analysis.py` and three new browser journeys
+in `test_e2e_design.py` (real model), for the same reason as the room scan below. Two existing journeys now
+wait for "Image uploaded, but it could not be analysed…" after uploading a 1 x 1 inspiration image.
+
 2026-11-26, room scan (branch `feature/room-scan`): `test_vision.py` 35 passed (real model on
 `tests/fixtures/room.jpg`, a CC0 photo, plus decoding, post-processing, colour, slots and checksum edges);
 frontend 40 passed (new `frontend/tests/room-logic.test.js`). **Not run yet:** `test_room_items.py` (scan and
