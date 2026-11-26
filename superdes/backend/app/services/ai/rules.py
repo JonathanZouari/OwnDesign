@@ -1,6 +1,8 @@
 """Deterministic, brief-aware fallback consultant (no model needed)."""
 import re
 
+from .library import match, render, values
+
 
 def _norm(s: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
@@ -10,6 +12,11 @@ class RuleBasedConsultant:
     name = "rules"
 
     def advise(self, ctx: dict, user_message: str) -> dict:
+        hits = match(user_message)
+        if hits and hits[0]["topic"] in ("app", "pricing"):
+            return {"message": render(hits[0], values(ctx)), "suggestions": []}
+        tip = next((h for h in hits if h["topic"] == "design"), None)
+
         cat = ctx["catalog"]
         styles = {s["key"]: s for s in cat["styles"]}
         brief = ctx["brief"]
@@ -112,4 +119,6 @@ class RuleBasedConsultant:
             suggestions.append({"kind": "layout_note", "key": "durable-finishes", "title": "Family/pet-friendly choices",
                                 "detail": "Prefer washable fabrics, rounded table edges and scratch-resistant floors.", "data": {}})
         lines.append("These are suggestions only - nothing has been changed in your plan.")
+        if tip:
+            lines.append("\n" + render(tip, {}))
         return {"message": "\n".join(lines), "suggestions": suggestions[:10]}

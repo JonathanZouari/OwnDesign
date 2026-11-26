@@ -47,3 +47,41 @@ def test_ai_on_empty_plan():
     r = c.post(f"/projects/{p['id']}/ai/messages", json={"message": "help"})
     assert r.status_code == 201 and "no rooms" in r.json()["message"]["content"]
     assert c.post(f"/projects/{p['id']}/ai/messages", json={"message": "x" * 4001}).status_code == 422
+
+
+def _ask(c, pid, text):
+    r = c.post(f"/projects/{pid}/ai/messages", json={"message": text})
+    assert r.status_code == 201, r.text
+    m = r.json()["message"]
+    assert m["provider"] == "rules"
+    return m
+
+
+def test_helper_answers_app_pricing_and_design_from_library():
+    c, _ = designer_with_studio()
+    pid = create_project(c)["id"]
+    before = c.get(f"/projects/{pid}/plan").json()["current_version"]
+
+    app = _ask(c, pid, "How do I invite someone to my project?")
+    assert "Source: App help" in app["content"] and app["suggestions"] == []
+
+    price = _ask(c, pid, "How much does the Pro plan cost?")
+    assert price["content"].startswith("Sample prices for reference, not a quote.")
+    assert "Source: Pricing" in price["content"]
+
+    est = _ask(c, pid, "how much will my design cost")  # no budget set in the brief
+    assert "None" not in est["content"] and "$" not in est["content"] and "not set" in est["content"]
+    assert " to " in est["content"] and "not available yet" not in est["content"]  # this project has a sofa
+    empty = _ask(c, create_project(c, {})["id"], "how much will my design cost")
+    assert "not available yet" in empty["content"] and "0 to 0" not in empty["content"]
+
+    design = _ask(c, pid, "what flooring is good for a dog")
+    assert "Source: Design guide" in design["content"]
+    assert {"style", "furniture"} <= {s["kind"] for s in design["suggestions"]}
+
+    still_design = _ask(c, pid, "Ideas for the living room?")
+    assert "Source: App help" not in still_design["content"] and "Source: Pricing" not in still_design["content"]
+    assert {"style", "furniture"} <= {s["kind"] for s in still_design["suggestions"]}
+
+    after = c.get(f"/projects/{pid}/plan").json()["current_version"]
+    assert after["version_no"] == before["version_no"]
