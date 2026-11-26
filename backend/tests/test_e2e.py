@@ -97,6 +97,19 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     page.keyboard.press("Enter")
     assert furniture.count() == 2
 
+    # The 3D walkthrough walks the draft: the outer wall stops the walker, and W does not reach the wall tool.
+    page.get_by_role("button", name="3D walkthrough").click()
+    page.locator("#walk canvas[data-position]").wait_for()
+    page.keyboard.down("w")
+    page.wait_for_function("document.querySelector('#walk canvas').dataset.position.endsWith(',30')")
+    page.wait_for_timeout(500)
+    page.keyboard.up("w")
+    assert page.locator("#walk canvas").get_attribute("data-position").endswith(",30")
+    page.keyboard.press("Escape")
+    page.locator("#walk").wait_for(state="hidden")
+    assert page.locator("#tool-name").inner_text() == "Select and move"
+    assert (walls.count(), furniture.count()) == (8, 2)
+
     # Scenario 1: a guest cannot persist; saving asks for an account.
     page.locator("#save").click()
     page.get_by_role("heading", name="Create an account to save your plan").wait_for()
