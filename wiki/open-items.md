@@ -44,6 +44,12 @@ line is rewritten on every colour-picker move; a chosen logo has no pixel-size l
   reported as "no WebGL"; if closing the view throws, the editor behind it stays inert; a furniture type named
   `constructor` gives a broken box (`Object.hasOwn` fixes it).
 
+## Version comparison gaps
+
+- **Overlay mode** (two versions on one canvas with opacity) and an **AI summary** of changes are not built.
+- **Room grouping** uses the box of a room's walls, so an L-shaped room claims its whole bounding box.
+- A room whose walls lie on one line has no area, so its furniture is grouped under "Outside any room".
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in
