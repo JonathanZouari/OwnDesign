@@ -32,13 +32,15 @@ export const apiMessage = (status) => API_ERRORS[status] ?? API_ERRORS.generic;
 
 export async function api(path, { method = "GET", body } = {}) {
   const session = await getSession();
+  // A FormData body (file upload) is sent as is: the browser sets the multipart Content-Type and boundary.
+  const isForm = body instanceof FormData;
   const headers = {
-    ...(body ? { "Content-Type": "application/json" } : {}),
+    ...(body && !isForm ? { "Content-Type": "application/json" } : {}),
     ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
   };
   let response;
   try {
-    response = await fetch(config.apiUrl + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    response = await fetch(config.apiUrl + path, { method, headers, body: isForm ? body : body ? JSON.stringify(body) : undefined });
   } catch {
     throw new Error(API_ERRORS.network);
   }

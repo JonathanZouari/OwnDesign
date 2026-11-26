@@ -18,7 +18,17 @@ run(async () => {
         h("td", {}, project.name),
         h("td", {}, PROJECT_TYPES[project.property_type]),
         h("td", {}, formatDate(project.created_at)),
-        h("td", {}, h("a", { class: "button", href: `editor.html?project=${project.id}` }, COMMON.open)),
+        h(
+          "td",
+          {},
+          h(
+            "div",
+            { class: "project-links" },
+            h("a", { class: "button", href: `editor.html?project=${project.id}`, "aria-label": `פתיחת התוכנית של ${project.name}` }, COMMON.open),
+            h("a", { class: "button", href: `design.html?project=${project.id}`, "aria-label": `בריף וחומרים של ${project.name}` }, "בריף וחומרים"),
+            h("a", { class: "button", href: `consultant.html?project=${project.id}`, "aria-label": `יועץ העיצוב של ${project.name}` }, "יועץ AI"),
+          ),
+        ),
       ),
     ),
   );

@@ -209,3 +209,26 @@ E2E after the removal: 34 passed (including the editor kind test).
 
 ## [2026-11-22] merge | Upstream Stitch screens merged into the homeowner/Hebrew branch
 Merged `upstream/main` (Stitch design sources, studio activity endpoint, client portal and studio dashboard rebuilt from Stitch screens, wiki) into `dev` with a normal merge commit. Both sides kept: the new portal (`entry.html`) and dashboard (`studio.html`) with metrics, project cards with plan previews, search and activity feed, and the `GET /v1/studios/{id}/audit` endpoint, together with the Hebrew right-to-left UI, projects without a studio, forgot password and PDF import. Our decisions won where they met: all text from the Stitch screens is Hebrew (static text in the HTML, text set from JS in `frontend/js/strings.js`: `ENTRY`, `STUDIO`, activity sentences in `studio-data.js`), the portal's start links carry `?via=studio` so a studio is attached only through a studio link, and the studio pages stay out of the homeowner navigation. His new tests were kept with their expected text in Hebrew; our E2E tests are unchanged. Wiki pages `decisions.md`, `design.md` and this log merged.
+
+## [2026-11-23] build | Phase 2: brief, finishes, images, moodboard, AI consultant
+Backend: three-plus migrations (tables, asset quota trigger, atomic consultant reservation), endpoints for
+brief, finishes, assets, moodboard and consultant, tests first. Frontend: `design.html`, `consultant.html`
+built by a general-purpose agent from the design system. Commits `90763ab`, `2c7278f`, `8a5bcc2`, `797dcec`,
+`5466898`, `f50c0bb`. Pages: [overview](overview.md), [architecture](architecture.md), [decisions](decisions.md),
+[design](design.md), [open-items](open-items.md).
+
+## [2026-11-23] security | Review of the Phase 2 backend
+Several findings fixed (suspended studios, upload race, consultant cap and context injection); see
+[security](security.md).
+
+## [2026-11-23] test | Phase 2 verified
+Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
+
+
+## [2026-11-26] build | Merge upstream phase 2 into the homeowner/Hebrew branch
+Merged upstream `dev` (`39134d8`) into `dev` (`67ca2ac`). Six conflicts resolved: Hebrew UI kept, the new
+brief and consultant links added in Hebrew; both env example and architecture additions kept; log entries
+kept from both sides. `backend/uv.lock` taken from upstream and NOT yet regenerated (no package index
+access): run `uv lock`. `design.html`, `consultant.html` and their scripts are still in English.
+Frontend tests: 148 passed, 1 skipped, 0 failed. Backend and E2E tests and the security review were not run.
+Pages updated: log, architecture.

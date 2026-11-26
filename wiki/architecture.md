@@ -36,6 +36,11 @@ visible only to its `client_user_id`. Quotas count per studio, and separately pe
 projects. The wizard attaches a remembered studio only when reached from a studio link
 (`wizard.html?via=studio`), so an old link never silently shares a homeowner's project with that studio.
 
+Phase 2 (`supabase/migrations/20261123*`): `project_briefs` (one JSON document per project),
+`finish_selections` (unique per room and surface), `inspiration_assets`, `moodboard_items`,
+`ai_conversations` (unique per project and user), `ai_messages`, `storage_deletions` (queue of files to remove).
+Their SELECT policies go through `projects`, except conversations: only their own user reads them.
+
 ## Plan geometry
 
 One JSON document per version, validated in `backend/app/schemas.py` and edited by pure functions in
@@ -73,3 +78,22 @@ writes a normal draft (`plan.walls`) plus `underlay` placement in cm. The page i
 `od.underlay.<projectId>`), and the editor draws it as an `<image>` above the grid. Nothing is uploaded: the
 geometry sent to the server never contains the underlay. Guests can import. The user's real PDF is used only
 locally for tuning and is never committed; tests generate synthetic PDFs with reportlab (dev dependency).
+
+Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `backend/app/catalog.py`):
+`GET /v1/catalog`; under `/v1/projects/{id}`: `brief`, `finishes`, `assets`, `moodboard`
+(GET and PUT, assets POST and DELETE), `consultant/messages` (GET, POST). Every write goes through
+`_writable_project`, which refuses a suspended studio.
+
+- **Images:** private bucket `project-assets`, no storage policies. The backend checks the file's bytes
+  (not the declared type), stores it under `<project_id>/<uuid>.<ext>` and returns signed URLs valid for
+  10 minutes. Deleting an asset row, directly or by cascade, queues the file in `storage_deletions`;
+  the backend removes queued files after an asset is deleted. The 30-image limit is enforced by a
+  database trigger. The body cap is 6 MB for `POST .../assets` only, 2 MB elsewhere.
+- **Consultant:** `reserve_ai_message` (database function) takes a per-user lock, counts the user's
+  messages of the last 24 hours across all projects, and stores the user message before the paid call.
+  The project context goes to OpenAI as a separate, escaped, untrusted input item, not in the
+  system prompt. A failed call keeps its slot. The OpenAI client is a FastAPI dependency (`get_openai`)
+  so tests replace it. `OPENAI_API_KEY` and `OPENAI_MODEL` are read from `backend/.env`; without a key
+  the endpoint answers 503.
+- **Frontend:** `design.html` (brief, materials, moodboard tabs), `consultant.html`; pure logic in
+  `frontend/js/design-logic.js`.

@@ -26,7 +26,18 @@ End to end, regression (both full suites) and edge cases for the change (`CLAUDE
 
 ## Last result
 
-2026-11-19: backend 43 passed (3 browser journeys), frontend 17 passed.
+2026-11-23: backend 94 passed (incl. 3 browser journeys), frontend 31 passed. New files:
+`backend/tests/test_design.py` (brief, finishes, uploads, moodboard, isolation, quota, suspended studio) and
+`test_consultant.py` (fake OpenAI client: context, privacy, cap, failure, injection, tag escaping);
+`frontend/tests/design-logic.test.js`. `backend/tests/test_e2e_design.py` (6 browser tests: client journey for brief, finishes and moodboard with
+reload; designer sees the client's data; client-side rejections, markup stays text; stranger and signed-out
+visitor; consultant page limits) passes together with `test_e2e.py` (9 browser tests in all). No chat message
+reaches OpenAI in the suite; the real call was checked by hand once.
+
+## Local setup notes
+
+`backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the
+journeys use the second). A system-level `OPENAI_API_KEY` overrides the one in `.env`; unset it before starting the backend.
 
 ## Not covered
 
