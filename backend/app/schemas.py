@@ -195,3 +195,16 @@ class MoodboardBody(Strict):
         if len(keys) != len(set(keys)):
             raise ValueError("an item can appear once on the board")
         return self
+
+
+# ---- walking paths -----------------------------------------------------------------------------------------------
+
+MAX_PATH_POINTS = 600
+Unit = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False, strict=True)]  # strict: no booleans or numeric strings
+PathPoints = Annotated[list[tuple[Unit, Unit]], Field(min_length=2, max_length=MAX_PATH_POINTS)]
+
+
+class WalkNoteCreate(Strict):
+    x: Unit
+    y: Unit
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=280)]
