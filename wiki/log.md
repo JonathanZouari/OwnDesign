@@ -256,3 +256,8 @@ Medium finding: a value such as `x;=1+1;y` was exported raw and a spreadsheet wi
 it into a formula. Fixed in `725b428` (`frontend/js/budget-logic.js`, tests first). Frontend 192 passed, 1 skipped;
 `tests/test_e2e_budget.py` 16 passed; the rest of the backend suite was not rerun. Pages: [security](security.md),
 [open-items](open-items.md).
+
+## [2026-11-26] docs | Budget pull request opened upstream
+Budget feature ported to `feat/budget-shopping-list` on the upstream `dev` (`ac28aff`), in English: pull request #33.
+Backend 237 passed and frontend 97 passed there; one Medium CSV finding fixed (`de9a23c`). Upstream pull request #13
+covers the same roadmap item. The upstream database (and its CI) still needs the estimates migration.
