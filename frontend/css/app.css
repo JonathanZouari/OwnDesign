@@ -497,6 +497,72 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 .asset img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; background: var(--surface-high); }
 .asset .caption { overflow-wrap: anywhere; }
 
+/* Style profile (Moodboard tab): what the analysed inspiration images share, and each image's analysis. */
+.style-body { display: grid; gap: 12px; }
+.style-body h3 { margin: 0; }
+.style-palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; list-style: none; margin: 0; padding: 0; }
+.style-color { display: grid; gap: 2px; justify-items: start; min-width: 0; padding: 8px; border-radius: 8px; background: var(--surface-low); }
+.style-color .style-swatch { width: 100%; height: 40px; margin-bottom: 4px; }
+.style-color-name { font-weight: 600; overflow-wrap: anywhere; text-transform: capitalize; }
+.style-pieces { display: grid; gap: 4px; margin: 0; padding-left: 1.1rem; }
+.style-analysis { display: grid; gap: 6px; justify-self: stretch; justify-items: start; min-width: 0; }
+.style-strip { display: flex; width: 100%; height: 14px; gap: 2px; list-style: none; margin: 0; padding: 0; }
+.style-strip-item { display: flex; flex: 1 1 0; min-width: 6px; }
+.style-strip .style-strip-dot { width: 100%; height: 100%; border-radius: 2px; }
+.style-summary { overflow-wrap: anywhere; }
+.style-analyse { padding: 0 8px; }
+
+/* "In the room" tab: room scan, review of what was found, and the list of items in the home.
+   Every class starts with .room- so it cannot collide with the editor's or the wizard's names. */
+.room-layout { display: grid; gap: 1rem; }
+.room-layout > .card { margin: 0; display: grid; gap: 12px; min-width: 0; }
+.room-layout .card h2, .room-layout .card p { margin: 0; }
+.room-layout h3 { font-size: 15px; line-height: 22px; font-weight: 600; overflow-wrap: anywhere; }
+.room-layout h2[tabindex="-1"]:focus { outline: none; }
+.room-layout h2[tabindex="-1"]:focus-visible { outline: 2px solid var(--primary-bright); outline-offset: 2px; }
+.room-review { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.room-review > * { min-width: 0; }
+.room-photo { position: relative; border-radius: 4px; overflow: hidden; background: var(--surface-high); }
+.room-photo img { display: block; width: 100%; height: auto; }
+.room-photo-missing { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 160px; color: var(--ink-soft); font-size: 12px; }
+.room-boxes { position: absolute; inset: 0; pointer-events: none; }
+.room-box { position: absolute; border: 2px solid var(--primary-bright); border-radius: 2px; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.7); }
+.room-box.off { border-style: dashed; border-color: var(--outline); opacity: 0.6; }
+.room-box.active { border-width: 3px; border-color: var(--primary); background: rgb(191 84 44 / 0.14); opacity: 1; }
+.room-box-num, .room-num {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 4px;
+  background: var(--primary); color: var(--on-primary); font: 500 11px/1 var(--font-mono);
+}
+.room-box-num { position: absolute; left: -2px; top: -2px; border-radius: 2px 0 4px 0; }
+.room-box.off .room-box-num { background: var(--outline); }
+.room-drafts, .room-items { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.room-drafts:empty, .room-items:empty { display: none; }
+.room-draft { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 6px 10px; align-items: center; padding: 8px; border-radius: 8px; background: var(--surface-low); }
+.room-draft-fields { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 6px; min-width: 0; }
+.room-layout .room-draft-meta { grid-column: 3; display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; margin: 0; font-size: 12px; line-height: 18px; color: var(--ink-soft); }
+.room-draft.off .room-num { background: var(--outline); }
+.room-draft.off .room-draft-fields, .room-draft.off .room-draft-meta { opacity: 0.55; }
+.room-group { display: grid; gap: 8px; }
+.room-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px; border-radius: 8px; background: var(--surface-low); }
+.room-item > .swatch-dot { margin-top: 1px; }
+.room-item.editing { grid-template-columns: minmax(0, 1fr); background: var(--panel); border: 1px solid var(--hairline-strong); }
+.room-item-text { display: grid; gap: 2px; min-width: 0; }
+.room-item-head { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; }
+.room-item-head strong { overflow-wrap: anywhere; }
+.room-layout .room-item-note { margin: 2px 0 0; color: var(--ink); overflow-wrap: anywhere; }
+.room-item-actions { display: flex; gap: 4px; }
+.room-item-actions button { padding: 0 8px; }
+.room-edit { display: grid; gap: 12px; }
+.room-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1rem; }
+.room-edit-wide { grid-column: 1 / -1; }
+.room-manual { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--hairline); }
+
+@media (max-width: 767px) {
+  .room-review, .room-draft-fields, .room-edit-grid { grid-template-columns: minmax(0, 1fr); }
+  .room-item { grid-template-columns: auto minmax(0, 1fr); }
+  .room-item-actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
+
 .page.consult { max-width: 1280px; }
 .consult-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr); gap: 1.25rem; align-items: start; }
 .consult-layout > * { min-width: 0; }

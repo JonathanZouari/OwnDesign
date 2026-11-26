@@ -1,6 +1,9 @@
-// Design brief, finishes and moodboard for one saved project (?project=<id>). Everything shown comes from the API.
+// Design brief, finishes, moodboard and the items already in the home for one saved project (?project=<id>).
+// Everything shown comes from the API.
 import { api, requireSession, signOut } from "../api.js";
 import * as L from "../design-logic.js";
+import * as R from "../room-logic.js";
+import * as S from "../style-logic.js";
 import { $, h, run, showStudio } from "../ui.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -9,7 +12,7 @@ const projectId = UUID.test(requested ?? "") ? requested : null; // anything els
 const base = `/v1/projects/${encodeURIComponent(projectId)}`;
 const SURFACE_LABEL = { floor: "Floor", walls: "Walls", ceiling: "Ceiling", cabinets: "Cabinets" };
 const KIND_LABEL = { inspiration: "Inspiration", existing_item: "Item I own" };
-const TABS = ["brief", "finishes", "moodboard"];
+const TABS = ["brief", "finishes", "moodboard", "room"];
 
 const state = {
   catalog: { styles: [], materials: [], surfaces: [] },
@@ -18,7 +21,13 @@ const state = {
   rooms: [], // rooms of the latest saved plan
   finishes: {}, // finishKey -> material id
   assets: [],
+  profile: null, // style profile built from the analysed inspiration images
+  styleSaving: false, // "Add colours to the brief" is saving
   board: [],
+  items: [], // the list of items already in the home
+  drafts: [], // scan results waiting to be checked
+  photo: "", // signed link of the scanned photo
+  editing: null, // id of the item whose edit form is open
 };
 
 const icon = (name) => h("span", { class: "icon", "aria-hidden": "true" }, name);
@@ -61,6 +70,7 @@ function showTab(name, focus = false) {
     button.setAttribute("aria-selected", String(selected));
     button.tabIndex = selected ? 0 : -1;
     $(`#panel-${tab}`).hidden = !selected;
+    if (selected) button.scrollIntoView({ block: "nearest", inline: "nearest" }); // the tab row scrolls sideways on phones
     if (selected && focus) button.focus();
   }
   history.replaceState(null, "", `#${name}`);
@@ -148,6 +158,7 @@ function renderBriefColors() {
       ),
     ),
   );
+  renderStyleButton(); // its count depends on the brief colours
 }
 
 function fillBrief(brief) {
@@ -175,24 +186,43 @@ function initBrief() {
   });
   $("#brief-form").addEventListener("submit", (event) => {
     event.preventDefault();
-    const form = event.currentTarget.elements;
-    const { payload, error } = L.buildBriefPayload({
-      styles: state.styles,
-      colors: state.colors,
-      budget_min: form.budget_min.value,
-      budget_max: form.budget_max.value,
-      currency: form.currency.value,
-      adults: form.adults.value,
-      children: form.children.value,
-      pets: form.pets.checked,
-      lifestyle: form.lifestyle.value,
-      needs: form.needs.value,
-      constraints: form.constraints.value,
-      existing_items: form.existing_items.value,
-    });
-    if (error) return setStatus($("#brief-status"), error, "error");
-    busy($("#brief-save"), $("#brief-status"), async () => fillBrief((await api(`${base}/brief`, { method: "PUT", body: payload })).brief), "Brief saved.");
+    saveBrief($("#brief-save"), $("#brief-status"), "Brief saved.");
   });
+}
+
+// Saves the brief form with the chosen styles and colours: used by "Save brief" and by the style
+// profile's "Add colours to the brief". Resolves to true when saved; problems are shown in `status`.
+async function saveBrief(button, status, done, problemPrefix = "") {
+  const form = $("#brief-form").elements;
+  const { payload, error } = L.buildBriefPayload({
+    styles: state.styles,
+    colors: state.colors,
+    budget_min: form.budget_min.value,
+    budget_max: form.budget_max.value,
+    currency: form.currency.value,
+    adults: form.adults.value,
+    children: form.children.value,
+    pets: form.pets.checked,
+    lifestyle: form.lifestyle.value,
+    needs: form.needs.value,
+    constraints: form.constraints.value,
+    existing_items: form.existing_items.value,
+  });
+  if (error) {
+    setStatus(status, problemPrefix + error, "error");
+    return false;
+  }
+  let saved = false;
+  await busy(
+    button,
+    status,
+    async () => {
+      fillBrief((await api(`${base}/brief`, { method: "PUT", body: payload })).brief);
+      saved = true;
+    },
+    done,
+  );
+  return saved;
 }
 
 // ---- finishes ---------------------------------------------------------------------------------------
@@ -374,16 +404,18 @@ function renderAssets() {
             renderAssets();
             renderBoard();
             $("#upload-file").focus();
+            await refreshProfile();
           },
           "Image deleted.",
         );
       });
       return h(
         "li",
-        { class: "asset" },
+        { class: "asset", "data-asset": asset.id },
         url ? h("img", { src: url, alt: name, loading: "lazy" }) : h("div", { class: "preview" }, icon("image")),
         h("span", { class: "chip" }, KIND_LABEL[asset.kind] ?? asset.kind),
         asset.caption && h("span", { class: "small caption" }, asset.caption),
+        asset.kind === "inspiration" && analysisView(asset, name),
         h(
           "div",
           { class: "board-actions" },
@@ -395,7 +427,116 @@ function renderAssets() {
   );
 }
 
+// ---- style profile ----------------------------------------------------------------------------------
+
+// A palette colour: the swatch helper (hex-validated) or the "no colour" pattern for anything else.
+const paletteSwatch = (hex, extra) => {
+  const node = L.swatchColor(hex) === "transparent" ? h("span", { class: "swatch-dot none", "aria-hidden": "true" }) : swatch(hex);
+  node.classList.add(extra);
+  return node;
+};
+
+// Under an inspiration image: its colours as a strip, what was found, or an Analyse button.
+function analysisView(asset, name) {
+  const analysis = asset.analysis;
+  if (!analysis) {
+    const analyse = h("button", { type: "button", class: "style-analyse", "aria-label": `Analyse image ${name}` }, icon("auto_awesome"), "Analyse");
+    analyse.addEventListener("click", () => analyseAsset(asset, analyse));
+    return h("div", { class: "style-analysis" }, h("span", { class: "small muted" }, "Not analysed yet"), analyse);
+  }
+  const palette = Array.isArray(analysis.palette) ? analysis.palette : [];
+  return h(
+    "div",
+    { class: "style-analysis" },
+    palette.length > 0 &&
+      h(
+        "ul",
+        { class: "style-strip", "aria-label": `Colours in image ${name}` },
+        palette.map((color) => {
+          const label = S.swatchLabel({ name: color?.name, hex: color?.hex, share: color?.share });
+          const segment = h("li", { class: "style-strip-item", role: "img", "aria-label": label, title: label }, paletteSwatch(color?.hex, "style-strip-dot"));
+          segment.style.flexGrow = String(Math.max(Number(color?.share) || 0, 0.05)); // a sliver stays visible
+          return segment;
+        }),
+      ),
+    h("span", { class: "small muted style-summary" }, S.analysisSummary(analysis)),
+  );
+}
+
+function analyseAsset(asset, button) {
+  busy(
+    button,
+    $("#upload-status"),
+    async () => {
+      const analysis = await api(`${base}/assets/${encodeURIComponent(asset.id)}/analysis`, { method: "POST" });
+      state.assets = state.assets.map((item) => (item.id === asset.id ? { ...item, analysis } : item));
+      renderAssets();
+      $(`#assets [data-asset="${CSS.escape(asset.id)}"] button:not(:disabled)`)?.focus(); // the Analyse button is gone
+      await refreshProfile();
+    },
+    "Image analysed.",
+  );
+}
+
+// The profile changes when an inspiration image is uploaded, deleted or analysed.
+async function refreshProfile() {
+  try {
+    state.profile = await api(`${base}/style-profile`);
+  } catch {
+    /* the profile on screen stays as it is */
+  }
+  renderStyleProfile();
+}
+
+function renderStyleButton() {
+  const button = $("#style-to-brief");
+  if (!button) return;
+  const view = S.styleButton(state.colors, state.profile?.palette);
+  $("#style-to-brief-text").textContent = view.text;
+  button.disabled = state.styleSaving || view.disabled;
+}
+
+function renderStyleProfile() {
+  const profile = state.profile;
+  const analysed = Number(profile?.analysed) || 0;
+  const total = Number(profile?.total) || 0;
+  $("#style-empty").hidden = analysed > 0;
+  $("#style-empty").textContent =
+    total > 0 ? "None of your inspiration images has been analysed yet. Use the Analyse button under an image." : "Upload inspiration images to see the colours and pieces they share.";
+  $("#style-body").hidden = analysed === 0;
+  const palette = Array.isArray(profile?.palette) ? profile.palette : [];
+  $("#style-palette").replaceChildren(
+    ...palette.map((color) =>
+      h(
+        "li",
+        { class: "style-color" },
+        paletteSwatch(color?.hex, "style-swatch"),
+        h("span", { class: "style-color-name" }, color?.name || color?.hex || "Colour"),
+        h("span", { class: "mono small" }, S.percent(color?.share)),
+        h("span", { class: "small muted" }, S.imagesText(color?.images)),
+      ),
+    ),
+  );
+  const sentences = S.profileSentences(profile);
+  $("#style-pieces").replaceChildren(...(sentences.length ? sentences.map((line) => h("li", {}, line)) : [h("li", { class: "muted" }, "No furniture found in these images.")]));
+  $("#style-basis").textContent = S.basisText(profile);
+  renderStyleButton();
+}
+
+function addPaletteToBrief() {
+  const { colors, added } = S.paletteToBriefColors(state.colors, state.profile?.palette);
+  if (added.length === 0) return renderStyleButton();
+  state.colors = colors;
+  state.styleSaving = true;
+  renderBriefColors();
+  saveBrief($("#style-to-brief"), $("#style-status"), S.addedMessage(added.length), "The colours were added to the brief but it was not saved: ").finally(() => {
+    state.styleSaving = false;
+    renderStyleButton();
+  });
+}
+
 function initMoodboard() {
+  $("#style-to-brief").addEventListener("click", addPaletteToBrief);
   $("#board-save").addEventListener("click", () =>
     busy(
       $("#board-save"),
@@ -419,16 +560,370 @@ function initMoodboard() {
     body.append("file", file);
     body.append("kind", form.kind.value);
     body.append("caption", form.caption.value.trim());
+    let created = null;
     busy(
       $("#upload-send"),
       $("#upload-status"),
       async () => {
-        await api(`${base}/assets`, { method: "POST", body });
+        const answer = await api(`${base}/assets`, { method: "POST", body });
         form.reset(); // the upload worked; a failed list refresh below must not invite a duplicate upload
         state.assets = await api(`${base}/assets`); // the upload answer has no link; the list carries signed links
         renderAssets();
+        await refreshProfile();
+        created = answer;
       },
-      "Image uploaded. Use its Board button to add it to the moodboard.",
+      "",
+    ).then(() => {
+      if (!created) return; // the upload or the list refresh failed; busy() shows why
+      const unanalysed = created.kind === "inspiration" && !created.analysis;
+      setStatus(
+        $("#upload-status"),
+        unanalysed
+          ? "Image uploaded, but it could not be analysed. Use its Analyse button to try again."
+          : "Image uploaded. Use its Board button to add it to the moodboard.",
+      );
+    });
+  });
+}
+
+// ---- in the room ------------------------------------------------------------------------------------
+
+const plural = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
+const roomName = (roomId) => state.rooms.find((room) => room.id === roomId)?.name ?? R.WHOLE_HOME;
+
+// "Whole home" (no room) first, then the rooms of the saved plan.
+const roomOptions = (selected) => [
+  h("option", { value: "", selected: !selected }, R.WHOLE_HOME),
+  ...state.rooms.map((room) => h("option", { value: room.id, selected: room.id === selected }, room.name)),
+];
+const categoryOptions = (selected) => R.CATEGORIES.map((category) => h("option", { value: category, selected: category === selected }, R.categoryLabel(category)));
+
+// A colour square only for a valid hex colour; anything else shows the "no colour" pattern.
+const itemSwatch = (hex) => (L.swatchColor(hex) === "transparent" ? h("span", { class: "swatch-dot none", "aria-hidden": "true" }) : swatch(hex));
+
+function renderAddButton() {
+  const count = state.drafts.filter((draft) => draft.selected).length;
+  $("#review-add-text").textContent = `Add ${plural(count, "item")}`;
+  $("#review-add").disabled = count === 0;
+}
+
+// Outlines the box of draft `number` on the photo while its row is hovered or focused.
+function highlightBox(number, on) {
+  $(`#review-photo [data-box="${number}"]`)?.classList.toggle("active", on);
+}
+
+function renderReview() {
+  const url = L.safeImageUrl(state.photo);
+  const boxes = h(
+    "div",
+    { class: "room-boxes", "aria-hidden": "true" },
+    state.drafts.map((draft) => {
+      const place = R.boxToPercent(draft.box);
+      if (!place) return null;
+      const box = h("span", { class: `room-box${draft.selected ? "" : " off"}`, "data-box": String(draft.number) }, h("span", { class: "room-box-num" }, String(draft.number)));
+      Object.assign(box.style, place);
+      return box;
+    }),
+  );
+  $("#review-photo").replaceChildren(
+    url ? h("img", { src: url, alt: "The scanned photo of the room" }) : h("div", { class: "room-photo-missing" }, icon("image"), "The photo cannot be shown."),
+    boxes,
+  );
+  $("#review-empty").hidden = state.drafts.length > 0;
+  $("#review-list").replaceChildren(
+    ...state.drafts.map((draft) => {
+      const id = `draft-${draft.number}`;
+      const row = h("li", { class: `room-draft${draft.selected ? "" : " off"}` });
+      const pick = h("input", {
+        type: "checkbox",
+        id: `${id}-pick`,
+        checked: draft.selected,
+        onchange: (event) => {
+          draft.selected = event.target.checked;
+          row.classList.toggle("off", !draft.selected);
+          $(`#review-photo [data-box="${draft.number}"]`)?.classList.toggle("off", !draft.selected);
+          renderAddButton();
+        },
+      });
+      const confidence = typeof draft.confidence === "number" ? `${Math.round(draft.confidence * 100)}% sure` : "";
+      row.append(
+        h("label", { for: `${id}-pick`, class: "sr-only" }, `Include item ${draft.number}`),
+        pick,
+        h("span", { class: "room-num", "aria-hidden": "true" }, String(draft.number)),
+        h(
+          "div",
+          { class: "room-draft-fields" },
+          h("label", { for: `${id}-name`, class: "sr-only" }, `Name of item ${draft.number}`),
+          h("input", {
+            id: `${id}-name`,
+            value: draft.label,
+            maxLength: R.MAX_LABEL,
+            autocomplete: "off",
+            oninput: (event) => {
+              draft.label = event.target.value;
+            },
+          }),
+          h("label", { for: `${id}-category`, class: "sr-only" }, `Category of item ${draft.number}`),
+          h(
+            "select",
+            {
+              id: `${id}-category`,
+              onchange: (event) => {
+                draft.category = event.target.value;
+              },
+            },
+            categoryOptions(draft.category),
+          ),
+        ),
+        h(
+          "p",
+          { class: "room-draft-meta" },
+          itemSwatch(draft.color_hex),
+          h("span", {}, draft.color_name || "No colour"),
+          confidence && h("span", { class: "mono" }, confidence),
+        ),
+      );
+      row.addEventListener("focusin", () => highlightBox(draft.number, true));
+      row.addEventListener("focusout", () => highlightBox(draft.number, false));
+      row.addEventListener("mouseenter", () => highlightBox(draft.number, true));
+      row.addEventListener("mouseleave", () => highlightBox(draft.number, false));
+      return row;
+    }),
+  );
+  renderAddButton();
+}
+
+function closeReview() {
+  state.drafts = [];
+  state.photo = "";
+  $("#review").hidden = true;
+  $("#review-list").replaceChildren();
+  $("#review-photo").replaceChildren();
+  setStatus($("#review-status"), "");
+}
+
+function itemRow(item) {
+  if (state.editing === item.id) return editRow(item);
+  const edit = h("button", { type: "button", "data-edit": item.id, "aria-label": `Edit ${item.label}`, onclick: () => openEdit(item.id) }, icon("edit"), "Edit");
+  const remove = h("button", { type: "button", class: "danger", "aria-label": `Delete ${item.label}` }, icon("delete"), "Delete");
+  remove.addEventListener("click", () => {
+    if (!confirm(`Delete "${item.label}" from the list? This cannot be undone.`)) return;
+    busy(
+      remove,
+      $("#items-status"),
+      async () => {
+        await api(`${base}/items/${encodeURIComponent(item.id)}`, { method: "DELETE" });
+        state.items = state.items.filter((other) => other.id !== item.id);
+        if (state.editing === item.id) state.editing = null;
+        renderItems();
+        $("#items-title").focus();
+      },
+      `${item.label} deleted.`,
+    );
+  });
+  return h(
+    "li",
+    { class: "room-item", "data-item": item.id },
+    itemSwatch(item.color_hex),
+    h(
+      "div",
+      { class: "room-item-text" },
+      h("div", { class: "room-item-head" }, h("strong", {}, item.label), item.source === "scan" && h("span", { class: "chip ok" }, "From photo")),
+      h("span", { class: "small muted" }, R.itemSummary(item)),
+      item.note && h("p", { class: "room-item-note small" }, item.note),
+    ),
+    h("div", { class: "room-item-actions" }, edit, remove),
+  );
+}
+
+function editRow(item) {
+  const id = `edit-${item.id}`;
+  const hasColour = L.swatchColor(item.color_hex) !== "transparent";
+  const colour = h("input", { type: "color", id: `${id}-colour`, value: hasColour ? item.color_hex : "#bf542c", disabled: !hasColour });
+  const noColour = h("input", {
+    type: "checkbox",
+    id: `${id}-nocolour`,
+    checked: !hasColour,
+    onchange: (event) => {
+      colour.disabled = event.target.checked;
+    },
+  });
+  const field = (key, text, control) => h("label", { for: `${id}-${key}` }, text, control);
+  const name = h("input", { id: `${id}-name`, value: item.label, maxLength: R.MAX_LABEL, autocomplete: "off" });
+  const category = h("select", { id: `${id}-category` }, categoryOptions(item.category));
+  const room = h("select", { id: `${id}-room` }, roomOptions(item.room_id));
+  const note = h("input", { id: `${id}-note`, value: item.note ?? "", maxLength: R.MAX_NOTE, autocomplete: "off" });
+  const save = h("button", { type: "submit", class: "primary" }, icon("save"), "Save");
+  const cancel = h("button", { type: "button", onclick: () => closeEdit(item.id) }, "Cancel");
+  const status = h("p", { class: "status", role: "status", "aria-live": "polite" });
+  const form = h(
+    "form",
+    { class: "room-edit", novalidate: true, "aria-label": `Edit ${item.label}` },
+    h(
+      "div",
+      { class: "room-edit-grid" },
+      field("name", "Name", name),
+      field("category", "Category", category),
+      h(
+        "div",
+        { class: "stack-tight" },
+        field("colour", "Colour", colour),
+        h("label", { class: "check", for: `${id}-nocolour` }, noColour, "No colour"),
+      ),
+      field("room", "Room", room),
+      h("label", { for: `${id}-note`, class: "room-edit-wide" }, "Note (optional)", note),
+    ),
+    h("div", { class: "savebar" }, save, cancel, status),
+  );
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const body = {
+      label: name.value.trim(),
+      category: category.value,
+      color_hex: noColour.checked ? null : colour.value.toLowerCase(),
+      room_id: room.value || null,
+      note: note.value.trim(),
+    };
+    const problem = R.validateItem(body);
+    if (problem) return setStatus(status, problem, "error");
+    cancel.disabled = true;
+    busy(
+      save,
+      status,
+      async () => {
+        const saved = await api(`${base}/items/${encodeURIComponent(item.id)}`, { method: "PUT", body });
+        state.items = state.items.map((other) => (other.id === saved.id ? saved : other));
+        closeEdit(item.id, `${saved.label} saved.`);
+      },
+      "Saved.",
+    ).finally(() => {
+      cancel.disabled = false;
+    });
+  });
+  return h("li", { class: "room-item editing", "data-item": item.id }, form);
+}
+
+function openEdit(itemId) {
+  state.editing = itemId;
+  setStatus($("#items-status"), "");
+  renderItems();
+  $(`#edit-${CSS.escape(itemId)}-name`)?.focus();
+}
+
+function closeEdit(itemId, message = "") {
+  state.editing = null;
+  renderItems();
+  setStatus($("#items-status"), message);
+  $(`#items-groups [data-edit="${CSS.escape(itemId)}"]`)?.focus();
+}
+
+function renderItems() {
+  $("#items-count").textContent = String(state.items.length);
+  $("#items-empty").hidden = state.items.length > 0;
+  $("#items-groups").replaceChildren(
+    ...R.groupByRoom(state.items, state.rooms).map((group, index) => {
+      const titleId = `items-group-${index}`;
+      return h(
+        "section",
+        { class: "room-group", "aria-labelledby": titleId },
+        h("h3", { id: titleId }, group.title, " ", h("span", { class: "mono muted small" }, String(group.items.length))),
+        h("ul", { class: "room-items" }, group.items.map(itemRow)),
+      );
+    }),
+  );
+}
+
+function initRoom() {
+  for (const select of [$("#scan-room"), $("#manual-room")]) select.replaceChildren(...roomOptions(null));
+  $("#manual-category").replaceChildren(h("option", { value: "" }, "Choose a category"), ...categoryOptions(null));
+
+  $("#scan-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const file = form.file.files[0];
+    const problem = R.scanFileProblem(file);
+    if (problem) return setStatus($("#scan-status"), problem, "error");
+    const body = new FormData();
+    body.append("file", file);
+    if (form.room_id.value) body.append("room_id", form.room_id.value);
+    let found = null;
+    busy(
+      $("#scan-send"),
+      $("#scan-status"),
+      async () => {
+        const scan = await api(`${base}/scans`, { method: "POST", body });
+        form.file.value = ""; // the photo is stored; a second press must not send it again
+        state.drafts = R.detectionsToDrafts(scan.detections, scan.asset.id, scan.room_id);
+        state.photo = scan.asset.url;
+        found = state.drafts.length;
+        setStatus($("#review-status"), "");
+        renderReview();
+        $("#review").hidden = false;
+      },
+      "",
+    ).then(() => {
+      if (found === null) return; // the scan failed; busy() shows why
+      setStatus($("#scan-status"), found ? `Found ${plural(found, "item")} in ${roomName(state.drafts[0].room_id)}. Check them below.` : "Nothing recognisable was found.");
+      $("#review-title").focus();
+    });
+  });
+
+  $("#review-add").addEventListener("click", () => {
+    const chosen = state.drafts.filter((draft) => draft.selected);
+    const items = R.selectedItems(state.drafts);
+    const problem = R.validateItems(items, chosen);
+    if (problem) return setStatus($("#review-status"), problem, "error");
+    let created = null;
+    $("#review-discard").disabled = true;
+    busy(
+      $("#review-add"),
+      $("#review-status"),
+      async () => {
+        created = await api(`${base}/items`, { method: "POST", body: { items } });
+      },
+      "",
+    ).then(() => {
+      $("#review-discard").disabled = false;
+      if (!created) return renderAddButton(); // the error stays beside the button
+      state.items = [...state.items, ...created];
+      closeReview();
+      renderItems();
+      setStatus($("#scan-status"), `Added ${plural(created.length, "item")}.`);
+      $("#items-title").focus();
+    });
+  });
+
+  $("#review-discard").addEventListener("click", () => {
+    closeReview();
+    setStatus($("#scan-status"), "Scan discarded. The photo stays with your images on the Moodboard tab.");
+    $("#scan-file").focus();
+  });
+
+  $("#manual-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const form = event.currentTarget.elements; // `.elements`: a control named "label" must not clash with form properties
+    const item = {
+      label: form.label.value.trim(),
+      category: form.category.value,
+      color_hex: null,
+      room_id: form.room_id.value || null,
+      note: form.note.value.trim(),
+      source: "manual",
+    };
+    const problem = R.validateItem(item);
+    if (problem) return setStatus($("#manual-status"), problem, "error");
+    busy(
+      $("#manual-add"),
+      $("#manual-status"),
+      async () => {
+        const created = await api(`${base}/items`, { method: "POST", body: { items: [item] } });
+        state.items = [...state.items, ...created];
+        form.label.value = "";
+        form.note.value = "";
+        renderItems();
+        form.label.focus();
+      },
+      `${item.label} added to ${roomName(item.room_id)}.`,
     );
   });
 }
@@ -440,7 +935,7 @@ run(async () => {
   await requireSession();
   $("#sign-out").addEventListener("click", signOut);
 
-  const [project, catalog, brief, versions, finishes, assets, board] = await Promise.all([
+  const [project, catalog, brief, versions, finishes, assets, board, items, profile] = await Promise.all([
     api(base),
     api("/v1/catalog"),
     api(`${base}/brief`),
@@ -448,12 +943,16 @@ run(async () => {
     api(`${base}/finishes`),
     api(`${base}/assets`),
     api(`${base}/moodboard`),
+    api(`${base}/items`),
+    api(`${base}/style-profile`).catch(() => null), // optional: the page works without it
   ]);
   state.catalog = catalog;
   state.rooms = versions.length ? (await api(`${base}/versions/latest`)).geometry.rooms : [];
   state.finishes = L.finishesToMap(finishes);
   state.assets = assets;
   state.board = board;
+  state.items = items;
+  state.profile = profile;
 
   const query = `?project=${encodeURIComponent(projectId)}`;
   document.title = `${project.name} · Brief & materials`;
@@ -470,10 +969,13 @@ run(async () => {
   initBrief();
   initFinishes();
   initMoodboard();
+  initRoom();
   fillBrief(brief.brief);
   renderFinishes();
   renderBoard();
   renderBoardSources();
   renderAssets();
+  renderStyleProfile();
+  renderItems();
   $("#design").hidden = false;
 });

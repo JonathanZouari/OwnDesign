@@ -54,6 +54,20 @@ failed in its first step. Not yet seen: a green `backend` run. It waits for the 
 
 ## Last result
 
+2026-11-26, inspiration analysis (branch `feature/inspiration-analysis`): `test_vision.py` and `test_style.py`
+47 passed; frontend 93 passed (new `frontend/tests/style-logic.test.js`); without secrets, as CI runs it: backend
+69 passed, 138 skipped, 0 errors. **Not run yet:** `test_inspiration_analysis.py` and three new browser journeys
+in `test_e2e_design.py` (real model), for the same reason as the room scan below. Two existing journeys now
+wait for "Image uploaded, but it could not be analysed…" after uploading a 1 x 1 inspiration image.
+
+2026-11-26, room scan (branch `feature/room-scan`): `test_vision.py` 35 passed (real model on
+`tests/fixtures/room.jpg`, a CC0 photo, plus decoding, post-processing, colour, slots and checksum edges);
+frontend 40 passed (new `frontend/tests/room-logic.test.js`). **Not run yet:** `test_room_items.py` (scan and
+item API, validation, isolation, Data API denial, quota race, suspended studio, consultant context; fake
+detector) and the three new browser journeys in `test_e2e_design.py` (real model), because the local
+`backend/.env` keys are empty and the `room_items` migration is not applied to the dev project. With empty keys
+the integration modules error at fixture setup instead of skipping.
+
 2026-11-26, after merging pull requests #9, #8 and #14: backend 100 passed (9 browser tests; the guest journey
 now also walks in 3D), frontend 57 passed, locally. On GitHub: `frontend` green, `backend` not yet run to the
 end (see CI), so the 3D step has not yet run on a Linux runner.

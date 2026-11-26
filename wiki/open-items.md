@@ -44,6 +44,27 @@ line is rewritten on every colour-picker move; a chosen logo has no pixel-size l
   reported as "no WebGL"; if closing the view throws, the editor behind it stays inert; a furniture type named
   `constructor` gives a broken box (`Object.hasOwn` fixes it).
 
+## Room scan
+
+- **To finish:** apply `20261126090000_room_items.sql` to the dev project, refill `backend/.env`, run
+  `test_room_items.py` and the room journeys, then merge `feature/room-scan` into `dev`.
+- **Licence.** YOLOv8 (code and weights) is AGPL-3.0. Fine while the repository is public; a closed hosted
+  product needs an Ultralytics licence or another model.
+- **Coverage.** COCO knows about 18 home classes: no lamp, rug, wardrobe, shelf or curtain. A model fine-tuned on
+  interior photos would fix this.
+- **No per-user scan limit** beyond the 30-image quota and the 2-slot limit per process.
+- `needs_supabase` skips only when `backend/.env` is missing, not when its keys are empty.
+
+## Inspiration analysis
+
+- **To finish:** apply `20261126120000_asset_analyses.sql` (after the room scan's migration), run
+  `test_inspiration_analysis.py` and the new browser journeys with dev keys.
+- Analysis runs inside the upload request and shares the 2 slots with room scans: several uploads at once, or
+  a scan at the same time, can leave images unanalysed (the person then uses "Analyse"). A background job would fix it.
+- The palette names come from a 12-colour list; fine shades (sage, terracotta) are not named.
+- "Add colours to the brief" saves the whole brief form as it stands, including unsaved edits on the Brief tab.
+- Images uploaded before this feature have no analysis until someone presses "Analyse".
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in

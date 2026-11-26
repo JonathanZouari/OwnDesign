@@ -40,3 +40,11 @@ Such lines are moved here and reworded when the pull request is merged.
   view. It goes against PRD 3.3, which excluded interactive 3D navigation; the PRD text has not been updated.
 - **three.js, vendored**, for the walkthrough, with controls written here (pull request #14). Its ready-made
   controls need an import map, which the `script-src 'self'` policy would block as an inline script.
+- **Room scan with YOLOv8n in the backend (ONNX, CPU).** The user asked for YOLOv8. ONNX keeps PyTorch out of
+  production; the server keeps the existing upload checks in one place. Detections are only suggestions: the
+  person confirms each item before it is listed. Items are a structured table, not the brief's free-text field.
+- **Inspiration images will be characterised with YOLOv8 plus a colour palette** (user's choice, 2026-11-26),
+  after the room scan ships; no style name from the model.
+- **Inspiration analysis in the upload request**, best effort. Simpler than a job queue; the cost is about 0.2 s
+  per upload and a shared 2-slot limit with room scans. An image left without an analysis gets an "Analyse"
+  button.
