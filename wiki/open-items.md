@@ -32,6 +32,14 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 - Railway deployment files and environments.
 - Sign-out does not invalidate an already issued token before it expires.
 
+## CI
+
+- **The CI secret key is not set yet**, so `backend` fails in its first step. The user creates a secret key named `ci` in Supabase and stores it as `SUPABASE_SECRET_KEY` in the environment `ci`.
+- Make the check required on `main` after some stable runs.
+- A separate Supabase project for CI: today CI and local runs share the dev project and delete each other's test accounts.
+- Repository settings: allow-list the three actions and require pinning by hash.
+- Smaller review notes, not done: the guard step reads the secret values where a presence flag would do; a failed assertion can print a test account's email or part of a token; lint, type check and coverage are not in CI.
+
 ## Smaller
 
 - Below 1200 px the sidebar is hidden, so the dashboard's in-page section links are not reachable there.

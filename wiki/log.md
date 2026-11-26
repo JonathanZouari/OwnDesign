@@ -101,3 +101,24 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+## [2026-11-26] plan | Tests in GitHub Actions
+Plan approved by the user: everything runs in CI, a separate Supabase key for CI, report only.
+Pages: [decisions](decisions.md).
+
+## [2026-11-26] security | Review of the CI plan and workflow
+Security-reviewer agent on the plan (2 high: branch-limited environment, separate key; both adopted), then
+security-reviewer and code-reviewer agents on the file (no critical, high or medium security finding; four small
+fixes applied), then `security-review` on the commits: no finding. Pages: [security](security.md),
+[open-items](open-items.md).
+
+## [2026-11-26] infra | CI workflow and the `ci` environment
+`.github/workflows/ci.yml` with jobs `frontend`, `backend`, `backend-unit`; GitHub environment `ci` limited to
+`dev` and `main`, holding the Supabase URL and publishable key. Found on the way: `test_consultant.py` imported
+`app.main` at module level, so the suite crashed instead of skipping without settings; fixed. Commits `0150113`,
+`dff701b`. Pages: [testing](testing.md), [security](security.md), [decisions](decisions.md).
+
+## [2026-11-26] test | CI verified, except the full backend run
+Local: backend 100 passed, frontend 31 passed. Clean clone without settings: 22 passed, 78 skipped. On GitHub:
+red check on a pull request with a failing test, refusal of a branch outside the environment's rule, failure on a
+missing secret, all as intended. The temporary pull request #25 was closed and its branch deleted. Open: a
+green `backend` run, waiting for the CI secret key. Pages: [testing](testing.md), [open-items](open-items.md).
