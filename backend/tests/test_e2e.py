@@ -270,3 +270,57 @@ def test_client_portal_entry_points(servers, page, api, make_user):
         page.goto(f"{SITE}/entry.html{query}")
         page.get_by_role("heading", name="This link is not valid").wait_for()
         assert page.get_by_role("link", name="Start designing").count() == 0
+
+
+def test_phone_layout_and_touch(servers, browser, api, make_user):
+    designer = make_user("e2e-phone")
+    studio = api.post("/v1/studios", json={"name": "Phone Studio"}, headers=designer.headers).json()["data"]
+    context = browser.new_context(viewport={"width": 360, "height": 740}, has_touch=True, is_mobile=True)
+    page = context.new_page()
+    page.goto(f"{SITE}/entry.html?studio={studio['slug']}")
+    assert not overflows(page)
+    page.get_by_role("link", name="Start designing").tap()
+    page.get_by_label("Project name").fill("Phone Flat")
+    assert not overflows(page)
+    page.get_by_role("button", name="Generate 2D canvas").tap()
+    page.wait_for_url("**/editor.html")
+    page.locator("#canvas [data-kind=walls]").first.wait_for(state="attached")
+    assert not overflows(page)
+    assert page.get_by_role("button", name="Sign in").is_visible()
+    assert page.get_by_role("button", name="Redo").bounding_box()["x"] < 360  # every tool fits
+
+    furniture = page.locator("#canvas [data-kind=furniture]")
+    canvas = page.locator("#canvas")
+    box = canvas.bounding_box()
+    x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    session = context.new_cdp_session(page)
+
+    def touch(kind, *points):
+        session.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": [{"x": px, "y": py, "id": i} for i, (px, py) in enumerate(points)]})
+
+    page.locator("[data-tool=furniture]").tap()
+    page.locator("#catalog button[data-type=sofa]").tap()
+
+    # A two-finger gesture with a placement tool moves the view and places nothing.
+    before = canvas.get_attribute("viewBox")
+    touch("touchStart", (x - 30, y))
+    touch("touchStart", (x - 30, y), (x + 30, y))
+    for step in range(1, 6):
+        touch("touchMove", (x - 30 + step * 10, y), (x + 30 + step * 10, y))
+    touch("touchEnd")
+    assert furniture.count() == 0
+    assert canvas.get_attribute("viewBox") != before
+
+    # A cancelled touch places nothing; a tap places exactly one item.
+    touch("touchStart", (x, y))
+    touch("touchCancel")
+    assert furniture.count() == 0
+    page.touchscreen.tap(x, y)
+    furniture.first.wait_for(state="attached")
+    assert furniture.count() == 1
+
+    # Held sideways, the canvas stays on screen.
+    page.set_viewport_size({"width": 740, "height": 360})
+    box = canvas.bounding_box()
+    assert box["height"] > 150 and box["y"] + box["height"] <= 360
+    context.close()
