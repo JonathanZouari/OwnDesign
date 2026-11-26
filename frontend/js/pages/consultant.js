@@ -80,7 +80,7 @@ run(async () => {
   document.title = `${project.name} · Design consultant`;
   $("#project-name").textContent = project.name;
   $("#crumb-name").textContent = project.name;
-  showStudio(project.studio.name);
+  if (project.studio) showStudio(project.studio.name);
   $("#nav-projects").href = project.my_role === "designer" ? "studio.html" : "projects.html";
   for (const id of ["#nav-editor", "#plan-link"]) $(id).href = `editor.html${query}`;
   for (const id of ["#nav-design", "#brief-link"]) $(id).href = `design.html${query}`;

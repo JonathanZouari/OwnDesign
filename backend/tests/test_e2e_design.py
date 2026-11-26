@@ -65,9 +65,9 @@ def world(api, make_user, studio):
 def sign_in(page, user, target: str):
     """Signs in through the form and lands on `target` (a page of the site, with its query)."""
     page.goto(f"{SITE}/auth.html?next={quote(target, safe='')}")
-    page.get_by_label("Email").fill(user.email)
-    page.get_by_label("Password").fill(user.password)
-    page.get_by_role("button", name="Sign in").click()
+    page.get_by_label("אימייל").fill(user.email)
+    page.get_by_label("סיסמה", exact=True).fill(user.password)
+    page.get_by_role("button", name="התחברות").click()
     page.wait_for_url(lambda url: url.split("#")[0] == f"{SITE}/{target}")
 
 
@@ -339,7 +339,7 @@ def test_stranger_cannot_open_another_clients_design_page(servers, page, api, ma
         sign_in(page, stranger, target)
         page.locator(".toast.error").wait_for()
         message = page.locator(".toast.error").inner_text()
-        assert "not found" in message.lower(), message
+        assert "הפריט המבוקש לא נמצא" in message, message
         assert "Traceback" not in message and "{" not in message
         # Nothing of the project is shown.
         assert page.locator("main").is_hidden()
@@ -359,7 +359,7 @@ def test_stranger_cannot_open_another_clients_design_page(servers, page, api, ma
 def test_signed_out_visitor_is_sent_to_sign_in(servers, page, world):
     page.goto(f"{SITE}/design.html?project={world.pid}")
     page.wait_for_url("**/auth.html?next=*")
-    page.get_by_role("heading", name="Sign in").wait_for()
+    page.get_by_role("heading", name="התחברות").wait_for()
     assert "Design Flat" not in page.content()
 
 
@@ -421,3 +421,21 @@ def test_consultant_page_starts_empty_and_limits_the_message(servers, page, worl
     assert page.locator("#plan-link").get_attribute("href") == f"editor.html?project={world.pid}"
     page.set_viewport_size({"width": 390, "height": 800})
     assert not overflows(page)
+
+
+def test_homeowner_without_a_studio_saves_a_brief_from_the_projects_list(servers, page, api, make_user):
+    owner = make_user("e2e-d2-solo")
+    created = api.post("/v1/projects", json={"name": "Solo Flat", "property_type": "existing"}, headers=owner.headers).json()["data"]
+    assert created["studio_id"] is None
+    sign_in(page, owner, "projects.html")
+    page.get_by_role("link", name="בריף וחומרים של Solo Flat").click()
+    page.wait_for_url(f"{SITE}/design.html?project={created['id']}")
+    page.get_by_role("heading", name="Solo Flat", level=1).wait_for()
+    page.get_by_label("Needs", exact=True).fill("Quiet reading corner")
+    page.get_by_role("button", name="Save brief").click()
+    page.get_by_text("Brief saved.").wait_for()
+    page.reload()
+    page.get_by_role("heading", name="Solo Flat", level=1).wait_for()
+    assert page.get_by_label("Needs", exact=True).input_value() == "Quiet reading corner"
+    saved = api.get(f"/v1/projects/{created['id']}/brief", headers=owner.headers).json()["data"]["brief"]
+    assert saved["needs"] == "Quiet reading corner"

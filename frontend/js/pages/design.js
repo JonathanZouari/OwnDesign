@@ -459,7 +459,7 @@ run(async () => {
   document.title = `${project.name} · Brief & materials`;
   $("#project-name").textContent = project.name;
   $("#crumb-name").textContent = project.name;
-  showStudio(project.studio.name);
+  if (project.studio) showStudio(project.studio.name);
   $("#nav-projects").href = project.my_role === "designer" ? "studio.html" : "projects.html";
   $("#nav-editor").href = `editor.html${query}`;
   $("#finishes-editor-link").href = `editor.html${query}`;
