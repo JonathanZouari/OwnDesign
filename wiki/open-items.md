@@ -25,6 +25,11 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 owner-only write endpoints with server-side image and colour validation, a tenant-isolation test, applying
 the theme on the pages that show the studio, a link from the dashboard, and browser journeys.
 
+From the review of pull request #8, not fixed: the contrast check accepts colours whose derived tokens fail
+4.5:1 (text `#747474` on white passes, but the muted text it produces is 3.19:1), which matters once the check
+decides what may be saved; the preview holds a second `h1` and a button and link that do nothing; the status
+line is rewritten on every colour-picker move; a chosen logo has no pixel-size limit.
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in
