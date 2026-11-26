@@ -1,5 +1,6 @@
 """Budget and shopping list (PRD FR-10, FR-11): editable, non-binding estimates. No supplier prices."""
 
+import math
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -53,7 +54,8 @@ def _line(item: dict, plan: dict | None) -> dict:
         else:
             stale = item["ref"].split("|")[0] not in {r["id"] for r in plan["rooms"]}
     qty = float(item["qty"])
-    return {**item, "qty": qty, "subtotal": round(qty * item["unit_price"]), "stale": stale}
+    # Half rounds up, like Math.round in the browser (Python's round() would round half to even).
+    return {**item, "qty": qty, "subtotal": math.floor(qty * item["unit_price"] + 0.5), "stale": stale}
 
 
 def _summary(user: CurrentUser, project_id: str) -> dict:
@@ -82,11 +84,9 @@ def get_budget(project_id: UUID, user: CurrentUser = Depends(current_user)):
 @router.put("")
 def put_budget(project_id: UUID, body: BudgetBody, user: CurrentUser = Depends(current_user)):
     project = _writable_project(user, project_id)
-    # ponytail: delete-then-insert is not atomic (same as finishes); saving again recovers.
-    service().table("budget_items").delete().eq("project_id", project["id"]).execute()
-    if body.items:
-        rows = [{**item.model_dump(), "project_id": project["id"], "position": i, "updated_by": user.id} for i, item in enumerate(body.items)]
-        service().table("budget_items").insert(rows).execute()
+    # One database transaction: a failure or a parallel save never leaves the project without its budget.
+    rows = [{**item.model_dump(), "position": i} for i, item in enumerate(body.items)]
+    service().rpc("save_budget", {"p_project": project["id"], "p_user": user.id, "p_items": rows}).execute()
     audit("budget.saved", user.id, studio_id=project["studio_id"], project_id=project["id"], count=len(body.items))
     return ok(_summary(user, project["id"]))
 

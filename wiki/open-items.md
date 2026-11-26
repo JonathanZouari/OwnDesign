@@ -51,6 +51,11 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 - **Placeholder prices.** `FURNITURE_PRICES_USD`, `MATERIAL_PRICES_USD` and `CURRENCY_FACTOR` in `backend/app/catalog.py` are rough
   guesses, not benchmarks (PRD open decision 12). They are labelled as estimates in the UI.
 - Walls are estimated at 2.5 m high and cabinets at 3 m2; the plan has no height or cabinet geometry.
-- The budget save is delete-then-insert, not atomic.
+- The budget save is atomic (database function `save_budget`), but untested until the migration is applied.
 - Migration `20261126090000_phase3_budget.sql` is not applied anywhere; no integration or browser test of the budget has run.
 - The "Dossier & Budget" placeholders remain in `wizard.html` and `studio.html` (no single project to link to).
+- Review findings still open (2026-11-26): a client and a designer saving in turn overwrite each other (no version check);
+  changing the brief's currency re-labels saved amounts without conversion; "Add from plan" never refreshes an existing quantity
+  and a finish line is not marked stale when its material changes; room area uses the bounding box and ignores openings;
+  backend furniture labels differ slightly from the frontend catalog ("Tv unit" vs "TV unit"); no unsaved-changes notice, no CSV export;
+  invalid numbers count as 0 in the live total until saved.
