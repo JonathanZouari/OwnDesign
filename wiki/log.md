@@ -140,3 +140,7 @@ Pages: [open-items](open-items.md).
 ## [2026-11-26] infra | Fork's main matches the original repository
 At the user's request, the fork's `main` was fast-forwarded (no force) from `ff474ae` to `39134d8`, the original
 repository's `main`. The fork had no commits of its own on `main`.
+
+## [2026-11-26] infra | Pull request for client tasks
+Opened pull request #17 on the original repository: the fork's `client-tasks` into `dev`. It asks for the new
+migration to be applied to the dev Supabase project before merging.
