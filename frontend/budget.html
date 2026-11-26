@@ -80,7 +80,10 @@
     <section class="card stack" aria-labelledby="shopping-title" id="shopping">
       <div class="row between">
         <h2 id="shopping-title">Shopping list</h2>
-        <button type="button" id="print-list"><span class="icon" aria-hidden="true">print</span>Print</button>
+        <div class="row">
+          <button type="button" id="download-csv"><span class="icon" aria-hidden="true">download</span>Download CSV</button>
+          <button type="button" id="print-list"><span class="icon" aria-hidden="true">print</span>Print</button>
+        </div>
       </div>
       <p class="muted small">Built from the saved budget. Save your changes first to see them here.</p>
       <div id="shopping-body"></div>

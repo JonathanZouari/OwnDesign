@@ -44,10 +44,33 @@ function renderSummary() {
   setStatus($("#target-status"), text, status === "over" ? "error" : "ok");
 }
 
+// The rows as they were last saved or loaded; the page is "dirty" when they differ from what is on screen.
+let baseline = "[]";
+const snapshot = () => JSON.stringify(state.rows.map(({ kind, ref, label, qty, unit, unit_price, note }) => ({ kind, ref, label, qty, unit, unit_price, note })));
+const isDirty = () => snapshot() !== baseline;
+
+function showDirty() {
+  const status = $("#save-status");
+  if (isDirty()) setStatus(status, "Unsaved changes.");
+  else if (status.textContent === "Unsaved changes.") setStatus(status, "");
+}
+
+window.addEventListener("beforeunload", (event) => {
+  if (isDirty()) event.preventDefault();
+});
+
 function field(row, key, label, attrs = {}) {
   const input = h("input", { type: "text", value: row[key], "aria-label": label, ...attrs });
+  const check = () => {
+    const problem = B.fieldError(key, input.value);
+    input.setAttribute("aria-invalid", problem ? "true" : "false");
+    input.title = problem ?? "";
+  };
+  check();
   input.addEventListener("input", () => {
     row[key] = input.value;
+    check();
+    showDirty();
     renderSummary();
     if (key === "qty" || key === "unit_price") subtotalCell(row).textContent = subtotalText(row);
   });
@@ -73,9 +96,15 @@ function renderLines() {
       const name = field(row, "label", `Item name, line ${index + 1}`, { maxLength: B.MAX_LABEL });
       const remove = h("button", { type: "button", "aria-label": `Remove line ${index + 1}` }, h("span", { class: "icon", "aria-hidden": "true" }, "delete"));
       remove.addEventListener("click", () => {
+        const removed = state.rows[index].label;
         state.rows.splice(index, 1);
         renderLines();
         renderSummary();
+        showDirty();
+        // Keep the keyboard place: the next line's name, or the add button when the list is empty.
+        const names = document.querySelectorAll("#lines-body tr td:first-child input");
+        (names[Math.min(index, names.length - 1)] ?? $("#add-custom")).focus();
+        setStatus($("#save-status"), `Removed "${removed}". Unsaved changes.`);
       });
       return h(
         "tr",
@@ -122,6 +151,7 @@ function useSaved(summary) {
   state.currency = summary.currency;
   state.min = summary.budget_min;
   state.max = summary.budget_max;
+  baseline = snapshot();
   renderLines();
   renderSummary();
   renderShopping();
@@ -160,6 +190,8 @@ run(async () => {
     state.rows.push({ kind: "custom", ref: null, label: "New item", qty: "1", unit: "item", unit_price: "0", note: "" });
     renderLines();
     renderSummary();
+    showDirty();
+    document.querySelector("#lines-body tr:last-child td:first-child input").focus();
   });
 
   $("#add-suggestions").addEventListener("click", (event) =>
@@ -182,6 +214,17 @@ run(async () => {
   );
 
   $("#print-list").addEventListener("click", () => window.print());
+
+  // The CSV and the printout are the last saved budget, not unsaved edits.
+  $("#download-csv").addEventListener("click", () => {
+    if (!state.saved) return;
+    const csv = B.shoppingListCsv(state.saved.items, state.currency, state.saved.notice);
+    const link = h("a", { href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })), download: "shopping-list.csv" });
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(link.href);
+  });
 
   useSaved(summary);
   $("#budget").hidden = false;

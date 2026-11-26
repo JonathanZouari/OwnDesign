@@ -58,4 +58,4 @@ Studio branding, project dossier and export, 3D renderings: designs are in
   changing the brief's currency re-labels saved amounts without conversion; "Add from plan" never refreshes an existing quantity
   and a finish line is not marked stale when its material changes; room area uses the bounding box and ignores openings;
   backend furniture labels differ slightly from the frontend catalog ("Tv unit" vs "TV unit"); no unsaved-changes notice, no CSV export;
-  invalid numbers count as 0 in the live total until saved.
+  invalid numbers still count as 0 in the live total (the field is now marked invalid).

@@ -70,3 +70,29 @@ test("buildPayload caps the number of lines", () => {
 test("formatMoney groups thousands and names the currency", () => {
   assert.equal(B.formatMoney(1234567, "EUR"), "1,234,567 EUR");
 });
+
+test("fieldError explains a number that cannot be saved, and is null for valid or other fields", () => {
+  assert.equal(B.fieldError("qty", "2.5"), null);
+  assert.match(B.fieldError("qty", "1,5"), /Quantity/);
+  assert.match(B.fieldError("unit_price", "1,000"), /Price/);
+  assert.equal(B.fieldError("unit_price", "1000"), null);
+  assert.equal(B.fieldError("note", "anything"), null);
+});
+
+test("shoppingListCsv: BOM, header, total, quoting and formula guard", () => {
+  const lines = [
+    { ...sofa, label: 'Sofa, "grey"' },
+    { ...custom, label: "=HYPERLINK(\"http://x\")", note: "+1" },
+    { ...custom, label: "שטיח", note: "line\nbreak" },
+  ];
+  const csv = B.shoppingListCsv(lines, "EUR", "Estimates only.");
+  assert.ok(csv.startsWith("\uFEFFEstimates only.\r\n"));
+  assert.match(csv, /Price per unit \(EUR\)/);
+  assert.match(csv, /"Sofa, ""grey"""/);
+  assert.match(csv, /'=HYPERLINK/);
+  assert.match(csv, /,'\+1\r\n/);
+  assert.match(csv, /שטיח/);
+  assert.match(csv, /"line\nbreak"/);
+  assert.match(csv, /Estimated total,2100,/);
+  assert.equal(B.shoppingListCsv([], "USD", "n").split("\r\n").length, 4);
+});

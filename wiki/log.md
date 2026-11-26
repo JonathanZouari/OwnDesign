@@ -108,3 +108,8 @@ and `GET .../budget/suggestions` (`backend/app/routes/budget.py`), page `fronten
 placeholders in `backend/app/catalog.py`. Passing: schema unit tests (`test_budget_schema.py`), frontend 41 of 41.
 Written but never run (no Supabase project): `backend/tests/test_budget.py`. Not written: browser E2E for the budget page.
 Security review not run yet. Pages: [architecture](architecture.md), [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] build | Budget page: unsaved-changes notice, invalid-field marking, CSV export, focus after remove
+Branch `budget-calculation` (from `dev`), nothing pushed. Frontend 43 of 43 passing. Download CSV has a BOM and a guard against
+spreadsheet formulas; it and Print use the last saved budget. Not checked in a browser. Still blocked on a Supabase project:
+migration, integration tests, browser E2E and security review. Decided with the user: no new Supabase project, no push for now.

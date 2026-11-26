@@ -544,3 +544,4 @@ ul.plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
   .appbar, .project-nav, #lines-title, .design-head ~ .card:not(#shopping), #print-list, #toasts { display: none !important; }
   #shopping { box-shadow: none; }
 }
+.budget input[aria-invalid="true"] { outline: 2px solid var(--error); }

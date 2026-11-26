@@ -75,3 +75,32 @@ export function buildPayload(rows) {
   }
   return { payload: { items } };
 }
+
+// The message for a number field that cannot be saved as typed, or null. Shown beside the field while typing.
+export function fieldError(key, raw) {
+  try {
+    if (key === "qty") parseQty(raw);
+    if (key === "unit_price") parsePrice(raw);
+    return null;
+  } catch (error) {
+    return error.message;
+  }
+}
+
+// A cell that a spreadsheet could read as a formula gets a leading apostrophe, so typed text never runs as one.
+const csvCell = (value) => {
+  let text = String(value ?? "");
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+};
+
+// The shopping list as CSV text. The BOM makes Excel read non-Latin names correctly.
+export function shoppingListCsv(lines, currency, notice) {
+  const rows = [
+    [notice],
+    ["Type", "Item", "Quantity", "Unit", `Price per unit (${currency})`, `Subtotal (${currency})`, "Note"],
+    ...lines.map((line) => [line.kind, line.label, line.qty, line.unit, line.unit_price, lineSubtotal(line), line.note]),
+    ["", "", "", "", "Estimated total", summarize(lines).total, ""],
+  ];
+  return `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}\r\n`;
+}
