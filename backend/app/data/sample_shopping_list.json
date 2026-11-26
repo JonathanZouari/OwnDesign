@@ -1,0 +1,256 @@
+{
+ "currency": "ILS",
+ "name": "רשימת קניות סינתטית",
+ "items": [
+  {
+   "category": "furniture",
+   "name": "ספה תלת מושבית",
+   "room": "סלון",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 6800,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "כורסה",
+   "room": "סלון",
+   "quantity": 2,
+   "unit": "unit",
+   "unit_price": 2400,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "שולחן סלון",
+   "room": "סלון",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 1200,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "מזנון טלוויזיה",
+   "room": "סלון",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 2200,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "שולחן אוכל",
+   "room": "סלון",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 3900,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "כיסא אוכל",
+   "room": "סלון",
+   "quantity": 6,
+   "unit": "unit",
+   "unit_price": 450,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "מיטה זוגית",
+   "room": "חדר שינה",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 3500,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "מזרן זוגי",
+   "room": "חדר שינה",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 4200,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "ארון בגדים הזזה",
+   "room": "חדר שינה",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 7500,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "שולחן עבודה",
+   "room": "חדר עבודה",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 1500,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "finish",
+   "name": "פרקט אלון",
+   "room": "סלון",
+   "quantity": 32,
+   "unit": "m2",
+   "unit_price": 280,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "finish",
+   "name": "אריחי פורצלן",
+   "room": "מטבח",
+   "quantity": 14,
+   "unit": "m2",
+   "unit_price": 190,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "finish",
+   "name": "צבע לקירות",
+   "room": "סלון",
+   "quantity": 120,
+   "unit": "m2",
+   "unit_price": 45,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "finish",
+   "name": "טיח סיד",
+   "room": "חדר שינה",
+   "quantity": 18,
+   "unit": "m2",
+   "unit_price": 160,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "lighting",
+   "name": "מנורות תלייה מעל שולחן האוכל",
+   "room": "סלון",
+   "quantity": 3,
+   "unit": "unit",
+   "unit_price": 650,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "lighting",
+   "name": "סט ספוטים שקועים",
+   "room": "מטבח",
+   "quantity": 1,
+   "unit": "set",
+   "unit_price": 1800,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "textile",
+   "name": "וילונות",
+   "room": "סלון",
+   "quantity": 6,
+   "unit": "m",
+   "unit_price": 420,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "textile",
+   "name": "שטיח",
+   "room": "סלון",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 2600,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "appliance",
+   "name": "מקרר",
+   "room": "מטבח",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 5900,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "appliance",
+   "name": "תנור בנוי",
+   "room": "מטבח",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 3200,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "appliance",
+   "name": "מדיח כלים",
+   "room": "מטבח",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 3400,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "משטח עבודה למטבח",
+   "room": "מטבח",
+   "quantity": 4.5,
+   "unit": "m",
+   "unit_price": 2100,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "furniture",
+   "name": "כיור ארון לאמבטיה",
+   "room": "חדר רחצה",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 2800,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "other",
+   "name": "מראה",
+   "room": "חדר רחצה",
+   "quantity": 1,
+   "unit": "unit",
+   "unit_price": 750,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  },
+  {
+   "category": "lighting",
+   "name": "מנורת קיר",
+   "room": "חדר שינה",
+   "quantity": 2,
+   "unit": "unit",
+   "unit_price": 380,
+   "source": "synthetic",
+   "note": "מחיר סינתטי להמחשה"
+  }
+ ]
+}
