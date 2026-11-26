@@ -8,6 +8,10 @@ Project memory for Atelier. Rules for maintaining it are in [`../CLAUDE.md`](../
 - [decisions.md](decisions.md): decisions made by the user and by Claude, with reasons.
 - [open-items.md](open-items.md): known gaps, deferred work and unanswered product questions.
 
+## Specifications
+
+- [../specs/plan-export.md](../specs/plan-export.md): plan export to PNG, PDF and DXF (product decisions confirmed, technical validation pending).
+
 ## Engineering
 
 - [architecture.md](architecture.md): how frontend, backend and Supabase fit together; access model; plan geometry.

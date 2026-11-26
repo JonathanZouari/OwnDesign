@@ -122,3 +122,8 @@ Local: backend 100 passed, frontend 31 passed. Clean clone without settings: 22 
 red check on a pull request with a failing test, refusal of a branch outside the environment's rule, failure on a
 missing secret, all as intended. The temporary pull request #25 was closed and its branch deleted. Open: a
 green `backend` run, waiting for the CI secret key. Pages: [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] docs | Plan export specification added
+The plan export feature specification (PNG, PDF and DXF downloads of a saved plan version, with a
+conceptual-plan notice and a studio activity event) added as a raw source at `specs/plan-export.md`.
+Technical validation (section 10 of the spec) comes before implementation. Pages: [index](index.md).
