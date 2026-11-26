@@ -1,5 +1,5 @@
 // Mouse, pen and touch interaction on the canvas: select, drag, draw walls, place openings and
-// furniture, pan and pinch/wheel zoom. Every edit goes through the pure functions in plan.js.
+// furniture, pan, two-finger pan with pinch zoom, wheel zoom. Every edit goes through the pure functions in plan.js.
 import { FURNITURE_BY_TYPE } from "../catalog.js";
 import * as P from "../plan.js";
 import { visibleArea } from "./render.js";
@@ -15,6 +15,14 @@ export const zoomAt = (view, point, factor) => {
   return { x: point.x - (point.x - view.x) * applied, y: point.y - (point.y - view.y) * applied, w, h: view.h * applied };
 };
 
+// A pinch zooms around the point first held, then follows the fingers. `shift` is how far their midpoint
+// moved, in plan units of the starting view.
+export const pinchView = (view, centre, factor, shift) => {
+  const next = zoomAt(view, centre, factor);
+  const applied = next.w / view.w;
+  return { ...next, x: next.x - shift.x * applied, y: next.y - shift.y * applied };
+};
+
 const axisLock = (from, to) => ({
   x: Math.abs(to.x - from.x) < AXIS_LOCK ? from.x : to.x,
   y: Math.abs(to.y - from.y) < AXIS_LOCK ? from.y : to.y,
@@ -28,6 +36,7 @@ export function attachPointer(canvas, editor) {
   const toPlan = (event, inverse = canvas.getScreenCTM().inverse()) =>
     new DOMPoint(event.clientX, event.clientY).matrixTransform(inverse);
   const snapped = (point) => ({ x: P.snap(point.x), y: P.snap(point.y) });
+  const midpoint = ([a, b]) => ({ clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2 });
 
   function place(point) {
     const { tool, plan } = editor;
@@ -53,8 +62,9 @@ export function attachPointer(canvas, editor) {
     if (pointers.size > 2) return; // extra fingers during a pinch are ignored
     if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
-      const centre = toPlan({ clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2 });
-      pinch = { distance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), view: editor.view, centre };
+      const inverse = canvas.getScreenCTM().inverse();
+      const centre = toPlan(midpoint([a, b]), inverse);
+      pinch = { distance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), view: editor.view, centre, inverse };
       editor.preview(null);
       editor.setPreviewLine(null);
       drag = null;
@@ -79,7 +89,7 @@ export function attachPointer(canvas, editor) {
     } else if (tool === "exterior" || tool === "partition") {
       drag = { type: "draw", kind: tool, start: snapped(point) };
     } else {
-      place(point);
+      drag = { type: "place", start: point }; // placed on lift, so the first finger of a pinch places nothing
     }
   });
 
@@ -89,10 +99,14 @@ export function attachPointer(canvas, editor) {
     if (pinch && pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-      if (distance > 0) editor.setView(zoomAt(pinch.view, pinch.centre, pinch.distance / distance));
+      if (distance > 0) {
+        const now = toPlan(midpoint([a, b]), pinch.inverse);
+        const shift = { x: now.x - pinch.centre.x, y: now.y - pinch.centre.y };
+        editor.setView(pinchView(pinch.view, pinch.centre, pinch.distance / distance, shift));
+      }
       return;
     }
-    if (!drag) return;
+    if (!drag || drag.type === "place") return;
     if (drag.type === "pan") {
       const now = toPlan(event, drag.inverse);
       editor.setView({ ...drag.view, x: drag.view.x - (now.x - drag.start.x), y: drag.view.y - (now.y - drag.start.y) });
@@ -124,7 +138,9 @@ export function attachPointer(canvas, editor) {
     if (!drag) return;
     const finished = drag;
     drag = null;
-    if (finished.type === "draw") {
+    if (finished.type === "place") {
+      if (!cancelled) place(finished.start);
+    } else if (finished.type === "draw") {
       editor.setPreviewLine(null);
       if (cancelled || !finished.end) return;
       const next = P.addWall(editor.plan, finished.start, finished.end, finished.kind);
