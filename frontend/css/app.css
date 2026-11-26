@@ -225,6 +225,13 @@ body.app .appbar { grid-column: 1 / -1; }
 .version:hover { background: var(--surface-mid); }
 .version .when { grid-column: 1 / -1; }
 
+.walk { position: absolute; inset: 0; z-index: 5; background: var(--surface-low); }
+.walk canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; outline-offset: -2px; }
+#walk-hint { left: 12px; top: 12px; max-width: min(46ch, calc(100% - 190px)); margin: 0; padding: 8px 10px; font-size: 12px; line-height: 18px; }
+#walk-close { right: 12px; top: 12px; }
+#walk-pad { left: 50%; bottom: 12px; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 48px); gap: 4px; padding: 4px; }
+#walk-pad button { min-height: 44px; padding: 0; touch-action: none; user-select: none; }
+
 #canvas { width: 100%; height: 100%; display: block; touch-action: none; outline-offset: -2px; }
 #canvas[data-tool="exterior"], #canvas[data-tool="partition"] { cursor: crosshair; }
 #canvas[data-tool="door"], #canvas[data-tool="window"], #canvas[data-tool^="furniture"] { cursor: copy; }

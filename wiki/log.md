@@ -146,3 +146,26 @@ security-reviewer agents: no critical or high finding; nine files, no network, s
 the other pages. One medium note on the contrast check and smaller ones are in [open-items](open-items.md); the
 contributor's code was not changed. On the merged tree: backend 100 passed, frontend 39 passed. No browser journey
 for the page yet. Commits `2552d1d` (merge) and the two that follow it. Pages: [open-items](open-items.md).
+
+## [2026-11-26] decision | 3D walkthrough approved
+The user chose a first-person walkthrough, reconsidering PRD 3.3. Pages: [decisions](decisions.md),
+[open-items](open-items.md).
+
+## [2026-11-26] build | 3D walkthrough in the plan editor
+Tests first for the geometry. Commits `5b50e33`, `3a688e3`, `ed51665`. Pages: [overview](overview.md),
+[architecture](architecture.md).
+
+## [2026-11-26] security | Review of the walkthrough, and a code review
+No security finding. Code review: sharp-angle walls could be crossed, oversized plans froze the tab, Ctrl+S
+did not save in 3D. Fixed in `ff3c9bf`, which also fixes the new browser journey (the page's policy blocks
+`wait_for_function`). Pages: [security](security.md).
+
+## [2026-11-26] infra | New dev Supabase project
+Created at the user's request, migrations and auth settings applied. Local backend on port 8001.
+
+## [2026-11-26] test | Walkthrough verified
+Backend 100 passed, frontend 49 passed. Pages: [testing](testing.md).
+
+## [2026-11-26] docs | Walkthrough sent as a pull request
+No write access to the repository, so the work goes from a fork to `dev` as a pull request. The local
+commits were re-authored before publishing, and the hashes above updated. Pages: [log](log.md).

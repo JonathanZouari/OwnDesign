@@ -19,6 +19,7 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 | `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names) |
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
+| `frontend/tests/plan3d.test.js` | unit, edge | 3D wall boxes, doors, windows, overlapping walls, collision, sharp corners, oversized plans |
 
 ## Required after every change
 
@@ -68,6 +69,9 @@ reaches OpenAI in the suite; the real call was checked by hand once.
 
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the
 journeys use the second). A system-level `OPENAI_API_KEY` overrides the one in `.env`; unset it before starting the backend.
+
+If port 8000 is taken, run the backend on another port and set `apiUrl` in `frontend/js/config.js`; the
+journeys follow `config.js`. `python -m http.server` can refuse connections on a loaded machine.
 
 ## Not covered
 

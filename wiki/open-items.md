@@ -8,6 +8,7 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Invites** never expire and are not bound to the invited email address.
 - **Product name.** "ATELIER" comes from Stitch; the PRD says undecided.
 - **PRD text** still says "no paid API", which the OpenAI decision overrides.
+- **PRD 3.3** still excludes interactive 3D navigation, which the walkthrough decision overrides.
 
 ## Phase 2 gaps
 
@@ -29,6 +30,14 @@ From the review of pull request #8, not fixed: the contrast check accepts colour
 4.5:1 (text `#747474` on white passes, but the muted text it produces is 3.19:1), which matters once the check
 decides what may be saved; the preview holds a second `h1` and a button and link that do nothing; the status
 line is rewritten on every colour-picker move; a chosen logo has no pixel-size limit.
+
+## 3D walkthrough gaps
+
+- No collision with furniture, no ceiling, no catalog materials or colours.
+- Each box is its own draw call; the largest plans the server accepts may be slow, especially on phones.
+  Instancing would fix it. Frame rate on real phones is unmeasured.
+- A lost WebGL context is not handled: leave the view and open it again.
+- Possibly stuck walking on macOS if a key is released while Cmd is held (unverified).
 
 ## Later phases with a Stitch screen waiting
 

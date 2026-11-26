@@ -16,6 +16,9 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **A separate Supabase secret key for CI**, created and entered by the user, so it can be revoked without breaking local work.
 - **The CI check reports only.** No branch protection for now.
 
+- **A 3D walkthrough in the plan editor.** The user chose it over a rotating or isometric view. This
+  reconsiders PRD 3.3, which excluded interactive 3D navigation.
+
 ## By Claude (open to change)
 
 - **FastAPI**, managed with `uv`; **no-build frontend** with plain ES modules. Smallest stack that meets the PRD's "Python backend, HTML/CSS frontend".
@@ -27,5 +30,7 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Consultant memory policy** (PRD 5.4 leaves it open): messages are stored per project and user, private to that user, capped at 30 a day per user. A failed OpenAI call still uses a slot because it may have been billed.
 - **Images go through the backend**, not directly to storage, so type, size, count and access are checked in one place.
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.
-
 - **Pull requests never get secrets**; the full suite runs on push to `dev`/`main` only ([testing.md](testing.md)). Came out of the security review of the CI plan.
+
+- **three.js, vendored**, for the walkthrough, with controls written here. Its ready-made controls need an
+  import map, which the `script-src 'self'` policy would block as an inline script.
