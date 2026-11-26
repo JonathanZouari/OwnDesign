@@ -1,14 +1,21 @@
-"""Browser tests of the Phase 2 pages: design brief, styles & materials, moodboard and the consultant.
+"""Browser tests of the Phase 2 pages: design brief, styles & materials, moodboard, "In the room" and the consultant.
 
 A client fills the brief, picks materials and builds a moodboard; everything survives a reload and is
 visible to the studio's designer. Bad input is refused in the browser, markup stays text, and a stranger
 sees nothing. No chat message is ever sent to the model: the POST is blocked in the browser.
 
+On the "In the room" tab a client scans a photo of a room, confirms what was found, and edits and deletes
+the listed items; the studio's designer sees the same list. The room scan is not mocked: it runs the real
+YOLOv8 model on tests/fixtures/room.jpg (a CC0 photo with a sofa, a chair and a table), so the first scan
+can take a while as the model loads.
+
 Starts the backend and the static frontend itself unless they are already running.
 """
 
+import re
 import sys
 import time
+from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import quote
 
@@ -421,3 +428,249 @@ def test_consultant_page_starts_empty_and_limits_the_message(servers, page, worl
     assert page.locator("#plan-link").get_attribute("href") == f"editor.html?project={world.pid}"
     page.set_viewport_size({"width": 390, "height": 800})
     assert not overflows(page)
+
+
+# ---- In the room -------------------------------------------------------------------------------------
+
+ROOM_PHOTO = Path(__file__).parent / "fixtures" / "room.jpg"
+FOUND_IN_ROOM_JPG = {"Sofa", "Chair", "Table"}  # what the real YOLOv8 model finds on the fixture photo
+SCAN_TIMEOUT = 120_000  # ms: the first scan loads the model
+
+
+def open_room(page, user, pid: str):
+    """Signs in and opens the "In the room" tab from the address (design.html?project=<id>#room)."""
+    open_design(page, user, pid)
+    page.goto(f"{SITE}/design.html?project={pid}#room")
+    page.reload()  # a fresh load reads the tab from the address
+    page.get_by_role("heading", name="Design Flat", level=1).wait_for()
+    page.locator("#panel-room").wait_for()
+    assert page.locator("#tab-room").get_attribute("aria-selected") == "true"
+
+
+def sign_out(page):
+    page.get_by_role("button", name="Sign out").click()
+    page.wait_for_url("**/index.html")
+
+
+def item_row(page, label: str):
+    return page.locator("#items-groups li.room-item").filter(has=page.get_by_text(label, exact=True))
+
+
+def add_label(page) -> str:
+    return page.locator("#review-add-text").inner_text()
+
+
+def test_client_scans_a_room_and_manages_the_item_list(servers, page, api, world):
+    open_room(page, world.client, world.pid)
+    page.locator("#items-empty").wait_for()
+    assert page.locator("#items-count").inner_text() == "0"
+    assert page.locator("#review").is_hidden()
+    # The room choice offers the whole home first, then the rooms of the saved plan.
+    options = page.locator("#scan-room option").evaluate_all("nodes => nodes.map(n => [n.value, n.textContent])")
+    assert options == [["", "Whole home"], ["r1", "Living room"]]
+
+    # Scan the photo for the living room; the real model runs on the server.
+    page.locator("#scan-file").set_input_files(str(ROOM_PHOTO))
+    page.locator("#scan-room").select_option(label="Living room")
+    page.locator("#scan-send").click()
+    page.locator("#review").wait_for(timeout=SCAN_TIMEOUT)
+    status = page.locator("#scan-status").inner_text()
+    assert re.fullmatch(r"Found \d+ items? in Living room\. Check them below\.", status), status
+    assert "error" not in (page.locator("#scan-status").get_attribute("class") or "")
+
+    # Boxes on the photo and one ticked draft per detection, named as the model names them.
+    drafts = page.locator("#review-list > li").count()
+    assert drafts >= 1
+    assert page.locator("#review-photo [data-box]").count() == drafts
+    names = [page.locator(f"#draft-{n}-name").input_value() for n in range(1, drafts + 1)]
+    assert names[0] in FOUND_IN_ROOM_JPG and set(names) <= FOUND_IN_ROOM_JPG, names
+    assert all(page.locator(f"#draft-{n}-pick").is_checked() for n in range(1, drafts + 1))
+    assert add_label(page) == f"Add {drafts} item{'' if drafts == 1 else 's'}"
+    assert page.get_by_role("img", name="The scanned photo of the room").count() == 1
+
+    # Unticking everything leaves nothing to add; ticking the first back allows one.
+    for n in range(1, drafts + 1):
+        page.get_by_label(f"Include item {n}", exact=True).uncheck()
+    assert add_label(page) == "Add 0 items"
+    assert page.locator("#review-add").is_disabled()
+    page.get_by_label("Include item 1", exact=True).check()
+    assert add_label(page) == "Add 1 item"
+    assert page.locator("#review-add").is_enabled()
+    first_category = page.locator("#draft-1-category").input_value()
+    page.locator("#draft-1-name").fill("Grey sofa")
+    page.locator("#review-add").click()
+    page.locator("#review").wait_for(state="hidden")
+    page.get_by_text("Added 1 item.", exact=True).wait_for()
+
+    # The item is listed under its room, marked as found in the photo.
+    groups = page.locator("#items-groups section.room-group")
+    assert groups.count() == 1
+    assert groups.locator("h3").inner_text().startswith("Living room")
+    assert page.locator("#items-count").inner_text() == "1"
+    assert page.locator("#items-empty").is_hidden()
+    assert item_row(page, "Grey sofa").count() == 1
+    assert item_row(page, "Grey sofa").get_by_text("From photo", exact=True).is_visible()
+
+    # What the browser added is what the API holds; the scanned photo is kept with the images.
+    items = api.get(f"{world.base}/items", headers=world.client.headers).json()["data"]
+    assert len(items) == 1
+    item = items[0]
+    assert (item["label"], item["category"], item["room_id"], item["source"], item["note"]) == ("Grey sofa", first_category, "r1", "scan", "")
+    assert item["asset_id"] and len(item["box"]) == 4 and 0 < item["confidence"] <= 1
+    assets = api.get(f"{world.base}/assets", headers=world.client.headers).json()["data"]
+    assert [(asset["id"], asset["kind"]) for asset in assets] == [(item["asset_id"], "existing_item")]
+    assert page.locator(f'#items-groups li.room-item[data-item="{item["id"]}"]').count() == 1
+
+    # A reload keeps the tab and the list.
+    page.reload()
+    page.locator("#items-groups li.room-item").first.wait_for()
+    assert page.locator("#tab-room").get_attribute("aria-selected") == "true"
+    assert item_row(page, "Grey sofa").get_by_text("From photo", exact=True).is_visible()
+    assert page.locator("#items-groups section.room-group > h3").inner_text().startswith("Living room")
+
+    # The studio's designer sees the same list.
+    sign_out(page)
+    open_room(page, world.designer, world.pid)
+    page.locator("#items-groups li.room-item").first.wait_for()
+    assert page.locator("#items-count").inner_text() == "1"
+    assert page.locator("#items-groups section.room-group > h3").inner_text().startswith("Living room")
+    assert item_row(page, "Grey sofa").get_by_text("From photo", exact=True).is_visible()
+    sign_out(page)
+
+    # The client adds a note to the item.
+    open_room(page, world.client, world.pid)
+    page.get_by_role("button", name="Edit Grey sofa", exact=True).click()
+    editing = page.locator(f'#items-groups li.room-item[data-item="{item["id"]}"]')
+    assert page.locator(f'#edit-{item["id"]}-name').input_value() == "Grey sofa"
+    assert page.locator(f'#edit-{item["id"]}-room').input_value() == "r1"
+    page.locator(f'#edit-{item["id"]}-note').fill("By the window")
+    editing.get_by_role("button", name="Save", exact=True).click()
+    page.get_by_text("Grey sofa saved.", exact=True).wait_for()
+    assert page.locator(f'#edit-{item["id"]}-note').count() == 0  # the form closed
+    assert item_row(page, "Grey sofa").get_by_text("By the window", exact=True).is_visible()
+    saved = api.get(f"{world.base}/items", headers=world.client.headers).json()["data"]
+    assert [(i["label"], i["note"], i["room_id"]) for i in saved] == [("Grey sofa", "By the window", "r1")]
+
+    # Cancel leaves the item as it was.
+    page.get_by_role("button", name="Edit Grey sofa", exact=True).click()
+    page.locator(f'#edit-{item["id"]}-note').fill("Not this")
+    editing.get_by_role("button", name="Cancel", exact=True).click()
+    assert item_row(page, "Grey sofa").get_by_text("By the window", exact=True).is_visible()
+    assert api.get(f"{world.base}/items", headers=world.client.headers).json()["data"][0]["note"] == "By the window"
+
+    # Deleting asks first; the empty state returns.
+    page.once("dialog", lambda dialog: dialog.accept())
+    page.get_by_role("button", name="Delete Grey sofa", exact=True).click()
+    page.get_by_text("Grey sofa deleted.", exact=True).wait_for()
+    page.locator("#items-empty").wait_for()
+    assert page.locator("#items-count").inner_text() == "0"
+    assert page.locator("#items-groups section.room-group").count() == 0
+    assert api.get(f"{world.base}/items", headers=world.client.headers).json()["data"] == []
+    page.reload()
+    page.locator("#items-empty").wait_for()
+
+
+def test_room_tab_refuses_bad_input_and_keeps_markup_as_text(servers, page, api, world):
+    scans = []
+    page.on("request", lambda request: scans.append(request.url) if request.method == "POST" and "/scans" in request.url else None)
+    open_room(page, world.client, world.pid)
+    scan_status = page.locator("#scan-status")
+
+    # No photo chosen: refused in the browser, nothing sent.
+    page.locator("#scan-send").click()
+    page.get_by_text("Choose or take a photo first.", exact=True).wait_for()
+    assert "error" in scan_status.get_attribute("class")
+
+    # A text file named like a photo, an empty photo and one over 5 MB are refused in the browser too.
+    picker = page.locator("#scan-file")
+    for upload, message in (
+        (image("notes.jpg", "text/plain", b"just some text"), "Use a JPEG, PNG or WebP photo."),
+        (image("empty.jpg", "image/jpeg", b""), "The file is empty."),
+        (image("huge.jpg", "image/jpeg", ROOM_PHOTO.read_bytes() + b"\x00" * (6 * 1024 * 1024)), "Photos can be at most 5 MB."),
+    ):
+        picker.set_input_files(upload)
+        page.locator("#scan-send").click()
+        page.get_by_text(message, exact=True).wait_for()
+        assert "error" in scan_status.get_attribute("class"), message
+    page.wait_for_timeout(300)
+    assert scans == []
+    assert page.locator("#review").is_hidden()
+    assert api.get(f"{world.base}/assets", headers=world.client.headers).json()["data"] == []
+
+    # Adding by hand: a name and a category are required.
+    manual_status = page.locator("#manual-status")
+    assert page.locator("#manual-category").input_value() == ""
+    page.locator("#manual-add").click()
+    page.get_by_text("Give the item a name.", exact=True).wait_for()
+    assert "error" in manual_status.get_attribute("class")
+    page.locator("#manual-name").fill("   ")
+    page.locator("#manual-add").click()
+    page.get_by_text("Give the item a name.", exact=True).wait_for()
+    page.locator("#manual-name").fill("Bookcase")
+    page.locator("#manual-add").click()
+    page.get_by_text("Choose a category.", exact=True).wait_for()
+    assert api.get(f"{world.base}/items", headers=world.client.headers).json()["data"] == []
+
+    # A name longer than 80 characters is cut at the field's limit.
+    page.locator("#manual-name").fill("x" * 81)
+    assert page.locator("#manual-name").evaluate("node => node.value.length") == 80
+
+    # Markup as a name and a note is saved and shown as plain text.
+    page.locator("#manual-name").fill(MARKUP)
+    page.locator("#manual-category").select_option("decor")
+    page.locator("#manual-room").select_option(label="Living room")
+    page.locator("#manual-note").fill(MARKUP)
+    page.locator("#manual-add").click()
+    page.get_by_text(f"{MARKUP} added to Living room.", exact=True).wait_for()
+    assert "error" not in (manual_status.get_attribute("class") or "")
+    assert page.locator("#manual-name").input_value() == "" and page.locator("#manual-note").input_value() == ""
+    row = page.locator("#items-groups li.room-item")
+    assert row.count() == 1
+    assert row.locator("strong").inner_text() == MARKUP
+    assert row.locator(".room-item-note").inner_text() == MARKUP
+    assert row.get_by_text("From photo").count() == 0  # typed by hand
+    assert no_script_ran(page)
+    stored = api.get(f"{world.base}/items", headers=world.client.headers).json()["data"]
+    assert [(i["label"], i["note"], i["category"], i["room_id"], i["source"]) for i in stored] == [(MARKUP, MARKUP, "decor", "r1", "manual")]
+
+    page.reload()
+    page.locator("#items-groups li.room-item").first.wait_for()
+    assert page.locator("#items-groups li.room-item strong").inner_text() == MARKUP
+    assert no_script_ran(page)
+
+    # An emptied name is refused in the edit form too, and nothing changes.
+    page.get_by_role("button", name=f"Edit {MARKUP}", exact=True).click()
+    page.locator(f'#edit-{stored[0]["id"]}-name').fill("")
+    page.locator("#items-groups li.room-item").get_by_role("button", name="Save", exact=True).click()
+    page.locator("#items-groups li.room-item").get_by_text("Give the item a name.", exact=True).wait_for()
+    assert api.get(f"{world.base}/items", headers=world.client.headers).json()["data"][0]["label"] == MARKUP
+
+    # The tab fits a 375 px phone, with the edit form open and with the list.
+    page.set_viewport_size({"width": 375, "height": 800})
+    assert not overflows(page)
+    page.locator("#items-groups li.room-item").get_by_role("button", name="Cancel", exact=True).click()
+    assert not overflows(page)
+    page.set_viewport_size({"width": 1280, "height": 720})
+    assert no_script_ran(page)
+
+
+def test_stranger_sees_no_room_items(servers, page, api, make_user, world):
+    added = api.post(
+        f"{world.base}/items",
+        json={"items": [{"label": "Secret armchair", "category": "seating", "room_id": "r1", "note": "private words", "source": "manual"}]},
+        headers=world.client.headers,
+    )
+    assert added.status_code == 201
+    stranger = make_user("e2e-d2-room-stranger")
+    assert api.get(f"{world.base}/items", headers=stranger.headers).status_code == 404
+
+    sign_in(page, stranger, "projects.html")
+    page.goto(f"{SITE}/design.html?project={world.pid}#room")
+    page.locator(".toast.error").wait_for()
+    message = page.locator(".toast.error").inner_text()
+    assert "not found" in message.lower(), message
+    assert "Traceback" not in message and "{" not in message
+    assert page.locator("main").is_hidden()
+    assert page.locator("#items-groups li.room-item").count() == 0
+    content = page.content()
+    assert "Secret armchair" not in content and "private words" not in content and "Design Flat" not in content
