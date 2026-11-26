@@ -415,7 +415,7 @@ LATIN_ALLOWED = {"ATELIER", "PDF", "ESC", "Ctrl", "Tab", "Enter", "Delete"}
 LATIN_WORDS_JS = r"""
 () => {
   const out = [];
-  const skip = (el) => !el || el.closest('.icon, script, style, [hidden]') || !el.checkVisibility();
+  const skip = (el) => !el || el.closest('.icon, script, style, [hidden], .file-name') || !el.checkVisibility();
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     if (!skip(node.parentElement)) out.push(node.nodeValue);
