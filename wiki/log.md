@@ -182,3 +182,12 @@ sides; the contributor's wiki text spoke of "the user", which was re-attributed
 ([decisions](decisions.md), "From merged pull requests"). On the merged tree: backend 100 passed, frontend 57
 passed. Commits `5bb03bf` (merge), `5c86f5b`. Pages: [decisions](decisions.md), [security](security.md),
 [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] test | Pull request #19 reviewed, not merged: version comparison
+Code-reviewer and security-reviewer agents, then its tests on a trial merge onto `dev`: frontend 63 passed, its
+unit and API tests passed, one of its four browser journeys failed (it asserts on text that the stylesheet
+uppercases, and a later step cannot pass). Also confirmed in the code: the details panel renders the text "null",
+and the comparison and the 3D walkthrough can be open at once. No security finding in the code; the endpoint
+reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
+not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
+Nothing of it is on `dev`.
