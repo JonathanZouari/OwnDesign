@@ -156,6 +156,33 @@ def test_phone_renames_a_room_but_cannot_drag_its_walls(servers, phone, api, wor
     assert latest["walls"] == VALID["walls"]
 
 
+def test_phone_shows_no_empty_action_bar_and_the_catalog_replaces_the_sheet(servers, phone, world):
+    page = phone
+    open_editor(page, world.client, world.pid)
+    page.locator("#canvas [data-kind=walls]").first.focus()
+    page.locator("#locked-note").wait_for()
+    expect(page.locator("#actions")).to_be_hidden()  # a wall has no phone actions: no empty bar
+    expect(page.locator("#inspector input").first).to_have_css("cursor", "not-allowed")
+
+    page.locator("#tools button[data-tool=furniture]").tap()
+    expect(page.locator("#catalog")).to_be_visible()
+    expect(page.locator("#inspector")).not_to_have_class(re.compile(r"\bsheet-open\b"))
+    catalog = page.locator("#catalog").bounding_box()
+    assert catalog["height"] >= 280  # the whole sheet, not a strip beside the inspector
+
+
+@pytest.mark.parametrize("width", [768, 1024, 1199])
+def test_tablet_app_bar_keeps_the_menu_and_brand_in_view(servers, page, world, width):
+    page.set_viewport_size({"width": width, "height": 900})
+    open_editor(page, world.client, world.pid)
+    for selector in ("#nav-menu", "#home-link", "#save"):
+        box = page.locator(selector).bounding_box()
+        assert box and box["x"] >= 0 and box["x"] + box["width"] <= width, selector
+    expect(page.locator(".appbar .tabs")).to_be_hidden()  # in the drawer instead
+    page.locator("#nav-menu").click()
+    drawer(page).get_by_role("link", name="Brief & Materials").wait_for()
+
+
 def test_phone_notice_can_be_dismissed_and_stays_dismissed(servers, phone, world):
     page = phone
     open_editor(page, world.client, world.pid)

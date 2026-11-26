@@ -80,6 +80,7 @@ button.ghost { border-color: transparent; }
 button.danger { color: var(--error); }
 button.link { min-height: 0; padding: 0; border: 0; color: var(--primary); font-weight: 400; text-decoration: underline; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
+input:disabled, select:disabled { background: var(--surface-mid); color: var(--ink-soft); cursor: not-allowed; opacity: 1; }
 button[aria-pressed="true"] { background: var(--inverse); border-color: var(--inverse); color: var(--on-inverse); }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font: 400 10px/14px var(--font-mono); letter-spacing: 0.04em; background: var(--surface-mid); color: var(--ink); white-space: nowrap; }
@@ -569,8 +570,9 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 
 @media (max-width: 1199px) {
   .nav-menu { display: inline-flex; }
-  /* The editor's sign in/out lives in the drawer here; in the bar it pushed a 768 px tablet sideways. */
-  .appbar #account { display: none; }
+  /* The tabs and the editor's sign in/out live in the drawer here; in the bar they pushed the menu
+     button and the brand out of a 768 px tablet. */
+  .appbar .tabs, .appbar #account { display: none; }
 }
 
 /* Touch screens: every control is at least 44 x 44 px. */

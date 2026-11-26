@@ -157,11 +157,12 @@ function render() {
   $("#undo").disabled = state.history.past.length === 0;
   $("#redo").disabled = state.history.future.length === 0;
 
-  $("#actions").hidden = !state.selection;
   const isFurniture = state.selection?.kind === "furniture";
   $("#rotate").hidden = !isFurniture;
   $("#duplicate").hidden = !isFurniture;
   $("#delete").hidden = !editor.moves(state.selection?.kind);
+  // A wall on a phone has no actions at all; an empty bar would show as a stray dark pill.
+  $("#actions").hidden = !state.selection || [...$("#actions").children].every((button) => button.hidden);
 
   const zoom = `${Math.round(100 / visibleArea(canvas).scale)}%`;
   $("#zoom-level").textContent = zoom;
@@ -265,6 +266,8 @@ function onKey(event) {
 function pickTool(id) {
   if (id !== "furniture") return editor.setTool(id);
   state.catalogOpen = !state.catalogOpen;
+  // On a phone the catalog and the inspector sheet cannot share the screen; the catalog wins.
+  if (state.catalogOpen && phone.matches) setSheetOpen(false);
   if (state.tool.startsWith("furniture:")) state.tool = "select";
   render();
   if (state.catalogOpen) $("#catalog button").focus(); // keyboard users land in the catalog, not behind the whole plan
