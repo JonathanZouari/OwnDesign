@@ -14,6 +14,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageOps, UnidentifiedImageError
 
+from app.schemas import ROOM_ITEM_CATEGORIES
+
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "yolov8n.onnx"
 MODEL_SHA256 = "8c8b6affc1f9a6482414338d996cc6799983d8da05078b7c44f16e3a3c5caa5e"
 
@@ -26,7 +28,7 @@ MIN_SIDE = 32
 MAX_PARALLEL = 2
 BUSY_SECONDS = 10
 
-CATEGORIES = ("seating", "sleeping", "tables", "storage", "appliances", "electronics", "decor", "plants", "bathroom", "other")
+CATEGORIES = ROOM_ITEM_CATEGORIES
 
 # COCO class id -> (label, category). Everything else (people, vehicles, animals, food...) is dropped.
 INTERIOR_CLASSES = {

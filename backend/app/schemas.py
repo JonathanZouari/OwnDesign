@@ -195,3 +195,41 @@ class MoodboardBody(Strict):
         if len(keys) != len(set(keys)):
             raise ValueError("an item can appear once on the board")
         return self
+
+
+ROOM_ITEM_CATEGORIES = ("seating", "sleeping", "tables", "storage", "appliances", "electronics", "decor", "plants", "bathroom", "other")
+Unit = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+Label = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
+Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
+
+
+class RoomItemEdit(Strict):
+    """The fields a person can change on an item in the room list."""
+
+    label: Label
+    category: Literal[ROOM_ITEM_CATEGORIES]
+    color_hex: Hex | None = None
+    room_id: Id | None = None
+    note: Note = ""
+
+
+class RoomItemIn(RoomItemEdit):
+    """An item to add: confirmed from a scan (with its photo, box and confidence) or typed by hand."""
+
+    source: Literal["scan", "manual"] = "manual"
+    asset_id: UUID | None = None
+    confidence: Unit | None = None
+    box: Annotated[list[Unit], Field(min_length=4, max_length=4)] | None = None
+
+    @model_validator(mode="after")
+    def _scan_fields(self):
+        x, y, w, h = self.box or (0, 0, 1, 1)
+        if w <= 0 or h <= 0 or x + w > 1.0001 or y + h > 1.0001:
+            raise ValueError("box must be inside the photo and not empty")
+        if self.source == "manual" and (self.asset_id or self.box or self.confidence is not None):
+            raise ValueError("photo, box and confidence belong to scanned items only")
+        return self
+
+
+class RoomItemsBody(Strict):
+    items: Annotated[list[RoomItemIn], Field(min_length=1, max_length=50)]
