@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
+  <title>Product catalog · Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="appbar">
+    <div class="group">
+      <a class="brand" href="projects.html">ATELIER</a>
+      <span class="chip studio" id="studio-brand" hidden></span>
+      <div class="crumb">
+        <span class="icon" aria-hidden="true">folder_open</span>
+        <strong id="crumb-name"></strong><span aria-hidden="true">•</span><span>Product catalog</span>
+      </div>
+    </div>
+    <nav aria-label="Account">
+      <button id="sign-out" type="button">Sign out</button>
+    </nav>
+  </header>
+
+  <main class="page catalog-page" id="shop" hidden>
+    <nav class="project-nav" aria-label="Project">
+      <a id="nav-projects" href="projects.html"><span class="icon" aria-hidden="true">arrow_back</span>All projects</a>
+      <a id="nav-editor" href="editor.html"><span class="icon" aria-hidden="true">architecture</span>2D canvas</a>
+      <a id="nav-design" href="design.html"><span class="icon" aria-hidden="true">palette</span>Brief &amp; materials</a>
+      <a id="nav-catalog" href="catalog.html" aria-current="page"><span class="icon" aria-hidden="true">chair</span>Product catalog</a>
+      <a id="nav-consultant" href="consultant.html"><span class="icon" aria-hidden="true">forum</span>Design consultant</a>
+    </nav>
+
+    <header class="design-head">
+      <span class="label accent">Product catalog</span>
+      <h1 id="project-name"></h1>
+      <p class="muted">Prices are estimates. Nothing is ordered or purchased.</p>
+    </header>
+
+    <div class="tablist" role="tablist" aria-label="Catalog sections">
+      <button type="button" role="tab" id="tab-catalog" aria-controls="panel-catalog" aria-selected="true">Catalog</button>
+      <button type="button" role="tab" id="tab-favorites" aria-controls="panel-favorites" aria-selected="false" tabindex="-1">Favorites</button>
+      <button type="button" role="tab" id="tab-list" aria-controls="panel-list" aria-selected="false" tabindex="-1">Shopping list</button>
+    </div>
+
+    <section role="tabpanel" id="panel-catalog" aria-labelledby="tab-catalog" tabindex="0">
+      <form class="card shop-filters" id="filters" aria-label="Product filters">
+        <label for="f-category">Category <select id="f-category"><option value="all">All categories</option></select></label>
+        <label for="f-color">Colour <select id="f-color"><option value="all">All colours</option></select></label>
+        <label for="f-min">Lowest price <output id="f-min-value" class="mono"></output><input type="range" id="f-min" step="10"></label>
+        <label for="f-max">Highest price <output id="f-max-value" class="mono"></output><input type="range" id="f-max" step="10"></label>
+        <label for="f-sort">Sort
+          <select id="f-sort">
+            <option value="">Featured</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+          </select>
+        </label>
+        <button type="reset">Clear filters</button>
+      </form>
+      <p class="muted small" id="result-count" role="status"></p>
+      <div class="shop-grid" id="grid"></div>
+      <p class="card" id="no-results" hidden>No products match these filters.</p>
+    </section>
+
+    <section role="tabpanel" id="panel-favorites" aria-labelledby="tab-favorites" tabindex="0" hidden>
+      <div class="shop-grid" id="fav-grid"></div>
+      <p class="card" id="fav-empty">No favorites yet. Use the heart on a product to save it here.</p>
+    </section>
+
+    <section role="tabpanel" id="panel-list" aria-labelledby="tab-list" tabindex="0" hidden>
+      <div class="card">
+        <div class="print-only">
+          <h2 id="print-title"></h2>
+          <p id="print-meta"></p>
+        </div>
+        <div class="row between">
+          <h2>Shopping list</h2>
+          <span class="chip" id="list-status" role="status"></span>
+        </div>
+        <p class="muted small" id="list-changed" role="status" hidden>Changed since approval, back to Draft.</p>
+        <p class="muted small no-print">Saved in this browser only. It is not shared with other devices.</p>
+        <ul class="shop-list" id="list"></ul>
+        <p id="list-empty">The list is empty. Add products from the catalog.</p>
+        <p class="shop-total">Estimated total <strong id="list-total"></strong></p>
+        <div class="row no-print">
+          <button type="button" id="export-csv">Export CSV</button>
+          <button type="button" id="export-pdf">Export PDF</button>
+          <button type="button" id="approve" class="primary" hidden>Approve list</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="select-dialog" class="shop-dialog" aria-labelledby="select-name">
+    <form id="select-form" method="dialog">
+      <h2 id="select-name"></h2>
+      <div id="select-image"></div>
+      <p class="muted" id="select-description"></p>
+      <fieldset id="select-colors"><legend>Colour</legend><div class="swatches"></div></fieldset>
+      <fieldset id="select-sizes"><legend>Size and dimensions</legend><div class="swatches"></div></fieldset>
+      <label for="qty">Quantity <input type="number" id="qty" min="1" max="99" step="1" value="1" required></label>
+      <p>Price <strong id="select-price"></strong></p>
+      <div class="row">
+        <button type="submit" class="primary" value="add">Add to shopping list</button>
+        <button type="submit" value="cancel" formnovalidate>Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="vendor/supabase-js-2.119.1.umd.js"></script>
+  <script type="module" src="js/pages/catalog.js"></script>
+</body>
+</html>
