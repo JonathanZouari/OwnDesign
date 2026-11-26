@@ -74,6 +74,12 @@ executes that code with the service key.
 What remains: the CI key is still a service key on the dev project; logs are public and GitHub masks exact
 secret strings only, so a failing test's traceback is visible to everyone. See [open-items.md](open-items.md).
 
+## Review of the villa demo
+
+No security finding: the download script accepts one host, keeps every file name inside the asset folder and
+writes only model, image and sky types; the page sets text only; its policy allows one import map by hash.
+Not checked: the full vendored addons. The policy does not restrict where images and requests load from.
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

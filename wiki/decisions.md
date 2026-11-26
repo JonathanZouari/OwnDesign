@@ -19,6 +19,10 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **A 3D walkthrough in the plan editor.** The user chose it over a rotating or isometric view. This
   reconsiders PRD 3.3, which excluded interactive 3D navigation.
 
+- **A realistic villa demo**, warm country style, two floors, as a separate page and not a feature of the
+  editor, with free downloaded models. The user chose these.
+- **Villa assets are not committed**; a script downloads them, to keep the repository small. User's choice.
+
 ## By Claude (open to change)
 
 - **FastAPI**, managed with `uv`; **no-build frontend** with plain ES modules. Smallest stack that meets the PRD's "Python backend, HTML/CSS frontend".
@@ -33,3 +37,5 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **three.js, vendored**, for the walkthrough, with controls written here. Its ready-made controls need an
   import map, which the `script-src 'self'` policy would block as an inline script.
 - **Pull requests never get secrets**; the full suite runs on push to `dev`/`main` only ([testing.md](testing.md)). Came out of the security review of the CI plan.
+- **The villa page allows one inline import map by hash.** This replaces the reason given above for avoiding
+  import maps: a hash permits it without allowing other inline scripts, and keeps vendored files unmodified.

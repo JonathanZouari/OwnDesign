@@ -20,6 +20,15 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
 - The editor has no link to the Phase 2 pages at 767 px and below.
 
+## Villa demo gaps
+
+- The home page link is for demonstration; the owner decides whether it stays.
+- Without the downloaded assets the page only shows a loading error, and its browser journey is skipped
+  (also in CI).
+- Poly Haven assets are not pinned to a version or checksum.
+- Doorways have no moving doors, there is no swimming, and phones are untested.
+- `python -m http.server` can refuse some of the many asset requests on a loaded machine.
+
 ## 3D walkthrough gaps
 
 - No collision with furniture, no ceiling, no catalog materials or colours.

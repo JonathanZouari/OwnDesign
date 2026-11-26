@@ -32,6 +32,12 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 
+## Demo: 3D villa
+
+- `/villa/`, linked from the home page: a stand-alone first-person tour of a two-floor villa (six living and
+  bedrooms, two bathrooms, stairs, garden, pool). Not connected to saved projects or the editor.
+- Its models and textures are downloaded once by a script ([architecture.md](architecture.md)).
+
 ## Built: 3D walkthrough
 
 - A first-person walkthrough of the plan, opened from the editor, including unsaved drafts. View only.

@@ -169,3 +169,14 @@ security-reviewer agents: no critical or high finding; nine files, no network, s
 the other pages. One medium note on the contrast check and smaller ones are in [open-items](open-items.md); the
 contributor's code was not changed. On the merged tree: backend 100 passed, frontend 39 passed. No browser journey
 for the page yet. Commits `2552d1d` (merge) and the two that follow it. Pages: [open-items](open-items.md).
+
+## [2026-11-26] docs | Upstream dev merged into the walkthrough branch
+Conflicts only in wiki pages, both sides kept. Commit `f38ece6`.
+
+## [2026-11-26] build | 3D villa demo
+Stand-alone page, asset download script, home page link, tests. Commits `5ed3396`, `23a8007`, `8b4e691`.
+Added to pull request #14. Pages: [overview](overview.md), [architecture](architecture.md),
+[decisions](decisions.md), [open-items](open-items.md), [testing](testing.md).
+
+## [2026-11-26] security | Review of the villa demo
+No finding. Pages: [security](security.md).
