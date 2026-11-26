@@ -27,6 +27,10 @@ End to end, regression (both full suites) and edge cases for the change (`CLAUDE
 
 ## Last result
 
+2026-11-26 (`feature/mobile`, new development Supabase project): backend 101 passed, frontend 35 passed.
+The 91 non-browser tests passed in a full run; the 10 browser tests passed in a temporary copy on ports
+8011 and 5511, because another local app held 8000 and 5500. Earlier results:
+
 2026-11-23: backend 94 passed (incl. 3 browser journeys), frontend 31 passed. New files:
 `backend/tests/test_design.py` (brief, finishes, uploads, moodboard, isolation, quota, suspended studio) and
 `test_consultant.py` (fake OpenAI client: context, privacy, cap, failure, injection, tag escaping);
@@ -47,6 +51,9 @@ many projects, a clean clone on another machine.
 
 ## Gotchas
 
+- The browser journeys reuse whatever already listens on ports 8000 and 5500. Another app there makes them
+  fail with time-outs.
+- Without `backend/.env`, `test_consultant.py` fails at collection instead of being skipped.
 - Every run of the backend suite deletes all `*@owndesign-test.example.com` accounts and their studios.
   Do not run it while someone is checking pages by hand with such accounts.
 - Playwright matches accessible names by substring. A second link containing "Start designing" or a

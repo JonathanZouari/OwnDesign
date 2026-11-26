@@ -115,3 +115,7 @@ data). The backend suite and browser journeys, including the new phone journey, 
 Removed the sticky chat composer (it hid replies). Landscape top bar keeps the home link and sign out on
 screen. The wizard disclaimer shows in landscape again. Simplified the tab tap-size rules. Extended the phone
 journey; it has still not been run (no `backend/.env` or `uv`). Checked in Chrome emulation with stubbed API data.
+
+## [2026-11-26] test | Phone version verified against a real project
+Backend 101 passed (browser journeys, including the phone journey, on alternate ports), frontend 35 passed.
+No code changes. Pages: [testing](testing.md).
