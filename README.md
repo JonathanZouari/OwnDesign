@@ -60,8 +60,23 @@ supabase config push      # applies the auth settings declared in supabase/confi
 `supabase/config.toml` currently holds **development** values: email confirmation is off and the
 site URL is `localhost:5500`. Production needs confirmation on, custom SMTP, and its own URLs.
 
+### After merging the budget feature (Phase 3)
+
+The budget needs one new migration, `supabase/migrations/20261126090000_phase3_budget.sql` (table `budget_items`
+and the function `save_budget`). Nothing else changes: the backend and the frontend read the same `backend/.env`
+and `frontend/js/config.js` as before, so no new setting is needed.
+
+1. Check what will run: `supabase db push --dry-run` (lists only the new migration if the project is up to date).
+2. Apply it **before** starting the new backend: `supabase db push`. Until then only `/v1/projects/{id}/budget...`
+   fails; every other route keeps working.
+3. Start the backend and the frontend as above and open a project, then **Budget**.
+4. Run `cd backend && uv run pytest` (needs `backend/.env`; the budget tests are in `tests/test_budget.py`) and
+   `cd frontend && npm test`.
+
+The migration only adds objects; it does not change or delete existing data.
+
 ## Not in Phase 1
 
-Design brief, moodboards, AI consultant, renderings, budget, dossier, messaging and tasks, studio
+Renderings, dossier, messaging and tasks, studio
 branding, invitation emails (the designer copies an invite link), per-project team permissions,
 Railway deployment files, rate limiting, subscriptions and credits.

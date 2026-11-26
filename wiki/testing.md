@@ -50,3 +50,9 @@ many projects, a clean clone on another machine.
   Do not run it while someone is checking pages by hand with such accounts.
 - Playwright matches accessible names by substring. A second link containing "Start designing" or a
   second heading containing the studio name breaks the journeys.
+
+## Phase 3 status (2026-11-26)
+
+Run and passing: `backend/tests/test_budget_schema.py` (payload validation), `frontend/tests/budget-logic.test.js`
+(frontend total 41). Written but not run, needs `backend/.env`: `backend/tests/test_budget.py` (round trip, suggestions,
+stale lines, isolation, Data API denial, suspended studio). No browser E2E for `budget.html` yet.

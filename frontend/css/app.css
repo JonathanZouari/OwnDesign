@@ -530,3 +530,20 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .board-item .board-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .msg { max-width: 100%; }
 }
+
+/* ---- budget ---- */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem; margin: 0; }
+.summary dt { font: 600 11px/14px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.summary dd { margin: 2px 0 0; }
+.summary .total dd { font-size: 1.25rem; color: var(--primary); }
+.budget td input { width: 100%; min-width: 4rem; }
+.budget td:first-child input { min-width: 9rem; }
+.shopping-group h3 { margin: 0.5rem 0 0.25rem; }
+ul.plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+@media print {
+  .appbar, .project-nav, #lines-title, .design-head ~ .card:not(#shopping), #print-list, #toasts { display: none !important; }
+  #shopping { box-shadow: none; }
+}
+.budget input[aria-invalid="true"] { outline: 2px solid var(--error); }
+/* The visually hidden "Remove" header is absolutely positioned: without a positioned parent it escapes the scroll box and widens the page. */
+.budget .table-wrap { position: relative; }

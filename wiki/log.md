@@ -101,3 +101,20 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+
+## [2026-11-26] build | Phase 3 budget and shopping list (code written, not yet verified against Supabase)
+Table `budget_items` (migration `20261126090000_phase3_budget.sql`, not applied yet), routes `GET/PUT /v1/projects/{id}/budget`
+and `GET .../budget/suggestions` (`backend/app/routes/budget.py`), page `frontend/budget.html`. Default prices are
+placeholders in `backend/app/catalog.py`. Passing: schema unit tests (`test_budget_schema.py`), frontend 41 of 41.
+Written but never run (no Supabase project): `backend/tests/test_budget.py`. Not written: browser E2E for the budget page.
+Security review not run yet. Pages: [architecture](architecture.md), [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] build | Budget page: unsaved-changes notice, invalid-field marking, CSV export, focus after remove
+Branch `budget-calculation` (from `dev`), nothing pushed. Frontend 43 of 43 passing. Download CSV has a BOM and a guard against
+spreadsheet formulas; it and Print use the last saved budget. Not checked in a browser. Still blocked on a Supabase project:
+migration, integration tests, browser E2E and security review. Decided with the user: no new Supabase project, no push for now.
+
+## [2026-11-26] docs | Budget branch made merge-ready for the main Supabase project
+The branch holds no keys, no `.env`, no `config.js` and no demo files. After a merge the main project connects through its
+own `backend/.env` and `frontend/js/config.js`; only the migration `20261126090000_phase3_budget.sql` has to be applied
+(`supabase db push`, before starting the new backend). Steps added to the README. Nothing was applied or pushed.

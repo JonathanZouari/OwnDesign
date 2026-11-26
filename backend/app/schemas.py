@@ -170,6 +170,39 @@ class FinishesBody(Strict):
         return self
 
 
+class BudgetItem(Strict):
+    kind: Literal["furniture", "finish", "custom"]
+    ref: Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_|-]{1,60}$")] | None = None
+    label: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
+    qty: Annotated[float, Field(ge=0, le=100_000, allow_inf_nan=False)]
+    unit: Literal["item", "m2"]
+    unit_price: Money
+    note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] = ""
+
+    @model_validator(mode="after")
+    def _consistent(self):
+        if (self.kind == "custom") != (self.ref is None):
+            raise ValueError("only custom lines have no ref")
+        if self.kind == "furniture" and (self.unit != "item" or "|" in self.ref):
+            raise ValueError("a furniture line counts items and refers to a furniture type")
+        if self.kind == "finish":
+            room, _, surface = self.ref.partition("|")
+            if self.unit != "m2" or not room or surface not in ("floor", "walls", "ceiling", "cabinets"):
+                raise ValueError("a finish line is in m2 and refers to roomId|surface")
+        return self
+
+
+class BudgetBody(Strict):
+    items: Annotated[list[BudgetItem], Field(max_length=300)]
+
+    @model_validator(mode="after")
+    def _one_line_per_ref(self):
+        keys = [(item.kind, item.ref) for item in self.items if item.ref is not None]
+        if len(keys) != len(set(keys)):
+            raise ValueError("one line per furniture type or room surface")
+        return self
+
+
 class MoodboardItem(Strict):
     kind: Literal["asset", "style", "material"]
     ref: Annotated[str, StringConstraints(min_length=1, max_length=40)]

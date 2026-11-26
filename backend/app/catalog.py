@@ -29,3 +29,20 @@ MATERIALS = [
 
 STYLE_IDS = frozenset(style["id"] for style in STYLES)
 MATERIALS_BY_ID = {material["id"]: material for material in MATERIALS}
+
+# Rough placeholder estimates (USD), NOT supplier prices: a starting point the user edits (PRD FR-10, MVP-06).
+# Furniture: per item. Materials: per square metre. The source of real benchmarks is an open PRD decision (12).
+FURNITURE_PRICES_USD = {
+    "sofa": 900, "armchair": 350, "coffee-table": 200, "tv-unit": 300, "dining-table": 500, "chair": 90,
+    "double-bed": 700, "single-bed": 350, "wardrobe": 600, "desk": 250,
+    "kitchen-counter": 2500, "kitchen-island": 2000, "sink": 250, "stove": 500, "fridge": 800,
+    "toilet": 250, "bathtub": 700, "shower": 600, "vanity": 400,
+}
+MATERIAL_PRICES_USD = {
+    "oak-floor": 70, "walnut-floor": 95, "polished-concrete": 60, "porcelain-stone": 45, "terracotta-tile": 50,
+    "white-paint": 8, "sage-paint": 9, "navy-paint": 9, "lime-plaster": 25, "black-metal": 120,
+}
+# Very rough multipliers so the defaults land in the project's currency; the user still edits every price.
+CURRENCY_FACTOR = {"USD": 1.0, "EUR": 0.9, "GBP": 0.8, "ILS": 3.6}
+WALL_HEIGHT_M = 2.5
+CABINET_M2 = 3.0  # starting quantity for a cabinets surface; there is no geometry to measure

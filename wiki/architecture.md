@@ -75,3 +75,12 @@ Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `
   the endpoint answers 503.
 - **Frontend:** `design.html` (brief, materials, moodboard tabs), `consultant.html`; pure logic in
   `frontend/js/design-logic.js`.
+
+## Phase 3: budget and shopping list
+
+Table `budget_items` (up to 300 lines per project; kind `furniture`, `finish` or `custom`; `ref` is the furniture type or
+`roomId|surface`, null for custom; unique per `(project_id, kind, ref)`). Same access model as Phase 2: SELECT through
+`projects` RLS, writes by the backend only. `GET/PUT /v1/projects/{id}/budget` (whole-set save, audit `budget.saved`, suspended
+studio gets 403), `GET .../budget/suggestions` derives lines from the latest plan and the finishes and saves nothing.
+The target range and currency come from the brief. A line whose furniture type or room left the plan is returned with
+`stale: true`. UI: `budget.html`, logic in `frontend/js/budget-logic.js`.
