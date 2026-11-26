@@ -12,6 +12,10 @@ Project memory for Atelier. Rules for maintaining it are in [`../CLAUDE.md`](../
 
 - [../specs/plan-export.md](../specs/plan-export.md): plan export to PNG, PDF and DXF (a contributor's proposal from pull request #9; the product decisions in it are not yet the owner's, technical validation pending).
 
+## Features
+
+- [walk-paths.md](walk-paths.md): "How we move": walking paths traced from a short video with YOLOv8 in the browser, and notes on them.
+
 ## Engineering
 
 - [architecture.md](architecture.md): how frontend, backend and Supabase fit together; access model; plan geometry.

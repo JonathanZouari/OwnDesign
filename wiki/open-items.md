@@ -49,6 +49,19 @@ line is rewritten on every colour-picker move; a chosen logo has no pixel-size l
 Studio branding, project dossier and export, 3D renderings: designs are in
 `design/stitch/` ([design.md](design.md)). Each is built as a real feature in its own phase.
 
+## How we move
+
+- **YOLOv8 is AGPL-3.0** (code and weights). Fine for this public course repository; a closed commercial
+  product needs an Ultralytics Enterprise licence or another model.
+- **Speed on phones is not measured.** One-thread WebAssembly; a 30-second video is 150 model runs. WebGPU or
+  a smaller input size are the options if it is slow.
+- **First trace downloads about 25 MB** (model and runtime), cached by the browser afterwards.
+- **Not tested on a real video of a person**: the browser test stubs the runtime for the journey and runs the
+  real model only on a drawn video with nobody in it.
+- **Videos longer than 30 seconds** are refused in the browser; this branch of the code has no automated test.
+- **The note limit (50 per path)** is checked in the API only; parallel requests can pass it by a few.
+- Signed picture links expire after 10 minutes; reload the page to renew them.
+
 ## Before production
 
 - Turn email confirmation on and configure SMTP. While it is off, someone can register with another person's address and it is shown to the designer as the client's email.

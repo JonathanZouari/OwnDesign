@@ -191,3 +191,24 @@ and the comparison and the 3D walkthrough can be open at once. No security findi
 reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
 not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
 Nothing of it is on `dev`.
+
+## [2026-11-26] plan | How we move: walking paths from a short video
+The user brought the idea (one person, fixed camera, one path, client notes). Plan approved: detection in the
+browser, path drawn over a still frame, notes on the path. The user first chose COCO-SSD over YOLOv8 because of
+the AGPL licence, then asked for YOLOv8. Pages: [walk-paths](walk-paths.md), [decisions](decisions.md).
+
+## [2026-11-26] build | How we move
+Migration `20261126130000_walk_paths.sql` (applied to the dev project with the user's approval),
+`backend/app/routes/walk.py`, `frontend/walk.html`, YOLOv8n (ONNX) with onnxruntime-web in the browser. Commits
+`00d4342`, `8db867c`, `4306f3c`, `878fb02`. Pages: [walk-paths](walk-paths.md), [architecture](architecture.md),
+[overview](overview.md), [open-items](open-items.md), [index](index.md).
+
+## [2026-11-26] test | How we move
+Frontend 71 passed, walking-path API 34 passed, browser 3 passed (real YOLOv8 in one), full backend 133 passed and
+1 failed on a Supabase timeout that passed when run again. Pages: [testing](testing.md).
+
+## [2026-11-26] security | How we move
+`security-review`: no finding. Pages: [security](security.md).
+
+## [2026-11-26] docs | How we move sent as pull request #29
+From the fork branch `feat/walk-paths` to `dev`, with screenshots from `design/walk/`. Not merged.

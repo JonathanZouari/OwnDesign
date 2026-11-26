@@ -561,3 +561,23 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .branding-layout { grid-template-columns: minmax(0, 1fr); }
   .theme-preview { position: static; }
 }
+
+/* ---- How we move ------------------------------------------------------------------------------------ */
+.walk .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.walk-card-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.walk-card-head h2 { overflow-wrap: anywhere; margin: 0; }
+.walk-figure { position: relative; margin: 0; cursor: crosshair; }
+.walk-figure img { display: block; width: 100%; height: auto; border-radius: 4px; background: var(--surface-low); }
+.walk-figure svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.walk-line { fill: none; stroke: var(--primary); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.walk-start { fill: #2e7d32; stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.walk-end { fill: var(--primary); stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.walk-marker { fill: none; stroke: #fff; stroke-width: 3; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 2px rgb(0 0 0 / 0.8)); }
+.walk-note circle { fill: #fff; stroke: var(--primary); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.walk-note text { fill: var(--primary); font-family: var(--font-mono); font-weight: 600; }
+.walk-notes { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.walk-notes:empty { display: none; }
+.walk-note-head { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.walk-note-text { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.walk input[type="range"] { padding: 0; height: 28px; accent-color: var(--primary); }
+.walk .checks li:last-child .icon { color: var(--on-secondary-tint); }

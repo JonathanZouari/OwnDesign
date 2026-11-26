@@ -32,6 +32,9 @@ Phase 2 (`supabase/migrations/20261123*`): `project_briefs` (one JSON document p
 `ai_conversations` (unique per project and user), `ai_messages`, `storage_deletions` (queue of files to remove).
 Their SELECT policies go through `projects`, except conversations: only their own user reads them.
 
+Walking paths (`supabase/migrations/20261126130000_walk_paths.sql`): `walk_paths`, `walk_path_notes`, read
+through the project. Details: [walk-paths.md](walk-paths.md).
+
 ## Plan geometry
 
 One JSON document per version, validated in `backend/app/schemas.py` and edited by pure functions in
@@ -81,3 +84,6 @@ Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `
   the endpoint answers 503.
 - **Frontend:** `design.html` (brief, materials, moodboard tabs), `consultant.html`; pure logic in
   `frontend/js/design-logic.js`.
+- **Walking paths:** `backend/app/routes/walk.py`, `frontend/walk.html`. The person detector (YOLOv8n, ONNX)
+  runs in the browser; `walk.html` alone adds `'wasm-unsafe-eval'` to its script policy for WebAssembly.
+  See [walk-paths.md](walk-paths.md).
