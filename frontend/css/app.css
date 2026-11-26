@@ -34,7 +34,8 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { min-height: 100vh; background: var(--surface); color: var(--ink); font: 400 14px/20px var(--font-body); }
+html { -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+body { padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left); min-height: 100vh; background: var(--surface); color: var(--ink); font: 400 14px/20px var(--font-body); }
 h1, h2, h3 { font-family: var(--font-head); margin: 0; }
 h1 { font-size: 30px; line-height: 38px; font-weight: 600; letter-spacing: -0.02em; }
 h2 { font-size: 18px; line-height: 26px; font-weight: 500; letter-spacing: -0.01em; }
@@ -72,13 +73,15 @@ button, .button {
   font: 600 13px/18px var(--font-body); text-decoration: none; cursor: pointer; transition: background-color 0.15s, color 0.15s;
   white-space: nowrap;
 }
-button:hover, .button:hover { background: rgb(36 37 35 / 0.05); }
+@media (hover: hover) { button:hover, .button:hover { background: rgb(36 37 35 / 0.05); } }
 button.primary, .button.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-button.primary:hover, .button.primary:hover { background: var(--primary-bright); }
+@media (hover: hover) { button.primary:hover, .button.primary:hover { background: var(--primary-bright); } }
 button.ghost { border-color: transparent; }
 button.danger { color: var(--error); }
 button.link { min-height: 0; padding: 0; border: 0; color: var(--primary); font-weight: 400; text-decoration: underline; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
+button, .button, nav a { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+button:active:not(:disabled), .button:active, nav a:active { filter: brightness(0.92); }
 button[aria-pressed="true"] { background: var(--inverse); border-color: var(--inverse); color: var(--on-inverse); }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font: 400 10px/14px var(--font-mono); letter-spacing: 0.04em; background: var(--surface-mid); color: var(--ink); white-space: nowrap; }
@@ -102,7 +105,7 @@ td.mono { font-size: 12px; }
 .linkbox { display: flex; gap: 8px; }
 .linkbox input { font: 500 12px/18px var(--font-mono); }
 
-#toasts { position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 90; width: min(92vw, 28rem); }
+#toasts { position: fixed; bottom: calc(3rem + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 90; width: min(92vw, 28rem); }
 .toast { background: var(--inverse); color: var(--on-inverse); padding: 10px 14px; border-radius: 8px; box-shadow: var(--shadow-3); }
 .toast.error { background: var(--error); color: #fff; }
 
@@ -139,19 +142,19 @@ dialog::backdrop { background: rgb(243 239 234 / 0.65); backdrop-filter: blur(4p
 .page h2 { margin-bottom: 0.5rem; }
 
 /* App shell (wizard + editor): palette sidebar, workspace, status bar */
-body.app { height: 100vh; display: grid; grid-template: 64px minmax(0, 1fr) 32px / 256px minmax(0, 1fr); overflow: hidden; }
+body.app { height: 100vh; height: 100dvh; display: grid; grid-template: 64px minmax(0, 1fr) auto / 256px minmax(0, 1fr); overflow: hidden; }
 body.app > * { min-width: 0; }
 body.app .appbar { grid-column: 1 / -1; }
 .palette { grid-row: 2; background: var(--surface-low); box-shadow: var(--shadow-1); padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; overflow-y: auto; }
 .palette nav { display: grid; gap: 4px; margin-top: 8px; }
 .palette nav > a, .palette nav > span { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 4px; color: var(--ink-soft); text-decoration: none; }
-.palette nav a:hover { background: var(--surface-mid); color: var(--ink); }
+@media (hover: hover) { .palette nav a:hover { background: var(--surface-mid); color: var(--ink); } }
 .palette nav a[aria-current="page"] { background: var(--primary-bright); color: #fffbff; font-weight: 600; }
 .palette nav > span { opacity: 0.45; }
 .readout { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px; border-radius: 4px; background: var(--surface-mid); margin-top: 4px; }
 .readout .code { color: var(--primary); font-weight: 500; }
 .workspace { grid-row: 2; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
-.statusbar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 12px; background: var(--surface-highest); font: 500 11px/16px var(--font-mono); letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; }
+.statusbar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: calc(32px + env(safe-area-inset-bottom)); padding: 0 12px env(safe-area-inset-bottom); background: var(--surface-highest); font: 500 11px/16px var(--font-mono); letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; }
 .statusbar .sep { color: var(--outline); margin: 0 10px; }
 .contextbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 12px; background: var(--surface-low); box-shadow: var(--shadow-1); z-index: 2; font: 500 11px/16px var(--font-mono); letter-spacing: 0.02em; }
 .contextbar .group { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -169,7 +172,7 @@ body.app .appbar { grid-column: 1 / -1; }
 .wizard-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 16px; background: var(--surface-mid); box-shadow: var(--shadow-2); }
 .presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 6px; }
 .presets button { flex-direction: column; white-space: normal; gap: 4px; min-height: 64px; border-color: transparent; background: var(--surface-mid); font-weight: 500; }
-.presets button:hover { background: var(--surface-highest); }
+@media (hover: hover) { .presets button:hover { background: var(--surface-highest); } }
 .stepper { display: grid; grid-template-columns: 32px 1fr auto 32px; align-items: center; height: 40px; background: var(--panel); border: 1px solid var(--hairline); border-radius: 4px; }
 .stepper button { min-height: 0; height: 100%; padding: 0; border: 0; font: 500 16px/1 var(--font-mono); }
 .stepper input { height: 100%; border: 0; background: none; text-align: center; font: 500 16px/1 var(--font-mono); -moz-appearance: textfield; appearance: textfield; }
@@ -209,7 +212,7 @@ body.app .appbar { grid-column: 1 / -1; }
 #zoom button { width: 36px; min-height: 32px; padding: 0; border: 0; }
 #actions { left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; padding: 4px; background: var(--inverse); border-color: var(--inverse); box-shadow: var(--shadow-3); }
 #actions button { border: 0; color: var(--on-inverse); white-space: nowrap; }
-#actions button:hover { background: rgb(255 255 255 / 0.12); }
+@media (hover: hover) { #actions button:hover { background: rgb(255 255 255 / 0.12); } }
 .inspector { width: 340px; flex: none; background: var(--panel); box-shadow: var(--shadow-2); z-index: 3; padding: 16px; overflow-y: auto; display: grid; gap: 14px; align-content: start; }
 .inspector h2 { font-size: 22px; line-height: 30px; letter-spacing: -0.015em; }
 .selection { padding: 12px; border-radius: 8px; background: var(--surface-low); }
@@ -222,7 +225,7 @@ body.app .appbar { grid-column: 1 / -1; }
 .field input:focus-visible, .field select:focus-visible { border: 0; box-shadow: 0 1.5px 0 var(--primary-bright); }
 .field .unit, .stepper .unit { font: 400 10px/14px var(--font-mono); color: var(--outline); text-transform: none; }
 .version { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; width: 100%; min-height: 0; padding: 8px 10px; border: 0; border-radius: 4px; background: var(--surface-low); text-align: left; justify-items: start; font-weight: 400; }
-.version:hover { background: var(--surface-mid); }
+@media (hover: hover) { .version:hover { background: var(--surface-mid); } }
 .version .when { grid-column: 1 / -1; }
 
 #canvas { width: 100%; height: 100%; display: block; touch-action: none; outline-offset: -2px; }
@@ -265,7 +268,7 @@ body.app .appbar { grid-column: 1 / -1; }
 }
 @media (max-width: 767px) {
   .appbar { height: 56px; }
-  body.app { grid-template-rows: 56px minmax(0, 1fr) 32px; }
+  body.app { grid-template-rows: 56px minmax(0, 1fr) auto; }
   .tabs, .wide { display: none !important; }
   #save { padding: 0 10px; }
   .hero h1 { font-size: 28px; line-height: 36px; }
@@ -432,7 +435,7 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 
 .project-nav { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 1.5rem; padding: 4px; border-radius: 8px; background: var(--surface-low); box-shadow: var(--shadow-1); }
 .project-nav a { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 4px; color: var(--ink-soft); font: 600 12px/18px var(--font-body); text-decoration: none; white-space: nowrap; }
-.project-nav a:hover { background: var(--surface-mid); color: var(--ink); }
+@media (hover: hover) { .project-nav a:hover { background: var(--surface-mid); color: var(--ink); } }
 .project-nav a[aria-current="page"] { background: var(--panel); color: var(--primary); box-shadow: var(--shadow-1); }
 .project-links { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 /* Editor header: above 1199 px these links live in the sidebar, which is hidden below that width. */
@@ -467,7 +470,7 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   font: 400 13px/18px var(--font-body); letter-spacing: 0; text-transform: none; color: var(--ink);
 }
 .swatch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.swatch:hover { background: var(--surface-low); }
+@media (hover: hover) { .swatch:hover { background: var(--surface-low); } }
 .swatch:has(input:checked) { border-color: var(--primary); background: var(--primary-tint); box-shadow: inset 0 0 0 1px var(--primary); }
 .swatch:has(input:focus-visible) { outline: 2px solid var(--primary-bright); outline-offset: 2px; }
 .surfaces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.5rem; margin-top: 12px; }
@@ -529,4 +532,21 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .board-item { grid-template-columns: 72px minmax(0, 1fr); }
   .board-item .board-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .msg { max-width: 100%; }
+}
+
+/* ==========================================================================
+   Touch screens. Last in the file so it wins over the component sizes above.
+   ========================================================================== */
+@media (pointer: coarse) {
+  /* Under 16px, iOS zooms the page when a field is focused. !important beats every component font size. */
+  input, select, textarea { font-size: 16px !important; }
+  button, .button, input:not([type="radio"], [type="checkbox"]), select { min-height: 44px; }
+  button.link { min-height: 0; }
+  .field input, .field select { height: 44px; }
+  .rail button { width: 44px; height: 44px; }
+  .rail button .icon { font-size: 22px; }
+  #zoom button { width: 44px; min-height: 44px; }
+  .stepper { grid-template-columns: 44px 1fr auto 44px; height: 46px; }
+  .room-list button, .color-list button { min-width: 44px; min-height: 44px; }
+  .project-nav a, .palette nav > a { min-height: 44px; }
 }
