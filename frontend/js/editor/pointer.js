@@ -72,9 +72,11 @@ export function attachPointer(canvas, editor) {
       drag = { type: "pan", inverse, start: point, view: editor.view };
     } else if (tool === "select") {
       const { kind, id, end } = target.dataset;
-      if (kind === "handle") {
-        // Reshaping a wall is drawing, which a phone does not offer; the wall stays selected.
-        if (editor.compact) return;
+      if (!editor.moves(kind)) {
+        // On a phone only furniture moves (a room drags its walls): a tap selects to read or rename, a drag pans.
+        if (kind !== "handle") editor.select({ kind, id });
+        drag = { type: "pan", inverse, start: point, view: editor.view };
+      } else if (kind === "handle") {
         drag = { type: "end", id: editor.selection.id, end: Number(end), origin: editor.plan };
       } else {
         editor.select({ kind, id });

@@ -18,6 +18,15 @@ export const PHONE_QUERY = "(max-width: 767px)";
 
 export const toolsFor = (compact) => TOOLS.filter((tool) => !compact || PHONE_TOOLS.has(tool.id));
 
+// Walls and openings are the drawing part of a plan: on a phone they can be selected and read, not changed
+// (moved, reshaped, retyped or deleted). Rooms and furniture stay editable.
+const STRUCTURE = new Set(["walls", "openings", "handle"]);
+export const isLocked = (kind, compact) => Boolean(compact) && STRUCTURE.has(kind);
+
+// Dragging, nudging or deleting a room changes its walls (plan.js translate/remove), so on a phone only
+// furniture is moved or deleted. A room's name and type stay editable in the inspector.
+export const canMove = (kind, compact) => !compact || kind === "furniture";
+
 export function isAllowed(tool, compact) {
   if (typeof tool !== "string") return false;
   if (tool.startsWith(FURNITURE_PREFIX)) return tool.length > FURNITURE_PREFIX.length;

@@ -15,6 +15,7 @@ from playwright.sync_api import expect
 from tests.conftest import needs_supabase
 from tests.test_e2e import FRONTEND, SITE, overflows
 from tests.test_e2e_design import MARKUP, servers, sign_in, studio, world  # noqa: F401  (fixtures)
+from tests.test_geometry import VALID
 
 pytestmark = [
     needs_supabase,
@@ -68,7 +69,7 @@ def test_phone_editor_offers_view_and_light_edits(servers, phone, api, world):
     assert rail(page) == PHONE_TOOLS
     notice = page.locator("#phone-notice")
     assert notice.is_visible()
-    assert "needs a tablet or computer" in notice.inner_text()
+    assert "tablet or computer" in notice.inner_text()
     assert not overflows(page)
 
     # A drawing shortcut from an attached keyboard does nothing.
@@ -108,15 +109,86 @@ def test_phone_editor_offers_view_and_light_edits(servers, phone, api, world):
     assert (latest["furniture"][0]["x"], latest["furniture"][0]["y"]) != (100, 100)
 
 
-def test_phone_cannot_reshape_a_wall_by_its_end_handles(servers, phone, world):
+@pytest.mark.parametrize("kind", ["walls", "openings"])
+def test_phone_shows_walls_and_openings_read_only(servers, phone, world, kind):
     page = phone
     open_editor(page, world.client, world.pid)
-    page.locator("#canvas [data-kind=walls]").first.focus()  # a straight wall has no height to tap in Playwright's eyes
-    handle = page.locator("#canvas [data-kind=handle]").first
-    handle.wait_for(state="attached")
-    drag(page, handle, 60, 0)
-    page.wait_for_timeout(300)
+    element = page.locator(f"#canvas [data-kind={kind}]").first
+    element.focus()  # selects it; a straight wall has no height for Playwright to tap
+
+    # Selected and readable, but every field is disabled and the sheet says where to change it.
+    page.locator("#locked-note").wait_for()
+    fields = page.locator("#inspector .fields").locator("input, select")
+    assert fields.count() == 3
+    for i in range(fields.count()):
+        expect(fields.nth(i)).to_be_disabled()
+    # No end handles to drag, and no delete action.
+    assert page.locator("#canvas [data-kind=handle]").count() == 0
+    assert page.locator("#delete").is_hidden()
+
+    # Delete and the arrow keys from an attached keyboard change nothing; a drag on it pans the view instead.
+    for key in ("Delete", "Backspace", "ArrowRight", "ArrowDown"):
+        element.focus()
+        page.keyboard.press(key)
+    if kind == "openings":  # a door has a body to grab; dragging it used to slide it along its wall
+        before = page.locator("#canvas").get_attribute("viewBox")
+        drag(page, element, 60, 0)
+        expect(page.locator("#canvas")).not_to_have_attribute("viewBox", before)
+    page.wait_for_timeout(200)
     assert page.locator("#status-save").inner_text() == "Saved · v1"
+    assert page.locator(f"#canvas [data-kind={kind}]").count() == (2 if kind == "walls" else 1)
+
+
+def test_phone_renames_a_room_but_cannot_drag_its_walls(servers, phone, api, world):
+    page = phone
+    open_editor(page, world.client, world.pid)
+    room = page.get_by_role("button", name="Room Living room")
+    drag(page, room, 80, 60)  # on a large screen this moves every wall of the room
+    room.focus()
+    expect(page.locator("#delete")).to_be_hidden()
+    page.get_by_label("Name").fill("Lounge")
+    page.get_by_label("Name").press("Enter")
+    page.locator("#save").tap()
+    page.get_by_role("button", name="Save version").tap()
+    page.get_by_text("Saved · v2").wait_for(state="attached")
+    latest = api.get(f"{world.base}/versions/latest", headers=world.client.headers).json()["data"]["geometry"]
+    assert latest["rooms"][0]["name"] == "Lounge"
+    assert latest["walls"] == VALID["walls"]
+
+
+def test_phone_notice_can_be_dismissed_and_stays_dismissed(servers, phone, world):
+    page = phone
+    open_editor(page, world.client, world.pid)
+    notice = page.locator("#phone-notice")
+    expect(notice).to_be_visible()
+    page.get_by_role("button", name="Dismiss notice").tap()
+    expect(notice).to_be_hidden()
+    page.reload()
+    page.locator("#canvas [data-kind=furniture]").first.wait_for(state="attached")
+    expect(notice).to_be_hidden()
+
+
+def test_menu_works_when_the_editor_cannot_load_its_project(servers, phone, world):
+    page = phone
+    missing = "00000000-0000-4000-8000-000000000000"
+    sign_in(page, world.client, f"editor.html?project={world.pid}")
+    page.goto(f"{SITE}/editor.html?project={missing}")
+    page.get_by_role("button", name="Open menu").tap()
+    drawer(page).wait_for()
+    # Project pages are offered only for a project that loaded.
+    assert drawer(page).get_by_role("link", name="Brief & Materials").count() == 0
+
+
+def test_drawer_offers_no_links_from_a_page_that_did_not_load(servers, phone, world):
+    page = phone
+    missing = "00000000-0000-4000-8000-000000000000"
+    sign_in(page, world.client, f"design.html?project={world.pid}")
+    page.goto(f"{SITE}/design.html?project={missing}")
+    page.wait_for_load_state("networkidle")
+    page.get_by_role("button", name="Open menu").tap()
+    drawer(page).wait_for()
+    hrefs = drawer(page).locator("a").evaluate_all("nodes => nodes.map(n => n.getAttribute('href'))")
+    assert not any(href in ("editor.html", "design.html", "consultant.html") for href in hrefs), hrefs
 
 
 def test_drawing_tools_appear_from_768_px(servers, page, world):
@@ -277,7 +349,7 @@ def test_inspector_sheet_follows_the_selection_and_stays_as_the_user_left_it(ser
     assert not overflows(page)
 
 
-@pytest.mark.parametrize("width", [320, 390, 767])
+@pytest.mark.parametrize("width", [320, 390, 767, 768])
 def test_no_page_scrolls_sideways_on_a_phone(servers, page, api, world, width):
     page.set_viewport_size({"width": width, "height": 800})
     pid = world.pid

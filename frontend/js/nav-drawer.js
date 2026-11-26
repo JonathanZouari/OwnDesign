@@ -42,12 +42,13 @@ export function initNavDrawer() {
     links.replaceChildren(
       ...[...document.querySelectorAll("[data-drawer-links]")]
         .flatMap((source) => [...source.children])
-        .filter((item) => item.matches("a[href], span") && !item.hidden)
+        // Not from a hidden section either: while a page loads its nav still has placeholder hrefs.
+        .filter((item) => item.matches("a[href], span") && !item.closest("[hidden]"))
         .map(copyLink),
     );
     actions.replaceChildren(
       ...[...document.querySelectorAll("[data-drawer-action]")]
-        .filter((original) => !original.hidden && original.textContent.trim())
+        .filter((original) => !original.closest("[hidden]") && original.textContent.trim())
         .map((original) => copyAction(original, close)),
     );
     const chip = document.getElementById("studio-brand");

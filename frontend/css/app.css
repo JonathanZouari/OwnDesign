@@ -560,7 +560,7 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; border-radius: 4px;
   color: var(--ink-soft); font: 500 14px/20px var(--font-body); text-decoration: none; overflow-wrap: anywhere;
 }
-.drawer-nav > a:hover { background: var(--surface-mid); color: var(--ink); }
+@media (hover: hover) { .drawer-nav > a:hover { background: var(--surface-mid); color: var(--ink); } }
 .drawer-nav > a[aria-current="page"] { background: var(--primary-bright); color: var(--on-primary); font-weight: 600; }
 .drawer-nav > span { opacity: 0.45; }
 .drawer-foot { display: grid; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--hairline); }
@@ -569,6 +569,8 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 
 @media (max-width: 1199px) {
   .nav-menu { display: inline-flex; }
+  /* The editor's sign in/out lives in the drawer here; in the bar it pushed a 768 px tablet sideways. */
+  .appbar #account { display: none; }
 }
 
 /* Touch screens: every control is at least 44 x 44 px. */
@@ -616,9 +618,11 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .contextbar { overflow: hidden; }
   .contextbar > .group:last-child { display: none; }
   .editor { flex-direction: column; }
-  .stage { order: 1; flex: 1; min-height: 0; }
+  .stage { order: 1; flex: 1; min-height: 0; overflow: hidden; }
   .sheet-handle { order: 2; }
-  .inspector { order: 3; width: 100%; max-height: 45vh; max-height: 45dvh; padding: 4px 16px 16px; box-shadow: none; }
+  /* On a short phone the sheet gives way, so the canvas keeps about 200 px. */
+  .inspector { order: 3; width: 100%; max-height: 45vh; max-height: min(45dvh, calc(100dvh - 420px)); min-height: 96px; padding: 4px 16px 16px; box-shadow: none; }
+  .editor:has(#inspector.sheet-open) #zoom { display: none; } /* pinch zooms; the column would cover the small canvas */
   .inspector:not(.sheet-open) { display: none; }
   .rail {
     order: 4; width: 100%; flex-direction: row; gap: 6px; padding: 6px 8px; overflow-x: auto; overflow-y: hidden;
@@ -654,9 +658,13 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .sheet-handle::before {
     content: ""; position: absolute; top: 4px; left: calc(50% - 18px); width: 36px; height: 4px; border-radius: 4px; background: var(--hairline-strong);
   }
-  .sheet-handle:hover { background: var(--panel); color: var(--ink); }
-  .sheet-handle .icon { transition: transform 0.15s; }
   .sheet-handle[aria-expanded="true"] .icon { transform: rotate(180deg); }
+}
+@media (max-width: 767px) and (hover: hover) {
+  .sheet-handle:hover { background: var(--panel); color: var(--ink); }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  .sheet-handle .icon { transition: transform 0.15s; }
 }
 
 /* Inserted by the editor at the top of the canvas on phones. */
@@ -665,5 +673,5 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   padding: 8px 12px; border-radius: 8px; background: var(--caution-tint); color: var(--on-caution-tint);
   font-size: 12px; line-height: 18px; box-shadow: var(--shadow-2);
 }
-.phone-notice .icon { color: var(--on-caution-tint); }
-.phone-notice button { margin-left: auto; flex: none; border-color: transparent; color: inherit; }
+.phone-notice p { margin: 0; }
+.phone-notice button { margin: -6px -8px -6px auto; flex: none; min-width: 44px; min-height: 44px; padding: 0; border-color: transparent; background: transparent; color: inherit; }

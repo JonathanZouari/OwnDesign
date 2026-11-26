@@ -8,12 +8,29 @@ import { $, action, h, run, showStudio, toast } from "../ui.js";
 import { renderInspector } from "./panel.js";
 import { attachPointer, zoomAt } from "./pointer.js";
 import { draw, visibleArea } from "./render.js";
-import { PHONE_QUERY, TOOLS, isAllowed, toolsFor } from "./tools.js";
+import { PHONE_QUERY, TOOLS, canMove, isAllowed, isLocked, toolsFor } from "./tools.js";
 import { initNavDrawer } from "../nav-drawer.js";
 import { initSheet, setSheetOpen } from "./sheet.js";
 
 const phone = matchMedia(PHONE_QUERY);
-const PHONE_NOTICE = "Drawing walls, doors and windows needs a tablet or computer. On a phone you can view the plan, move, rotate and resize items, and add furniture.";
+const PHONE_NOTICE = "Walls, doors and windows are edited on a tablet or computer. Here you can view the plan and arrange furniture.";
+const NOTICE_KEY = "atelier.phoneNoticeDismissed";
+const noticeDismissed = () => {
+  try {
+    return sessionStorage.getItem(NOTICE_KEY) === "1";
+  } catch {
+    return false; // storage blocked: the notice simply shows again
+  }
+};
+function dismissNotice() {
+  try {
+    sessionStorage.setItem(NOTICE_KEY, "1");
+  } catch {
+    // storage blocked: dismissed for this page only
+  }
+  $("#phone-notice").hidden = true;
+  canvas.focus({ preventScroll: true });
+}
 const VIEW_LIMIT = 99_000; // cm
 const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 
@@ -53,6 +70,8 @@ const editor = {
     return phone.matches;
   },
   allows: (tool) => isAllowed(tool, phone.matches),
+  locks: (kind) => isLocked(kind, phone.matches),
+  moves: (kind) => canMove(kind, phone.matches),
   preview(plan) {
     state.live = plan;
     render();
@@ -112,7 +131,7 @@ function render() {
   canvas.setAttribute("viewBox", `${x} ${y} ${w} ${height}`);
   canvas.dataset.tool = state.tool;
   const hadFocus = canvas.contains(document.activeElement);
-  draw(canvas, { plan, selection: state.selection, preview: state.previewLine });
+  draw(canvas, { plan, selection: state.selection, preview: state.previewLine, locked: editor.locks(state.selection?.kind) });
   if (hadFocus) {
     const node = state.selection && canvas.querySelector(`[data-kind="${state.selection.kind}"][data-id="${state.selection.id}"]`);
     (node ?? canvas).focus({ preventScroll: true });
@@ -122,7 +141,10 @@ function render() {
   // The phone's bottom sheet opens when something gets selected and closes when the selection clears.
   // Only on that change, so a sheet the user opened or closed by hand stays that way while editing.
   const hasSelection = Boolean(state.selection);
-  if (hasSelection !== sheetFollows) setSheetOpen((sheetFollows = hasSelection));
+  if (hasSelection !== sheetFollows) {
+    sheetFollows = hasSelection;
+    setSheetOpen(hasSelection);
+  }
 
   for (const button of $("#tools").children) {
     const { tool } = button.dataset;
@@ -139,6 +161,7 @@ function render() {
   const isFurniture = state.selection?.kind === "furniture";
   $("#rotate").hidden = !isFurniture;
   $("#duplicate").hidden = !isFurniture;
+  $("#delete").hidden = !editor.moves(state.selection?.kind);
 
   const zoom = `${Math.round(100 / visibleArea(canvas).scale)}%`;
   $("#zoom-level").textContent = zoom;
@@ -172,7 +195,7 @@ const redo = () => {
   keepDraft();
   render();
 };
-const removeSelection = () => state.selection && editor.commit(P.remove(editor.plan, state.selection.kind, state.selection.id), null);
+const removeSelection = () => state.selection && editor.moves(state.selection.kind) && editor.commit(P.remove(editor.plan, state.selection.kind, state.selection.id), null);
 const rotateSelection = () => {
   const item = editor.plan.furniture.find((candidate) => candidate.id === state.selection?.id);
   if (item) editor.commit(P.patch(editor.plan, "furniture", item.id, { rotation: item.rotation + 90 }));
@@ -181,6 +204,7 @@ const rotateSelection = () => {
 function nudge([dx, dy]) {
   const { selection } = state;
   const plan = editor.plan;
+  if (!editor.moves(selection.kind)) return;
   if (selection.kind === "openings") {
     const opening = plan.openings.find((candidate) => candidate.id === selection.id);
     return editor.commit(P.patch(plan, "openings", selection.id, { offset: opening.offset + (dx || dy) * P.GRID }));
@@ -305,7 +329,7 @@ function buildRail() {
       ),
     ),
   );
-  $("#phone-notice").hidden = !phone.matches;
+  $("#phone-notice").hidden = !phone.matches || noticeDismissed();
   $(".rail").setAttribute("aria-orientation", phone.matches ? "horizontal" : "vertical");
 }
 
@@ -320,10 +344,14 @@ function onPhoneChange() {
 }
 
 function buildChrome(name, role) {
-  $(".stage").prepend(h("p", { class: "phone-notice", id: "phone-notice", role: "note" }, PHONE_NOTICE));
+  $(".stage").prepend(
+    h("div", { class: "phone-notice", id: "phone-notice", role: "note" },
+      h("p", {}, PHONE_NOTICE),
+      h("button", { type: "button", "aria-label": "Dismiss notice", onclick: dismissNotice }, h("span", { class: "icon", "aria-hidden": "true" }, "close")),
+    ),
+  );
   buildRail();
   phone.addEventListener("change", onPhoneChange);
-  initNavDrawer();
   initSheet();
   // Opening the phone's sheet resizes the stage without a window resize; redraw so the view follows.
   new ResizeObserver(() => render()).observe($(".stage"));
@@ -374,11 +402,13 @@ function buildChrome(name, role) {
     if (target && target.dataset.kind !== "handle") editor.select({ kind: target.dataset.kind, id: target.dataset.id });
   });
   document.addEventListener("keydown", onKey);
-  window.addEventListener("resize", render);
   window.addEventListener("beforeunload", (event) => {
     if (isDirty()) event.preventDefault();
   });
 }
+
+// At module start, so the menu works while the plan loads and after a failed load.
+initNavDrawer();
 
 run(async () => {
   let plan;

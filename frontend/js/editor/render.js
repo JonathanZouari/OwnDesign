@@ -149,13 +149,15 @@ function dimensions(plan, scale) {
   });
 }
 
-function selectionOverlay(plan, selection, scale) {
+function selectionOverlay(plan, selection, scale, locked) {
   if (!selection) return [];
   if (selection.kind === "walls") {
     const wall = plan.walls.find((w) => w.id === selection.id);
     if (!wall) return [];
     const handle = (end, x, y) => svg("circle", { cx: x, cy: y, r: 7 * scale, class: "handle", "stroke-width": 2 * scale, "data-kind": "handle", "data-end": end });
-    return [chip((wall.x1 + wall.x2) / 2, (wall.y1 + wall.y2) / 2, `${metres(wallLength(wall))} m`, scale), handle(1, wall.x1, wall.y1), handle(2, wall.x2, wall.y2)];
+    const label = chip((wall.x1 + wall.x2) / 2, (wall.y1 + wall.y2) / 2, `${metres(wallLength(wall))} m`, scale);
+    // A wall that cannot be reshaped (on a phone) shows its length but no end handles to drag.
+    return locked ? [label] : [label, handle(1, wall.x1, wall.y1), handle(2, wall.x2, wall.y2)];
   }
   if (selection.kind === "furniture") {
     const item = plan.furniture.find((f) => f.id === selection.id);
@@ -166,7 +168,7 @@ function selectionOverlay(plan, selection, scale) {
   return [];
 }
 
-export function draw(canvas, { plan, selection, preview }) {
+export function draw(canvas, { plan, selection, preview, locked = false }) {
   const area = visibleArea(canvas);
   const walls = new Map(plan.walls.map((wall) => [wall.id, wall]));
   const is = (kind, id) => selection?.kind === kind && selection.id === id;
@@ -178,7 +180,7 @@ export function draw(canvas, { plan, selection, preview }) {
       plan.openings.map((opening) => openingNode(opening, walls.get(opening.wallId), is("openings", opening.id))),
       dimensions(plan, area.scale),
       plan.rooms.map((room) => roomNode(plan, room, is("rooms", room.id), area.scale)),
-      selectionOverlay(plan, selection, area.scale),
+      selectionOverlay(plan, selection, area.scale, locked),
       preview && [
         svg("line", { ...preview, class: "preview", "stroke-width": 3 * area.scale, "pointer-events": "none" }),
         chip((preview.x1 + preview.x2) / 2, (preview.y1 + preview.y2) / 2 - 16 * area.scale, `${metres(Math.hypot(preview.x2 - preview.x1, preview.y2 - preview.y1))} m`, area.scale),

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { TOOLS, isAllowed, toolsFor } from "../js/editor/tools.js";
+import { TOOLS, canMove, isAllowed, isLocked, toolsFor } from "../js/editor/tools.js";
 
 const ids = (tools) => tools.map((tool) => tool.id);
 
@@ -35,6 +35,25 @@ test("unknown, empty and malformed tool names are refused", () => {
     assert.equal(isAllowed(tool, false), false, String(tool));
     assert.equal(isAllowed(tool, true), false, String(tool));
   }
+});
+
+test("on a phone walls, openings and wall ends are locked; rooms and furniture are not", () => {
+  for (const kind of ["walls", "openings", "handle"]) {
+    assert.equal(isLocked(kind, true), true, kind);
+    assert.equal(isLocked(kind, false), false, kind);
+  }
+  for (const kind of ["rooms", "furniture"]) assert.equal(isLocked(kind, true), false, kind);
+});
+
+test("nothing is locked for an unknown kind, or when compact is not a real true", () => {
+  for (const kind of [undefined, null, "", "Walls", "wall"]) assert.equal(isLocked(kind, true), false, String(kind));
+  for (const compact of [undefined, null, 0, ""]) assert.equal(isLocked("walls", compact), false, String(compact));
+});
+
+test("on a phone only furniture moves or is deleted: moving a room moves its walls", () => {
+  assert.equal(canMove("furniture", true), true);
+  for (const kind of ["rooms", "walls", "openings", "handle", undefined, ""]) assert.equal(canMove(kind, true), false, String(kind));
+  for (const kind of ["rooms", "walls", "openings", "handle", "furniture"]) assert.equal(canMove(kind, false), true, kind);
 });
 
 test("the returned list is a copy, so callers cannot change the tool set", () => {
