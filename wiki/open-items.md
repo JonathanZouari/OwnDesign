@@ -28,6 +28,17 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - A lost WebGL context is not handled: leave the view and open it again.
 - Possibly stuck walking on macOS if a key is released while Cmd is held (unverified).
 
+## Studio branding
+
+`branding.html` is a browser-only preview. Still needed: storage and a table for the logo and colours,
+owner-only write endpoints with server-side image and colour validation, a tenant-isolation test, applying
+the theme on the pages that show the studio, a link from the dashboard, and browser journeys.
+
+From the review of pull request #8, not fixed: the contrast check accepts colours whose derived tokens fail
+4.5:1 (text `#747474` on white passes, but the muted text it produces is 3.19:1), which matters once the check
+decides what may be saved; the preview holds a second `h1` and a button and link that do nothing; the status
+line is rewritten on every colour-picker move; a chosen logo has no pixel-size limit.
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in
@@ -40,6 +51,14 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 - `connect-src` in the content security policy, per environment.
 - Railway deployment files and environments.
 - Sign-out does not invalidate an already issued token before it expires.
+
+## CI
+
+- **The CI secret key is not set yet**, so `backend` fails in its first step. The user creates a secret key named `ci` in Supabase and stores it as `SUPABASE_SECRET_KEY` in the environment `ci`.
+- Make the check required on `main` after some stable runs.
+- A separate Supabase project for CI: today CI and local runs share the dev project and delete each other's test accounts.
+- Repository settings: allow-list the three actions and require pinning by hash.
+- Smaller review notes, not done: the guard step reads the secret values where a presence flag would do; a failed assertion can print a test account's email or part of a token; lint, type check and coverage are not in CI.
 
 ## Smaller
 

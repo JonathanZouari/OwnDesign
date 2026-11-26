@@ -537,3 +537,27 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .board-item .board-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .msg { max-width: 100%; }
 }
+
+/* ==========================================================================
+   Studio branding preview (branding.html)
+   ========================================================================== */
+.page.branding { max-width: 1280px; }
+.branding-layout { display: grid; grid-template-columns: minmax(280px, 2fr) minmax(0, 3fr); gap: 1.25rem; align-items: start; }
+.branding-layout > * { min-width: 0; }
+.preset-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.preset { flex-direction: column; align-items: flex-start; padding: 10px 12px; white-space: normal; }
+.preset-swatches { display: flex; gap: 4px; }
+.color-fields { display: grid; gap: 10px; }
+.color-fields input[type="color"] { flex: none; }
+.color-fields input[aria-invalid="true"] { border-color: var(--error); }
+/* The theme variables are set on this element only; colour is restated so it does not inherit the page's. */
+.theme-preview { position: sticky; top: 80px; border: 1px solid var(--hairline-strong); border-radius: 8px; overflow: hidden; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-2); }
+.preview-bar { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 16px; box-shadow: var(--shadow-1); }
+.preview-bar .brand { color: var(--ink); }
+.preview-bar img { height: 40px; max-width: 180px; object-fit: contain; }
+.preview-body { display: grid; gap: 1rem; padding: 1.25rem; }
+.preview-body .card { margin: 0; }
+@media (max-width: 767px) {
+  .branding-layout { grid-template-columns: minmax(0, 1fr); }
+  .theme-preview { position: static; }
+}

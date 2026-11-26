@@ -123,3 +123,49 @@ Backend 100 passed, frontend 49 passed. Pages: [testing](testing.md).
 ## [2026-11-26] docs | Walkthrough sent as a pull request
 No write access to the repository, so the work goes from a fork to `dev` as a pull request. The local
 commits were re-authored before publishing, and the hashes above updated. Pages: [log](log.md).
+
+## [2026-11-26] plan | Tests in GitHub Actions
+Plan approved by the user: everything runs in CI, a separate Supabase key for CI, report only.
+Pages: [decisions](decisions.md).
+
+## [2026-11-26] security | Review of the CI plan and workflow
+Security-reviewer agent on the plan (2 high: branch-limited environment, separate key; both adopted), then
+security-reviewer and code-reviewer agents on the file (no critical, high or medium security finding; four small
+fixes applied), then `security-review` on the commits: no finding. Pages: [security](security.md),
+[open-items](open-items.md).
+
+## [2026-11-26] infra | CI workflow and the `ci` environment
+`.github/workflows/ci.yml` with jobs `frontend`, `backend`, `backend-unit`; GitHub environment `ci` limited to
+`dev` and `main`, holding the Supabase URL and publishable key. Found on the way: `test_consultant.py` imported
+`app.main` at module level, so the suite crashed instead of skipping without settings; fixed. Commits `0150113`,
+`dff701b`. Pages: [testing](testing.md), [security](security.md), [decisions](decisions.md).
+
+## [2026-11-26] test | CI verified, except the full backend run
+Local: backend 100 passed, frontend 31 passed. Clean clone without settings: 22 passed, 78 skipped. On GitHub:
+red check on a pull request with a failing test, refusal of a branch outside the environment's rule, failure on a
+missing secret, all as intended. The temporary pull request #25 was closed and its branch deleted. Open: a
+green `backend` run, waiting for the CI secret key. Pages: [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] docs | Plan export specification added
+The plan export feature specification (PNG, PDF and DXF downloads of a saved plan version, with a
+conceptual-plan notice and a studio activity event) added as a raw source at `specs/plan-export.md`.
+Technical validation (section 10 of the spec) comes before implementation. Pages: [index](index.md).
+
+## [2026-11-26] docs | Pull request #9 merged: plan export specification
+A document only (`specs/plan-export.md`, 145 lines), read in full: no code, no secrets. Its "confirmed product
+decisions" are the contributor's; the index line now says so. Conflict in this log resolved by keeping both
+sides. Frontend 31 passed; the backend suite was not run for a document. Commits `3a7a741`, `b63440f`.
+Pages: [index](index.md).
+
+## [2026-11-26] build | Studio branding preview
+`branding.html`: logo upload (PNG, JPG, WebP, 2 MB), four colour presets, custom primary, background and
+text colours with a contrast check, live preview. Browser only, nothing saved. Frontend 39 passed; manual
+check in Chrome. Backend integration and browser journeys not run (Supabase not configured).
+Pages: [overview](overview.md), [design](design.md), [open-items](open-items.md).
+
+## [2026-11-26] build | Pull request #8 merged: studio branding preview
+Browser-only preview page (`frontend/branding.html`); nothing saved or sent. Static read, then code-reviewer and
+security-reviewer agents: no critical or high finding; nine files, no network, storage or dynamic code; CSP as on
+the other pages. One medium note on the contrast check and smaller ones are in [open-items](open-items.md); the
+contributor's code was not changed. On the merged tree: backend 100 passed, frontend 39 passed. No browser journey
+for the page yet. Commits `2552d1d` (merge) and the two that follow it. Pages: [open-items](open-items.md).

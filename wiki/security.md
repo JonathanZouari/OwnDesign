@@ -54,6 +54,26 @@ unchanged, and three.js is served locally. Not checked: that the vendored files 
 byte for byte. The code review found that a crafted plan could freeze the viewer's tab; such plans are now
 refused. The small fix commit that followed was not reviewed separately.
 
+## CI (GitHub Actions)
+
+Source: `.github/workflows/ci.yml`. The plan and the file were each reviewed by a security-reviewer agent, and
+`security-review` ran on the commits. No critical finding. Two high findings on the plan, both built in:
+
+- Secrets live in the environment `ci`, limited to `dev` and `main`, not at repository level. A fork, another
+  branch or an edited workflow cannot get them (tried: refused).
+- CI uses its own Supabase secret key, not the one from `backend/.env`.
+
+Also in place: pull requests run in jobs with no secrets and never with `pull_request_target`; secrets reach
+single steps, not the job; actions pinned to commit hashes and uv to a version; no cache, no artifacts
+(Playwright traces hold tokens and the repository is public); read-only token.
+
+**Before merging a pull request from a fork, read its diff of `backend/tests/`, `uv.lock`, `pyproject.toml`,
+`frontend/package.json` and `.github/`.** Its green check ran without secrets; after the merge, the push run
+executes that code with the service key.
+
+What remains: the CI key is still a service key on the dev project; logs are public and GitHub masks exact
+secret strings only, so a failing test's traceback is visible to everyone. See [open-items.md](open-items.md).
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

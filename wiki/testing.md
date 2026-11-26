@@ -8,7 +8,7 @@ cd frontend && npm test          # plan logic, node --test
 ```
 
 First E2E run needs `uv run playwright install chromium`. Integration and E2E tests are skipped when
-`backend/.env` is missing. They create users at `*@owndesign-test.example.com` and delete them afterwards.
+`backend/.env` is missing (a test module must not import `app.main` at module level, or collection fails there). They create users at `*@owndesign-test.example.com` and delete them afterwards.
 
 ## Suites
 
@@ -25,6 +25,33 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 
 End to end, regression (both full suites) and edge cases for the change (`CLAUDE.md`, step 5).
 
+## CI
+
+Source: `.github/workflows/ci.yml`. Report only: a red check does not block a merge ([open-items.md](open-items.md)).
+
+| Job | Runs on | What it does |
+|---|---|---|
+| `frontend` | every push to `dev`/`main`, every pull request | `npm test` |
+| `backend` | push to `dev`/`main` only | the full suite, browser journeys included, against the dev Supabase project |
+| `backend-unit` | pull requests only | the suite with no secrets: unit tests run, the rest skip (22 passed, 78 skipped) |
+
+- A pull request never gets secrets, also not from a branch of this repository. A pull request from
+  `dev` to `main` still shows the full run, because checks attach to the commit and `dev` was pushed.
+- `backend` takes its three Supabase values from the GitHub environment `ci`, which only `dev` and `main`
+  may use ([security.md](security.md)). Its first step fails when one is missing, so a missing secret
+  cannot turn into a green run of skipped tests.
+- `backend` runs are never parallel (concurrency group `supabase-dev`): the suite deletes every test
+  account at the end. GitHub keeps one waiting run; a newer push replaces an older waiting one, which then
+  shows as cancelled.
+- A local `uv run pytest` during a CI run breaks whichever finishes last, for the same reason. Wait for the
+  run on `dev` before running the suite locally.
+- Pull requests from forks may wait for "Approve and run" by the owner before any job starts.
+
+Checked on 2026-11-26: a pull request with a failing test showed a red check (`frontend` failed,
+`backend-unit` passed, `backend` skipped); a branch that added itself to the push trigger was refused by
+the environment ("not allowed to deploy to ci"), with no step run; with the secret key missing, `backend`
+failed in its first step. Not yet seen: a green `backend` run. It waits for the CI secret key.
+
 ## Last result
 
 2026-11-26: backend 100 passed (incl. the browser journeys, the guest journey now also walks in 3D), frontend
@@ -32,6 +59,11 @@ End to end, regression (both full suites) and edge cases for the change (`CLAUDE
 a browser without WebGL were checked once in headless Chrome, not part of the suites.
 
 2026-11-23: backend 94 passed (incl. 3 browser journeys), frontend 31 passed. New files:
+
+2026-11-26: backend 100 passed (9 browser tests), frontend 31 passed, locally. On GitHub: `frontend` green,
+`backend` not yet run to the end (see CI).
+
+2026-11-23, new files:
 `backend/tests/test_design.py` (brief, finishes, uploads, moodboard, isolation, quota, suspended studio) and
 `test_consultant.py` (fake OpenAI client: context, privacy, cap, failure, injection, tag escaping);
 `frontend/tests/design-logic.test.js`. `backend/tests/test_e2e_design.py` (6 browser tests: client journey for brief, finishes and moodboard with
@@ -50,7 +82,7 @@ journeys follow `config.js`. `python -m http.server` can refuse connections on a
 ## Not covered
 
 Real touch devices (pinch zoom), browsers other than Chromium, screen readers, load, a studio with
-many projects, a clean clone on another machine.
+many projects. Code outside `backend/` and `frontend/` is not run by CI.
 
 ## Gotchas
 
