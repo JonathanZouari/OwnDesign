@@ -147,8 +147,11 @@ the other pages. One medium note on the contrast check and smaller ones are in [
 contributor's code was not changed. On the merged tree: backend 100 passed, frontend 39 passed. No browser journey
 for the page yet. Commits `2552d1d` (merge) and the two that follow it. Pages: [open-items](open-items.md).
 
-## [2026-11-26] decision | 3D walkthrough approved
-The user chose a first-person walkthrough, reconsidering PRD 3.3. Pages: [decisions](decisions.md),
+The six entries that follow came with pull request #14 and describe work in the contributor's fork. "The user"
+in them was the contributor's own user, and the Supabase project and test run were theirs, not this project's.
+
+## [2026-11-26] decision | 3D walkthrough chosen (in the contributor's fork)
+The contributor chose a first-person walkthrough, against PRD 3.3. Pages: [decisions](decisions.md),
 [open-items](open-items.md).
 
 ## [2026-11-26] build | 3D walkthrough in the plan editor
@@ -160,11 +163,11 @@ No security finding. Code review: sharp-angle walls could be crossed, oversized 
 did not save in 3D. Fixed in `ff3c9bf`, which also fixes the new browser journey (the page's policy blocks
 `wait_for_function`). Pages: [security](security.md).
 
-## [2026-11-26] infra | New dev Supabase project
-Created at the user's request, migrations and auth settings applied. Local backend on port 8001.
+## [2026-11-26] infra | The contributor's own Supabase project
+Created by the contributor for their fork, migrations and auth settings applied. Not this project's database.
 
-## [2026-11-26] test | Walkthrough verified
-Backend 100 passed, frontend 49 passed. Pages: [testing](testing.md).
+## [2026-11-26] test | Walkthrough verified (in the contributor's fork)
+Backend 100 passed, frontend 49 passed, as reported by the contributor. Pages: [testing](testing.md).
 
 ## [2026-11-26] docs | Walkthrough sent as a pull request
 No write access to the repository, so the work goes from a fork to `dev` as a pull request. The local

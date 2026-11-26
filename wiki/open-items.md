@@ -38,6 +38,11 @@ line is rewritten on every colour-picker move; a chosen logo has no pixel-size l
   Instancing would fix it. Frame rate on real phones is unmeasured.
 - A lost WebGL context is not handled: leave the view and open it again.
 - Possibly stuck walking on macOS if a key is released while Cmd is held (unverified).
+- From the review of pull request #14, not fixed: holding W or D while leaving the 3D view can pick the wall or
+  door tool (key repeat reaches the editor's shortcuts); the oversized-plan guard counts wall cuts, not boxes,
+  so the largest legal plan is slow; a failure after the WebGL renderer is created leaks its context and is
+  reported as "no WebGL"; if closing the view throws, the editor behind it stays inert; a furniture type named
+  `constructor` gives a broken box (`Object.hasOwn` fixes it).
 
 ## Later phases with a Stitch screen waiting
 

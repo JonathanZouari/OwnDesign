@@ -16,8 +16,6 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **A separate Supabase secret key for CI**, created and entered by the user, so it can be revoked without breaking local work.
 - **The CI check reports only.** No branch protection for now.
 
-- **A 3D walkthrough in the plan editor.** The user chose it over a rotating or isometric view. This
-  reconsiders PRD 3.3, which excluded interactive 3D navigation.
 
 ## By Claude (open to change)
 
@@ -32,5 +30,13 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.
 - **Pull requests never get secrets**; the full suite runs on push to `dev`/`main` only ([testing.md](testing.md)). Came out of the security review of the CI plan.
 
-- **three.js, vendored**, for the walkthrough, with controls written here. Its ready-made controls need an
-  import map, which the `script-src 'self'` policy would block as an inline script.
+## From merged pull requests
+
+Made by outside contributors in their own forks and accepted when the owner had the pull request merged.
+A pull request's wiki text may say "the user": that is the contributor's own user, never this project's owner.
+Such lines are moved here and reworded when the pull request is merged.
+
+- **A 3D walkthrough in the plan editor** (pull request #14), first person rather than a rotating or isometric
+  view. It goes against PRD 3.3, which excluded interactive 3D navigation; the PRD text has not been updated.
+- **three.js, vendored**, for the walkthrough, with controls written here (pull request #14). Its ready-made
+  controls need an import map, which the `script-src 'self'` policy would block as an inline script.

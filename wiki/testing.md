@@ -70,8 +70,7 @@ reaches OpenAI in the suite; the real call was checked by hand once.
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the
 journeys use the second). A system-level `OPENAI_API_KEY` overrides the one in `.env`; unset it before starting the backend.
 
-If port 8000 is taken, run the backend on another port and set `apiUrl` in `frontend/js/config.js`; the
-journeys follow `config.js`. `python -m http.server` can refuse connections on a loaded machine.
+`python -m http.server` can refuse connections on a loaded machine.
 
 ## Not covered
 

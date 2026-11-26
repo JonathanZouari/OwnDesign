@@ -67,12 +67,13 @@ executes that code with the service key.
 What remains: the CI key is still a service key on the dev project; logs are public and GitHub masks exact
 secret strings only, so a failing test's traceback is visible to everyone. See [open-items.md](open-items.md).
 
-## Review of the 3D walkthrough
+## Review of the 3D walkthrough (pull request #14)
 
-No security finding: plan values reach only three.js geometry as numbers, the content security policy is
-unchanged, and three.js is served locally. Not checked: that the vendored files match the published release
-byte for byte. The code review found that a crafted plan could freeze the viewer's tab; such plans are now
-refused. The small fix commit that followed was not reviewed separately.
+Reviewed again here before merging, by reading and by a security-reviewer agent: no critical or high finding.
+Plan values reach only three.js geometry as numbers, the content security policy is unchanged, and three.js is
+served locally. The three vendored files are byte for byte the published npm package `three@0.180.0` (SHA-256
+compared at merge time). The guard against oversized plans counts wall cuts, not boxes: the largest plan the
+server accepts still makes the viewer's own tab sluggish ([open-items.md](open-items.md)).
 
 ## Every stage
 
