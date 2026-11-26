@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
+  <title>How we move · Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="appbar">
+    <div class="group">
+      <a class="brand" href="projects.html">ATELIER</a>
+      <span class="chip studio" id="studio-brand" hidden></span>
+      <div class="crumb">
+        <span class="icon" aria-hidden="true">folder_open</span>
+        <strong id="crumb-name"></strong><span aria-hidden="true">•</span><span>How we move</span>
+      </div>
+    </div>
+    <nav aria-label="Account">
+      <button id="sign-out" type="button">Sign out</button>
+    </nav>
+  </header>
+
+  <main class="page walk" id="walk" hidden>
+    <nav class="project-nav" aria-label="Project">
+      <a id="nav-projects" href="projects.html"><span class="icon" aria-hidden="true">arrow_back</span>All projects</a>
+      <a id="nav-editor" href="editor.html"><span class="icon" aria-hidden="true">architecture</span>2D canvas</a>
+      <a id="nav-design" href="design.html"><span class="icon" aria-hidden="true">palette</span>Brief &amp; materials</a>
+      <a id="nav-walk" href="walk.html" aria-current="page"><span class="icon" aria-hidden="true">directions_walk</span>How we move</a>
+      <a id="nav-consultant" href="consultant.html"><span class="icon" aria-hidden="true">forum</span>Design consultant</a>
+    </nav>
+
+    <header class="design-head">
+      <span class="label accent">How we move</span>
+      <h1 id="project-name"></h1>
+      <p class="muted">Film a route you walk every day, like the front door to the kitchen. We draw the route over the room so the studio can keep it clear.</p>
+    </header>
+
+    <section class="card stack" aria-labelledby="trace-title">
+      <h2 id="trace-title">Trace a new path</h2>
+      <ul class="checks">
+        <li><span class="icon" aria-hidden="true">check</span>Put the phone down so it does not move, with the whole route in view.</li>
+        <li><span class="icon" aria-hidden="true">check</span>One person walks, head to feet in the picture. Up to 30 seconds.</li>
+        <li><span class="icon" aria-hidden="true">lock</span>The video stays on this device. Only one still picture and the drawn path are saved.</li>
+      </ul>
+      <form id="trace-form" class="stack" novalidate>
+        <label for="video">Video
+          <input id="video" name="video" type="file" accept="video/*">
+        </label>
+        <label for="label">Name of the route (optional)
+          <input id="label" name="label" type="text" maxlength="80" placeholder="Front door to kitchen">
+        </label>
+        <div><button class="primary" type="submit" id="trace">Trace my path</button></div>
+        <p class="status" id="trace-status" role="status" aria-live="polite"></p>
+      </form>
+      <div id="preview" class="stack" hidden>
+        <div id="preview-figure"></div>
+        <div class="actions">
+          <button class="primary" type="button" id="save-path">Save path</button>
+          <button type="button" id="discard-path">Discard</button>
+        </div>
+      </div>
+    </section>
+
+    <p class="muted" id="paths-empty" hidden>No paths yet.</p>
+    <div id="paths" class="stack"></div>
+  </main>
+
+  <script src="vendor/supabase-js-2.119.1.umd.js"></script>
+  <script type="module" src="js/pages/walk.js"></script>
+</body>
+</html>

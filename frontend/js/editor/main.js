@@ -403,7 +403,7 @@ run(async () => {
     $("#tab-wizard").textContent = "All projects";
     $("#nav-wizard").hidden = true;
     // The brief and the consultant belong to a saved project, so their links appear only here.
-    for (const page of ["design", "consultant"]) {
+    for (const page of ["design", "walk", "consultant"]) {
       for (const link of [$(`#tab-${page}`), $(`#nav-${page}`)]) {
         link.href = `${page}.html?project=${encodeURIComponent(projectId)}`;
         link.hidden = false;

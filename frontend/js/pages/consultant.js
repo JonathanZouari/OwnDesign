@@ -84,6 +84,7 @@ run(async () => {
   $("#nav-projects").href = project.my_role === "designer" ? "studio.html" : "projects.html";
   for (const id of ["#nav-editor", "#plan-link"]) $(id).href = `editor.html${query}`;
   for (const id of ["#nav-design", "#brief-link"]) $(id).href = `design.html${query}`;
+  $("#nav-walk").href = `walk.html${query}`;
   $("#nav-consultant").href = `consultant.html${query}`;
 
   if (versions.length) {
