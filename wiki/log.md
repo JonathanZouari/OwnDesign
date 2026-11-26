@@ -236,3 +236,6 @@ Database and code reviews, findings fixed; `security-review`: no High or Medium 
 ## [2026-11-26] test | Inspiration analysis, partly verified
 Unit 47 passed, frontend 93 passed, CI-like run 69 passed / 138 skipped. Integration and browser tests not run
 (empty keys, migrations not applied). Pages: [testing](testing.md).
+
+## [2026-11-26] docs | Inspiration analysis sent as pull request #32
+Pull request #32 to `dev` of the upstream repository, stacked on #30 (merge #30 first, then apply both migrations).
