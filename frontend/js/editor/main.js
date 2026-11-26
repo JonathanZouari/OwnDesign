@@ -8,15 +8,10 @@ import { $, action, h, run, showStudio, toast } from "../ui.js";
 import { renderInspector } from "./panel.js";
 import { attachPointer, zoomAt } from "./pointer.js";
 import { draw, visibleArea } from "./render.js";
+import { PHONE_QUERY, TOOLS, isAllowed, toolsFor } from "./tools.js";
 
-const TOOLS = [
-  { id: "select", icon: "near_me", key: "V", label: "Select and move" },
-  { id: "exterior", icon: "polyline", key: "W", label: "Draw exterior wall" },
-  { id: "partition", icon: "vertical_split", key: "P", label: "Draw partition" },
-  { id: "door", icon: "meeting_room", key: "D", label: "Place door" },
-  { id: "window", icon: "window", key: "N", label: "Place window" },
-  { id: "furniture", icon: "chair", key: "F", label: "Furniture catalog" },
-];
+const phone = matchMedia(PHONE_QUERY);
+const PHONE_NOTICE = "Drawing walls, doors and windows needs a tablet or computer. On a phone you can view the plan, move, rotate and resize items, and add furniture.";
 const VIEW_LIMIT = 99_000; // cm
 const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 
@@ -52,6 +47,10 @@ const editor = {
   get view() {
     return state.view;
   },
+  get compact() {
+    return phone.matches;
+  },
+  allows: (tool) => isAllowed(tool, phone.matches),
   preview(plan) {
     state.live = plan;
     render();
@@ -73,7 +72,7 @@ const editor = {
     render();
   },
   setTool(tool) {
-    state.tool = tool;
+    state.tool = editor.allows(tool) ? tool : "select";
     state.catalogOpen = false;
     render();
   },
@@ -224,7 +223,7 @@ function onKey(event) {
   } else if (ARROWS[key] && state.selection) nudge(ARROWS[key]);
   else if (key === "r" && state.selection?.kind === "furniture") rotateSelection();
   else {
-    const tool = TOOLS.find((candidate) => candidate.key.toLowerCase() === key);
+    const tool = toolsFor(phone.matches).find((candidate) => candidate.key.toLowerCase() === key);
     if (!tool) return;
     pickTool(tool.id);
   }
@@ -289,15 +288,32 @@ async function savePlan(label) {
   toast(`Saved as v${version.version_no}`);
 }
 
-function buildChrome(name, role) {
+function buildRail() {
   $("#tools").replaceChildren(
-    ...TOOLS.map((tool) =>
+    ...toolsFor(phone.matches).map((tool) =>
       h("button", { type: "button", title: `${tool.label} (${tool.key})`, "aria-label": tool.label, "data-tool": tool.id, onclick: () => chooseTool(tool.id) },
         h("span", { class: "icon", "aria-hidden": "true" }, tool.icon),
         h("span", { class: "key", "aria-hidden": "true" }, tool.key),
       ),
     ),
   );
+  $("#phone-notice").hidden = !phone.matches;
+}
+
+// Crossing the phone breakpoint (rotating a tablet, resizing a window) rebuilds the rail. A drawing tool
+// that is no longer offered falls back to Select, and a wall being drawn is dropped (pointer.js re-checks).
+function onPhoneChange() {
+  buildRail();
+  if (!editor.allows(state.tool)) {
+    state.previewLine = null;
+    editor.setTool("select");
+  } else render();
+}
+
+function buildChrome(name, role) {
+  $(".stage").prepend(h("p", { class: "phone-notice", id: "phone-notice", role: "note" }, PHONE_NOTICE));
+  buildRail();
+  phone.addEventListener("change", onPhoneChange);
   const groups = [...new Set(FURNITURE.map((item) => item.group))];
   $("#catalog").replaceChildren(
     ...groups.flatMap((group) => [

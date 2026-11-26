@@ -63,6 +63,8 @@ export function attachPointer(canvas, editor) {
     const inverse = canvas.getScreenCTM().inverse();
     const point = toPlan(event, inverse);
     const target = event.target.closest("[data-kind]");
+    // A tool the current screen does not offer (e.g. a wall tool after rotating to a phone) acts as Select.
+    if (!editor.allows(editor.tool)) editor.setTool("select");
     const { tool } = editor;
 
     if (event.button === 1 || (tool === "select" && !target)) {
@@ -71,6 +73,8 @@ export function attachPointer(canvas, editor) {
     } else if (tool === "select") {
       const { kind, id, end } = target.dataset;
       if (kind === "handle") {
+        // Reshaping a wall is drawing, which a phone does not offer; the wall stays selected.
+        if (editor.compact) return;
         drag = { type: "end", id: editor.selection.id, end: Number(end), origin: editor.plan };
       } else {
         editor.select({ kind, id });
@@ -126,7 +130,8 @@ export function attachPointer(canvas, editor) {
     drag = null;
     if (finished.type === "draw") {
       editor.setPreviewLine(null);
-      if (cancelled || !finished.end) return;
+      // The screen may have crossed the phone breakpoint mid-draw; the wall is then dropped.
+      if (cancelled || !finished.end || !editor.allows(finished.kind)) return;
       const next = P.addWall(editor.plan, finished.start, finished.end, finished.kind);
       if (next !== editor.plan) editor.commit(next, { kind: "walls", id: next.walls.at(-1).id });
     } else if (finished.type !== "pan") {
