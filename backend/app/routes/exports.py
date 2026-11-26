@@ -24,9 +24,13 @@ from app.schemas import Geometry, Strict
 router = APIRouter(prefix="/v1/projects/{project_id}/versions/{version_id}")
 
 MEDIA_TYPES = {"pdf": "application/pdf", "png": "image/png", "dxf": "image/vnd.dxf"}
-# An A3 PNG is about 17 megapixels; bound how many are built at once so exports cannot starve other requests.
+# An A3 PNG is about 17 megapixels; bound how many are built at once so exports cannot starve other requests,
+# and let each user build one at a time so a single account cannot hold every slot.
 MAX_PARALLEL_EXPORTS = 2
 SLOTS = threading.BoundedSemaphore(MAX_PARALLEL_EXPORTS)
+_BUSY_USERS: set[str] = set()
+_BUSY_LOCK = threading.Lock()
+BUSY = {"Retry-After": "5"}
 
 
 class ExportRequest(Strict):
@@ -60,13 +64,21 @@ def export_plan(project_id: UUID, version_id: UUID, body: ExportRequest, user: C
     except ValidationError:
         raise HTTPException(422, "This saved version cannot be exported") from None
 
-    if not SLOTS.acquire(blocking=False):
-        raise HTTPException(429, "Too many exports at once. Please try again in a moment.")
+    with _BUSY_LOCK:
+        if user.id in _BUSY_USERS:
+            raise HTTPException(429, "Your previous export is still being prepared. Please wait for it to finish.", headers=BUSY)
+        _BUSY_USERS.add(user.id)
     try:
-        info = ExportInfo(project["name"], version["version_no"], version["label"], datetime.now(UTC).date())
-        content = render(geometry, info, body.format, body.paper)
+        if not SLOTS.acquire(timeout=2):
+            raise HTTPException(429, "Too many exports at once. Please try again in a moment.", headers=BUSY)
+        try:
+            info = ExportInfo(project["name"], version["version_no"], version["label"], datetime.now(UTC).date())
+            content = render(geometry, info, body.format, body.paper)
+        finally:
+            SLOTS.release()
     finally:
-        SLOTS.release()
+        with _BUSY_LOCK:
+            _BUSY_USERS.discard(user.id)
 
     # Reading is allowed in a suspended studio, so this does not use _writable_project; the event is metadata only.
     role = "designer" if user.role_in(project["studio_id"]) else "client"

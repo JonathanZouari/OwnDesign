@@ -239,8 +239,39 @@ def test_too_many_exports_at_once(api, world, admin):
         before = len(export_events(admin, world.project_a["id"]))
         response = api.post(url(world.project_a, world.v1), json={"format": "png"}, headers=world.client_a.headers)
         assert response.status_code == 429
+        assert response.headers["retry-after"] == "5"
         assert len(export_events(admin, world.project_a["id"])) == before
     finally:
         for _ in held:
             exports.SLOTS.release()
     assert api.post(url(world.project_a, world.v1), json={"format": "png"}, headers=world.client_a.headers).status_code == 200
+
+
+def test_one_user_cannot_hold_every_export_slot(api, world, admin):
+    from app.routes import exports
+
+    exports._BUSY_USERS.add(world.client_a.id)  # as if this client's previous export were still being built
+    try:
+        response = api.post(url(world.project_a, world.v1), json={"format": "png"}, headers=world.client_a.headers)
+        assert response.status_code == 429 and response.headers["retry-after"] == "5"
+        # Someone else is not blocked by it.
+        assert api.post(url(world.project_a, world.v1), json={"format": "png"}, headers=world.designer_a.headers).status_code == 200
+    finally:
+        exports._BUSY_USERS.discard(world.client_a.id)
+    assert api.post(url(world.project_a, world.v1), json={"format": "png"}, headers=world.client_a.headers).status_code == 200
+
+
+def test_parallel_png_exports_are_serialised_safely(world):
+    """PDFium is not thread-safe; many PNG renders at once must all succeed and stay identical."""
+    from concurrent.futures import ThreadPoolExecutor
+    from datetime import date
+
+    from app.exports.pdf import ExportInfo
+    from app.exports.png import render_png
+    from app.schemas import Geometry
+
+    geometry = Geometry.model_validate(two_rooms())
+    info = ExportInfo("Flat A", 1, "", date(2026, 11, 26))
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        results = list(pool.map(lambda _: render_png(geometry, info, "a4"), range(12)))
+    assert len(set(results)) == 1 and results[0].startswith(MAGIC["png"])

@@ -63,7 +63,7 @@ app.add_middleware(BodyLimit)
 
 @app.exception_handler(HTTPException)
 async def http_error(_: Request, error: HTTPException):
-    return JSONResponse(fail(str(error.detail)), status_code=error.status_code)
+    return JSONResponse(fail(str(error.detail)), status_code=error.status_code, headers=error.headers)
 
 
 @app.exception_handler(RequestValidationError)
