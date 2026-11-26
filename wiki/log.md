@@ -101,3 +101,12 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+
+## [2026-11-26] build | Phone version (branch feature/mobile)
+Touch: items are placed on lift, two fingers pan and zoom. CSS: dynamic viewport height, safe areas, 44 px
+targets, 16 px inputs, hover only on hover devices, visible tabs and sign in/out, landscape editor, stacked
+project table, sticky chat composer. Commits `8381605` to the test commit on `feature/mobile`. Frontend 35
+passed. Pages checked at 360, 390, 740x360 and 1280 px in Chrome emulation (signed-in pages with stubbed API
+data). The backend suite and browser journeys, including the new phone journey, were NOT run: no
+`backend/.env` or `uv` on this machine. Pages: [design](design.md), [testing](testing.md),
+[open-items](open-items.md).

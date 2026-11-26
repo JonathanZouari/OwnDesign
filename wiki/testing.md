@@ -16,8 +16,9 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 |---|---|---|
 | `backend/tests/test_geometry.py` | unit, edge | geometry validation: bounds, duplicates, openings outside walls |
 | `backend/tests/test_api.py` | integration, edge | auth, studios, invites, projects, versions, isolation, quotas, 413 on chunked upload, studio activity (members only) |
-| `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names) |
+| `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names); phone layout and touch (no sideways scroll, tools reachable, pinch places nothing, landscape) |
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
+| `frontend/tests/pointer.test.js` | unit, edge | two-finger pan and pinch zoom maths, zoom limit |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
 
 ## Required after every change

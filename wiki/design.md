@@ -11,6 +11,9 @@ Sources: Stitch project "AI Interior Design Platform" (reached through the Stitc
 - The tokens are CSS variables at the top of `frontend/css/app.css`. New UI uses them, not new colours.
 - Brand in the UI: "ATELIER" with a green studio chip.
 - Breakpoints: 1199 px and 767 px.
+- Phones: touch sizes (44 px targets, 16 px inputs) are under `(pointer: coarse)`; short landscape screens
+  have their own block (`max-height: 500px`). Hover styles go inside `(hover: hover)`. The workspace tabs
+  stay visible and scroll sideways. Tables that do not fit use `.stack-rows`.
 - Fonts load from Google Fonts ([open-items.md](open-items.md)).
 
 ## Screens

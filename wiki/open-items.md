@@ -17,7 +17,7 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Orphaned image files.** Files of a deleted project or user are queued in `storage_deletions` and removed only the next time an asset is deleted. Needs a scheduled drain.
 - **Delete-then-insert saves** of finishes and the moodboard are not atomic.
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
-- The editor has no link to the Phase 2 pages at 767 px and below.
+- Phone layout is checked in Chrome emulation only; it still needs a real iOS and Android device.
 
 ## Later phases with a Stitch screen waiting
 
@@ -41,7 +41,6 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 - `.area`, `.version` and `.wide` are global classes in `app.css` and are easy to collide with.
 - Audit event ids are one sequence across all studios, so a member can infer overall event volume.
 - Fonts load from Google, which exposes the visitor's IP address to Google.
-- The editor's sign in/out button is hidden on phones.
 - The coordinate limit is enforced in the editor only by clamping the view.
 - Two adjacent rooms from the wizard produce two overlapping walls.
 - Commit author address in the published history is the user's personal one (published by the user's choice).
