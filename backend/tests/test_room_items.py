@@ -8,7 +8,6 @@ from types import SimpleNamespace
 import pytest
 
 from app import vision
-from app.main import app
 from tests.conftest import needs_supabase
 from tests.test_design import PNG
 from tests.test_geometry import VALID
@@ -33,6 +32,8 @@ class FakeDetector:
 
 @pytest.fixture()
 def fake():
+    from app.main import app  # not at module level: collection must work without Supabase settings (CI)
+
     detector = FakeDetector()
     app.dependency_overrides[vision.get_detector] = lambda: detector
     yield detector
