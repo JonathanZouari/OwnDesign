@@ -1,0 +1,2 @@
+# Marker so Railpack detects Python. Dependencies live in backend/requirements.txt and are
+# installed by the build command (railway.toml buildCommand / Render build command).
