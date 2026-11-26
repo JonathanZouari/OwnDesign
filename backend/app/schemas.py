@@ -186,6 +186,18 @@ class MoodboardItem(Strict):
         return self
 
 
+class TaskCreate(Strict):
+    """A request from the studio to the client (PRD FR-13), e.g. "Measure the bedroom"."""
+
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+    details: Text = ""
+
+
+class TaskUpdate(Strict):
+    status: Literal["open", "done"]
+    client_note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] = ""
+
+
 class MoodboardBody(Strict):
     items: Annotated[list[MoodboardItem], Field(max_length=40)]
 
