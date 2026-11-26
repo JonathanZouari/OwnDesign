@@ -136,3 +136,7 @@ The account in use has no write access to the original repository (403), so the 
 `origin` is the user's fork, `upstream` the original. `client-tasks` pushed to the fork; the fork's `dev`
 fast-forwarded to match `upstream/dev`; its `main` left 12 commits behind until the user asks to move it.
 Pages: [open-items](open-items.md).
+
+## [2026-11-26] infra | Fork's main matches the original repository
+At the user's request, the fork's `main` was fast-forwarded (no force) from `ff474ae` to `39134d8`, the original
+repository's `main`. The fork had no commits of its own on `main`.
