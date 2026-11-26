@@ -19,6 +19,12 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
 - The editor has no link to the Phase 2 pages at 767 px and below.
 
+## Studio branding
+
+`branding.html` is a browser-only preview. Still needed: storage and a table for the logo and colours,
+owner-only write endpoints with server-side image and colour validation, a tenant-isolation test, applying
+the theme on the pages that show the studio, a link from the dashboard, and browser journeys.
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in

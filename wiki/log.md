@@ -101,3 +101,9 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+
+## [2026-11-26] build | Studio branding preview
+`branding.html`: logo upload (PNG, JPG, WebP, 2 MB), four colour presets, custom primary, background and
+text colours with a contrast check, live preview. Browser only, nothing saved. Frontend 39 passed; manual
+check in Chrome. Backend integration and browser journeys not run (Supabase not configured).
+Pages: [overview](overview.md), [design](design.md), [open-items](open-items.md).
