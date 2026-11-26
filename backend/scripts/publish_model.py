@@ -4,15 +4,19 @@ The server never needs PyTorch: this script exports RF-DETR Small (Apache 2.0) t
 int8 (about 39 MB, under Supabase's 50 MB per-file limit) and uploads it. The server downloads the file on first
 use and refuses it unless its SHA-256 matches MODEL_SHA256 in app/detection/model.py.
 
-Export, quantize and upload (needs the extra packages only for this run):
+A rebuild does not give the same bytes (versions of PyTorch, ONNX and Python change them), so one built file is
+shared by every environment:
 
-    cd backend
-    uv run --with rfdetr==1.12.1 --with onnx --with onnxruntime python -m scripts.publish_model --build
+1. Build it once (needs the extra packages only for this run). It is saved as ./rfdetr-small-int8.onnx:
 
-Upload a file built before, for example the same file to another Supabase project (re-exporting can change the
-bytes, and then the pinned hash would no longer match):
+       cd backend
+       uv run --with rfdetr==1.12.1 --with onnx --with onnxruntime python -m scripts.publish_model --build
 
-    uv run python -m scripts.publish_model --file /path/to/rfdetr-small-int8.onnx
+   If the printed SHA-256 differs from MODEL_SHA256, set MODEL_SHA256 to it, commit, and go on with step 2.
+
+2. Upload that same file to each Supabase project (dev, CI, production), each with its own backend/.env:
+
+       uv run python -m scripts.publish_model --file rfdetr-small-int8.onnx
 
 Both read SUPABASE_URL and SUPABASE_SECRET_KEY from backend/.env, like the app.
 """
@@ -47,14 +51,19 @@ def main() -> int:
     source.add_argument("--file", type=Path, help="upload an existing ONNX file")
     args = parser.parse_args()
 
-    with tempfile.TemporaryDirectory() as tmp:
-        path = build(Path(tmp)) if args.build else args.file
-        data = path.read_bytes()
+    if args.build:
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build(Path(tmp)).read_bytes()
+        Path(MODEL_OBJECT).write_bytes(data)
+        print(f"Saved {Path(MODEL_OBJECT).resolve()}")
+    else:
+        data = args.file.read_bytes()
     digest = hashlib.sha256(data).hexdigest()
     print(f"{MODEL_OBJECT}: {len(data) / 1_000_000:.1f} MB, sha256 {digest}")
     if digest != MODEL_SHA256:
         print(f"This is not the pinned model ({MODEL_SHA256}).", file=sys.stderr)
-        print("If it should become the new model, update MODEL_SHA256 in app/detection/model.py first.", file=sys.stderr)
+        print("If it should become the new model, set MODEL_SHA256 in app/detection/model.py to the value above,", file=sys.stderr)
+        print("then upload this same file with --file.", file=sys.stderr)
         return 1
     service().storage.from_(BUCKET).upload(MODEL_OBJECT, data, {"content-type": "application/octet-stream", "upsert": "true"})
     print(f"Uploaded to bucket '{BUCKET}'.")
