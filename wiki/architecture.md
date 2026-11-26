@@ -57,6 +57,12 @@ each change; the plan object is never mutated.
 every wall lying along it, because adjacent rooms have overlapping walls. Plans needing more than 5000
 cuts are refused. No server or database change.
 
+**Villa demo:** `frontend/villa/` (`js/world.js`: the villa as boxes plus walking physics, one rule for
+walls, floors, steps and furniture; `js/scene.js`; `js/main.js`). `npm run villa:assets` downloads CC0 models,
+textures and a sky from Poly Haven (about 57 MB) into the git-ignored `frontend/villa/assets/`. More three.js
+0.180.0 files in `frontend/vendor/three-0.180.0/addons/` import `three` by name, so the page has an import map
+allowed by its hash in the content security policy. No server or database change.
+
 ## API
 
 Studios, invites, studio activity (`GET /v1/studios/{id}/audit`, the latest 10 audit events, members

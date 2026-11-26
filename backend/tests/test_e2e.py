@@ -289,3 +289,26 @@ def test_client_portal_entry_points(servers, page, api, make_user):
         page.goto(f"{SITE}/entry.html{query}")
         page.get_by_role("heading", name="This link is not valid").wait_for()
         assert page.get_by_role("link", name="Start designing").count() == 0
+
+
+@pytest.mark.skipif(not (FRONTEND / "villa" / "assets" / "sky.hdr").exists(), reason="villa assets not downloaded")
+def test_villa_demo_opens_from_the_home_page_and_walks(servers, browser_type):
+    # Its own browser on the graphics card: drawing the villa in software takes minutes.
+    browser = browser_type.launch(channel="chromium", args=["--enable-gpu", "--ignore-gpu-blocklist"])
+    page = browser.new_page(viewport={"width": 640, "height": 480})
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.set_default_timeout(400_000)  # still enough where there is no graphics card
+    page.goto(f"{SITE}/index.html")
+    page.get_by_role("link", name="Villa 3D demo").click()
+    view = page.locator("canvas[data-position]")
+    view.wait_for()
+    start = view.get_attribute("data-position")
+    page.keyboard.down("w")
+    page.locator(f"canvas[data-position]:not([data-position='{start}'])").wait_for()
+    page.keyboard.up("w")
+    page.get_by_text("Jump to a room").click()
+    page.get_by_role("button", name="Main bedroom").click()
+    page.get_by_text("Main bedroom · Upper floor").wait_for()
+    assert errors == []
+    browser.close()

@@ -191,3 +191,12 @@ and the comparison and the 3D walkthrough can be open at once. No security findi
 reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
 not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
 Nothing of it is on `dev`.
+
+## [2026-11-26] build | 3D villa demo (in the contributor's fork)
+Stand-alone page at `/villa/`, asset download script, home page link, tests. Chosen by the contributor.
+Commits `5ed3396`, `23a8007`, `8b4e691`. Frontend 85 passed; see [testing](testing.md) for the backend run.
+Pages: [overview](overview.md), [architecture](architecture.md), [decisions](decisions.md),
+[open-items](open-items.md).
+
+## [2026-11-26] security | Review of the villa demo (in the contributor's fork)
+No finding. Pages: [security](security.md).

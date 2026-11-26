@@ -37,6 +37,12 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - Studio branding (`branding.html`): logo and three colours applied to a sample client entry page in the
   browser. Nothing is saved, nothing reaches real client pages, and the page is not linked from the app.
 
+## Demo: 3D villa
+
+- `/villa/`, linked from the home page: a stand-alone first-person tour of a two-floor villa (six living and
+  bedrooms, two bathrooms, stairs, garden, pool). Not connected to saved projects or the editor.
+- Its models and textures are downloaded once by a script ([architecture.md](architecture.md)).
+
 ## Built: 3D walkthrough
 
 - A first-person walkthrough of the plan, opened from the editor, including unsaved drafts. View only.

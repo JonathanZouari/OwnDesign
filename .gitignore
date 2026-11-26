@@ -6,4 +6,5 @@ node_modules/
 supabase/.temp/
 supabase/.branches/
 frontend/js/config.js
+frontend/villa/assets/
 test-results/

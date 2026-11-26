@@ -40,3 +40,6 @@ Such lines are moved here and reworded when the pull request is merged.
   view. It goes against PRD 3.3, which excluded interactive 3D navigation; the PRD text has not been updated.
 - **three.js, vendored**, for the walkthrough, with controls written here (pull request #14). Its ready-made
   controls need an import map, which the `script-src 'self'` policy would block as an inline script.
+- **A realistic villa demo** (contributor's pull request): warm country style, two floors, a separate page and
+  not an editor feature, free downloaded models that a script fetches instead of committing them. It allows one
+  inline import map by hash, which keeps the vendored files unmodified.

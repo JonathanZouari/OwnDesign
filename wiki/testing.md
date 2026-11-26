@@ -19,6 +19,7 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 | `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names) |
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
+| `frontend/tests/villa.test.js` | unit, edge | villa: every room reachable on foot, stairs, pool and fence, import map policy |
 | `frontend/tests/plan3d.test.js` | unit, edge | 3D wall boxes, doors, windows, overlapping walls, collision, sharp corners, oversized plans |
 
 ## Required after every change
@@ -53,6 +54,10 @@ the environment ("not allowed to deploy to ci"), with no step run; with the secr
 failed in its first step. Not yet seen: a green `backend` run. It waits for the CI secret key.
 
 ## Last result
+
+2026-11-26, villa demo, as run by its contributor on their own Supabase project: frontend 85 passed. Backend:
+100 passed in a full run where the new villa journey timed out in a software-drawing browser; the journey was
+moved to a browser using the graphics card and passed on its own. The full suite was not run again after that.
 
 2026-11-26, after merging pull requests #9, #8 and #14: backend 100 passed (9 browser tests; the guest journey
 now also walks in 3D), frontend 57 passed, locally. On GitHub: `frontend` green, `backend` not yet run to the

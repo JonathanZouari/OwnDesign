@@ -31,6 +31,15 @@ From the review of pull request #8, not fixed: the contrast check accepts colour
 decides what may be saved; the preview holds a second `h1` and a button and link that do nothing; the status
 line is rewritten on every colour-picker move; a chosen logo has no pixel-size limit.
 
+## Villa demo gaps
+
+- The home page link is for demonstration; the owner decides whether it stays.
+- Without the downloaded assets the page only shows a loading error, and its browser journey is skipped
+  (also in CI).
+- Poly Haven assets are not pinned to a version or checksum.
+- Doorways have no moving doors, there is no swimming, and phones are untested.
+- `python -m http.server` can refuse some of the many asset requests on a loaded machine.
+
 ## 3D walkthrough gaps
 
 - No collision with furniture, no ceiling, no catalog materials or colours.

@@ -75,6 +75,13 @@ served locally. The three vendored files are byte for byte the published npm pac
 compared at merge time). The guard against oversized plans counts wall cuts, not boxes: the largest plan the
 server accepts still makes the viewer's own tab sluggish ([open-items.md](open-items.md)).
 
+## Review of the villa demo (contributor's fork)
+
+A security-reviewer agent on the three code commits: no finding. The download script accepts one host, keeps
+every file name inside the asset folder and writes only model, image and sky types; the page sets text only;
+its policy allows one import map by hash. Not checked: the vendored addons beyond targeted searches. The policy
+does not restrict where images and requests load from.
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add
