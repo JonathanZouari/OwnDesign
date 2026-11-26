@@ -8,7 +8,7 @@ designer work on the same floor plan. AI assistance comes in later phases.
 ## Built: Phase 1
 
 - A designer signs up and opens a studio. One studio per owner.
-- A client enters through the studio link, a personal invite link, or as a guest. The client portal
+- A client enters through a personal invite link that the studio emails to them; only that confirmed address can accept it, and only invited clients can start a project. The studio link shows the studio, and a guest can sketch before signing in. The client portal
   (`entry.html`) offers guest or account access, and the wizard or a blank canvas as a starting point.
 - A guided wizard builds the apartment from rooms and dimensions.
 - A 2D editor (SVG): walls, partitions, doors, windows, generic furniture, undo/redo, pan/zoom, keyboard use.

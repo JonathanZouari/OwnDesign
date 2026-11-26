@@ -51,3 +51,16 @@ commits is still to do.
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add
 the outcome here and to [log.md](log.md).
+
+## Review of invite emails and invite access (2026-11-26)
+
+- Accepting an invite needs a signed-in account whose **confirmed** email, read from Supabase Auth, equals the
+  invited address (case ignored). A refusal does not reveal the invited address. A forward cannot use up the
+  link, because only the invited address can accept it.
+- Revoked invites, and expired ones that were not accepted, answer 404 everywhere. Resend and cancel check
+  studio membership and that the invite belongs to that studio.
+- `create_project` needs an accepted invite to the studio, or membership.
+- Email: names are HTML-escaped, the subject has no line breaks, the link host comes from `APP_URL`, failures
+  log only the error type. 20 emails per studio a day; one email per invite per minute.
+- Open: the identity check is only as strong as email confirmation, which is off in the dev settings
+  ([open-items.md](open-items.md)).

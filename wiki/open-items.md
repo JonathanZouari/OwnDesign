@@ -5,7 +5,6 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 ## Needs a product decision
 
 - **Deleting a client account** also deletes their projects, including versions a designer saved. The PRD leaves retention open.
-- **Invites** never expire and are not bound to the invited email address.
 - **Product name.** "ATELIER" comes from Stitch; the PRD says undecided.
 - **PRD text** still says "no paid API", which the OpenAI decision overrides.
 
@@ -26,10 +25,10 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 
 ## Before production
 
-- Turn email confirmation on and configure SMTP. While it is off, someone can register with another person's address and it is shown to the designer as the client's email.
+- **Turn email confirmation on and configure SMTP (Resend: `smtp.resend.com`).** The invite identity check depends on it: while confirmation is off, Supabase marks every new address as confirmed, so someone can register with the invited client's address and accept the invite. `supabase/config.toml` still holds the dev value.
 - Rate limiting on the API.
 - `connect-src` in the content security policy, per environment.
-- Railway deployment files and environments.
+- Railway deployment files and environments. Each environment needs its own Supabase project, `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL`; dev must not be able to email real clients (a test sender, or a Resend key limited to approved recipients).
 - Sign-out does not invalidate an already issued token before it expires.
 
 ## Smaller
@@ -45,3 +44,6 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 - The coordinate limit is enforced in the editor only by clamping the view.
 - Two adjacent rooms from the wizard produce two overlapping walls.
 - Commit author address in the published history is the user's personal one (published by the user's choice).
+- Clients who joined through the studio link before 2026-11-26 keep their projects but need a personal invite to start a new one.
+- Invite email text includes the studio and client names, which users choose. They are escaped, but a phishing-style studio name would still reach the client from our sender. Consider a subject without the studio name, or reviewing studio names.
+- The email hero image (`frontend/img/email-hero.jpg`) bakes in the logo; regenerate it if the logo or photo changes.

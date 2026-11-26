@@ -101,3 +101,35 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+## [2026-11-26] build | Invite links are emailed to the client
+Creating an invite emails the personal link through the Resend HTTP API (`backend/app/mailer.py`), on the
+existing httpx client. Off unless `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL` are set; the link is built from
+`APP_URL`, never from the request. At most 20 emails per studio a day. A failed send never fails the invite: the
+dashboard copies the link instead. Commit `4ce5db5`. Pages: [architecture](architecture.md), [security](security.md).
+
+## [2026-11-26] design | Invite email as an invitation card
+Branded HTML email (`backend/app/invite_email.html`): hero photo with the logo mark baked in
+(`frontend/img/email-hero.jpg`, from `interior-concept.jpg` and the new `logo-mark.svg`), tagline "Your space,
+your style. Let's design it together.", three steps, full-width button. Tables and inline styles only, for Gmail
+and Outlook. Checked at 680 and 375 px with very long names. Commits `5bd9b63`, `3447205`, `72d9c61`.
+
+## [2026-11-26] decision | Who may enter through an invite
+The user decided: only the invited client, proven by a confirmed email address; client projects need an accepted
+invite; invites expire after 14 days; a resend carries the same link; designers can cancel a pending invite.
+Pages: [decisions](decisions.md).
+
+## [2026-11-26] build | Invite identity, expiry, resend and cancel
+Migration `20261126100000_invite_lifecycle.sql`; `accept_invite` checks the confirmed address from Supabase Auth;
+`create_project` requires an accepted invite or membership; new resend and cancel endpoints; one open invite per
+address; 60 s double-send guard; dashboard buttons. Commit `41da67a`. Pages: [architecture](architecture.md),
+[security](security.md), [open-items](open-items.md), [overview](overview.md).
+
+## [2026-11-26] security | Review of the invite email and invite access changes
+`security-review` on the branch, then a focused pass over every access decision of commit `41da67a`. No critical
+or high finding. Recorded: email confirmation is off on the dev settings, so the identity check is only real once
+it is on; invite email text comes from user-controlled names. Pages: [security](security.md),
+[open-items](open-items.md).
+
+## [2026-11-26] test | Invites verified on a fresh test project
+New Supabase project for tests (all 7 migrations applied). Backend 122 passed (9 browser journeys included),
+frontend 33 passed. New: `backend/tests/test_invites.py` (11), `test_invite_email.py`. Pages: [testing](testing.md).

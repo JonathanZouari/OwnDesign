@@ -26,6 +26,14 @@ End to end, regression (both full suites) and edge cases for the change (`CLAUDE
 
 ## Last result
 
+2026-11-26: backend 122 passed (9 browser journeys included), frontend 33 passed, on a fresh Supabase test
+project. New: `backend/tests/test_invites.py` (who may accept, forwards, letter case, unconfirmed address,
+expiry and renewal, one open invite per address with 5 parallel requests, cancel rules, double-send guard,
+project gate) and `test_invite_email.py` (message escaping, header injection, Resend failures, daily cap). The
+`admit` fixture in `conftest.py` gives a test client an accepted invite. The real Resend call was not made: no
+key yet.
+
+Earlier, 
 2026-11-23: backend 94 passed (incl. 3 browser journeys), frontend 31 passed. New files:
 `backend/tests/test_design.py` (brief, finishes, uploads, moodboard, isolation, quota, suspended studio) and
 `test_consultant.py` (fake OpenAI client: context, privacy, cap, failure, injection, tag escaping);
