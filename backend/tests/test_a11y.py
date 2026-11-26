@@ -92,3 +92,30 @@ def test_statement_is_hebrew_rtl_and_lists_required_parts(site, page):
     assert page.evaluate("[document.documentElement.lang, document.documentElement.dir]") == ["he", "rtl"]
     for heading in ("מה הונגש באתר", "חלקים שלא הונגשו במלואם", "פניות בנושא נגישות"):
         assert page.get_by_role("heading", name=heading).count() == 1
+
+
+def test_studio_sections_reachable_below_1200px(site, page):
+    # The dashboard itself is hidden until sign-in, so check the rule, not visibility.
+    display = lambda: page.evaluate("getComputedStyle(document.querySelector('.section-links')).display")
+    page.set_viewport_size({"width": 1000, "height": 700})
+    page.goto(f"{SITE}/studio.html")
+    assert display() == "flex"
+    page.set_viewport_size({"width": 1400, "height": 800})
+    assert display() == "none"
+
+
+def test_editor_phone_keeps_workspace_links_and_account_button(site, page):
+    page.set_viewport_size({"width": 375, "height": 700})
+    page.goto(f"{SITE}/editor.html")
+    page.wait_for_load_state("networkidle")
+    assert page.locator("#tab-wizard").is_visible()
+    assert page.locator("#account").is_visible()
+    assert not page.evaluate("document.documentElement.scrollWidth > window.innerWidth")
+
+
+@pytest.mark.parametrize("name", ["index.html", "auth.html", "editor.html", "wizard.html", "studio.html", "accessibility.html"])
+def test_no_axe_violations_on_a_phone(site, page, name):
+    page.set_viewport_size({"width": 375, "height": 700})
+    page.goto(f"{SITE}/{name}")
+    page.wait_for_load_state("networkidle")
+    assert violations(page) == []

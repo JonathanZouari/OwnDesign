@@ -14,6 +14,8 @@ was not read: confirm with a lawyer before publishing.
 - `test_a11y.py`: axe-core (WCAG 2.2 A/AA) on all 10 pages, skip link, 320 px reflow, statement links.
   Needs no Supabase; signed-in states are not covered by axe.
 
+## Done: responsive navigation (section links below 1200 px, tabs row and account button on phones)
+
 ## Not done
 See [open-items.md](open-items.md): coordinator details in the statement, responsive navigation,
 screen-reader testing, target size audit, signed-in axe runs.

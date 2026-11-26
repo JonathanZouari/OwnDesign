@@ -538,3 +538,13 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 .page-footer { max-width: 1040px; margin: 0 auto; padding: 0 1rem 2rem; font-size: 12px; }
 .statusbar a { color: var(--primary); }
 .todo { background: var(--caution-tint); color: var(--on-caution-tint); padding: 0 4px; border-radius: 4px; }
+.section-links { display: none; gap: 8px; flex-wrap: wrap; }
+.section-links a { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 12px; border-radius: 4px; background: var(--surface-low); }
+@media (max-width: 1199px) { .section-links { display: flex; } }
+/* Phones: keep the workspace links (Phase 2 pages) reachable in a second, scrollable row */
+@media (max-width: 767px) {
+  .appbar { height: auto; min-height: 56px; flex-wrap: wrap; padding-block: 6px; }
+  body.app { grid-template-rows: auto minmax(0, 1fr) 32px; }
+  .appbar .tabs { display: flex !important; order: 3; width: 100%; overflow-x: auto; }
+  .tabs span { display: none; }
+}
