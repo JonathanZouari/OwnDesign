@@ -1,15 +1,21 @@
 """Database-level tests for the estimates schema: read-only RLS for users, atomic replace_estimate for the backend.
 
-These need the migration 20261127090000_estimates.sql applied to the Supabase project in backend/.env.
+These need the migrations 20261127090000_estimates.sql and 20261127100000_estimate_version_check.sql applied to
+the Supabase project in backend/.env.
 """
 
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
+from postgrest.exceptions import APIError
 
 from tests.conftest import needs_supabase
 
 pytestmark = needs_supabase
+
+STALE = "PT409"  # raised by replace_estimate; PostgREST answers it with HTTP 409
 
 
 def item(name="Sofa", **over):
@@ -18,9 +24,35 @@ def item(name="Sofa", **over):
     return {**base, **over}
 
 
-def replace(admin, project_id, items, user_id=None, currency="EUR"):
+def replace(admin, project_id, items, user_id=None, currency="EUR", **version):
+    """Without keyword arguments this sends the original four named parameters; pass p_check / p_base to add them."""
     return admin.rpc("replace_estimate", {"p_project": project_id, "p_user": user_id, "p_currency": currency,
-                                          "p_items": items}).execute()
+                                          "p_items": items, **version}).execute()
+
+
+def head(admin, project_id):
+    """The estimate's header row, or None when no list was ever saved."""
+    data = admin.table("project_estimates").select("*").eq("project_id", project_id).execute().data
+    return data[0] if data else None
+
+
+def race(project_id, lists, **version):
+    """Runs one replace per list in parallel and returns, per call, None on success or the error code."""
+    from supabase import create_client
+
+    from app.db import settings
+
+    def one(items):
+        # httpx clients are not safe to share between threads on Windows: one service client per thread.
+        client = create_client(settings().supabase_url, settings().supabase_secret_key)
+        try:
+            replace(client, project_id, items, **version)
+        except APIError as error:
+            return error.code
+        return None
+
+    with ThreadPoolExecutor(len(lists)) as pool:
+        return list(pool.map(one, lists))
 
 
 def rows(admin, project_id):
@@ -135,20 +167,8 @@ def test_bad_currency_and_unknown_project_rejected(admin, pid):
 
 
 def test_parallel_replaces_never_interleave(admin, pid):
-    from concurrent.futures import ThreadPoolExecutor
-
-    from supabase import create_client
-
-    from app.db import settings
-
-    def own_client_replace(items):
-        # httpx clients are not safe to share between threads on Windows: one service client per thread.
-        client = create_client(settings().supabase_url, settings().supabase_secret_key)
-        return replace(client, pid.id, items)
-
     lists = [[item(f"{tag}{n}") for n in range(30)] for tag in ("a", "b", "c", "d")]
-    with ThreadPoolExecutor(4) as pool:
-        list(pool.map(own_client_replace, lists))
+    assert race(pid.id, lists) == [None] * 4
     names = [r["name"] for r in rows(admin, pid.id)]
     assert names in [[i["name"] for i in items] for items in lists]
 
@@ -158,6 +178,110 @@ def test_deleting_the_project_cascades(admin, api, pid):
     admin.table("projects").delete().eq("id", pid.id).execute()
     assert admin.table("project_estimates").select("*").eq("project_id", pid.id).execute().data == []
     assert rows(admin, pid.id) == []
+
+
+# ---- service role: version check -----------------------------------------------------------------------------
+
+
+def assert_stale(admin, project_id, **version):
+    """The checked call raises PT409 and leaves the header and the list exactly as they were."""
+    before = head(admin, project_id), rows(admin, project_id)
+    with pytest.raises(APIError) as error:
+        replace(admin, project_id, [item("rejected")], currency="GBP", p_check=True, **version)
+    assert error.value.code == STALE
+    assert (head(admin, project_id), rows(admin, project_id)) == before
+
+
+def test_without_check_the_list_is_overwritten_whatever_the_base(admin, pid):
+    replace(admin, pid.id, [item("first")])
+    old = head(admin, pid.id)["updated_at"]
+    replace(admin, pid.id, [item("second")])  # the original four-parameter call
+    replace(admin, pid.id, [item("third")], p_check=False, p_base=old)  # a stale base is ignored
+    replace(admin, pid.id, [item("fourth")], p_base=old)  # p_check defaults to false
+    assert [r["name"] for r in rows(admin, pid.id)] == ["fourth"]
+
+
+def test_check_with_matching_base_succeeds_repeatedly(admin, pid):
+    replace(admin, pid.id, [item("first")])
+    for name, currency in (("second", "ILS"), ("third", "USD")):
+        replace(admin, pid.id, [item(name)], currency=currency, p_check=True, p_base=head(admin, pid.id)["updated_at"])
+        assert [r["name"] for r in rows(admin, pid.id)] == [name]
+        assert head(admin, pid.id)["currency"] == currency
+
+
+def test_check_with_stale_base_is_rejected_and_nothing_changes(admin, pid):
+    replace(admin, pid.id, [item("first")], currency="USD")
+    stale = head(admin, pid.id)["updated_at"]
+    replace(admin, pid.id, [item("second")], currency="ILS")
+    assert_stale(admin, pid.id, p_base=stale)
+    assert_stale(admin, pid.id, p_base=stale)  # repeating the request does not get it through
+
+
+@pytest.mark.parametrize("microseconds", [-1, 1])
+def test_check_compares_the_base_to_the_microsecond(admin, pid, microseconds):
+    replace(admin, pid.id, [item("keep")])
+    current = datetime.fromisoformat(head(admin, pid.id)["updated_at"])
+    assert_stale(admin, pid.id, p_base=(current + timedelta(microseconds=microseconds)).isoformat())
+
+
+@pytest.mark.parametrize("version", [{"p_base": None}, {}], ids=["null base", "base omitted"])
+def test_check_with_null_base_creates_a_list_only_when_none_exists(admin, pid, version):
+    replace(admin, pid.id, [item("first")], p_check=True, **version)
+    assert [r["name"] for r in rows(admin, pid.id)] == ["first"]
+    assert_stale(admin, pid.id, **version)
+
+
+def test_check_with_null_base_is_rejected_when_the_saved_list_is_empty(admin, pid):
+    replace(admin, pid.id, [])
+    assert_stale(admin, pid.id, p_base=None)
+
+
+def test_check_with_a_base_is_rejected_when_no_list_exists(admin, pid):
+    assert_stale(admin, pid.id, p_base="2026-01-01T00:00:00+00:00")
+    assert head(admin, pid.id) is None
+
+
+def test_malformed_base_is_rejected_and_nothing_changes(admin, pid):
+    replace(admin, pid.id, [item("keep")])
+    before = head(admin, pid.id)
+    with pytest.raises(APIError) as error:
+        replace(admin, pid.id, [item("new")], p_check=True, p_base="not-a-timestamp")
+    assert error.value.code == "22007"  # invalid datetime format
+    assert head(admin, pid.id) == before
+    assert [r["name"] for r in rows(admin, pid.id)] == ["keep"]
+
+
+def test_failed_checked_save_keeps_the_base_valid(admin, pid):
+    replace(admin, pid.id, [item("keep")])
+    base = head(admin, pid.id)["updated_at"]
+    with pytest.raises(APIError) as error:
+        replace(admin, pid.id, [item("bad", quantity=0)], p_check=True, p_base=base)
+    assert error.value.code == "23514"  # check constraint, not a version conflict
+    replace(admin, pid.id, [item("fixed")], p_check=True, p_base=base)
+    assert [r["name"] for r in rows(admin, pid.id)] == ["fixed"]
+
+
+def test_updated_at_moves_forward_on_every_save(admin, pid):
+    stamps = []
+    for version in ({}, {}, {"p_check": False}, {}):
+        replace(admin, pid.id, [item("same")], **version)  # identical content still makes a new version
+        stamps.append(datetime.fromisoformat(head(admin, pid.id)["updated_at"]))
+    replace(admin, pid.id, [item("same")], p_check=True, p_base=head(admin, pid.id)["updated_at"])
+    stamps.append(datetime.fromisoformat(head(admin, pid.id)["updated_at"]))
+    assert all(earlier < later for earlier, later in zip(stamps, stamps[1:]))
+
+
+@pytest.mark.parametrize("existing", [True, False], ids=["existing list", "first save"])
+def test_parallel_checked_saves_from_the_same_base_let_exactly_one_through(admin, pid, existing):
+    base = None
+    if existing:
+        replace(admin, pid.id, [item("start")])
+        base = head(admin, pid.id)["updated_at"]
+    lists = [[item(f"{tag}{n}") for n in range(30)] for tag in ("a", "b")]
+    results = race(pid.id, lists, p_check=True, p_base=base)
+    assert sorted(results, key=str) == [None, STALE]
+    winner = lists[results.index(None)]
+    assert [r["name"] for r in rows(admin, pid.id)] == [i["name"] for i in winner]
 
 
 # ---- users and anon: read-only through RLS ------------------------------------------------------------------
@@ -200,6 +324,21 @@ def test_anon_sees_nothing_and_cannot_call_the_function(world, admin):
     with pytest.raises(Exception):
         anon.rpc("replace_estimate", {"p_project": world.pid, "p_user": None, "p_currency": "USD", "p_items": []}).execute()
     assert len(rows(admin, world.pid)) == 1
+
+
+@pytest.mark.parametrize("who", ["client_a", "designer_a", "stranger", "designer_b", "owner", None])
+@pytest.mark.parametrize("check", [True, False])
+def test_users_and_anon_cannot_execute_the_versioned_signature(world, admin, who, check):
+    replace(admin, world.pid, [item("secret")])
+    before = head(admin, world.pid)
+    user = getattr(world, who) if who else None
+    db = user_client(user.token if user else None)
+    with pytest.raises(APIError) as error:
+        replace(db, world.pid, [], user_id=user.id if user else None, currency="USD",
+                p_check=check, p_base=before["updated_at"])
+    assert error.value.code == "42501"  # permission denied, not a version conflict
+    assert head(admin, world.pid) == before
+    assert [r["name"] for r in rows(admin, world.pid)] == ["secret"]
 
 
 def test_read_access_follows_project_visibility(world, admin):
