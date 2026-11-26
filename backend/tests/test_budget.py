@@ -140,3 +140,16 @@ def test_suspended_studio_blocks_the_write(api, world, admin):
         assert api.put(url(world), json={"items": [CUSTOM]}, headers=world.client_a.headers).status_code == 403
     finally:
         admin.table("studios").update({"status": "active"}).eq("id", studio_id).execute()
+
+
+def test_parallel_saves_end_with_one_consistent_budget(api, world):
+    from concurrent.futures import ThreadPoolExecutor
+
+    h = world.client_a.headers
+    sets = [[SOFA], [SOFA, CUSTOM], [CUSTOM, CUSTOM], [SOFA, {**CUSTOM, "label": "Rug"}]]
+    with ThreadPoolExecutor(8) as pool:
+        codes = list(pool.map(lambda items: api.put(url(world), json={"items": items}, headers=h).status_code, sets * 3))
+    assert set(codes) == {200}
+    final = api.get(url(world), headers=h).json()["data"]["items"]
+    assert [[i["label"] for i in s] for s in sets if [i["label"] for i in s] == [i["label"] for i in final]]  # exactly one whole set won
+    api.put(url(world), json={"items": []}, headers=h)

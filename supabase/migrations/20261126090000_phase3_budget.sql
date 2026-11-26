@@ -37,6 +37,8 @@ security definer
 set search_path = ''
 as $$
 begin
+  -- Saves of the same project run one after another, so a parallel save cannot hit the unique key.
+  perform pg_advisory_xact_lock(hashtextextended(p_project::text, 0));
   delete from public.budget_items where project_id = p_project;
   insert into public.budget_items (project_id, position, kind, ref, label, qty, unit, unit_price, note, updated_by)
   select p_project, r.position, r.kind, r.ref, r.label, r.qty, r.unit, r.unit_price, r.note, p_user
