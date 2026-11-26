@@ -14,6 +14,7 @@ PT_PER_MM = 72 / 25.4
 PAPER_MM = {"a4": (210, 297), "a3": (297, 420)}
 MARGIN_MM = 12
 FOOTER_MM = 24  # project, version, date and the notices
+LABEL_GUTTER_PT = 24  # room for a wall-length label beside an outer wall
 MIN_PIECE_CM = 1  # a wall remnant shorter than this beside an opening is not drawn
 MIN_LABELLED_WALL_CM = 80  # same rule as the editor (frontend/js/editor/render.js)
 EMPTY_BOUNDS = (0.0, 0.0, 600.0, 400.0)  # same as planBox() in frontend/js/plan.js
@@ -31,7 +32,7 @@ class Box:
 
 @dataclass(frozen=True)
 class Piece:
-    """The part of a wall from `start` to `end` cm along it, between openings."""
+    """The part of a wall from `start` to `end` cm along it, between openings (beyond 0..length at a square cap)."""
 
     wall: Wall
     start: float
@@ -91,9 +92,14 @@ def wall_pieces(geometry: Geometry) -> list[Piece]:
     for wall in geometry.walls:
         cursor = 0.0
         length = wall_length(wall)
+        half = wall.thickness / 2
         for start, end in sorted(gaps.get(wall.id, [])) + [(length, length)]:
             if start - cursor >= MIN_PIECE_CM:
-                pieces.append(Piece(wall, cursor, min(start, length)))
+                # Square caps at the wall's own ends, as the editor draws them (stroke-linecap: square),
+                # so corners close; no cap beside an opening, which stays a clean gap.
+                piece_start = -half if cursor == 0 else cursor
+                piece_end = length + half if start >= length else start
+                pieces.append(Piece(wall, piece_start, piece_end))
             cursor = max(cursor, end)
     return pieces
 
@@ -153,7 +159,7 @@ def room_labels(geometry: Geometry) -> list[RoomLabel]:
         if box is None:
             continue
         area = box.w * box.h / 10_000
-        labels.append(RoomLabel(room.name, f"≈ {area:.1f} m²", (box.x + box.w / 2, box.y + box.h / 2)))
+        labels.append(RoomLabel(room.name, f"~ {area:.1f} m²", (box.x + box.w / 2, box.y + box.h / 2)))
     return labels
 
 
@@ -210,10 +216,10 @@ def sheet(geometry: Geometry, paper: str) -> Sheet:
     bounds = plan_bounds(geometry)
     plan_w, plan_h = max(bounds.w, 1.0), max(bounds.h, 1.0)
     short, long = (side * PT_PER_MM for side in PAPER_MM[paper])
-    margin, footer = MARGIN_MM * PT_PER_MM, FOOTER_MM * PT_PER_MM
+    margin, footer, gutter = MARGIN_MM * PT_PER_MM, FOOTER_MM * PT_PER_MM, LABEL_GUTTER_PT
     best = None
     for width, height in ((short, long), (long, short)):
-        area = Box(margin, margin + footer, width - 2 * margin, height - 2 * margin - footer)
+        area = Box(margin + gutter, margin + footer + gutter, width - 2 * (margin + gutter), height - 2 * (margin + gutter) - footer)
         scale = min(area.w / plan_w, area.h / plan_h)
         if best is None or scale > best.scale:
             best = Sheet(width, height, area, scale, bounds)

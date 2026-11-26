@@ -36,7 +36,8 @@ def empty(raw):
 def test_wall_pieces_leave_a_gap_for_each_opening():
     geometry = plan()  # w1 is 400 cm with a 90 cm door at 50 cm
     pieces = {(p.wall.id, round(p.start), round(p.end)) for p in L.wall_pieces(geometry)}
-    assert pieces == {("w1", 0, 50), ("w1", 140, 400), ("w2", 0, 300)}
+    # The wall's own ends get square caps of half its thickness (as in the editor); the gap edges do not.
+    assert pieces == {("w1", -10, 50), ("w1", 140, 410), ("w2", -5, 305)}
 
 
 def test_wall_pieces_merge_overlapping_openings_and_drop_slivers():
@@ -90,7 +91,7 @@ def test_window_symbol_is_two_lines_along_the_wall_and_two_jambs():
 def test_room_labels_use_the_editor_area_and_mark_it_approximate():
     labels = L.room_labels(plan(lambda raw: room(raw, "r2", "Bedroom", 0, 500, 400, 350)))
     bedroom = next(label for label in labels if label.name == "Bedroom")
-    assert bedroom.area == "≈ 14.0 m²"  # 400 x 350 cm, as the editor computes it
+    assert bedroom.area == "~ 14.0 m²"  # 400 x 350 cm, as the editor computes it
     assert bedroom.centre == pytest.approx((200, 675))
 
 
