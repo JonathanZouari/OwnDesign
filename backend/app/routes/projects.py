@@ -34,12 +34,19 @@ def list_projects(studio_id: UUID | None = None, user: CurrentUser = Depends(cur
     return ok(query.execute().data)
 
 
+def _accepted_invite(user_id: str, studio_id: str) -> bool:
+    query = service().table("studio_invites").select("id").eq("studio_id", studio_id).eq("accepted_by", user_id)
+    return bool(query.limit(1).execute().data)
+
+
 @router.post("", status_code=201)
 def create_project(body: ProjectCreate, user: CurrentUser = Depends(current_user)):
     studio_id = str(body.studio_id)
     studio = service().table("studios").select("id").eq("id", studio_id).eq("status", "active").execute().data
     if not studio:
         raise HTTPException(404, "Studio not found")
+    if not user.role_in(studio_id) and not _accepted_invite(user.id, studio_id):
+        raise HTTPException(403, "Only invited clients can start a project with this studio. Ask the studio for a personal invitation.")
     mine = user.db.table("projects").select("id").eq("studio_id", studio_id).eq("client_user_id", user.id).execute().data
     if len(mine) >= MAX_PROJECTS_PER_CLIENT:
         raise HTTPException(409, "You have reached the number of projects allowed with this studio")

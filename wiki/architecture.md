@@ -54,7 +54,11 @@ each change; the plan object is never mutated.
 ## API
 
 Studios, invites, studio activity (`GET /v1/studios/{id}/audit`, the latest 10 audit events, members
-only): `backend/app/routes/studios.py`. Projects, versions: `backend/app/routes/projects.py`.
+only): `backend/app/routes/studios.py`. Invites: create (reuses the open invite for the same address and emails
+it), `POST .../invites/{id}/send` (same token, expiry renewed), `DELETE .../invites/{id}` (cancel), public
+`GET /v1/invites/{token}`, and `POST /v1/invites/{token}/accept` (the confirmed address must match). Invites
+expire after 14 days. Emails: `backend/app/mailer.py` and `invite_email.html`. `create_project` needs an
+accepted invite to the studio unless the caller is a member. Projects, versions: `backend/app/routes/projects.py`.
 Quotas: 20 projects per client per studio, 500 versions per project.
 
 Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `backend/app/catalog.py`):

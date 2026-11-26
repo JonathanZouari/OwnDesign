@@ -1,9 +1,9 @@
 import { api, requireSession, signOut } from "../api.js";
 import { isPlan, planArea } from "../plan.js";
 import { KEYS, save } from "../store.js";
-import { activityText, matchesProject, studioMetrics } from "../studio-data.js";
+import { activityText, inviteState, matchesProject, studioMetrics } from "../studio-data.js";
 import { planThumbnail } from "../thumbnail.js";
-import { $, action, copyText, formatDate, h, pageUrl, run, showStudio } from "../ui.js";
+import { $, action, copyText, formatDate, h, pageUrl, run, showStudio, toast } from "../ui.js";
 
 const TYPE_LABEL = { existing: "Existing home", new_build: "New build" };
 const UNKNOWN = "—";
@@ -11,19 +11,40 @@ const UNKNOWN = "—";
 const icon = (name) => h("span", { class: "icon", "aria-hidden": "true" }, name);
 const inviteUrl = (invite) => pageUrl(`entry.html?invite=${invite.token}`);
 
-function showInvites(invites) {
+const INVITE_CHIP = { accepted: ["ok", "Accepted"], pending: ["", "Pending"], expired: ["caution", "Expired"] };
+
+// resend and cancel are click handlers wrapped in action(), so each button is disabled while its request runs.
+function showInvites(invites, { resend, cancel }) {
   $("#no-invites").hidden = invites.length > 0;
   $("#invites").replaceChildren(
-    ...invites.map((invite) =>
-      h(
+    ...invites.map((invite) => {
+      const state = inviteState(invite);
+      const [chipClass, chipText] = INVITE_CHIP[state];
+      const label = (text) => ({ type: "button", "aria-label": `${text} ${invite.client_name}` });
+      const buttons =
+        state === "accepted"
+          ? []
+          : [
+              state === "pending" && h("button", { ...label("Copy invite link for"), onclick: () => copyText(inviteUrl(invite)) }, "Copy link"),
+              h("button", { ...label("Resend email to"), onclick: action(() => resend(invite)) }, "Resend"),
+              h("button", { ...label("Cancel invite for"), onclick: action(() => cancel(invite)) }, "Cancel"),
+            ].filter(Boolean);
+      return h(
         "tr",
         {},
         h("td", {}, h("span", { class: "who" }, invite.client_name), h("span", { class: "code" }, invite.client_email)),
-        h("td", {}, h("span", { class: `chip ${invite.accepted_at ? "ok" : ""}` }, invite.accepted_at ? "Accepted" : "Pending")),
-        h("td", {}, h("button", { type: "button", onclick: () => copyText(inviteUrl(invite)) }, "Copy link")),
-      ),
-    ),
+        h("td", {}, h("span", { class: `chip ${chipClass}` }, chipText)),
+        h("td", {}, h("div", { class: "row-actions" }, ...buttons)),
+      );
+    }),
   );
+}
+
+// After an invite was created or resent: tell the designer whether the client got an email or the link must be sent by hand.
+async function reportDelivery(invite) {
+  if (invite.emailed) return toast(`Invite emailed to ${invite.client_email}`);
+  toast("The email could not be sent. The link is copied: send it to the client yourself.", "error");
+  await copyText(inviteUrl(invite));
 }
 
 function showMetrics(projects, invites) {
@@ -125,19 +146,38 @@ async function loadActivity(studio) {
 
 function wireInvites(studio, projects, initialInvites) {
   let invites = initialInvites;
+  const base = `/v1/studios/${studio.id}/invites`;
+  // Shown from each response: a failed list refresh must not look like a failed invite.
+  const update = (changed, { remove = false } = {}) => {
+    const others = invites.filter((invite) => invite.id !== changed.id); // inviting the same client again returns the same invite
+    invites = remove ? others : [changed, ...others];
+    showInvites(invites, handlers);
+    showMetrics(projects, invites);
+    run(() => loadActivity(studio));
+  };
+  const handlers = {
+    async resend(invite) {
+      const sent = await api(`${base}/${invite.id}/send`, { method: "POST" });
+      update(sent);
+      await reportDelivery(sent);
+    },
+    async cancel(invite) {
+      await api(`${base}/${invite.id}`, { method: "DELETE" });
+      update(invite, { remove: true });
+      toast(`Invite for ${invite.client_name} cancelled. The link no longer works.`);
+    },
+  };
+  showInvites(invites, handlers);
+
   const form = $("#invite-form");
   $("#invite-client").addEventListener("click", () => form.elements.client_name.focus());
   form.addEventListener(
     "submit",
     action(async () => {
-      const body = Object.fromEntries(new FormData(form));
-      const invite = await api(`/v1/studios/${studio.id}/invites`, { method: "POST", body });
+      const invite = await api(base, { method: "POST", body: Object.fromEntries(new FormData(form)) });
       form.reset();
-      invites = [invite, ...invites]; // shown from the response: a failed refresh must not look like a failed invite
-      showInvites(invites);
-      showMetrics(projects, invites);
-      run(() => loadActivity(studio));
-      await copyText(inviteUrl(invite));
+      update(invite);
+      await reportDelivery(invite);
     }),
   );
 }
@@ -160,7 +200,6 @@ async function showDashboard(studio, email, role) {
     api(`/v1/projects?studio_id=${studio.id}`),
     api(`/v1/studios/${studio.id}/invites`),
   ]);
-  showInvites(invites);
   showMetrics(projects, invites);
   showProjects(projects);
   wireInvites(studio, projects, invites);

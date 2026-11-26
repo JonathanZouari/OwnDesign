@@ -19,6 +19,14 @@ function render() {
   form.elements.password.autocomplete = signup ? "new-password" : "current-password";
 }
 
+// Where the confirmation email returns to. Carries the invite token, which localStorage would lose on another device.
+function confirmationUrl() {
+  const back = new URL(location.href);
+  const invite = load(KEYS.invite);
+  if (invite) back.searchParams.set("invite", invite);
+  return back.href;
+}
+
 // Finishes whatever the visitor started before they had an account, then sends them on.
 async function afterSignIn() {
   const pendingStudio = load(KEYS.pendingStudio);
@@ -28,11 +36,20 @@ async function afterSignIn() {
     });
     save(KEYS.pendingStudio, null);
   }
-  const invite = load(KEYS.invite);
+  // From the confirmation link's URL first: it may be opened in a browser that never saw the invite page.
+  const invite = params.get("invite") ?? load(KEYS.invite);
   if (invite) {
-    await api(`/v1/invites/${encodeURIComponent(invite)}/accept`, { method: "POST" }).catch((error) => {
+    try {
+      await api(`/v1/invites/${encodeURIComponent(invite)}/accept`, { method: "POST" });
+    } catch (error) {
+      if (error.status === 403) {
+        // Signed in with an address the invitation was not sent to: let them sign in again with the right one.
+        save(KEYS.invite, invite);
+        await supabase.auth.signOut(); // stays on this page, unlike signOut(), so the reason stays visible
+        throw error;
+      }
       if (![404, 409, 422].includes(error.status)) throw error; // a stale invite must not block sign-in
-    });
+    }
     save(KEYS.invite, null);
   }
   const next = safeNext(params.get("next"));
@@ -54,7 +71,7 @@ form.addEventListener(
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: location.href },
+      options: { emailRedirectTo: confirmationUrl() },
     });
     if (error) throw new Error(error.message);
     if (asStudio) save(KEYS.pendingStudio, studio.trim());

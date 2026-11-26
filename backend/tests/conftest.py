@@ -57,6 +57,25 @@ def make_user(admin):
 
     yield make
 
+
+@pytest.fixture(scope="session")
+def admit(admin):
+    """Marks a user as an invited client of a studio, as accepting a personal invite does."""
+
+    def admit_(studio_id: str, user) -> None:
+        admin.table("studio_invites").insert(
+            {
+                "studio_id": studio_id,
+                "client_email": user.email,
+                "client_name": "Test client",
+                "token": uuid.uuid4().hex,
+                "accepted_by": user.id,
+                "accepted_at": "now()",
+            }
+        ).execute()
+
+    return admit_
+
     # Removes every test account, including ones created through the browser sign-up form.
     users = [user for user in admin.auth.admin.list_users(per_page=1000) if (user.email or "").endswith(f"@{TEST_EMAIL_DOMAIN}")]
     user_ids = [user.id for user in users]

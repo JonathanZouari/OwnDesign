@@ -1,10 +1,12 @@
 import re
 import secrets
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path
+from postgrest.exceptions import APIError
 
+from app import mailer
 from app.auth import CurrentUser, current_user
 from app.db import audit, service
 from app.responses import ok
@@ -15,6 +17,10 @@ router = APIRouter(prefix="/v1")
 Slug = Path(pattern=r"^[a-z0-9-]{3,60}$")
 Token = Path(pattern=r"^[A-Za-z0-9_-]{20,64}$")
 ACTIVITY_METADATA = ("version_no", "author_role")  # the only audit metadata the dashboard is given
+EMAILS_PER_DAY = 20  # per studio: keeps a compromised designer account from using us to spam
+INVITE_DAYS = 14
+RESEND_GUARD = timedelta(seconds=60)  # a double click must not send the same email twice
+INVITE_COLUMNS = "id, client_email, client_name, token, accepted_at, expires_at, created_at"
 
 
 def _slug(name: str) -> str:
@@ -22,11 +28,36 @@ def _slug(name: str) -> str:
     return f"{base}-{secrets.token_hex(3)}"
 
 
-def _require_member(user: CurrentUser, studio_id: UUID) -> None:
+def _require_member(user: CurrentUser, studio_id: UUID) -> dict:
     # RLS-scoped: only a member can see the studio row at all, and a suspended studio is treated the same.
-    rows = user.db.table("studio_memberships").select("role, studio:studios(status)").eq("studio_id", str(studio_id)).execute().data
+    rows = user.db.table("studio_memberships").select("role, studio:studios(status, name)").eq("studio_id", str(studio_id)).execute().data
     if not rows or rows[0]["studio"]["status"] != "active":
         raise HTTPException(403, "You are not a member of an active studio with this id")
+    return rows[0]["studio"]
+
+
+def _emails_today(studio_id: UUID) -> int:
+    since = (datetime.now(UTC) - timedelta(days=1)).isoformat()
+    query = service().table("audit_events").select("id", count="exact").eq("studio_id", str(studio_id))
+    return query.eq("action", "invite.emailed").gte("created_at", since).limit(1).execute().count or 0
+
+
+def _recently_emailed(invite_id: str) -> bool:
+    since = (datetime.now(UTC) - RESEND_GUARD).isoformat()
+    query = service().table("audit_events").select("id").eq("action", "invite.emailed").eq("metadata->>invite_id", invite_id)
+    return bool(query.gte("created_at", since).limit(1).execute().data)
+
+
+def _email_invite(user: CurrentUser, studio_id: UUID, studio_name: str, invite: dict) -> bool:
+    if _recently_emailed(invite["id"]):
+        return True  # already on its way: a second click or a retry right after a success
+    # shortcut: the count-then-send cap can be overshot by a few parallel requests; move it into SQL if that matters.
+    if not mailer.enabled() or _emails_today(studio_id) >= EMAILS_PER_DAY:
+        return False
+    sent = mailer.send_invite(invite["client_email"], invite["client_name"], studio_name, invite["token"])
+    if sent:
+        audit("invite.emailed", user.id, studio_id=str(studio_id), invite_id=invite["id"])
+    return sent
 
 
 @router.get("/me")
@@ -61,26 +92,101 @@ def studio_by_slug(slug: str = Slug):
     return ok(rows[0])
 
 
+def _new_expiry() -> str:
+    return (datetime.now(UTC) + timedelta(days=INVITE_DAYS)).isoformat()
+
+
+def _expired(invite: dict) -> bool:
+    return datetime.fromisoformat(invite["expires_at"]) <= datetime.now(UTC)
+
+
+def _open_invite(studio_id: UUID, email: str) -> dict | None:
+    query = service().table("studio_invites").select(INVITE_COLUMNS).eq("studio_id", str(studio_id)).eq("client_email", email)
+    rows = query.is_("accepted_at", "null").is_("revoked_at", "null").execute().data
+    return rows[0] if rows else None
+
+
+def _renew(invite_id: str, changes: dict | None = None) -> dict:
+    # Same token, a fresh 14 days: a link the client already has keeps working.
+    update = {"expires_at": _new_expiry(), **(changes or {})}
+    return service().table("studio_invites").update(update).eq("id", invite_id).execute().data[0]
+
+
+def _studio_invite(studio_id: UUID, invite_id: UUID) -> dict:
+    query = service().table("studio_invites").select(INVITE_COLUMNS + ", revoked_at").eq("id", str(invite_id))
+    rows = query.eq("studio_id", str(studio_id)).execute().data
+    if not rows or rows[0]["revoked_at"]:
+        raise HTTPException(404, "Invitation not found")
+    return rows[0]
+
+
+def _public(invite: dict) -> dict:
+    return {key: invite[key] for key in INVITE_COLUMNS.split(", ")}
+
+
+def _insert_invite(studio_id: UUID, email: str, name: str, user: CurrentUser) -> dict | None:
+    """The new invite, or None when a parallel request created the open invite for this address first."""
+    row = {
+        "studio_id": str(studio_id),
+        "client_email": email,
+        "client_name": name,
+        "token": secrets.token_urlsafe(24),
+        "created_by": user.id,
+        "expires_at": _new_expiry(),
+    }
+    try:
+        invite = service().table("studio_invites").insert(row).execute().data[0]
+    except APIError as error:
+        if error.code == "23505":  # unique violation on studio_invites_one_open_idx
+            return None
+        raise
+    audit("invite.created", user.id, studio_id=str(studio_id), invite_id=invite["id"])
+    return invite
+
+
 @router.post("/studios/{studio_id}/invites", status_code=201)
 def create_invite(studio_id: UUID, body: InviteCreate, user: CurrentUser = Depends(current_user)):
+    """One open invite per client: inviting the same address again resends the same link."""
+    studio = _require_member(user, studio_id)
+    email = body.client_email.lower()  # stored lower-case so lookups and the unique index agree
+    invite = _open_invite(studio_id, email)
+    if invite is None:
+        invite = _insert_invite(studio_id, email, body.client_name, user) or _open_invite(studio_id, email)
+        if invite is None:
+            raise HTTPException(409, "Please try again")  # the parallel invite was accepted or revoked in between
+    else:
+        invite = _renew(invite["id"], {"client_name": body.client_name})
+    invite = _public(invite)
+    return ok({**invite, "emailed": _email_invite(user, studio_id, studio["name"], invite)})
+
+
+@router.post("/studios/{studio_id}/invites/{invite_id}/send")
+def resend_invite(studio_id: UUID, invite_id: UUID, user: CurrentUser = Depends(current_user)):
+    studio = _require_member(user, studio_id)
+    invite = _studio_invite(studio_id, invite_id)
+    if invite["accepted_at"]:
+        raise HTTPException(409, "This invitation was already accepted")
+    invite = _public(_renew(invite["id"]))
+    return ok({**invite, "emailed": _email_invite(user, studio_id, studio["name"], invite)})
+
+
+@router.delete("/studios/{studio_id}/invites/{invite_id}")
+def revoke_invite(studio_id: UUID, invite_id: UUID, user: CurrentUser = Depends(current_user)):
     _require_member(user, studio_id)
-    invite = (
+    invite = _studio_invite(studio_id, invite_id)
+    revoked = (
         service()
         .table("studio_invites")
-        .insert(
-            {
-                "studio_id": str(studio_id),
-                "client_email": body.client_email,
-                "client_name": body.client_name,
-                "token": secrets.token_urlsafe(24),
-                "created_by": user.id,
-            }
-        )
+        .update({"revoked_at": datetime.now(UTC).isoformat()})
+        .eq("id", invite["id"])
+        .is_("accepted_at", "null")  # an accepted invite is history, not a live link
         .execute()
-        .data[0]
+        .data
     )
-    audit("invite.created", user.id, studio_id=str(studio_id), invite_id=invite["id"])
-    return ok(invite)
+    if not revoked:
+        raise HTTPException(409, "This invitation was already accepted")
+    audit("invite.revoked", user.id, studio_id=str(studio_id), invite_id=invite["id"])
+    return ok({"id": invite["id"]})
 
 
 @router.get("/studios/{studio_id}/invites")
@@ -88,8 +194,9 @@ def list_invites(studio_id: UUID, user: CurrentUser = Depends(current_user)):
     _require_member(user, studio_id)
     rows = (
         user.db.table("studio_invites")
-        .select("id, client_email, client_name, token, accepted_at, created_at")
+        .select(INVITE_COLUMNS)
         .eq("studio_id", str(studio_id))
+        .is_("revoked_at", "null")
         .order("created_at", desc=True)
         .execute()
         .data
@@ -113,36 +220,54 @@ def list_activity(studio_id: UUID, user: CurrentUser = Depends(current_user)):
     return ok([{**row, "metadata": {key: row["metadata"][key] for key in ACTIVITY_METADATA if key in row["metadata"]}} for row in rows])
 
 
-@router.get("/invites/{token}")
-def invite_by_token(token: str = Token):
-    """Public: possession of the unguessable token is the credential. Never returns the email."""
+def _live_invite(token: str) -> dict:
+    """The invite behind a token, or 404 when it does not exist, was revoked, or expired before being accepted."""
     rows = (
         service()
         .table("studio_invites")
-        .select("client_name, accepted_at, studio:studios(id, name, slug)")
+        .select("id, studio_id, client_name, client_email, accepted_by, accepted_at, expires_at, revoked_at, studio:studios(id, name, slug)")
         .eq("token", token)
         .execute()
         .data
     )
-    if not rows:
-        raise HTTPException(404, "Invitation not found")
-    return ok(rows[0])
+    if not rows or rows[0]["revoked_at"] or (not rows[0]["accepted_at"] and _expired(rows[0])):
+        raise HTTPException(404, "This invitation is not valid any more. Ask the studio to send it again.")
+    return rows[0]
+
+
+@router.get("/invites/{token}")
+def invite_by_token(token: str = Token):
+    """Public: shows whom the link greets. Never returns the email; entering still needs that verified address."""
+    invite = _live_invite(token)
+    return ok({key: invite[key] for key in ("client_name", "accepted_at", "studio")})
+
+
+def _verified_email(user_id: str) -> str | None:
+    # Read from Supabase Auth, not from the token: an address counts only once its owner confirmed it.
+    account = service().auth.admin.get_user_by_id(user_id).user
+    return (account.email or "").lower() if account and account.email_confirmed_at else None
 
 
 @router.post("/invites/{token}/accept")
 def accept_invite(token: str = Token, user: CurrentUser = Depends(current_user)):
-    rows = service().table("studio_invites").select("id, studio_id, accepted_by").eq("token", token).execute().data
-    if not rows:
-        raise HTTPException(404, "Invitation not found")
-    invite = rows[0]
+    """Only the invited client may accept: the account's confirmed email must be the invited address."""
+    invite = _live_invite(token)
     if invite["accepted_by"] == user.id:
         return ok({"studio_id": invite["studio_id"]})
+    if invite["accepted_by"]:
+        raise HTTPException(409, "This invitation was already used")
+    email = _verified_email(user.id)
+    if email is None:
+        raise HTTPException(403, "Confirm your email address first, then open the invitation again.")
+    if email != invite["client_email"].lower():
+        raise HTTPException(403, "This invitation was sent to a different email address. Sign in with that address.")
     updated = (
         service()
         .table("studio_invites")
         .update({"accepted_by": user.id, "accepted_at": datetime.now(UTC).isoformat()})
         .eq("id", invite["id"])
-        .is_("accepted_by", "null")  # guards against two people racing for one invite
+        .is_("accepted_by", "null")  # guards against two requests racing for one invite
+        .is_("revoked_at", "null")
         .execute()
         .data
     )

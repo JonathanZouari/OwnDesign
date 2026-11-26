@@ -381,6 +381,7 @@ svg.thumb { display: block; padding: 0; }
 .dash-side .card p { margin: 0; }
 .invites th, .invites td { padding: 8px 6px; }
 .invites th:first-child, .invites td:first-child { padding-left: 0; }
+.invites .row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
 .invites th:last-child, .invites td:last-child { padding-right: 0; text-align: right; }
 .invites .who, .invites .code { display: block; overflow-wrap: anywhere; }
 .invites .who { font-weight: 500; }

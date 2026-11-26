@@ -52,9 +52,10 @@ def studio(api, make_user):
 
 
 @pytest.fixture
-def world(api, make_user, studio):
+def world(api, make_user, studio, admit):
     """A client of the studio with one project that has a saved plan (one room: Living room)."""
     client = make_user("e2e-d2-client")
+    admit(studio.id, client)
     project = api.post(
         "/v1/projects", json={"studio_id": studio.id, "name": "Design Flat", "property_type": "existing"}, headers=client.headers
     ).json()["data"]

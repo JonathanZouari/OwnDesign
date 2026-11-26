@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { activityText, matchesProject, studioMetrics } from "../js/studio-data.js";
+import { activityText, inviteState, matchesProject, studioMetrics } from "../js/studio-data.js";
 
 const NOW = new Date(2026, 10, 19, 12);
 const inMonth = new Date(2026, 10, 2).toISOString();
@@ -29,6 +29,7 @@ test("activity rows read as sentences", () => {
   assert.equal(activityText({ ...version, metadata: { version_no: 1, author_role: "client" }, project: null }), "Version 1 saved by the client");
   assert.equal(activityText({ action: "project.created", metadata: {}, project: { name: "Flat A" } }), "Project created · Flat A");
   assert.equal(activityText({ action: "invite.accepted", metadata: null, project: null }), "Invite accepted by the client");
+  assert.equal(activityText({ action: "invite.emailed", metadata: {}, project: null }), "Invite emailed to the client");
   assert.equal(activityText({ action: "something.new", metadata: {}, project: null }), "something.new");
 });
 
@@ -39,4 +40,18 @@ test("projects are filtered by name or client email, ignoring case and outer spa
   assert.ok(matchesProject(project, "dana@"));
   assert.ok(!matchesProject(project, "villa"));
   assert.ok(matchesProject({ name: "Loft", client_email: null }, "lof"));
+});
+
+test("an invite is accepted, expired at its expiry instant, or pending", () => {
+  const at = (days) => new Date(NOW.getTime() + days * 86400000).toISOString();
+  assert.equal(inviteState({ accepted_at: at(-1), expires_at: at(-5) }, NOW), "accepted"); // acceptance outlives expiry
+  assert.equal(inviteState({ accepted_at: null, expires_at: at(1) }, NOW), "pending");
+  assert.equal(inviteState({ accepted_at: null, expires_at: NOW.toISOString() }, NOW), "expired");
+  assert.equal(inviteState({ accepted_at: null, expires_at: at(-1) }, NOW), "expired");
+  assert.equal(inviteState({ accepted_at: null }, NOW), "pending"); // older rows without an expiry
+});
+
+test("expired invites are not counted as pending", () => {
+  const invites = [{ accepted_at: null, expires_at: "2099-01-01T00:00:00Z" }, { accepted_at: null, expires_at: "2000-01-01T00:00:00Z" }];
+  assert.equal(studioMetrics([], invites, NOW).pendingInvites, 1);
 });

@@ -24,3 +24,7 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Consultant memory policy** (PRD 5.4 leaves it open): messages are stored per project and user, private to that user, capped at 30 a day per user. A failed OpenAI call still uses a slot because it may have been billed.
 - **Images go through the backend**, not directly to storage, so type, size, count and access are checked in one place.
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.
+- **Only the invited client may enter through a personal invite** (user, 2026-11-26). The server compares the account's confirmed email, read from Supabase Auth, with the invited address. The address in the email alone is not proof.
+- **Client projects need an accepted invite** to that studio (user, 2026-11-26). The public studio link still shows the studio, but a stranger cannot start a project through it. Studio members are exempt.
+- **Invites expire after 14 days; a resend carries the same link and renews it; a pending invite can be cancelled** (user, 2026-11-26).
+- **Invite emails go through Resend's HTTP API** with the existing httpx client, so no new dependency. The link comes from `APP_URL`, never from the request.
