@@ -127,3 +127,9 @@ green `backend` run, waiting for the CI secret key. Pages: [testing](testing.md)
 The plan export feature specification (PNG, PDF and DXF downloads of a saved plan version, with a
 conceptual-plan notice and a studio activity event) added as a raw source at `specs/plan-export.md`.
 Technical validation (section 10 of the spec) comes before implementation. Pages: [index](index.md).
+
+## [2026-11-26] docs | Pull request #9 merged: plan export specification
+A document only (`specs/plan-export.md`, 145 lines), read in full: no code, no secrets. Its "confirmed product
+decisions" are the contributor's; the index line now says so. Conflict in this log resolved by keeping both
+sides. Frontend 31 passed; the backend suite was not run for a document. Commits `3a7a741`, `b63440f`.
+Pages: [index](index.md).
