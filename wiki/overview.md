@@ -43,13 +43,20 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - Keyboard (any layout), drag to look, and on-screen buttons. Walls and windows block, doorways let through.
 - Heights are assumed, because the plan stores none ([architecture.md](architecture.md)).
 
+## Built: budget and shopping list
+
+- One list per project (`budget.html`): category, room, quantity, unit and unit price; subtotals and a total,
+  compared with the brief's budget. Four currencies, no conversion.
+- A synthetic sample list, CSV import and export, and a print view. Prices are illustrative, not quotes.
+- The client and the studio's designers see and edit the same list.
+
 ## Not built yet
 
-Renderings, budget, dossier,
+Renderings, dossier,
 messaging and tasks, saved and applied studio branding, invitation emails, per-project team permissions, deployment,
 rate limiting, subscriptions and credits.
 
 ## Next
 
-Per the PRD: renderings, version comparison, budget and shopping list, dossier and handoff, messaging and
+Per the PRD: renderings, version comparison, dossier and handoff, messaging and
 tasks, studio branding ([open-items.md](open-items.md) lists what must be settled before production).

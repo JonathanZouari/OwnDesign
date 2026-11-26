@@ -191,3 +191,14 @@ and the comparison and the 3D walkthrough can be open at once. No security findi
 reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
 not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
 Nothing of it is on `dev`.
+
+## [2026-11-26] build | Budget and shopping list
+Ported to this branch from a contributor's fork, in English: estimates schema (atomic replace, read-only RLS),
+API with a synthetic sample list, `budget.html` with CSV import and export, links from the project list, editor,
+brief and consultant pages. The new editor tab widened the page near 900 px, so the header tabs now scroll between
+768 and 1199 px. Commits `d804409`, `278d4df`, `1101993`. Pages: [overview](overview.md), [architecture](architecture.md),
+[open-items](open-items.md).
+
+## [2026-11-26] test | Budget and shopping list verified
+Locally: backend 237 passed, 0 failed, 0 skipped (before this change: 100 passed), frontend 92 passed (before: 57). The migration was already applied to the database used. No
+security review or code review yet. Pages: [testing](testing.md), [open-items](open-items.md).

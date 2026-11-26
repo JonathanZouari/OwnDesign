@@ -20,6 +20,10 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
 | `frontend/tests/plan3d.test.js` | unit, edge | 3D wall boxes, doors, windows, overlapping walls, collision, sharp corners, oversized plans |
+| `backend/tests/test_estimate.py` | integration, edge | budget API: round trip, exact totals, invalid input, statuses, isolation between clients and studios, suspended studio, concurrent saves |
+| `backend/tests/test_estimate_db.py` | database, edge | `replace_estimate` atomicity and limits, cascade, read-only RLS, anonymous caller |
+| `backend/tests/test_e2e_budget.py` | end to end, edge | budget journeys: build and save, sample, statuses, CSV export and import, invalid input, strangers, designer, suspended studio, links, print, phone width |
+| `frontend/tests/budget-logic.test.js` | unit, edge | amounts, parsing limits, budget statuses, CSV export, import and decoding, the example file |
 
 ## Required after every change
 
@@ -33,7 +37,7 @@ Source: `.github/workflows/ci.yml`. Report only: a red check does not block a me
 |---|---|---|
 | `frontend` | every push to `dev`/`main`, every pull request | `npm test` |
 | `backend` | push to `dev`/`main` only | the full suite, browser journeys included, against the dev Supabase project |
-| `backend-unit` | pull requests only | the suite with no secrets: unit tests run, the rest skip (22 passed, 78 skipped) |
+| `backend-unit` | pull requests only | the suite with no secrets: unit tests run, the rest skip (22 passed, 215 skipped, checked locally without secrets) |
 
 - A pull request never gets secrets, also not from a branch of this repository. A pull request from
   `dev` to `main` still shows the full run, because checks attach to the commit and `dev` was pushed.
@@ -53,6 +57,9 @@ the environment ("not allowed to deploy to ci"), with no step run; with the secr
 failed in its first step. Not yet seen: a green `backend` run. It waits for the CI secret key.
 
 ## Last result
+
+2026-11-26, with the budget and shopping list, locally: backend 237 passed, 0 failed, 0 skipped (before this change: 100 passed), frontend 92 passed (before: 57). Python 3.13 is
+needed locally: uv may otherwise pick a newer Python for which `pyyaml` has no prebuilt package.
 
 2026-11-26, after merging pull requests #9, #8 and #14: backend 100 passed (9 browser tests; the guest journey
 now also walks in 3D), frontend 57 passed, locally. On GitHub: `frontend` green, `backend` not yet run to the

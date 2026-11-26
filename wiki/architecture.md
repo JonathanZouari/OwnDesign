@@ -32,6 +32,11 @@ Phase 2 (`supabase/migrations/20261123*`): `project_briefs` (one JSON document p
 `ai_conversations` (unique per project and user), `ai_messages`, `storage_deletions` (queue of files to remove).
 Their SELECT policies go through `projects`, except conversations: only their own user reads them.
 
+Budget (`supabase/migrations/20261127090000_estimates.sql`): `project_estimates` (one per project: currency),
+`estimate_items` (ordered lines, at most 200). Same SELECT rule through `projects`. The list is only written by
+the database function `replace_estimate` (service role), which replaces it in one transaction under a
+per-project advisory lock.
+
 ## Plan geometry
 
 One JSON document per version, validated in `backend/app/schemas.py` and edited by pure functions in
@@ -81,3 +86,16 @@ Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `
   the endpoint answers 503.
 - **Frontend:** `design.html` (brief, materials, moodboard tabs), `consultant.html`; pure logic in
   `frontend/js/design-logic.js`.
+
+## Budget and shopping list
+
+- API (`backend/app/routes/estimate.py`): `GET` and `PUT /v1/projects/{id}/estimate`, `GET /v1/estimate/sample`
+  (`backend/app/data/sample_shopping_list.json`, synthetic, ILS; validated when the app starts). `PUT` replaces
+  the whole list and goes through `_writable_project`.
+- Money is whole currency units, quantities have two decimals; each line is rounded half up, then summed. The
+  server returns amounts, totals and the status against the brief's budget (`no_items`, `no_budget`,
+  `currency_mismatch`, `under`, `within`, `over`). Nothing is converted between currencies.
+- Frontend: `budget.html`, `js/pages/budget.js`, pure logic and CSV in `js/budget-logic.js`. The page repeats
+  the arithmetic to show totals while typing. CSV import (up to 1 MB, UTF-8 or windows-1252, comma, semicolon
+  or tab) is all or nothing, matches columns by name and changes only the page until saved. Exported cells that
+  could run as spreadsheet formulas get a leading apostrophe.
