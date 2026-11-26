@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
+  <title>Budget &amp; shopping list · Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="appbar">
+    <div class="group">
+      <a class="brand" href="projects.html">ATELIER</a>
+      <span class="chip studio" id="studio-brand" hidden></span>
+      <div class="crumb">
+        <span class="icon" aria-hidden="true">folder_open</span>
+        <strong id="crumb-name"></strong><span aria-hidden="true">•</span><span>Budget</span>
+      </div>
+    </div>
+    <nav aria-label="Account">
+      <button id="sign-out" type="button">Sign out</button>
+    </nav>
+  </header>
+
+  <main class="page design budget" id="budget" hidden>
+    <nav class="project-nav" aria-label="Project">
+      <a id="nav-projects" href="projects.html"><span class="icon" aria-hidden="true">arrow_back</span>All projects</a>
+      <a id="nav-editor" href="editor.html"><span class="icon" aria-hidden="true">architecture</span>2D canvas</a>
+      <a id="nav-design" href="design.html"><span class="icon" aria-hidden="true">palette</span>Brief &amp; materials</a>
+      <a id="nav-consultant" href="consultant.html"><span class="icon" aria-hidden="true">forum</span>Design consultant</a>
+      <a id="nav-budget" href="budget.html" aria-current="page"><span class="icon" aria-hidden="true">receipt_long</span>Budget</a>
+    </nav>
+
+    <header class="design-head">
+      <span class="label accent">Budget &amp; shopping list</span>
+      <h1 id="project-name"></h1>
+      <p class="note" role="note">Estimates only. These are not quotes and not supplier prices: the starting numbers are rough placeholders, so edit every price to match what you expect to pay.</p>
+    </header>
+
+    <section class="card" aria-labelledby="summary-title">
+      <h2 id="summary-title">Summary</h2>
+      <dl class="summary" id="summary"></dl>
+      <p class="status" id="target-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card stack" aria-labelledby="lines-title">
+      <div class="row between">
+        <h2 id="lines-title">Lines</h2>
+        <div class="row">
+          <button type="button" id="add-suggestions"><span class="icon" aria-hidden="true">auto_awesome</span>Add from plan &amp; finishes</button>
+          <button type="button" id="add-custom"><span class="icon" aria-hidden="true">add</span>Add a line</button>
+        </div>
+      </div>
+      <p class="muted small" id="lines-empty" hidden>No lines yet. Add them from your saved plan and finishes, or add your own.</p>
+      <div class="table-wrap">
+        <table id="lines-table" hidden>
+          <thead>
+            <tr>
+              <th scope="col">Item</th>
+              <th scope="col">Qty</th>
+              <th scope="col">Unit</th>
+              <th scope="col">Price per unit</th>
+              <th scope="col">Subtotal</th>
+              <th scope="col">Note</th>
+              <th scope="col"><span class="sr-only">Remove</span></th>
+            </tr>
+          </thead>
+          <tbody id="lines-body"></tbody>
+        </table>
+      </div>
+      <div class="savebar">
+        <button type="button" class="primary" id="save-budget">Save budget</button>
+        <p class="status" id="save-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="card stack" aria-labelledby="shopping-title" id="shopping">
+      <div class="row between">
+        <h2 id="shopping-title">Shopping list</h2>
+        <button type="button" id="print-list"><span class="icon" aria-hidden="true">print</span>Print</button>
+      </div>
+      <p class="muted small">Built from the saved budget. Save your changes first to see them here.</p>
+      <div id="shopping-body"></div>
+    </section>
+  </main>
+
+  <script type="module" src="js/pages/budget.js"></script>
+</body>
+</html>
