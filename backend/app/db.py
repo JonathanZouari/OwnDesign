@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     resend_api_key: str = ""  # empty: invites are not emailed, the designer copies the link
     email_from: str = ""  # e.g. "Atelier <invites@your-domain.com>", a sender verified in Resend
     app_url: str = ""  # public frontend base URL; invite links in emails point here
+    email_redirect_to: str = ""  # dev only: send every invite email to this test address instead of the client
 
 
 @lru_cache

@@ -8,7 +8,9 @@ import pytest
 from app import mailer
 from tests.conftest import needs_supabase
 
-CONFIG = SimpleNamespace(resend_api_key="re_test", email_from="Atelier <invites@example.com>", app_url="https://app.example.com/")
+CONFIG = SimpleNamespace(
+    resend_api_key="re_test", email_from="Atelier <invites@example.com>", app_url="https://app.example.com/", email_redirect_to=""
+)
 
 
 class FakeHttp:
@@ -56,6 +58,13 @@ def test_send_posts_to_resend_with_key(configured):
     url, body, headers = configured.calls[0]
     assert url == mailer.RESEND_URL and headers == {"Authorization": "Bearer re_test"}
     assert "https://app.example.com/entry.html?invite=tok" in body["text"]
+
+
+def test_dev_redirect_sends_to_the_test_inbox_and_names_the_intended_address(monkeypatch):
+    monkeypatch.setattr(mailer, "settings", lambda: SimpleNamespace(**{**vars(CONFIG), "email_redirect_to": "delivered@resend.dev"}))
+    message = mailer.invite_message("client@realdomain.com", "Dana", "Studio", "https://app.example.com/e")
+    assert message["to"] == ["delivered@resend.dev"]
+    assert message["subject"].startswith("[dev, for client@realdomain.com] ")
 
 
 @pytest.mark.parametrize("http", [FakeHttp(status=422), FakeHttp(status=500), FakeHttp(error=httpx.ConnectTimeout("t"))])

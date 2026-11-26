@@ -151,7 +151,7 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     assert latest["walls"] == first["walls"]
 
 
-def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, api, make_user, admit):
+def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, browser, api, admin, make_user, admit):
     from tests.test_geometry import VALID
 
     # A new designer signs up through the UI and gets a studio with its own link.
@@ -170,32 +170,77 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
     page.get_by_text("No projects yet").wait_for()
 
     # Personal invite: appears as pending, and its link resolves publicly to this studio.
-    page.get_by_label("Client name").fill("Dana Client")
-    page.get_by_label("Client email").fill("dana@example.com")
+    page.locator("#invite-form").get_by_label("Client name").fill("Dana Client")
+    page.locator("#invite-form").get_by_label("Client email").fill("dana@example.com")
     page.get_by_role("button", name="Send invite").click()
-    page.get_by_role("cell", name="Pending").wait_for()
+    # Invite history: email is off in tests, so the row says so and the designer is told and gets the link.
+    page.locator("#invites").get_by_text("Not sent: email is off").wait_for()
     assert metric(page, "pending-invites") == "1"
-    # Inviting the same client again keeps one row; email is off here, so the designer is told and gets the link.
-    page.get_by_label("Client name").fill("Dana Client")
-    page.get_by_label("Client email").fill("DANA@example.com")
+    # Inviting the same client again keeps one row.
+    page.locator("#invite-form").get_by_label("Client name").fill("Dana Client")
+    page.locator("#invite-form").get_by_label("Client email").fill("DANA@example.com")
     send = page.get_by_role("button", name="Send invite", exact=True)
     send.click()
     expect(send).to_be_enabled()  # the button is disabled until its request has finished
-    expect(page.locator("#invites tr")).to_have_count(1)
-    resend = page.get_by_role("button", name="Resend email to Dana Client")
+    expect(page.locator("#invites li")).to_have_count(1)
+    resend = page.get_by_role("button", name="Resend email to dana@example.com")
     resend.click()
     expect(resend).to_be_enabled()
     page.get_by_text("The email could not be sent").first.wait_for()
-    # A second client is invited and then cancelled: the row and its count go away.
-    page.get_by_label("Client name").fill("Eli Client")
-    page.get_by_label("Client email").fill("eli@example.com")
+    # A second client is invited and then cancelled: the row stays in the history, without actions.
+    page.locator("#invite-form").get_by_label("Client name").fill("Eli Client")
+    page.locator("#invite-form").get_by_label("Client email").fill("eli@example.com")
     send.click()
-    page.get_by_role("button", name="Cancel invite for Eli Client").wait_for()
+    cancel_eli = page.get_by_role("button", name="Cancel invite for eli@example.com")
+    cancel_eli.wait_for()
     assert metric(page, "pending-invites") == "2"
-    page.get_by_role("button", name="Cancel invite for Eli Client").click()
-    page.get_by_text("Invite for Eli Client cancelled").wait_for()
-    assert page.get_by_role("button", name="Cancel invite for Eli Client").count() == 0
+    cancel_eli.click()
+    page.get_by_text("Invite for eli@example.com cancelled").wait_for()
+    eli_row = page.locator("#invites li").filter(has_text="eli@example.com")
+    expect(eli_row.get_by_text("Cancelled")).to_be_visible()
+    assert eli_row.get_by_role("button").count() == 0
     assert metric(page, "pending-invites") == "1"
+
+    # Correct Dana's address from the same screen: both addresses are shown before anything changes.
+    fixed = make_user("e2e-dana-fixed")
+    page.get_by_role("button", name="Correct address of dana@example.com").click()
+    dialog = page.get_by_role("dialog", name="Correct address and resend")
+    expect(dialog.locator("#correct-original")).to_have_text("dana@example.com")
+    dialog.get_by_label("Corrected email").fill(fixed.email)
+    dialog.get_by_role("button", name="Review").click()
+    expect(dialog.locator("#review-original")).to_have_text("dana@example.com")
+    expect(dialog.locator("#review-corrected")).to_have_text(fixed.email)
+    dialog.get_by_role("button", name="Cancel old link and send").click()
+    expect(dialog).to_be_hidden()
+    dana_row = page.locator("#invites li").filter(has_text="dana@example.com")
+    expect(dana_row.get_by_text("Replaced: address corrected")).to_be_visible()
+    fixed_row = page.locator("#invites li").filter(has_text=fixed.email)
+    expect(fixed_row.get_by_role("button", name=f"Correct address of {fixed.email}")).to_be_visible()
+    assert page.locator("#invites li").nth(0).inner_text().count(fixed.email) == 1  # newest first
+
+    # In fresh browser contexts (like private windows): the old link is dead, the new one opens this studio
+    # and lets only the corrected address in.
+    studio_id = api.get(f"/v1/studios/by-slug/{slug}").json()["data"]["id"]
+    tokens = {
+        row["client_email"]: row["token"]
+        for row in admin.table("studio_invites").select("client_email, token").eq("studio_id", studio_id).execute().data
+    }
+    private = browser.new_context()
+    try:
+        visitor = private.new_page()
+        visitor.goto(f"{SITE}/entry.html?invite={tokens['dana@example.com']}")
+        visitor.get_by_role("heading", name="This link is not valid").wait_for()
+        visitor.goto(f"{SITE}/entry.html?invite={tokens[fixed.email]}")
+        visitor.get_by_role("heading", name="Hi Dana Client, plan your home with Atelier E2E.").wait_for()
+        visitor.goto(f"{SITE}/auth.html")
+        visitor.get_by_label("Email").fill(fixed.email)
+        visitor.get_by_label("Password").fill(fixed.password)
+        visitor.get_by_role("button", name="Sign in").click()
+        visitor.wait_for_url("**/projects.html")
+    finally:
+        private.close()
+    accepted = admin.table("studio_invites").select("accepted_by").eq("token", tokens[fixed.email]).execute().data[0]
+    assert accepted["accepted_by"] == fixed.id
 
     # A client of this studio saves a plan (through the API, as the editor would).
     client = make_user("e2e-invited")
@@ -213,7 +258,8 @@ def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, ap
 
     page.reload()
     card = page.get_by_role("article", name="Dana's flat")
-    card.get_by_text(client.email).wait_for()
+    card.get_by_text(client.email, exact=True).wait_for()
+    expect(card.locator(".invited-by")).to_contain_text(f"Joined through the invite to {client.email}")  # admit() accepted it
     card.scroll_into_view_if_needed()  # a plan preview is fetched when its card comes into view
     card.locator("svg.thumb").wait_for(state="attached")
     page.get_by_role("article", name=unsaved).locator(".thumb.empty").wait_for(state="attached")

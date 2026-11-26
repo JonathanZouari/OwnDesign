@@ -33,10 +33,13 @@ def _one_line(text: str) -> str:
 
 
 def invite_message(to: str, client_name: str, studio_name: str, url: str) -> dict:
+    # Dev: every invite goes to one test inbox (e.g. delivered@resend.dev), never to the address a tester typed.
+    redirect = settings().email_redirect_to
+    subject = _one_line(f"{studio_name} invited you to your design project")
     return {
         "from": settings().email_from,
-        "to": [to],
-        "subject": _one_line(f"{studio_name} invited you to your design project"),
+        "to": [redirect or to],
+        "subject": f"[dev, for {to}] {subject}" if redirect else subject,
         "text": f"Hi {client_name},\n\n{studio_name} invited you to plan your home with them.\n"
         "Your space, your style. Let's design it together.\n\n"
         f"Open your personal link:\n{url}\n\n"

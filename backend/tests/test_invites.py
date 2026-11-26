@@ -140,7 +140,8 @@ def test_cancel_kills_the_link_and_hides_it(api, make_user, world, invite):
     assert accept(api, sent["token"], client).status_code == 404
     assert api.post(f"{url}/send", headers=world.designer.headers).status_code == 404
     listed = api.get(f"/v1/studios/{world.studio['id']}/invites", headers=world.designer.headers).json()["data"]
-    assert sent["id"] not in [row["id"] for row in listed]
+    cancelled = [row for row in listed if row["id"] == sent["id"]]
+    assert len(cancelled) == 1 and cancelled[0]["revoked_at"] and cancelled[0]["replaced_by"] is None  # kept as history
 
     fresh = invite(client.email)  # a cancelled invite does not block inviting the client again
     assert fresh["token"] != sent["token"]
@@ -187,3 +188,129 @@ def test_only_invited_clients_and_members_can_open_a_project(api, make_user, wor
     assert new_project(api, world.studio_b, client).status_code == 403  # the invite is for one studio only
 
     assert new_project(api, world.studio, world.designer).status_code == 201  # the studio's own designer
+
+
+# History and address correction
+
+
+def correct(api, world, invite_id, email, name="Client", designer=None, studio=None):
+    studio, designer = studio or world.studio, designer or world.designer
+    url = f"/v1/studios/{studio['id']}/invites/{invite_id}/correct"
+    return api.post(url, json={"client_email": email, "client_name": name}, headers=designer.headers)
+
+
+def history(api, world):
+    return api.get(f"/v1/studios/{world.studio['id']}/invites", headers=world.designer.headers).json()["data"]
+
+
+def test_correcting_an_address_kills_the_old_link_and_keeps_both_in_history(api, make_user, world, invite):
+    wrong, right = make_user("inv-typo"), make_user("inv-right")
+    original = invite(wrong.email, "Noa")
+
+    response = correct(api, world, original["id"], right.email.upper(), "Noa")
+    assert response.status_code == 201
+    replacement = response.json()["data"]
+    assert replacement["client_email"] == right.email and replacement["token"] != original["token"]
+
+    # The original link no longer opens anything, for anyone; the new one works for the corrected address only.
+    assert api.get(f"/v1/invites/{original['token']}").status_code == 404
+    assert accept(api, original["token"], wrong).status_code == 404
+    assert api.get(f"/v1/invites/{replacement['token']}").json()["data"]["client_name"] == "Noa"
+    assert accept(api, replacement["token"], wrong).status_code == 403
+    assert accept(api, replacement["token"], right).status_code == 200
+    assert new_project(api, world.studio, right).status_code == 201
+    assert new_project(api, world.studio, wrong).status_code == 403
+
+    rows = {row["id"]: row for row in history(api, world)}
+    assert rows[original["id"]]["revoked_at"] and rows[original["id"]]["replaced_by"] == replacement["id"]
+    assert rows[replacement["id"]]["accepted_by"] == right.id
+    ordered = [row["created_at"] for row in history(api, world)]
+    assert ordered == sorted(ordered, reverse=True)  # newest first
+
+
+def test_a_repeated_or_parallel_correction_makes_one_invite_and_one_email(api, monkeypatch, world, invite):
+    from app import mailer
+
+    sent = []
+    monkeypatch.setattr(mailer, "enabled", lambda: True)
+    monkeypatch.setattr(mailer, "send_invite", lambda *args: sent.append(args) or True)
+    original = invite(unique_email("inv-double-fix"))
+    sent.clear()
+    target = unique_email("inv-double-fixed")
+    with ThreadPoolExecutor(5) as pool:  # a double click, or a retry while the first request is still running
+        responses = list(pool.map(lambda _: correct(api, world, original["id"], target), range(5)))
+    assert {r.status_code for r in responses} == {201}
+    assert len({r.json()["data"]["id"] for r in responses}) == 1
+    assert [args[0] for args in sent] == [target]
+    assert sum(row["client_email"] == target for row in history(api, world)) == 1
+    # Correcting again to a different address is refused: the original was already replaced.
+    assert correct(api, world, original["id"], unique_email("inv-other")).status_code == 409
+
+
+def test_a_failed_send_shows_in_history_and_can_be_retried(api, monkeypatch, world, invite):
+    from app import mailer
+
+    monkeypatch.setattr(mailer, "enabled", lambda: True)
+    monkeypatch.setattr(mailer, "send_invite", lambda *args: False)  # Resend down
+    original = invite(unique_email("inv-fail-src"))
+    fixed = correct(api, world, original["id"], unique_email("inv-fail-dst")).json()["data"]
+    assert fixed["emailed"] is False and fixed["last_send_status"] == "failed" and fixed["last_send_at"]
+    row = next(r for r in history(api, world) if r["id"] == fixed["id"])
+    assert row["last_send_status"] == "failed"
+
+    sent = []
+    monkeypatch.setattr(mailer, "send_invite", lambda *args: sent.append(args) or True)  # Resend is back
+    url = f"/v1/studios/{world.studio['id']}/invites/{fixed['id']}/send"
+    retry = api.post(url, headers=world.designer.headers).json()["data"]
+    assert retry["emailed"] and retry["last_send_status"] == "sent" and len(sent) == 1
+    assert retry["token"] == fixed["token"]  # a retry is the same invite, not a new one
+    again = api.post(url, headers=world.designer.headers).json()["data"]
+    assert again["emailed"] and len(sent) == 1  # a second click right after the success sends nothing
+
+
+def test_send_status_records_email_off(api, world, invite):
+    created = invite(unique_email("inv-off"))  # no Resend key in tests
+    assert created["emailed"] is False and created["last_send_status"] == "not_configured"
+
+
+def test_only_open_invites_can_be_corrected(api, make_user, world, invite):
+    client = make_user("inv-fix-accepted")
+    accepted = invite(client.email)
+    assert accept(api, accepted["token"], client).status_code == 200
+    assert correct(api, world, accepted["id"], unique_email("x")).status_code == 409
+
+    cancelled = invite(unique_email("inv-fix-cancelled"))
+    api.delete(f"/v1/studios/{world.studio['id']}/invites/{cancelled['id']}", headers=world.designer.headers)
+    assert correct(api, world, cancelled["id"], unique_email("y")).status_code == 409
+
+    same = invite(unique_email("inv-fix-same"))
+    assert correct(api, world, same["id"], same["client_email"].upper()).status_code == 422
+
+
+def test_correcting_to_an_address_with_an_open_invite_reuses_it(api, world, invite):
+    existing = invite(unique_email("inv-already"))
+    typo = invite(unique_email("inv-typo2"))
+    fixed = correct(api, world, typo["id"], existing["client_email"]).json()["data"]
+    assert fixed["id"] == existing["id"] and fixed["token"] == existing["token"]
+
+
+def test_correction_needs_a_member_of_that_studio_and_valid_input(api, make_user, world, invite):
+    target = invite(unique_email("inv-fix-auth"))
+    other = unique_email("inv-fix-auth2")
+    assert correct(api, world, target["id"], other, designer=world.designer_b).status_code == 403
+    assert correct(api, world, target["id"], other, designer=world.designer_b, studio=world.studio_b).status_code == 404
+    assert correct(api, world, target["id"], other, designer=make_user("inv-fix-client")).status_code == 403
+    url = f"/v1/studios/{world.studio['id']}/invites/{target['id']}/correct"
+    assert api.post(url, json={"client_email": other, "client_name": "X"}).status_code == 401
+    bad_bodies = (
+        {"client_email": "not-an-email", "client_name": "X"},
+        {"client_email": other, "client_name": ""},
+        {"client_email": other, "client_name": "X", "extra": 1},
+        {},
+    )
+    for bad in bad_bodies:
+        assert api.post(url, json=bad, headers=world.designer.headers).status_code == 422
+    bad_id = f"/v1/studios/{world.studio['id']}/invites/not-a-uuid/correct"
+    assert api.post(bad_id, json={"client_email": other, "client_name": "X"}, headers=world.designer.headers).status_code == 422
+    assert api.get(f"/v1/invites/{target['token']}").status_code == 200  # every refusal left the invite untouched
+    assert api.get(f"/v1/studios/{world.studio['id']}/invites", headers=world.designer_b.headers).status_code == 403

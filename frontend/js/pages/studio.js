@@ -1,7 +1,7 @@
 import { api, requireSession, signOut } from "../api.js";
 import { isPlan, planArea } from "../plan.js";
 import { KEYS, save } from "../store.js";
-import { activityText, inviteState, matchesProject, studioMetrics } from "../studio-data.js";
+import { activityText, inviteForProject, inviteHistoryStatus, inviteState, isOpenInvite, matchesProject, studioMetrics } from "../studio-data.js";
 import { planThumbnail } from "../thumbnail.js";
 import { $, action, copyText, formatDate, h, pageUrl, run, showStudio, toast } from "../ui.js";
 
@@ -11,33 +11,72 @@ const UNKNOWN = "—";
 const icon = (name) => h("span", { class: "icon", "aria-hidden": "true" }, name);
 const inviteUrl = (invite) => pageUrl(`entry.html?invite=${invite.token}`);
 
-const INVITE_CHIP = { accepted: ["ok", "Accepted"], pending: ["", "Pending"], expired: ["caution", "Expired"] };
-
-// resend and cancel are click handlers wrapped in action(), so each button is disabled while its request runs.
-function showInvites(invites, { resend, cancel }) {
+// The invite history, newest first (the API orders it). resend, correct and cancel are wrapped in action(), so
+// each button is disabled while its request runs.
+function showInvites(invites, projects, { resend, correct, cancel }) {
   $("#no-invites").hidden = invites.length > 0;
   $("#invites").replaceChildren(
     ...invites.map((invite) => {
-      const state = inviteState(invite);
-      const [chipClass, chipText] = INVITE_CHIP[state];
-      const label = (text) => ({ type: "button", "aria-label": `${text} ${invite.client_name}` });
-      const buttons =
-        state === "accepted"
-          ? []
-          : [
-              state === "pending" && h("button", { ...label("Copy invite link for"), onclick: () => copyText(inviteUrl(invite)) }, "Copy link"),
-              h("button", { ...label("Resend email to"), onclick: action(() => resend(invite)) }, "Resend"),
-              h("button", { ...label("Cancel invite for"), onclick: action(() => cancel(invite)) }, "Cancel"),
-            ].filter(Boolean);
+      const [statusText, tone] = inviteHistoryStatus(invite, projects);
+      const open = isOpenInvite(invite);
+      const label = (text) => ({ type: "button", "aria-label": `${text} ${invite.client_email}` });
+      const buttons = open
+        ? [
+            inviteState(invite) === "pending" &&
+              h("button", { ...label("Copy invite link for"), onclick: () => copyText(inviteUrl(invite)) }, "Copy link"),
+            h("button", { ...label("Resend email to"), onclick: action(() => resend(invite)) }, "Resend"),
+            h("button", { ...label("Correct address of"), onclick: () => correct(invite) }, "Correct address"),
+            h("button", { ...label("Cancel invite for"), onclick: action(() => cancel(invite)) }, "Cancel"),
+          ].filter(Boolean)
+        : [];
       return h(
-        "tr",
-        {},
-        h("td", {}, h("span", { class: "who" }, invite.client_name), h("span", { class: "code" }, invite.client_email)),
-        h("td", {}, h("span", { class: `chip ${chipClass}` }, chipText)),
-        h("td", {}, h("div", { class: "row-actions" }, ...buttons)),
+        "li",
+        { class: open ? "" : "closed" },
+        h("span", { class: "who" }, invite.client_name),
+        h("span", { class: "code" }, invite.client_email),
+        h(
+          "div",
+          { class: "meta" },
+          h("span", { class: `chip ${tone}` }, statusText),
+          invite.last_send_at
+            ? h("span", { class: "sent-at" }, "Last email ", h("time", { dateTime: invite.last_send_at }, formatDate(invite.last_send_at)))
+            : h("span", { class: "sent-at" }, "No email sent"),
+        ),
+        buttons.length ? h("div", { class: "row-actions" }, ...buttons) : null,
       );
     }),
   );
+}
+
+// Two steps, so the designer sees both addresses before the old link is cancelled.
+function openCorrectDialog(invite, submit) {
+  const dialog = $("#correct-dialog");
+  const form = $("#correct-form");
+  const review = $("#correct-review");
+  const button = $("#correct-submit");
+  const step = (reviewing) => {
+    $("#correct-edit").hidden = reviewing;
+    review.hidden = !reviewing;
+    button.textContent = reviewing ? "Cancel old link and send" : "Review";
+    $("#correct-back").textContent = reviewing ? "Back" : "Cancel";
+  };
+  form.reset();
+  step(false);
+  $("#correct-original").textContent = invite.client_email;
+  form.elements.client_name.value = invite.client_name;
+  form.onsubmit = action(async () => {
+    const body = Object.fromEntries(new FormData(form));
+    if (review.hidden) {
+      if (body.client_email.trim().toLowerCase() === invite.client_email) throw new Error("The corrected address is the same as the original.");
+      $("#review-original").textContent = invite.client_email;
+      $("#review-corrected").textContent = body.client_email.trim();
+      return step(true);
+    }
+    await submit(invite, body);
+    dialog.close();
+  });
+  $("#correct-back").onclick = () => (review.hidden ? dialog.close() : step(false));
+  dialog.showModal();
 }
 
 // After an invite was created or resent: tell the designer whether the client got an email or the link must be sent by hand.
@@ -78,10 +117,23 @@ function projectCard(project) {
       ),
       h("h3", { id: titleId }, project.name),
       h("p", { class: "client" }, icon("person"), h("span", {}, project.client_email ?? "No client email")),
+      h("p", { class: "invited-by" }),
       h("dl", { class: "facts" }, fact("Floor area", "fact-area"), fact("Latest version", "fact-version")),
       h("div", {}, h("a", { class: "button primary", href: `editor.html?project=${project.id}` }, icon("architecture"), "Launch 2D canvas")),
     ),
   );
+}
+
+// Read-only: which invite brought this project's client in. The full history and its actions are in "Clients & invites".
+function showInvitedBy(projects, invites) {
+  for (const project of projects) {
+    const line = document.getElementById(`project-${project.id}`)?.closest("article")?.querySelector(".invited-by");
+    if (!line) continue;
+    const invite = inviteForProject(project, invites);
+    line.textContent = invite
+      ? `Joined through the invite to ${invite.client_email} · ${formatDate(invite.accepted_at)}`
+      : "No invite on record for this client";
+  }
 }
 
 function showPreview(card, project, version) {
@@ -147,14 +199,20 @@ async function loadActivity(studio) {
 function wireInvites(studio, projects, initialInvites) {
   let invites = initialInvites;
   const base = `/v1/studios/${studio.id}/invites`;
-  // Shown from each response: a failed list refresh must not look like a failed invite.
-  const update = (changed, { remove = false } = {}) => {
-    const others = invites.filter((invite) => invite.id !== changed.id); // inviting the same client again returns the same invite
-    invites = remove ? others : [changed, ...others];
-    showInvites(invites, handlers);
+  const render = () => {
+    invites.sort((a, b) => (a.created_at < b.created_at ? 1 : -1)); // newest first, as the API returns them
+    showInvites(invites, projects, handlers);
     showMetrics(projects, invites);
+    showInvitedBy(projects, invites);
+  };
+  // Shown from each response: a failed list refresh must not look like a failed invite.
+  const update = (...changed) => {
+    const ids = new Set(changed.map((invite) => invite.id)); // inviting the same client again returns the same invite
+    invites = [...changed, ...invites.filter((invite) => !ids.has(invite.id))];
+    render();
     run(() => loadActivity(studio));
   };
+  const now = () => new Date().toISOString();
   const handlers = {
     async resend(invite) {
       const sent = await api(`${base}/${invite.id}/send`, { method: "POST" });
@@ -163,11 +221,19 @@ function wireInvites(studio, projects, initialInvites) {
     },
     async cancel(invite) {
       await api(`${base}/${invite.id}`, { method: "DELETE" });
-      update(invite, { remove: true });
-      toast(`Invite for ${invite.client_name} cancelled. The link no longer works.`);
+      update({ ...invite, revoked_at: now() });
+      toast(`Invite for ${invite.client_email} cancelled. The link no longer works.`);
+    },
+    correct(invite) {
+      openCorrectDialog(invite, async (original, body) => {
+        const replacement = await api(`${base}/${original.id}/correct`, { method: "POST", body });
+        // Both stay in the history: the original as replaced, the new invite on top.
+        update(replacement, { ...original, revoked_at: original.revoked_at ?? now(), replaced_by: replacement.id });
+        await reportDelivery(replacement);
+      });
     },
   };
-  showInvites(invites, handlers);
+  render();
 
   const form = $("#invite-form");
   $("#invite-client").addEventListener("click", () => form.elements.client_name.focus());
@@ -200,9 +266,8 @@ async function showDashboard(studio, email, role) {
     api(`/v1/projects?studio_id=${studio.id}`),
     api(`/v1/studios/${studio.id}/invites`),
   ]);
-  showMetrics(projects, invites);
   showProjects(projects);
-  wireInvites(studio, projects, invites);
+  wireInvites(studio, projects, invites); // also fills the metrics and each card's invite line
   $("#dashboard").hidden = false;
   run(() => loadActivity(studio)); // its own error path: the dashboard stays usable without the activity list
 }

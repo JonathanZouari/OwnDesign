@@ -93,12 +93,8 @@
                 <button class="primary">Send invite</button>
               </form>
               <p class="muted small">We email the client a personal link. Only that email address can open it, and it expires after 14 days. If the email cannot be sent, the link is copied for you to send.</p>
-              <div class="table-wrap">
-                <table class="invites">
-                  <thead><tr><th>Client</th><th>Status</th><th>Link</th></tr></thead>
-                  <tbody id="invites"></tbody>
-                </table>
-              </div>
+              <h3 class="label" id="invite-history-title">Invite history</h3>
+              <ul class="invites" id="invites" aria-labelledby="invite-history-title"></ul>
               <p class="muted small" id="no-invites" hidden>No invites yet.</p>
             </section>
 
@@ -120,6 +116,29 @@
       </div>
     </div>
   </main>
+
+  <dialog id="correct-dialog" aria-labelledby="correct-title">
+    <form id="correct-form" class="stack">
+      <h2 id="correct-title">Correct address and resend</h2>
+      <div id="correct-edit" class="stack">
+        <p class="muted small" style="margin: 0">The current link stops working. The corrected address gets a new link.</p>
+        <p class="small" style="margin: 0">Original address: <span class="code" id="correct-original"></span></p>
+        <label>Client name <input name="client_name" required maxlength="80"></label>
+        <label>Corrected email <input name="client_email" type="email" required></label>
+      </div>
+      <div id="correct-review" class="stack" hidden>
+        <p style="margin: 0">Please check before sending:</p>
+        <dl class="correct-compare">
+          <dt>Original (link will stop working)</dt><dd class="code" id="review-original"></dd>
+          <dt>Corrected (gets a new link)</dt><dd class="code" id="review-corrected"></dd>
+        </dl>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" id="correct-back">Cancel</button>
+        <button class="primary" id="correct-submit">Review</button>
+      </div>
+    </form>
+  </dialog>
 
   <footer class="statusbar">
     <span>Areas in m², approximate</span>

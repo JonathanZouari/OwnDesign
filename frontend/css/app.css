@@ -379,12 +379,19 @@ svg.thumb { display: block; padding: 0; }
 .dash-side h2 { display: flex; align-items: center; gap: 8px; margin: 0; }
 .dash-side h2 .icon { color: var(--primary); }
 .dash-side .card p { margin: 0; }
-.invites th, .invites td { padding: 8px 6px; }
-.invites th:first-child, .invites td:first-child { padding-left: 0; }
-.invites .row-actions { display: flex; flex-wrap: wrap; gap: 4px; }
-.invites th:last-child, .invites td:last-child { padding-right: 0; text-align: right; }
-.invites .who, .invites .code { display: block; overflow-wrap: anywhere; }
+.chip.error { background: #ffdad6; color: var(--error); }
+.invites { list-style: none; margin: 0; padding: 0; }
+.invites li { display: grid; gap: 4px; padding: 12px 0; border-top: 1px solid var(--hairline); }
 .invites .who { font-weight: 500; }
+.invites .code { overflow-wrap: anywhere; }
+.invites .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px; color: var(--outline); }
+.invites .meta .chip { white-space: normal; }
+.invites .row-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.invites li.closed .who, .invites li.closed .code { color: var(--outline); }
+.correct-compare { display: grid; gap: 4px; margin: 0; }
+.correct-compare dt { font-size: 12px; color: var(--ink-soft); }
+.correct-compare dd { margin: 0 0 8px; overflow-wrap: anywhere; }
+.project .invited-by { margin: 0; font-size: 12px; color: var(--ink-soft); overflow-wrap: anywhere; }
 .activity { display: grid; gap: 12px; list-style: none; margin: 0; padding: 0; }
 .activity li { position: relative; display: grid; gap: 2px; padding-left: 16px; overflow-wrap: anywhere; }
 .activity li::before { content: ""; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }

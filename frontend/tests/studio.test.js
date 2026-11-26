@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { activityText, inviteState, matchesProject, studioMetrics } from "../js/studio-data.js";
+import { activityText, inviteForProject, inviteHistoryStatus, inviteState, isOpenInvite, matchesProject, studioMetrics } from "../js/studio-data.js";
 
 const NOW = new Date(2026, 10, 19, 12);
 const inMonth = new Date(2026, 10, 2).toISOString();
@@ -54,4 +54,50 @@ test("an invite is accepted, expired at its expiry instant, or pending", () => {
 test("expired invites are not counted as pending", () => {
   const invites = [{ accepted_at: null, expires_at: "2099-01-01T00:00:00Z" }, { accepted_at: null, expires_at: "2000-01-01T00:00:00Z" }];
   assert.equal(studioMetrics([], invites, NOW).pendingInvites, 1);
+});
+
+test("history status shows only what the system can verify", () => {
+  const open = { accepted_at: null, revoked_at: null, expires_at: "2099-01-01T00:00:00Z" };
+  const status = (invite, projects = []) => inviteHistoryStatus({ ...open, ...invite }, projects, NOW)[0];
+  assert.equal(status({}), "Not sent yet");
+  assert.equal(status({ last_send_at: "2026-11-19T10:00:00Z" }), "Sending…");
+  assert.equal(status({ last_send_status: "sent" }), "Sent");
+  assert.equal(status({ last_send_status: "failed" }), "Sending failed");
+  assert.equal(status({ last_send_status: "not_configured" }), "Not sent: email is off");
+  assert.equal(status({ last_send_status: "daily_limit" }), "Not sent: daily email limit");
+  assert.equal(status({ last_send_status: "sent", expires_at: "2000-01-01T00:00:00Z" }), "Expired");
+  assert.equal(status({ revoked_at: "2026-11-19T10:00:00Z" }), "Cancelled");
+  assert.equal(status({ revoked_at: "2026-11-19T10:00:00Z", replaced_by: "new-id" }), "Replaced: address corrected");
+  // Accepting proves a verified sign-in; "entered the project" needs a project of that same account.
+  const accepted = { accepted_at: "2026-11-19T10:00:00Z", accepted_by: "user-1", last_send_status: "sent" };
+  assert.equal(status(accepted), "Client signed in, no project yet");
+  assert.equal(status(accepted, [{ client_user_id: "someone-else" }]), "Client signed in, no project yet");
+  assert.equal(status(accepted, [{ client_user_id: "user-1" }]), "Client entered the project");
+  // A cancelled invite stays cancelled even if its row also says sent.
+  assert.equal(status({ revoked_at: "2026-11-19T10:00:00Z", last_send_status: "sent" }), "Cancelled");
+});
+
+test("only open invites offer actions, and cancelled ones are not pending", () => {
+  const base = { accepted_at: null, revoked_at: null, expires_at: "2099-01-01T00:00:00Z" };
+  assert.ok(isOpenInvite(base, NOW));
+  assert.ok(isOpenInvite({ ...base, expires_at: "2000-01-01T00:00:00Z" }, NOW)); // expired: resend or correct
+  assert.ok(!isOpenInvite({ ...base, revoked_at: "2026-11-19T10:00:00Z" }, NOW));
+  assert.ok(!isOpenInvite({ ...base, accepted_at: "2026-11-19T10:00:00Z" }, NOW));
+  assert.equal(inviteState({ ...base, revoked_at: "x", accepted_at: "y" }, NOW), "cancelled");
+  assert.equal(studioMetrics([], [base, { ...base, revoked_at: "2026-11-19T10:00:00Z" }], NOW).pendingInvites, 1);
+});
+
+test("a project card finds the invite its client accepted", () => {
+  const invites = [
+    { id: "a", accepted_by: null },
+    { id: "b", accepted_by: "user-1" },
+  ];
+  assert.equal(inviteForProject({ client_user_id: "user-1" }, invites).id, "b");
+  assert.equal(inviteForProject({ client_user_id: "user-2" }, invites), null);
+  assert.equal(inviteForProject({ client_user_id: null }, [{ accepted_by: null }]), null); // never matches on missing ids
+  assert.equal(inviteForProject({ client_user_id: "user-1" }, []), null);
+});
+
+test("correction activity reads as a sentence", () => {
+  assert.equal(activityText({ action: "invite.corrected", metadata: {}, project: null }), "Invite address corrected and sent again");
 });
