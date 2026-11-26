@@ -5,6 +5,7 @@ import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
 import * as P from "../plan.js";
 import { KEYS, load, save as store } from "../store.js";
 import { $, action, h, run, showStudio, toast } from "../ui.js";
+import { initConsultant } from "./consultant-panel.js";
 import { renderInspector } from "./panel.js";
 import { attachPointer, zoomAt } from "./pointer.js";
 import { draw, visibleArea } from "./render.js";
@@ -23,6 +24,7 @@ const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], Arrow
 const params = new URLSearchParams(location.search);
 const projectId = params.get("project");
 const canvas = $("#canvas");
+let consultant = null; // the side panel, only for a saved project
 
 const state = {
   history: null,
@@ -142,6 +144,7 @@ function render() {
   $("#status-save").textContent = state.project
     ? isDirty() ? "Unsaved changes" : latest ? `Saved · v${latest.version_no}` : "Nothing saved yet"
     : state.signedIn ? "Draft · not saved to your account yet" : "Guest draft · kept in this browser only";
+  consultant?.onEditorChange();
 }
 
 function fit() {
@@ -206,7 +209,7 @@ function placeAtCentre() {
 }
 
 function onKey(event) {
-  if (event.target.closest("input, select, textarea, dialog")) return;
+  if (event.target.closest("input, select, textarea, dialog, #consultant-panel")) return;
   if (state.live || state.previewLine) return; // mid-drag: the drag would overwrite a keyboard edit
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
   const mod = event.ctrlKey || event.metaKey;
@@ -387,6 +390,15 @@ run(async () => {
   state.history = P.history.start(plan);
   state.saved = plan;
   buildChrome(name, role);
+  // The consultant reads the editor (selection, plan, saved version) and never changes the plan.
+  if (state.project) {
+    consultant = initConsultant({
+      projectId: state.project.id,
+      toggle: $("#consultant-toggle"),
+      panel: $("#consultant-panel"),
+      host: { getSelection: () => state.selection, getPlan: () => editor.plan, isDirty, getVersion: () => state.versions?.[0] ?? null },
+    });
+  }
   fit();
   if (params.get("save") && state.draft && state.signedIn) openSave();
 });

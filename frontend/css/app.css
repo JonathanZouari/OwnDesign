@@ -530,3 +530,54 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .board-item .board-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .msg { max-width: 100%; }
 }
+
+/* ==========================================================================
+   Design Consultant side panel (editor)
+   ========================================================================== */
+.consultant { width: 380px; flex: none; z-index: 3; display: flex; flex-direction: column; min-height: 0; background: var(--panel); box-shadow: var(--shadow-2); border-left: 1px solid var(--hairline); }
+.consultant[hidden] { display: none; }
+.consultant.wide { width: 560px; }
+.consultant-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 12px 12px 8px 16px; }
+.consultant-head h2 { font-size: 18px; line-height: 24px; letter-spacing: -0.01em; }
+.consultant-head p { margin: 0; }
+.consultant-tools { display: flex; gap: 2px; }
+.consultant-tools button { width: 32px; min-height: 32px; padding: 0; border-color: transparent; }
+.consultant-tools button[aria-pressed="true"] { background: var(--surface-high); }
+.consultant-scope { display: grid; gap: 4px; padding: 0 16px 8px; border-bottom: 1px solid var(--hairline); }
+.consultant-scope label { font: 500 11px/16px var(--font-mono); color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.consultant-context { margin: 0; font-size: 12px; line-height: 16px; color: var(--ink-soft); }
+.consultant-sessions { list-style: none; margin: 0; padding: 8px 12px; max-height: 40%; overflow-y: auto; border-bottom: 1px solid var(--hairline); display: grid; gap: 4px; }
+.consultant-sessions[hidden] { display: none; }
+.consultant-sessions button { width: 100%; justify-content: space-between; border-color: transparent; text-align: left; }
+.consultant-body { position: relative; flex: 1; min-height: 0; display: flex; }
+.consultant-thread { list-style: none; margin: 0; padding: 12px 16px; flex: 1; overflow-y: auto; display: grid; gap: 12px; align-content: start; }
+.consultant .msg { max-width: 100%; }
+.consultant .msg .who { display: block; margin-bottom: 4px; font: 500 12px/16px var(--font-mono); color: var(--secondary); }
+.consultant .msg.user .who { color: var(--primary); }
+.consultant .msg-text { white-space: normal; font-size: 14px; line-height: 22px; }
+.consultant .msg.user .msg-text { white-space: pre-wrap; }
+.consultant .msg-text > * { margin: 0 0 8px; }
+.consultant .msg-text > :last-child { margin-bottom: 0; }
+.consultant .msg-text p { white-space: pre-wrap; }
+.consultant .msg-text h3, .consultant .msg-text h4, .consultant .msg-text h5 { font-size: 15px; line-height: 22px; }
+.consultant .msg-text ul, .consultant .msg-text ol { padding-inline-start: 20px; }
+.consultant .msg-text code { font: 400 12px/18px var(--font-mono); background: var(--surface-mid); padding: 1px 4px; border-radius: 4px; }
+.consultant .msg-text pre { overflow-x: auto; padding: 8px 10px; background: var(--surface-mid); border-radius: 6px; }
+.consultant .msg-text pre code { background: none; padding: 0; }
+.consultant .msg.streaming { border-style: dashed; }
+.consultant-jump { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); box-shadow: var(--shadow-2); }
+.consultant-jump[hidden] { display: none; }
+.consultant-suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 8px; }
+.consultant-suggestions:empty { display: none; }
+.consultant-suggestions .chip { cursor: pointer; text-align: left; }
+.consultant-error { margin: 0; padding: 0 16px 8px; color: var(--error); font-size: 13px; }
+.consultant-error:empty { display: none; }
+.consultant-composer { display: grid; gap: 8px; padding: 8px 16px 16px; border-top: 1px solid var(--hairline); }
+.consultant-composer textarea { width: 100%; resize: vertical; min-height: 56px; max-height: 160px; }
+.consultant-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.consultant-actions [hidden] { display: none; }
+@media (max-width: 1199px) { .consultant { width: 320px; } .consultant.wide { width: 440px; } }
+@media (max-width: 767px) {
+  .consultant, .consultant.wide { order: 4; width: 100%; max-height: 60vh; border-left: 0; border-top: 1px solid var(--hairline); }
+  #consultant-toggle { padding: 0 10px; }
+}

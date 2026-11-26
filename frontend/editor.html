@@ -30,6 +30,7 @@
     </nav>
     <div class="group">
       <span class="chip caution" title="Conceptual plan. Not for construction. Requires review by a qualified professional."><span class="icon" aria-hidden="true" style="font-size: 14px">warning</span><span>Conceptual<span class="wide"> — Non-Structural Review</span></span></span>
+      <button id="consultant-toggle" type="button" hidden aria-expanded="false" aria-controls="consultant-panel" title="Design Consultant"><span class="icon" aria-hidden="true">forum</span><span class="wide">Consultant</span></button>
       <button class="primary" id="save" type="button" aria-label="Save plan"><span class="icon" aria-hidden="true">save</span><span class="wide">Save plan</span></button>
       <button id="account" class="wide" type="button"></button>
     </div>
@@ -92,6 +93,7 @@
       </div>
 
       <aside class="inspector" id="inspector" aria-label="Element inspector"></aside>
+      <aside class="consultant" id="consultant-panel" hidden aria-labelledby="consultant-title"></aside>
     </div>
   </main>
 
