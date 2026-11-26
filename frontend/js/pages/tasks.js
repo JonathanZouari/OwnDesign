@@ -24,13 +24,15 @@ async function reload() {
 // Runs one task change; a 409 means someone else changed it first, so the list is reloaded either way.
 async function change(button, request, done) {
   button.disabled = true;
+  let message = done;
   try {
     await request();
-    say(done);
   } catch (error) {
-    say(error.message || "Something went wrong.");
+    message = error.message || "Something went wrong.";
   }
+  // The list is refreshed first, so the announcement describes what is on screen.
   await reload().catch(() => {});
+  say(message);
 }
 
 function actionsNode(task) {

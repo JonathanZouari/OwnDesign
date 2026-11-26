@@ -85,9 +85,12 @@ def update_task(project_id: UUID, task_id: UUID, body: TaskUpdate, user: Current
         changes = {"status": "done", "done_at": "now()", "done_by": user.id, "client_note": body.client_note}
         expected = "open"
     else:
-        if not (_is_client(user, project) or _is_designer(user, project)):
+        is_client = _is_client(user, project)
+        if not (is_client or _is_designer(user, project)):
             raise HTTPException(403, "You cannot reopen this task")
-        changes = {"status": "open", "done_at": None, "done_by": None, "client_note": ""}
+        changes = {"status": "open", "done_at": None, "done_by": None}
+        if is_client:
+            changes["client_note"] = ""  # the client takes back their answer; a designer's reopen keeps it as context
         expected = "done"
     # Conditional on the current status: of two simultaneous clicks, one changes the task and one gets 409.
     updated = (

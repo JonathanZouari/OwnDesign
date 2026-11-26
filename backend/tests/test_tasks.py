@@ -60,6 +60,10 @@ def test_designer_asks_client_completes_designer_reopens(api, world):
     reopened = api.patch(url(world.mine, task["id"]), json={"status": "open"}, headers=world.designer.headers)
     assert reopened.status_code == 200
     assert reopened.json()["data"]["status"] == "open" and reopened.json()["data"]["done_at"] is None
+    # The client's answer stays visible after the designer reopens, and a new completion replaces it.
+    assert reopened.json()["data"]["client_note"] == "3.40 x 2.90 m"
+    again = api.patch(url(world.mine, task["id"]), json={"status": "done", "client_note": "3.45 x 2.90 m"}, headers=world.client.headers)
+    assert again.json()["data"]["client_note"] == "3.45 x 2.90 m"
 
 
 def test_client_can_undo_own_completion(api, world):

@@ -333,7 +333,7 @@ def test_designer_asks_client_completes_a_task(servers, page, api, make_user):
     done = page.locator("#done-list .task", has_text="Measure the bedroom")
     done.get_by_text("3.40 x 2.90 m").wait_for()
     page.get_by_role("button", name="Reopen: Measure the bedroom").click()
-    page.locator("#open-list .task", has_text="Measure the bedroom").wait_for()
+    page.locator("#open-list .task", has_text="Measure the bedroom").get_by_text("3.40 x 2.90 m").wait_for()
     assert page.locator("#done-empty").is_visible()
     # Delete takes two clicks.
     page.get_by_role("button", name="Delete: Measure the bedroom").click()
