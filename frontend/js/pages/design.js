@@ -465,6 +465,7 @@ run(async () => {
   $("#finishes-editor-link").href = `editor.html${query}`;
   $("#nav-design").href = `design.html${query}`;
   $("#nav-consultant").href = `consultant.html${query}`;
+  $("#nav-tasks").href = `tasks.html${query}`;
 
   initTabs();
   initBrief();

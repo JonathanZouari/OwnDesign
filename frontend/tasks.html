@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
+  <title>Tasks · Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="appbar">
+    <div class="group">
+      <a class="brand" href="projects.html">ATELIER</a>
+      <span class="chip studio" id="studio-brand" hidden></span>
+      <div class="crumb">
+        <span class="icon" aria-hidden="true">folder_open</span>
+        <strong id="crumb-name"></strong><span aria-hidden="true">•</span><span>Tasks</span>
+      </div>
+    </div>
+    <nav aria-label="Account">
+      <button id="sign-out" type="button">Sign out</button>
+    </nav>
+  </header>
+
+  <main class="page tasks" id="tasks" hidden>
+    <nav class="project-nav" aria-label="Project">
+      <a id="nav-projects" href="projects.html"><span class="icon" aria-hidden="true">arrow_back</span>All projects</a>
+      <a id="nav-editor" href="editor.html"><span class="icon" aria-hidden="true">architecture</span>2D canvas</a>
+      <a id="nav-design" href="design.html"><span class="icon" aria-hidden="true">palette</span>Brief &amp; materials</a>
+      <a id="nav-consultant" href="consultant.html"><span class="icon" aria-hidden="true">forum</span>Design consultant</a>
+      <a id="nav-tasks" href="tasks.html" aria-current="page"><span class="icon" aria-hidden="true">task_alt</span>Tasks</a>
+    </nav>
+
+    <header class="design-head">
+      <span class="label accent">Tasks</span>
+      <h1 id="project-name"></h1>
+      <p class="muted" id="tasks-intro"></p>
+    </header>
+
+    <p class="status" id="tasks-status" role="status" aria-live="polite"></p>
+
+    <section class="card" id="task-new" aria-labelledby="task-new-title" hidden>
+      <h2 id="task-new-title">New task</h2>
+      <form id="task-form" class="stack" novalidate>
+        <label for="task-title">Task
+          <input id="task-title" name="title" maxlength="120" required autocomplete="off" placeholder="Measure the bedroom">
+        </label>
+        <label for="task-details">Details (optional)
+          <textarea id="task-details" name="details" maxlength="1000" rows="3"></textarea>
+        </label>
+        <div class="savebar">
+          <button class="primary" type="submit" id="task-add"><span class="icon" aria-hidden="true">add_task</span>Add task</button>
+          <p class="status" id="task-form-status" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <section class="card task-section" aria-labelledby="open-title">
+      <h2 id="open-title">Open <span id="open-count" class="mono muted small"></span></h2>
+      <p class="muted" id="open-empty" hidden>No open tasks.</p>
+      <ul class="task-list" id="open-list"></ul>
+    </section>
+
+    <section class="card task-section" aria-labelledby="done-title">
+      <h2 id="done-title">Done <span id="done-count" class="mono muted small"></span></h2>
+      <p class="muted" id="done-empty" hidden>Nothing done yet.</p>
+      <ul class="task-list" id="done-list"></ul>
+    </section>
+  </main>
+
+  <script src="vendor/supabase-js-2.119.1.umd.js"></script>
+  <script type="module" src="js/pages/tasks.js"></script>
+</body>
+</html>

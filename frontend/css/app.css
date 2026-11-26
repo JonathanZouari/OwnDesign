@@ -530,3 +530,52 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .board-item .board-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .msg { max-width: 100%; }
 }
+
+/* ---- tasks ---- */
+/* Project tasks (tasks.html). No Stitch screen; follows the design system.
+   js/pages/tasks.js builds each list item as:
+   <li class="task" data-status="open|done">
+     <span class="icon task-icon" aria-hidden="true">radio_button_unchecked | check_circle</span>
+     <div class="task-main">
+       <h3 class="task-title">…</h3>
+       <p class="task-details">…</p>                                   (optional)
+       <p class="task-meta mono small muted">Asked 26 Nov 2026 · Done 27 Nov 2026</p>
+       <p class="task-note"><span class="label">Client note</span> …</p>  (optional)
+     </div>
+     <div class="task-actions">buttons, or a small form:
+       <label>Note (optional)<input class="task-note-input" maxlength="500"></label>
+       <button class="primary">Mark as done</button>
+     </div>
+   </li>
+   No transitions here, so nothing to switch off for prefers-reduced-motion. */
+.page.tasks { max-width: 880px; }
+.tasks .card { display: grid; gap: 12px; }
+.tasks .card > h2, .tasks .card > p { margin: 0; }
+.tasks .task-section h2 { display: flex; align-items: baseline; gap: 8px; }
+.task-list { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.task-list:empty { display: none; }
+.tasks .task {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start;
+  padding: 12px; border: 1px solid transparent; border-radius: 8px; background: var(--surface-low);
+}
+.tasks .task-icon { font-size: 20px; margin-top: 1px; color: var(--primary); }
+.tasks .task-main { display: grid; gap: 4px; min-width: 0; }
+.tasks .task-main > * { margin: 0; }
+.tasks .task-title { font: 500 15px/22px var(--font-head); letter-spacing: -0.005em; color: var(--ink); overflow-wrap: anywhere; }
+.tasks .task-details { white-space: pre-wrap; overflow-wrap: anywhere; }
+.tasks .task-note { padding: 8px 10px; border-radius: 4px; background: var(--panel); border-left: 2px solid var(--secondary); overflow-wrap: anywhere; }
+.tasks .task-note .label { display: block; margin-bottom: 2px; color: var(--on-secondary-tint); }
+.tasks .task-actions { display: flex; align-items: flex-end; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.tasks .task-actions form { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; margin: 0; }
+.tasks .task-actions label { width: 14rem; }
+/* Done: quieter (no fill, moss check, softer title) but not struck through, so it stays readable. */
+.tasks .task[data-status="done"] { background: transparent; border-color: var(--hairline); }
+.tasks .task[data-status="done"] .task-icon { color: var(--secondary); }
+.tasks .task[data-status="done"] .task-title { color: var(--ink-soft); }
+
+@media (max-width: 767px) {
+  .tasks .task { grid-template-columns: auto minmax(0, 1fr); }
+  .tasks .task-actions, .tasks .task-actions form { grid-column: 1 / -1; flex-direction: column; align-items: stretch; }
+  .tasks .task-actions label { width: auto; }
+  .tasks .task-actions button, .tasks .task-actions .button { width: 100%; min-height: 44px; }
+}
