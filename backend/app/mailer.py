@@ -38,7 +38,7 @@ def invite_message(to: str, client_name: str, studio_name: str, url: str) -> dic
         "to": [to],
         "subject": _one_line(f"{studio_name} invited you to your design project"),
         "text": f"Hi {client_name},\n\n{studio_name} invited you to plan your home with them.\n"
-        f"We're happy to design with you.\n\nOpen your personal link:\n{url}\n\n"
+        f"\nOpen your personal link:\n{url}\n\n"
         "This link is for you only. Do not forward it.",
         # Every value is HTML-escaped (names come from users); substitute() fails loudly on a missing one.
         "html": TEMPLATE.substitute(name=escape(client_name), studio=escape(studio_name), url=escape(url), logo=escape(logo_url())),

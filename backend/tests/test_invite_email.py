@@ -44,10 +44,8 @@ def test_names_are_escaped_and_subject_is_one_line(configured):
     assert "$" not in message["html"]  # every template placeholder was filled
 
 
-def test_message_has_greeting_line_and_logo(configured):
+def test_message_has_logo_and_link(configured):
     message = mailer.invite_message("a@x.com", "Dana", "Studio", "https://app.example.com/entry.html?invite=t")
-    for body in (message["text"], message["html"]):
-        assert "happy to design with you" in body
     assert 'src="https://app.example.com/img/logo-mark.png"' in message["html"]
     assert 'href="https://app.example.com/entry.html?invite=t"' in message["html"]
 
