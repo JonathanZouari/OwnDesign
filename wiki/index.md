@@ -10,7 +10,7 @@ Project memory for Atelier. Rules for maintaining it are in [`../CLAUDE.md`](../
 
 ## Specifications
 
-- [../specs/plan-export.md](../specs/plan-export.md): plan export to PNG, PDF and DXF (product decisions confirmed, technical validation pending).
+- [../specs/plan-export.md](../specs/plan-export.md): plan export to PNG, PDF and DXF (a contributor's proposal from pull request #9; the product decisions in it are not yet the owner's, technical validation pending).
 
 ## Engineering
 
