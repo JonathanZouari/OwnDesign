@@ -75,3 +75,23 @@ Design assistance (`backend/app/routes/design.py`, `consultant.py`, catalog in `
   the endpoint answers 503.
 - **Frontend:** `design.html` (brief, materials, moodboard tabs), `consultant.html`; pure logic in
   `frontend/js/design-logic.js`.
+
+## Plan export
+
+Spec: `../specs/plan-export.md`. Code: `backend/app/exports/` and `backend/app/routes/exports.py`; dialog in
+`frontend/js/editor/main.js` with pure helpers in `frontend/js/export-logic.js`.
+
+- `POST /v1/projects/{id}/versions/{version}/export` with `{format: pdf|png|dxf, paper: a4|a3}`. The project is
+  read through RLS, the version must belong to that project, and the stored geometry is validated again. The
+  browser never sends geometry; unsaved canvas changes are never exported.
+- The file is built on the server. The audit event `plan.exported` (`version_no`, `format`, `actor_role`) is
+  written only after the file exists; if it cannot be written, no file is sent. Nothing is stored.
+- `layout.py` holds the shared geometry, mirroring the editor: walls split at openings with square caps at their
+  own ends, door leaf on the normal `(-uy, ux)` with a quarter arc, furniture `translate(x y) rotate(r)`, room
+  area as the box around the room's wall centrelines (shown with `~`), wall-length labels from 80 cm,
+  de-duplicated by midpoint. The page is A4 or A3 in whichever orientation draws the plan larger.
+- PDF: reportlab, font Heebo (OFL, Hebrew and Latin, `backend/app/exports/fonts/`), Hebrew put in display order
+  by python-bidi. PNG: the PDF page rasterised by pypdfium2 at 300 DPI (A4 2480 x 3508). PDFium is not
+  thread-safe, so every PDFium call holds one lock. DXF: ezdxf, R2010, centimetres, layers `WALLS`, `OPENINGS`,
+  `FURNITURE`, `NOTES`, y flipped (plan y grows downward, CAD y upward).
+- Two exports at a time per process, one per user; beyond that 429 with `Retry-After`.

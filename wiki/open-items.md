@@ -19,6 +19,19 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
 - The editor has no link to the Phase 2 pages at 767 px and below.
 
+## Plan export
+
+- **The spec's product decisions are a proposal** until the owner accepts them ([decisions.md](decisions.md)).
+- **DXF not yet opened in a CAD program.** The Homebrew LibreCAD cask is disabled (Gatekeeper); the automated tests read the file back with ezdxf only.
+- **Activity can be flooded.** Every export adds an audit row and there is no rate limit, so a client can push other events out of the dashboard's latest ten.
+- **Export limits are per process.** With several workers, the two-slot and one-per-user limits multiply. An A3 PNG peaks at a few hundred MB.
+- **The event is written before the download finishes**, so a client that disconnects mid-download is still recorded.
+- **A Hebrew project name gives the file name `plan-vN`**; `filename*=UTF-8''…` would keep it.
+- **Scripts other than Hebrew and Latin** (Arabic, Cyrillic) show as empty boxes: Heebo does not cover them.
+- **Opening within 1 cm of a wall end** drops the square cap there, so a corner can show a small notch.
+- **Room label position** is the room's centre, not the editor's `min(h/2, 60)` from the top.
+- **Flaky browser tests**: see [testing.md](testing.md).
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in

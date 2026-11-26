@@ -32,6 +32,11 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 
+## Proposed: plan export
+
+In a pull request from a contributor (`../specs/plan-export.md`): a saved plan version downloaded from the editor
+as PDF or PNG (A4 or A3, labels, measurements, notices) or DXF for CAD, recorded in studio activity.
+
 ## Not built yet
 
 Renderings, budget, dossier,
