@@ -1,5 +1,5 @@
 import { api, requireSession, signOut } from "../api.js";
-import { COMMON, PROJECT_TYPES } from "../strings.js";
+import { PROJECT_TYPES, PROJECTS } from "../strings.js";
 import { KEYS, load } from "../store.js";
 import { $, formatDate, h, run } from "../ui.js";
 
@@ -24,9 +24,9 @@ run(async () => {
           h(
             "div",
             { class: "project-links" },
-            h("a", { class: "button", href: `editor.html?project=${project.id}`, "aria-label": `פתיחת התוכנית של ${project.name}` }, COMMON.open),
-            h("a", { class: "button", href: `design.html?project=${project.id}`, "aria-label": `בריף וחומרים של ${project.name}` }, "בריף וחומרים"),
-            h("a", { class: "button", href: `consultant.html?project=${project.id}`, "aria-label": `יועץ העיצוב של ${project.name}` }, "יועץ AI"),
+            h("a", { class: "button", href: `editor.html?project=${project.id}`, "aria-label": PROJECTS.openLabel(project.name) }, PROJECTS.open),
+            h("a", { class: "button", href: `design.html?project=${project.id}`, "aria-label": PROJECTS.briefLabel(project.name) }, PROJECTS.brief),
+            h("a", { class: "button", href: `consultant.html?project=${project.id}`, "aria-label": PROJECTS.consultantLabel(project.name) }, PROJECTS.consultant),
           ),
         ),
       ),

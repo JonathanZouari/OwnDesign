@@ -65,7 +65,14 @@ export const ENTRY = {
 
 export const PROJECT_TYPES = { existing: "בית קיים", new_build: "בנייה חדשה" };
 
-export const PROJECTS = { open: COMMON.open };
+export const PROJECTS = {
+  open: COMMON.open,
+  brief: "בריף וחומרים",
+  consultant: "יועץ AI",
+  openLabel: (name) => `פתיחת התוכנית של ${name}`,
+  briefLabel: (name) => `בריף וחומרים של ${name}`,
+  consultantLabel: (name) => `יועץ העיצוב של ${name}`,
+};
 
 export const STUDIO = {
   accepted: "אושר",

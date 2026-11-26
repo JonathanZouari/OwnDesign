@@ -274,7 +274,7 @@ def test_homeowner_designs_without_a_studio_and_saves(servers, page):
     row = page.get_by_role("row", name="Home Flat")
     row.wait_for()
     assert page.locator("#studio-link").count() == 0 and page.get_by_text("הסטודיו שלי").count() == 0
-    row.get_by_role("link", name="פתיחה").click()
+    row.get_by_role("link", name="פתיחת התוכנית של Home Flat", exact=True).click()
     page.wait_for_url(f"**/editor.html?project={project_id}")
     page.get_by_text("עריכה כלקוח").wait_for()
     page.goto(f"{SITE}/projects.html")
