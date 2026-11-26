@@ -12,7 +12,7 @@ from app import vision
 from app.auth import CurrentUser, current_user
 from app.db import audit, service
 from app.responses import ok
-from app.routes.design import ASSET_COLUMNS, MAX_ASSET_BYTES, _signed_urls, _sniff, _writable_project, store_asset
+from app.routes.design import ASSET_COLUMNS, MAX_ASSET_BYTES, MAX_ASSETS_PER_PROJECT, _signed_urls, _sniff, _writable_project, store_asset
 from app.routes.projects import _project_or_404
 from app.schemas import RoomItemEdit, RoomItemsBody
 
@@ -45,8 +45,13 @@ def scan_room(
     data = file.file.read(MAX_ASSET_BYTES + 1)
     detections: list[dict] = []
     if data and len(data) <= MAX_ASSET_BYTES and _sniff(data):  # store_asset refuses empty, oversized and non-image files
+        # The image limit is checked again (and enforced by the database) in store_asset; checking it here first
+        # means a full project does not pay for a model run.
+        stored = user.db.table("inspiration_assets").select("id", count="exact").eq("project_id", project["id"]).limit(1).execute().count or 0
+        if stored >= MAX_ASSETS_PER_PROJECT:
+            raise HTTPException(409, "This project has reached its limit of images")
         try:
-            detections = detector.detect(vision.decode_image(data))
+            detections = vision.scan(data, detector)
         except vision.ImageError:
             raise HTTPException(422, "The photo could not be read. Try a JPEG, PNG or WebP photo.") from None
         except vision.DetectorBusy:
@@ -75,9 +80,12 @@ def add_items(project_id: UUID, body: RoomItemsBody, user: CurrentUser = Depends
         raise HTTPException(422, "Invalid input (room_id): the room is not part of the saved plan")
     asset_ids = {str(item.asset_id) for item in body.items if item.asset_id}
     if asset_ids:
-        mine = user.db.table("inspiration_assets").select("id").eq("project_id", pid).in_("id", list(asset_ids)).execute().data
+        mine = (
+            user.db.table("inspiration_assets").select("id").eq("project_id", pid).eq("kind", "existing_item")
+            .in_("id", list(asset_ids)).execute().data
+        )
         if len(mine) != len(asset_ids):
-            raise HTTPException(422, "Invalid input (asset_id): the photo is not part of this project")
+            raise HTTPException(422, "Invalid input (asset_id): the photo is not a room photo of this project")
     existing = user.db.table("room_items").select("id", count="exact").eq("project_id", pid).limit(1).execute().count or 0
     if existing + len(body.items) > MAX_ITEMS_PER_PROJECT:
         raise HTTPException(409, f"A project can list at most {MAX_ITEMS_PER_PROJECT} items")
@@ -112,7 +120,10 @@ def edit_item(project_id: UUID, item_id: UUID, body: RoomItemEdit, user: Current
     _item_or_404(user, project["id"], item_id)
     _check_room(user, project["id"], body.room_id)
     changes = {**body.model_dump(), "color_hex": body.color_hex.lower() if body.color_hex else None, "updated_at": "now()"}
-    row = service().table("room_items").update(changes).eq("id", str(item_id)).eq("project_id", project["id"]).execute().data[0]
+    updated = service().table("room_items").update(changes).eq("id", str(item_id)).eq("project_id", project["id"]).execute().data
+    if not updated:  # deleted in the meantime
+        raise HTTPException(404, "Item not found")
+    row = updated[0]
     audit("item.edited", user.id, studio_id=project["studio_id"], project_id=project["id"], item_id=str(item_id))
     return ok({key: row[key] for key in ITEM_COLUMNS.split(", ")})
 

@@ -7,6 +7,7 @@ its position in the photo. Nothing here touches the database: the route decides 
 
 import hashlib
 import io
+import logging
 import threading
 from functools import lru_cache
 from pathlib import Path
@@ -23,10 +24,16 @@ INPUT_SIZE = 640
 CONFIDENCE = np.float32(0.35)
 IOU = 0.45
 MAX_DETECTIONS = 30
-MAX_PIXELS = 40_000_000
+MAX_PIXELS = 16_000_000  # e.g. 4900 x 3260; a 5 MB file above this is unusual for a photo
+MAX_ASPECT = 20
 MIN_SIDE = 32
-MAX_PARALLEL = 2
-BUSY_SECONDS = 10
+WORK_SIDE = 1280  # enough for 640 px detection and colour sampling
+MAX_PARALLEL = 2  # scans decoding or running the model at once, per process
+BUSY_SECONDS = 1  # a caller waits this long for a slot, then gets 503 (keeps threadpool threads free)
+
+log = logging.getLogger(__name__)
+_slots = threading.BoundedSemaphore(MAX_PARALLEL)
+_load_lock = threading.Lock()
 
 CATEGORIES = ROOM_ITEM_CATEGORIES
 
@@ -69,28 +76,37 @@ class DetectorBusy(RuntimeError):
 
 
 def decode_image(data: bytes) -> Image.Image:
-    """An upright RGB image, or ImageError. The size is checked from the header before any pixel is decoded."""
+    """An upright RGB image of at most WORK_SIDE px a side, or ImageError.
+
+    Size and shape are checked from the header before any pixel is decoded. A JPEG is decoded at reduced scale
+    (`draft`), and every image is shrunk before it is rotated or converted, so one scan holds a few MB at most.
+    """
     try:
         img = Image.open(io.BytesIO(data))
-        if img.format not in {"JPEG", "PNG", "WEBP"}:
+        if img.format not in {"JPEG", "MPO", "PNG", "WEBP"}:  # MPO: phone JPEGs with an extra preview frame
             raise ImageError("unsupported image format")
         if img.width * img.height > MAX_PIXELS:
             raise ImageError("the image has too many pixels")
+        if min(img.size) < MIN_SIDE:
+            raise ImageError("the image is too small")
+        if max(img.size) / min(img.size) > MAX_ASPECT:
+            raise ImageError("the image is too narrow")
+        if img.format in {"JPEG", "MPO"}:
+            img.draft("RGB", (WORK_SIDE, WORK_SIDE))
         img.load()
+        img.thumbnail((WORK_SIDE, WORK_SIDE))
         img = ImageOps.exif_transpose(img).convert("RGB")
     except ImageError:
         raise
     except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Image.DecompressionBombError) as error:
         raise ImageError("the image could not be read") from error
-    if min(img.size) < MIN_SIDE:
-        raise ImageError("the image is too small")
     return img
 
 
 def letterbox(img: Image.Image) -> tuple[np.ndarray, float, tuple[int, int]]:
     """Scaled to fit 640 x 640 on grey, as YOLOv8 was trained. Returns the NCHW tensor, the scale and the padding."""
     scale = min(INPUT_SIZE / img.width, INPUT_SIZE / img.height)
-    width, height = round(img.width * scale), round(img.height * scale)
+    width, height = max(1, round(img.width * scale)), max(1, round(img.height * scale))
     pad = ((INPUT_SIZE - width) // 2, (INPUT_SIZE - height) // 2)
     canvas = Image.new("RGB", (INPUT_SIZE, INPUT_SIZE), (114, 114, 114))
     canvas.paste(img.resize((width, height), Image.Resampling.BILINEAR), pad)
@@ -152,11 +168,11 @@ def postprocess(output: np.ndarray, scale: float, pad: tuple[int, int], size: tu
 def dominant_color(img: Image.Image, box: list[float]) -> tuple[str, str]:
     """The most common colour in the middle 60% of the box (edges are usually background): hex and a name."""
     x, y, w, h = box
-    left, top = (x + w * 0.2) * img.width, (y + h * 0.2) * img.height
-    right, bottom = (x + w * 0.8) * img.width, (y + h * 0.8) * img.height
-    left, top = int(left), int(top)
-    right, bottom = max(int(round(right)), left + 1), max(int(round(bottom)), top + 1)
-    crop = img.crop((left, top, min(right, img.width), min(bottom, img.height)))
+    left = min(int((x + w * 0.2) * img.width), img.width - 1)
+    top = min(int((y + h * 0.2) * img.height), img.height - 1)
+    right = min(max(int(round((x + w * 0.8) * img.width)), left + 1), img.width)
+    bottom = min(max(int(round((y + h * 0.8) * img.height)), top + 1), img.height)
+    crop = img.crop((left, top, right, bottom))
     crop.thumbnail((48, 48))
     quantized = crop.quantize(colors=4)
     palette = quantized.getpalette() or []
@@ -171,6 +187,8 @@ def characterise(img: Image.Image, detections: list[dict]) -> list[dict]:
     for found in detections:
         label, category = INTERIOR_CLASSES[found["class_id"]]
         box = [round(v, 4) for v in found["box"]]
+        if box[2] <= 0 or box[3] <= 0:  # too small to keep once rounded; the API would refuse it anyway
+            continue
         centre = box[0] + box[2] / 2
         color_hex, color_name = dominant_color(img, box)
         result.append({
@@ -189,22 +207,15 @@ class Detector:
     def __init__(self, session):
         self._session = session
         self._input = session.get_inputs()[0].name
-        self._slots = threading.BoundedSemaphore(MAX_PARALLEL)
 
     def detect(self, img: Image.Image) -> list[dict]:
         tensor, scale, pad = letterbox(img)
-        if not self._slots.acquire(timeout=BUSY_SECONDS):
-            raise DetectorBusy("the room scanner is busy")
-        try:
-            output = self._session.run(None, {self._input: tensor})[0]
-        finally:
-            self._slots.release()
+        output = self._session.run(None, {self._input: tensor})[0]
         return characterise(img, postprocess(output, scale, pad, img.size))
 
 
 @lru_cache(maxsize=1)
-def load_detector() -> Detector:
-    """Loads the model once per process after checking it is the exact file recorded in models/README.md."""
+def _load() -> Detector:
     import onnxruntime
 
     data = MODEL_PATH.read_bytes()
@@ -216,10 +227,29 @@ def load_detector() -> Detector:
     return Detector(onnxruntime.InferenceSession(data, options, providers=["CPUExecutionProvider"]))
 
 
+def load_detector() -> Detector:
+    """Loads the model once per process after checking it is the exact file recorded in models/README.md.
+    The lock stops concurrent first requests from each building a session."""
+    with _load_lock:
+        return _load()
+
+
 def get_detector() -> Detector:
-    """A FastAPI dependency, so tests can replace the model with a fake."""
-    return load_detector()
+    """A FastAPI dependency, so tests can replace the model with a fake. A missing or altered model is a 503."""
+    from fastapi import HTTPException
+
+    try:
+        return load_detector()
+    except (OSError, RuntimeError):
+        log.exception("The room scan model could not be loaded")
+        raise HTTPException(503, "The room scanner is not available right now.") from None
 
 
-def scan(data: bytes, detector: Detector) -> list[dict]:
-    return detector.detect(decode_image(data))
+def scan(data: bytes, detector) -> list[dict]:
+    """Decodes and detects inside one of MAX_PARALLEL slots, so memory and CPU per process stay bounded."""
+    if not _slots.acquire(timeout=BUSY_SECONDS):
+        raise DetectorBusy("the room scanner is busy")
+    try:
+        return detector.detect(decode_image(data))
+    finally:
+        _slots.release()

@@ -189,3 +189,97 @@ def test_scan_returns_characterised_detections(detector):
     result = vision.scan((FIXTURES / "room.jpg").read_bytes(), detector)
     assert result and all(set(d) == {"label", "category", "confidence", "box", "color_hex", "color_name", "position"} for d in result)
     assert all(0 <= v <= 1 for d in result for v in d["box"])
+
+
+# ---- review fixes: phone photos, shapes, memory, concurrency ---------------------------------------------------
+
+
+def test_decode_accepts_mpo_phone_jpegs():
+    buffer = io.BytesIO()
+    Image.new("RGB", (120, 90), "red").save(buffer, "MPO", save_all=True, append_images=[Image.new("RGB", (60, 45))])
+    assert Image.open(io.BytesIO(buffer.getvalue())).format == "MPO"
+    assert vision.decode_image(buffer.getvalue()).size == (120, 90)
+
+
+@pytest.mark.parametrize("size", [(32, 60000), (60000, 32), (40, 801)])
+def test_decode_refuses_extreme_aspect_ratios(size):
+    with pytest.raises(vision.ImageError):
+        vision.decode_image(encode(Image.new("L", size), "PNG", optimize=True))
+
+
+def test_decode_accepts_the_largest_allowed_aspect_ratio_and_detection_runs():
+    img = vision.decode_image(encode(Image.new("RGB", (32 * 20, 32), "white"), "PNG"))
+    tensor, scale, pad = vision.letterbox(img)
+    assert tensor.shape == (1, 3, 640, 640)
+
+
+def test_decode_shrinks_large_photos_to_the_working_size():
+    img = vision.decode_image(encode(Image.new("RGB", (4000, 3000), "white")))
+    assert max(img.size) == vision.WORK_SIDE and img.size == (1280, 960)
+
+
+def test_dominant_color_at_the_far_edges_does_not_fail():
+    img = Image.new("RGB", (640, 480), "blue")
+    for box in ([1.0, 0.5, 0.0, 0.1], [0.5, 1.0, 0.1, 0.0], [0.9999, 0.9999, 0.0001, 0.0001]):
+        assert vision.dominant_color(img, box)[0].startswith("#")
+
+
+def test_characterise_drops_boxes_that_round_to_nothing():
+    img = Image.new("RGB", (640, 480))
+    assert vision.characterise(img, [{"class_id": 56, "confidence": 0.9, "box": [0.5, 0.5, 0.00001, 0.2]}]) == []
+
+
+def test_scan_is_refused_when_every_slot_is_taken(monkeypatch):
+    monkeypatch.setattr(vision, "BUSY_SECONDS", 0.05)
+    held = [vision._slots.acquire() for _ in range(vision.MAX_PARALLEL)]
+    try:
+        with pytest.raises(vision.DetectorBusy):
+            vision.scan(encode(Image.new("RGB", (64, 64))), detector=None)
+    finally:
+        for _ in held:
+            vision._slots.release()
+
+
+def test_concurrent_scans_never_exceed_the_slot_limit():
+    import threading
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    lock, state = threading.Lock(), {"now": 0, "peak": 0}
+
+    class Slow:
+        def detect(self, img):
+            with lock:
+                state["now"] += 1
+                state["peak"] = max(state["peak"], state["now"])
+            time.sleep(0.05)
+            with lock:
+                state["now"] -= 1
+            return []
+
+    data = encode(Image.new("RGB", (64, 64)))
+    with ThreadPoolExecutor(8) as pool:
+        results = list(pool.map(lambda _: vision.scan(data, Slow()), range(8)))
+    assert results == [[]] * 8 and state["peak"] <= vision.MAX_PARALLEL
+
+
+def test_concurrent_first_loads_build_one_session():
+    from concurrent.futures import ThreadPoolExecutor
+
+    vision._load.cache_clear()
+    with ThreadPoolExecutor(4) as pool:
+        loaded = list(pool.map(lambda _: vision.load_detector(), range(4)))
+    assert all(d is loaded[0] for d in loaded)
+
+
+def test_an_altered_model_file_is_refused(monkeypatch):
+    from fastapi import HTTPException
+
+    vision._load.cache_clear()
+    monkeypatch.setattr(vision, "MODEL_SHA256", "0" * 64)
+    try:
+        with pytest.raises(HTTPException) as error:
+            vision.get_detector()
+        assert error.value.status_code == 503
+    finally:
+        vision._load.cache_clear()

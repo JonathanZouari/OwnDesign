@@ -152,7 +152,7 @@ def test_confirmed_items_are_added_listed_edited_and_removed(api, world, fake):
     edit = {"label": "Floor lamp", "category": "decor", "color_hex": "#000000", "room_id": None, "note": "brass"}
     edited = api.put(url, json=edit, headers=world.designer.headers)
     assert edited.status_code == 200 and edited.json()["data"]["label"] == "Floor lamp"
-    assert edited.json()["data"]["updated_at"] >= created[1]["updated_at"]
+    assert edited.json()["data"]["updated_at"] > created[1]["updated_at"]
     assert api.put(url, json={**edit, "room_id": "nope"}, headers=world.client.headers).status_code == 422
 
     assert api.delete(url, headers=world.client.headers).status_code == 200
@@ -219,7 +219,7 @@ def test_item_isolation(api, world):
     assert api.get(f"/v1/projects/{pid}/items", headers=world.client.headers).status_code == 200
 
 
-def test_users_cannot_read_others_or_write_items_through_the_data_api(world, admin):
+def test_users_cannot_read_others_or_write_items_through_the_data_api(api, world, admin):
     from supabase import create_client
 
     from app.db import settings
@@ -229,34 +229,43 @@ def test_users_cannot_read_others_or_write_items_through_the_data_api(world, adm
         client.postgrest.auth(user.token)
         return client
 
+    from postgrest.exceptions import APIError
+
     pid = world.project["id"]
+    own = add(api, world.client, pid, [item(label="Data API chair")]).json()["data"][0]
     mine = as_user(world.client).table("room_items").select("id").eq("project_id", pid).execute().data
-    assert mine  # the client reads its own items
+    assert own["id"] in {row["id"] for row in mine}  # the client reads its own items
     for stranger in (world.other_client, world.designer_b):
         assert as_user(stranger).table("room_items").select("id").eq("project_id", pid).execute().data == []
     anon = create_client(settings().supabase_url, settings().supabase_publishable_key)
-    with pytest.raises(Exception):
+    with pytest.raises(APIError) as denied:
         anon.table("room_items").select("id").limit(1).execute()
+    assert denied.value.code == "42501"
     client = as_user(world.client)
     for write in (
         lambda: client.table("room_items").insert({"project_id": pid, "label": "x", "category": "other", "source": "manual"}).execute(),
         lambda: client.table("room_items").update({"label": "hacked"}).eq("project_id", pid).execute(),
         lambda: client.table("room_items").delete().eq("project_id", pid).execute(),
     ):
-        with pytest.raises(Exception):
+        with pytest.raises(APIError) as denied:
             write()
+        assert denied.value.code == "42501"  # permission denied: users have SELECT only
     labels = {row["label"] for row in admin.table("room_items").select("label").eq("project_id", pid).execute().data}
-    assert "hacked" not in labels and labels
+    assert "hacked" not in labels and "Data API chair" in labels
 
 
-def test_database_refuses_moving_an_item_or_linking_another_projects_photo(world, admin):
+def test_database_refuses_moving_an_item_or_linking_another_projects_photo(api, world, admin, fake):
+    from postgrest.exceptions import APIError
+
     pid, other = world.project["id"], world.other_project["id"]
-    row = admin.table("room_items").select("id").eq("project_id", pid).limit(1).execute().data[0]
-    with pytest.raises(Exception):
+    row = add(api, world.client, pid, [item(label="Stays here")]).json()["data"][0]
+    with pytest.raises(APIError) as refused:
         admin.table("room_items").update({"project_id": other}).eq("id", row["id"]).execute()
-    other_asset = admin.table("inspiration_assets").select("id").eq("project_id", other).limit(1).execute().data[0]["id"]
-    with pytest.raises(Exception):
+    assert refused.value.code == "P0001"
+    other_asset = scan(api, world.other_client, other).json()["data"]["asset"]["id"]
+    with pytest.raises(APIError) as refused:
         admin.table("room_items").insert({"project_id": pid, "label": "x", "category": "other", "source": "scan", "asset_id": other_asset}).execute()
+    assert refused.value.code == "23503"  # the composite foreign key: the photo belongs to another project
 
 
 def test_deleting_the_photo_keeps_the_item(api, world, fake):
@@ -295,10 +304,29 @@ def test_item_quota_holds_under_parallel_requests(api, world, admin):
     assert len(admin.table("room_items").select("id").eq("project_id", pid).execute().data) == 200
 
 
+def test_scan_of_a_project_with_no_image_slots_left_skips_the_model(api, world, admin, fake):
+    pid = world.project_fn(world.client, "Full")["id"]
+    rows = [{"project_id": pid, "kind": "inspiration", "storage_path": f"{pid}/fake-{i}.png", "mime": "image/png", "size_bytes": 1}
+            for i in range(30)]
+    admin.table("inspiration_assets").insert(rows).execute()
+    assert scan(api, world.client, pid).status_code == 409
+    assert fake.calls == 0
+
+
+def test_inspiration_photos_cannot_be_linked_to_items(api, world):
+    from tests.test_design import upload
+
+    pid = world.project["id"]
+    inspiration = upload(api, world.client, pid, PNG).json()["data"]["id"]
+    linked = item(source="scan", asset_id=inspiration, box=[0, 0, 1, 1], confidence=0.9)
+    assert add(api, world.client, pid, [linked]).status_code == 422
+
+
 def test_consultant_context_includes_the_items(api, world):
     from app.auth import CurrentUser
     from app.routes.consultant import _context
 
+    add(api, world.client, world.project["id"], [item(label="Private chair")])
     project = api.get(f"/v1/projects/{world.project['id']}", headers=world.client.headers).json()["data"]
     from supabase import create_client
 
