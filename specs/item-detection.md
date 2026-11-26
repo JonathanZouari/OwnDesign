@@ -2,7 +2,7 @@
 
 ## Furniture and fixtures recognised in a client's own photos
 
-**Status:** Draft. A contributor's proposal; product and technical decisions still open are listed in section 13.
+**Status:** A contributor's proposal. The decisions in section 13 are the contributor's and await the owner's acceptance.
 **Date:** 26 November 2026
 **Product:** Atelier / OwnDesign
 
@@ -27,6 +27,7 @@ by the share of suggestions the user accepts.
 - Detecting common furniture and fixtures in images the client uploads as "Item I own" (`inspiration_assets.kind = 'existing_item'`).
 - Showing each detection on the image (box, name, confidence) and letting the user accept or dismiss it.
 - Adding accepted items to the brief's existing items.
+- Listing accepted items that have a catalog type under "My items" in the editor palette, for the user to place on the plan themselves.
 - Running the model on Atelier's own server, on CPU, with no third-party service.
 
 ### Out of scope
@@ -34,7 +35,7 @@ by the share of suggestions the user accepts.
 - Converting a photo or a drawing of a floor plan into walls, doors or windows (PRD 3.3: not approved).
 - Camera or LiDAR room scanning (PRD 3.3: not approved).
 - Measuring items from a photo. Detection says what an item is, not its size.
-- Adding detected items to the 2D plan automatically.
+- Adding detected items to the 2D plan automatically. They are only offered in the palette.
 - Detection in inspiration images, shopping lists, and quality checks of renderings (possible later features).
 - Training or fine-tuning a model in this release.
 
@@ -52,6 +53,7 @@ RLS-scoped read, writes with the service key, and refuses writes in a suspended 
 4. The page draws a box and a name for each item on the photo, with a confidence level.
 5. The client ticks the items to keep and selects **Add to brief**.
 6. The accepted items appear in the brief's existing items and are saved with it.
+7. In the plan editor, the palette shows a "My items" group with the accepted items that have a catalog type. The user places them like any other furniture, at the catalog's default size, and can resize them.
 
 ## 6. Detection output
 
@@ -76,28 +78,31 @@ exists (`frontend/js/catalog.js`):
 | book | Books | none |
 
 Other COCO classes (people, animals, vehicles, food and so on) are discarded. Wardrobes, lamps, rugs, desks and
-cabinets are not COCO classes and are not detected without fine-tuning (section 13).
+cabinets are not COCO classes and are not detected without fine-tuning (a later release).
 
 ## 7. Functional requirements
 
 1. Detection is available only to users who may see the project, and only on an image of that project.
 2. Detection runs on the stored image, never on an image or result supplied by the browser.
 3. Only the classes in section 6 are returned, each with its name, confidence and a box relative to the image.
-4. Results below a confidence threshold are not shown.
-5. Running detection again on the same image returns the stored result instead of running the model again.
+4. Results with a confidence below 0.4 are not shown. Results below 0.6 are marked "Not sure" and are not ticked in advance.
+5. Detection results are returned to the browser and not stored. Only items the user accepts are stored; running detection again runs the model again.
 6. Accepting items adds them to the brief through the existing brief validation (`Brief.existing_items`, 1000 characters).
 7. Detection never changes the plan, and never changes the brief without the user's confirmation.
-8. A failed detection shows a clear error and stores nothing.
-9. Detection results are removed with their image (cascade).
+8. The editor palette lists accepted items with a catalog type; placing one adds a normal furniture item of that type (the plan schema does not change).
+9. A failed detection shows a clear error and stores nothing.
+10. Accepted items belong to the project and stay when their source photo is deleted (the photo reference is cleared); they are removed with the project.
 
 ## 8. Acceptance criteria
 
 - The client and a designer of the studio can run detection on the project's "Item I own" photo and see the same items.
-- A user without access to the project cannot run detection or read results by changing a project or image id.
+- A user without access to the project cannot run detection or read accepted items by changing a project or image id.
 - A sofa, chairs and a dining table are found in a reference living-room photo.
 - Non-home classes (for example a person) are never returned.
 - Accepted items appear in the brief after a reload. Dismissed items do not.
-- Deleting the image deletes its detection results.
+- An accepted sofa appears under "My items" in the editor palette and can be placed on the plan; an accepted plant (no catalog type) does not appear there.
+- Nothing is stored for items the user did not accept.
+- Deleting the photo keeps the accepted items, in the brief and in the palette.
 - A corrupt or unsupported image fails with a clear message and stores nothing.
 
 ## 9. Security, privacy and implementation constraints
@@ -106,7 +111,7 @@ cabinets are not COCO classes and are not detected without fine-tuning (section 
 - Reuse the existing image checks (type from the file's bytes, 5 MB, 30 per project) and the tenant-isolation model. Any new table gets RLS, explicit grants and an isolation test.
 - Audit records hold metadata only (image id, number of items), never image bytes.
 - Bound concurrent model runs, as plan export does, so detection cannot starve other requests.
-- Retention and consent for detection results follow the open item on consultant retention (`wiki/open-items.md`).
+- Only accepted items are stored (type, label, count, source photo). Retention and consent for photos and accepted items follow the open item on consultant retention (`wiki/open-items.md`).
 
 ## 10. Model and licence
 
@@ -146,13 +151,14 @@ Images: `backend/app/routes/design.py` (`/assets`, private bucket `project-asset
 - Feature: existing-item detection in "Item I own" photos (contributor's choice, to be confirmed by the owner).
 - Model family: RF-DETR (Apache 2.0) instead of YOLOv8 (AGPL-3.0).
 - Runtime: ONNX Runtime on CPU, on Atelier's own server.
+- Model size: RF-DETR Small (input 512). It found the TV, a second plant and books that Nano missed; 0.23 s per image is not noticeable to the user.
+- Model file: kept in a private Supabase Storage bucket. The server downloads it on first use, checks its sha256 against the value pinned in the code, and keeps a local copy. Tests use a small stand-in model.
+- Owner consultation: this specification goes to the owner as its own pull request first; code follows in a separate pull request after the owner accepts the direction.
+- Synchronous detection: the request runs the model and answers (about a quarter of a second locally). Concurrent runs are bounded as in plan export: two at a time per process, one per user, 429 with `Retry-After` beyond that. A background job is not worth a queue, a worker and status polling for this duration; revisit if server timings are much slower.
+- Editor: accepted items with a catalog type are offered under "My items" in the editor palette; the user places them. Accepted items are therefore kept as structured data (type, label, count), not only as brief text. The editor is also changed by other open pull requests (3D walkthrough, mobile), so this part may need rebasing.
+- Confidence threshold 0.4. In the trial, sofa, chairs and table scored 0.78-0.94 and books and a second plant 0.46-0.52; the user confirms every item, so a low threshold misses less without letting mistakes through.
+- Storage: only accepted items are stored. Detections the user did not accept are never kept, so less personal data is held; the cost is running the model again if the user detects the same photo twice.
 
 ### Open
 
-1. Model size: Nano or Small.
-2. Where the ONNX file is kept, since it cannot be committed.
-3. How the owner is consulted before implementation (a specification pull request first, as for plan export).
-4. Synchronous detection in the request, or a background job.
-5. Whether accepted items also appear in the editor palette as suggested furniture.
-6. Confidence threshold.
-7. Whether detection results are stored, and for how long.
+None. Every decision above still needs the owner's acceptance.

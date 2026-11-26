@@ -11,7 +11,7 @@ Project memory for Atelier. Rules for maintaining it are in [`../CLAUDE.md`](../
 ## Specifications
 
 - [../specs/plan-export.md](../specs/plan-export.md): plan export to PNG, PDF and DXF (a contributor's proposal from pull request #9; the product decisions in it are not yet the owner's, technical validation pending).
-- [../specs/item-detection.md](../specs/item-detection.md): recognising furniture in a client's "Item I own" photos with RF-DETR on the server (a contributor's draft; open decisions in its section 13).
+- [../specs/item-detection.md](../specs/item-detection.md): recognising furniture in a client's "Item I own" photos with RF-DETR on the server (a contributor's proposal; its decisions in section 13 await the owner).
 
 ## Engineering
 

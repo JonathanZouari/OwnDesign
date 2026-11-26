@@ -197,3 +197,9 @@ A contributor's draft at `specs/item-detection.md`: detect furniture in "Item I 
 to the brief. YOLOv8 set aside for its AGPL-3.0 licence; RF-DETR (Apache 2.0) through ONNX Runtime instead.
 Local CPU trial on the two Stitch interior images: Nano 0.12 s, Small 0.23 s per image, sofa, chairs and table
 found; the ONNX file (116-123 MB) is over GitHub's file limit. Open decisions in section 13. Pages: [index](index.md).
+
+## [2026-11-26] decision | Existing-item detection: the contributor's choices
+Model RF-DETR Small; ONNX file in a private Supabase Storage bucket, checked by sha256; detection runs in the
+request with the export concurrency limits; accepted items also offered under "My items" in the editor palette;
+confidence threshold 0.4 ("Not sure" below 0.6); only accepted items are stored. Specification first, as its own
+pull request. All await the owner. Pages: [index](index.md).
