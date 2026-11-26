@@ -133,3 +133,18 @@ A document only (`specs/plan-export.md`, 145 lines), read in full: no code, no s
 decisions" are the contributor's; the index line now says so. Conflict in this log resolved by keeping both
 sides. Frontend 31 passed; the backend suite was not run for a document. Commits `3a7a741`, `b63440f`.
 Pages: [index](index.md).
+
+## [2026-11-26] build | Plan export (contributor's pull request)
+Server-side export of a saved plan version to PDF, PNG and DXF, the export dialog in the editor and the
+`plan.exported` activity event, tests first. Commits `03f552e`, `ee34403`, `efe6f1a`, `f0ff0ff`, `f0ed5e5`,
+`a9f63b2`. Pages: [architecture](architecture.md), [overview](overview.md), [decisions](decisions.md).
+
+## [2026-11-26] security | Review of plan export
+Security-reviewer agent, Python code review, `security-review` on the commits. Fixed: PDFium thread safety, one
+export per user, door swings and diagonal walls off the page, Hebrew ellipsis. `security-review`: no finding.
+Commits `2a122d3`, `eb91b9a`. Pages: [security](security.md), [open-items](open-items.md).
+
+## [2026-11-26] test | Plan export verified
+Backend 183 passed, frontend 36 passed, locally on top of `dev` at `e53276a`. One known flaky browser test from
+Phase 2 fails about half the runs, also without these changes. DXF not opened in a CAD program. Pages:
+[testing](testing.md).

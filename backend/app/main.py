@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.db import settings
 from app.responses import fail, ok
-from app.routes import consultant, design, projects, studios
+from app.routes import consultant, design, exports, projects, studios
 
 log = logging.getLogger(__name__)
 MAX_BODY_BYTES = 2_000_000  # a full 1000-item plan is well under this
@@ -25,6 +25,7 @@ app.include_router(projects.router)
 app.include_router(design.catalog_router)
 app.include_router(design.router)
 app.include_router(consultant.router)
+app.include_router(exports.router)
 
 
 class BodyLimit:
@@ -62,7 +63,7 @@ app.add_middleware(BodyLimit)
 
 @app.exception_handler(HTTPException)
 async def http_error(_: Request, error: HTTPException):
-    return JSONResponse(fail(str(error.detail)), status_code=error.status_code)
+    return JSONResponse(fail(str(error.detail)), status_code=error.status_code, headers=error.headers)
 
 
 @app.exception_handler(RequestValidationError)

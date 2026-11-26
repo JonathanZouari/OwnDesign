@@ -1,7 +1,8 @@
 // Editor controller: owns the state, wires tools, keyboard, zoom, save and versions.
 // Two modes: a saved project (?project=<id>, needs sign-in) or a local draft (guest or not yet saved).
-import { api, getSession, requireSession, signOut } from "../api.js";
+import { api, apiDownload, getSession, requireSession, signOut } from "../api.js";
 import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
+import { downloadName, exportBody, exportNote, FORMATS, needsPaper, versionLabel } from "../export-logic.js";
 import * as P from "../plan.js";
 import { KEYS, load, save as store } from "../store.js";
 import { $, action, h, run, showStudio, toast } from "../ui.js";
@@ -138,6 +139,7 @@ function render() {
   $("#status-zoom").textContent = `Zoom: ${zoom}`;
   $("#context-area").textContent = `${P.planArea(plan).toFixed(1)} m²`;
   const latest = state.versions?.[0];
+  $("#export").hidden = !latest; // only a saved version can be exported
   $("#crumb-version").textContent = state.project ? `Plan Editor (${latest ? `v${latest.version_no}` : "no versions"}${isDirty() ? ", edited" : ""})` : "Plan Editor (Draft)";
   $("#status-save").textContent = state.project
     ? isDirty() ? "Unsaved changes" : latest ? `Saved · v${latest.version_no}` : "Nothing saved yet"
@@ -289,6 +291,55 @@ async function savePlan(label) {
   toast(`Saved as v${version.version_no}`);
 }
 
+// ---- export: always of a saved version, built by the backend --------------------------------------------------
+
+const exportChoice = () => {
+  const dialog = $("#export-dialog");
+  return {
+    format: dialog.querySelector("input[name=format]:checked").value,
+    paper: $("#export-paper").value,
+    version: state.versions.find((version) => version.id === $("#export-version").value),
+  };
+};
+
+function syncExport() {
+  const { format, version } = exportChoice();
+  $("#export-hint").textContent = FORMATS.find((candidate) => candidate.id === format).hint;
+  $("#export-paper-field").hidden = !needsPaper(format);
+  const dirty = isDirty();
+  $("#export-note").textContent = exportNote(version, dirty);
+  $("#export-note").className = dirty ? "note" : "muted small";
+}
+
+function openExport() {
+  const dialog = $("#export-dialog");
+  $("#export-version").replaceChildren(...state.versions.map((version) => h("option", { value: version.id }, versionLabel(version))));
+  $("#export-version").value = state.versions[0].id; // the latest saved version
+  dialog.returnValue = "";
+  syncExport();
+  dialog.showModal();
+}
+
+async function exportPlan() {
+  const { format, paper, version } = exportChoice();
+  const label = FORMATS.find((candidate) => candidate.id === format).label;
+  const button = $("#export");
+  button.disabled = true;
+  toast(`Preparing ${label} of v${version.version_no}…`);
+  try {
+    const file = await apiDownload(`/v1/projects/${state.project.id}/versions/${version.id}/export`, exportBody(format, paper));
+    const name = downloadName(state.project.name, version.version_no, format);
+    const link = h("a", { href: URL.createObjectURL(file), download: name, hidden: true });
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
+    toast(`Downloaded ${name}`);
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function buildChrome(name, role) {
   $("#tools").replaceChildren(
     ...TOOLS.map((tool) =>
@@ -332,6 +383,12 @@ function buildChrome(name, role) {
   $("#zoom-in").addEventListener("click", () => zoomBy(1 / 1.25));
   $("#zoom-out").addEventListener("click", () => zoomBy(1.25));
   $("#zoom-fit").addEventListener("click", fit);
+  $("#export").addEventListener("click", openExport);
+  $("#export-cancel").addEventListener("click", () => $("#export-dialog").close("cancel"));
+  $("#export-dialog").addEventListener("change", syncExport);
+  $("#export-dialog").addEventListener("close", action(async (event) => {
+    if (event.currentTarget.returnValue === "export") await exportPlan();
+  }));
   $("#save").addEventListener("click", openSave);
   $("#save-cancel").addEventListener("click", () => $("#save-dialog").close("cancel"));
   $("#save-dialog").addEventListener("close", action(async (event) => {

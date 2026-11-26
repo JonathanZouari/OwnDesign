@@ -29,3 +29,14 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.
 
 - **Pull requests never get secrets**; the full suite runs on push to `dev`/`main` only ([testing.md](testing.md)). Came out of the security review of the CI plan.
+
+## Proposed in the plan export pull request (awaiting the owner)
+
+The contributor's choices for `specs/plan-export.md`; they become decisions only when the owner accepts them.
+
+- **The file is built on the server**, so the export is recorded only after it succeeded and the browser never sends geometry.
+- **Studio activity shows the exporter's role**, not a name or email, as for saved versions.
+- **A suspended studio can still export** (reading is allowed there).
+- **Room names in any Hebrew or Latin text**: font Heebo plus python-bidi (LGPL, used unmodified on the server only).
+- **Room areas as the editor computes them**, marked `~` with "Room areas are approximate" (Heebo has no `≈`).
+- **The paper size the user picked last is kept** while the editor stays open.

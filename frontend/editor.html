@@ -30,6 +30,7 @@
     </nav>
     <div class="group">
       <span class="chip caution" title="Conceptual plan. Not for construction. Requires review by a qualified professional."><span class="icon" aria-hidden="true" style="font-size: 14px">warning</span><span>Conceptual<span class="wide"> — Non-Structural Review</span></span></span>
+      <button id="export" type="button" aria-label="Export plan" hidden><span class="icon" aria-hidden="true">download</span><span class="wide">Export</span></button>
       <button class="primary" id="save" type="button" aria-label="Save plan"><span class="icon" aria-hidden="true">save</span><span class="wide">Save plan</span></button>
       <button id="account" class="wide" type="button"></button>
     </div>
@@ -110,6 +111,36 @@
       <div class="dialog-actions">
         <button type="button" id="save-cancel">Cancel</button>
         <button class="primary" value="save">Save version</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="export-dialog" aria-labelledby="export-title">
+    <form method="dialog" class="stack">
+      <h2 id="export-title">Export plan</h2>
+      <fieldset>
+        <legend>Format</legend>
+        <div class="choice">
+          <label><input type="radio" name="format" value="pdf" checked> PDF</label>
+          <label><input type="radio" name="format" value="png"> PNG image</label>
+          <label><input type="radio" name="format" value="dxf"> DXF for CAD</label>
+        </div>
+        <p class="muted small" id="export-hint" style="margin: 6px 0 0"></p>
+      </fieldset>
+      <label>Saved version
+        <select id="export-version" name="version"></select>
+      </label>
+      <label id="export-paper-field">Paper size
+        <select id="export-paper" name="paper">
+          <option value="a4">A4</option>
+          <option value="a3">A3</option>
+        </select>
+      </label>
+      <p id="export-note" class="muted small" style="margin: 0"></p>
+      <p class="muted small" style="margin: 0">Conceptual plan only. Not for construction.</p>
+      <div class="dialog-actions">
+        <button type="button" id="export-cancel">Cancel</button>
+        <button class="primary" value="export">Download</button>
       </div>
     </form>
   </dialog>

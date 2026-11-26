@@ -67,6 +67,16 @@ executes that code with the service key.
 What remains: the CI key is still a service key on the dev project; logs are public and GitHub masks exact
 secret strings only, so a failing test's traceback is visible to everyone. See [open-items.md](open-items.md).
 
+## Review of plan export
+
+A security-reviewer agent, a Python code review and `security-review` on the commits of the export branch.
+Fixed: PDFium called from two threads at once (it is not thread-safe; could crash the process), one account
+could hold every export slot (now one export per user, `Retry-After` on 429), door swings and diagonal walls
+could fall off the page, an ellipsis on the wrong side of a shortened Hebrew name. Checked, no finding:
+project/version pairing and RLS, role label, activity metadata, `Content-Disposition` (ASCII file name only),
+user text in PDF (drawn as text, never parsed) and DXF (only a fixed notice), frontend (text nodes, `blob:`
+download). Not fixed: see "Plan export" in [open-items.md](open-items.md).
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

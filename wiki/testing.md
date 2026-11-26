@@ -64,6 +64,19 @@ reload; designer sees the client's data; client-side rejections, markup stays te
 visitor; consultant page limits) passes together with `test_e2e.py` (9 browser tests in all). No chat message
 reaches OpenAI in the suite; the real call was checked by hand once.
 
+2026-11-26, plan export: backend 183 passed locally, frontend 36 passed. New files:
+`backend/tests/test_export_layout.py` (geometry and page layout), `test_export_files.py` (PDF, PNG and DXF read
+back: page size, orientation, labels, notices, Hebrew, 300 DPI, layers, units, y flip, door arcs in four
+directions, largest allowed plan), `test_export_api.py` (each role and format, earlier version, access refused
+by project/version pairing and across studios, audit content, no event on failure, malformed stored version,
+429, suspended studio, parallel PNG renders), `test_e2e_export.py` (4 browser journeys: client exports each
+format and an earlier version, unsaved changes not exported, designer export shown in activity, no button
+before a save), `frontend/tests/export-logic.test.js`. Not done: opening the DXF in a CAD program by hand.
+
+Known flaky, not caused by export: `test_e2e_design.py::test_designer_sees_the_clients_brief_materials_and_moodboard`
+fails about one run in two with "Element is not attached to the DOM" (4 of 6 on a clean `dev` checkout).
+`test_e2e_export.py::test_no_export_button_before_anything_is_saved` failed once in seven full runs under load.
+
 ## Local setup notes
 
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the
