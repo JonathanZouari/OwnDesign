@@ -101,6 +101,39 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+## [2026-11-26] plan | Tests in GitHub Actions
+Plan approved by the user: everything runs in CI, a separate Supabase key for CI, report only.
+Pages: [decisions](decisions.md).
+
+## [2026-11-26] security | Review of the CI plan and workflow
+Security-reviewer agent on the plan (2 high: branch-limited environment, separate key; both adopted), then
+security-reviewer and code-reviewer agents on the file (no critical, high or medium security finding; four small
+fixes applied), then `security-review` on the commits: no finding. Pages: [security](security.md),
+[open-items](open-items.md).
+
+## [2026-11-26] infra | CI workflow and the `ci` environment
+`.github/workflows/ci.yml` with jobs `frontend`, `backend`, `backend-unit`; GitHub environment `ci` limited to
+`dev` and `main`, holding the Supabase URL and publishable key. Found on the way: `test_consultant.py` imported
+`app.main` at module level, so the suite crashed instead of skipping without settings; fixed. Commits `0150113`,
+`dff701b`. Pages: [testing](testing.md), [security](security.md), [decisions](decisions.md).
+
+## [2026-11-26] test | CI verified, except the full backend run
+Local: backend 100 passed, frontend 31 passed. Clean clone without settings: 22 passed, 78 skipped. On GitHub:
+red check on a pull request with a failing test, refusal of a branch outside the environment's rule, failure on a
+missing secret, all as intended. The temporary pull request #25 was closed and its branch deleted. Open: a
+green `backend` run, waiting for the CI secret key. Pages: [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] docs | Plan export specification added
+The plan export feature specification (PNG, PDF and DXF downloads of a saved plan version, with a
+conceptual-plan notice and a studio activity event) added as a raw source at `specs/plan-export.md`.
+Technical validation (section 10 of the spec) comes before implementation. Pages: [index](index.md).
+
+## [2026-11-26] docs | Pull request #9 merged: plan export specification
+A document only (`specs/plan-export.md`, 145 lines), read in full: no code, no secrets. Its "confirmed product
+decisions" are the contributor's; the index line now says so. Conflict in this log resolved by keeping both
+sides. Frontend 31 passed; the backend suite was not run for a document. Commits `3a7a741`, `b63440f`.
+Pages: [index](index.md).
+
 ## [2026-11-26] decision | The app is for customers
 The user: the app is only for customers, not internal designers. Recorded in [decisions](decisions.md).
 
