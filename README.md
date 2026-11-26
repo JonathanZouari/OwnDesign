@@ -63,8 +63,14 @@ supabase config push      # applies the auth settings declared in supabase/confi
 `supabase/config.toml` currently holds **development** values: email confirmation is off and the
 site URL is `localhost:5500`. Production needs confirmation on, custom SMTP, and its own URLs.
 
+## Budget and shopping list
+
+`budget.html` (linked from the project list and the project pages): one shopping list per project, compared with
+the brief's budget, with CSV import and export (example: `frontend/samples/shopping-list-example.csv`) and a
+print view. The sample list uses synthetic prices. Needs migration `20261127090000_estimates.sql`.
+
 ## Not in Phase 1
 
-Design brief, moodboards, AI consultant, renderings, budget, dossier, messaging and tasks, studio
+Design brief, moodboards, AI consultant, renderings, dossier, messaging and tasks, studio
 branding, invitation emails (the designer copies an invite link), per-project team permissions,
 Railway deployment files, rate limiting, subscriptions and credits.

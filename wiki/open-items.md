@@ -20,6 +20,22 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
 - The editor has no link to the Phase 2 pages at 767 px and below.
 
+## Budget and shopping list gaps
+
+- **Edits made while a save is in flight are overwritten** when the saved list comes back.
+- **No version check between editors:** the client and the designer replace the whole list, and the last save wins.
+- **Print** clips long values, because the cells are still single-line inputs.
+- **`1.500` is rejected by the page but accepted by the API** (it counts as 1.5 there).
+- A comma typed as a quantity is read as the decimal separator (`1,00` is 1; `1,000` is rejected), while the
+  CSV import reads `1,000` as one thousand.
+- Without a currency in the list, the file or the brief, a CSV import sets ILS, the sample list's currency;
+  the brief's own default is USD.
+- The studio dashboard does not link to the budget, and the editor header still shows "Dossier & Budget" as coming later.
+- **The migration must be applied** to each Supabase project (the CI one included) before the budget tests can pass there.
+- The ported diff had no code review of its own: the code was reviewed in its source form before porting.
+- CSV import drops an apostrophe that stands before `= + - @` at the start of a value or after a `;`, tab or line
+  break (for example `x;'=1` comes back as `x;=1`): it cannot be told apart from the export's formula guard.
+
 ## Studio branding
 
 `branding.html` is a browser-only preview. Still needed: storage and a table for the logo and colours,
@@ -67,6 +83,7 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 
 ## Smaller
 
+- The editor is wider than a 375 px phone screen: the "3D walkthrough" button sticks out (seen while testing the budget links).
 - Below 1200 px the sidebar is hidden, so the dashboard's in-page section links are not reachable there.
 - The wizard replaces an unsaved draft after a notice only; the portal's blank canvas asks first.
 - The dashboard lists every project of the studio on one page; there is no paging yet.

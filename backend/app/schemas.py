@@ -1,11 +1,12 @@
 """Request schemas. Geometry is the canonical 2D plan: centimetres, origin top-left, y down."""
 
 import math
+from decimal import Decimal, InvalidOperation
 from typing import Annotated, Literal
 from uuid import UUID
 
 from app.catalog import MATERIALS_BY_ID, STYLE_IDS
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator, model_validator
 
 MAX_COORD_CM = 100_000  # 1 km: far beyond any residential plan
 MAX_ITEMS = 1000
@@ -195,3 +196,53 @@ class MoodboardBody(Strict):
         if len(keys) != len(set(keys)):
             raise ValueError("an item can appear once on the board")
         return self
+
+
+# ---- estimate (budget and shopping list) -------------------------------------------------------------------------
+
+MAX_ESTIMATE_ITEMS = 200
+EstimatePrice = Annotated[int, Field(strict=True, ge=0, le=100_000_000)]  # strict: no bools, no 1.5, no "5"
+
+
+class EstimateItem(Strict):
+    category: Literal["furniture", "finish", "lighting", "textile", "appliance", "other"]
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+    room: Annotated[str, StringConstraints(strip_whitespace=True, max_length=60)] | None = None
+    quantity: Decimal
+    unit: Literal["unit", "m2", "m", "set"]
+    unit_price: EstimatePrice
+    source: Literal["synthetic", "user"] = "user"
+    note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None = ""
+
+    @field_validator("quantity", mode="before")
+    @classmethod
+    def _quantity_is_a_plain_number(cls, value):
+        if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+            raise ValueError("quantity must be a number")
+        try:
+            number = Decimal(str(value).strip())
+        except InvalidOperation:
+            raise ValueError("quantity must be a number") from None
+        if not number.is_finite():
+            raise ValueError("quantity must be a finite number")
+        if not 0 < number <= 10000:
+            raise ValueError("quantity must be above 0 and at most 10000")
+        # range first: quantize raises InvalidOperation for huge values
+        if number != number.quantize(Decimal("0.01")):
+            raise ValueError("quantity can have at most 2 decimal places")
+        return number
+
+    @field_validator("room")
+    @classmethod
+    def _blank_room_is_none(cls, value):
+        return value or None
+
+    @field_validator("note")
+    @classmethod
+    def _no_note_is_empty(cls, value):
+        return value or ""
+
+
+class EstimateBody(Strict):
+    currency: Literal["USD", "EUR", "GBP", "ILS"]
+    items: Annotated[list[EstimateItem], Field(max_length=MAX_ESTIMATE_ITEMS)]
