@@ -232,3 +232,17 @@ kept from both sides. `backend/uv.lock` taken from upstream and NOT yet regenera
 access): run `uv lock`. `design.html`, `consultant.html` and their scripts are still in English.
 Frontend tests: 148 passed, 1 skipped, 0 failed. Backend and E2E tests and the security review were not run.
 Pages updated: log, architecture.
+
+## [2026-11-26] build | Budget and shopping list, full Hebrew UI, phase 2 fixes
+Phase 2 migrations and the estimates migration applied to the Supabase project (user approved each).
+Fixed: project row links (`4221f73`), phase 2 writes and pages for projects without a studio (`98f93ae`,
+`f30b6dd`), backend lockfile (`4938043`). Budget: schema (`6dbb65d`, `1202d81`), API (`055f5ca`), page
+(`1fbae85`, `c125727`), phone overflow (`3508d2f`), quantity crash (`89b70f2`), CSV import (`abc732f`,
+`9db2346`, `0bead2c`). Hebrew UI (`c35aa4d`, `fc2a082`, `9f4d217`, `ea91c9f`, `c20e07c`).
+
+## [2026-11-26] test | Full regression
+Backend 295 passed; frontend 187 passed, 1 skipped.
+
+## [2026-11-26] security | Merge, budget, translation and CSV import
+No high-confidence finding. Deferred code review items are in open-items. Pages updated: overview,
+architecture, decisions, design, testing, security, open-items.

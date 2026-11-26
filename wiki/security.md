@@ -45,7 +45,15 @@ untrusted input item). Checked, no finding: tenant isolation of every new table 
 checks, signed URLs, no IDOR through asset or room ids. Not fixed: see the Phase 2 gaps in
 [open-items.md](open-items.md). The Phase 2 frontend had a code review (fixed: expiring image links,
 duplicate chat message after a failed answer, unvalidated `?project=`); a security review of the frontend
-commits is still to do.
+commits is still to do (done 2026-11-26, below).
+
+## Review of 2026-11-26
+
+Phase 2 merge (backend and frontend), budget feature, Hebrew translation and CSV import. No high-confidence
+finding (confidence 8 or more) in any of the three passes. Checked: tenant isolation and RLS of the new tables,
+`replace_estimate` callable by the service role only, DOM built from text nodes, CSV formula guard on export,
+CSV import cannot reach object keys or markup, no secrets in the new commits. The reviews were run by subagents
+following the `security-review` method. A code review found a crash (500) on huge quantities; fixed.
 
 ## Every stage
 

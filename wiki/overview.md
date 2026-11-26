@@ -36,13 +36,24 @@ without a studio. The studio features below are built but hidden from the UI for
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 
+## Built: budget and shopping list (2026-11-26, course task)
+
+- One shopping list per project (`budget.html`): editable rows (category, name, room, quantity, unit, unit price),
+  line amounts and category totals computed live, never stored.
+- The list is received ready-made: a **synthetic** sample of 25 items in ILS, or a CSV file import. Prices are
+  labelled non-binding and synthetic.
+- Comparison with the budget range of the brief (under, within, over, no budget, currency mismatch; no conversion).
+- CSV export (the same format the import reads; example in `frontend/samples/`) and a print view.
+- The whole UI is Hebrew, right to left, including the brief, materials and consultant pages; the consultant is
+  instructed to answer in Hebrew.
+
 ## Not built yet
 
-Renderings, budget, dossier,
+Renderings, dossier,
 messaging and tasks, studio branding, invitation emails, per-project team permissions, deployment,
 rate limiting, subscriptions and credits.
 
 ## Next
 
-Per the PRD: renderings, version comparison, budget and shopping list, dossier and handoff, messaging and
+Per the PRD: renderings, version comparison, dossier and handoff, messaging and
 tasks, studio branding ([open-items.md](open-items.md) lists what must be settled before production).

@@ -26,3 +26,8 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Images go through the backend**, not directly to storage, so type, size, count and access are checked in one place.
 - **Later-phase widgets shown in Stitch are left out** (AI advisor, credits, budget, compliance badges) so the UI shows no fake data.
 - **No automatic room detection from PDF plans** (2026-11-20). It did not work well enough on real drawings; the user cancelled it. Walls and furniture import stay; the room outline schema and editor kind buttons are kept.
+- **Shopping list is synthetic** (user, 2026-11-26): the course task assumes the list is received ready; no
+  supplier catalog and no AI pricing. Prices are shown as non-binding. Also chosen by the user: editable prices
+  and quantities, comparison with the brief budget, CSV and print export, then CSV import.
+- **The whole UI is Hebrew** (user, 2026-11-26), catalog labels included; ids stay English.
+- **Budget goes upstream as its own pull request, in English** (user, 2026-11-26); `dev` is pushed as usual.

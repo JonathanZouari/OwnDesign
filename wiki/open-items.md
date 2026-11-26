@@ -19,6 +19,23 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
 - The editor has no link to the Phase 2 pages at 767 px and below.
 
+## Budget and shopping list
+
+- Typing while a save is in flight is overwritten by the server response.
+- Print clips long item names and rooms (printed as form controls) and the list card may start on page 2.
+- Two editors (client and designer) overwrite each other silently: no `updated_at` conflict check.
+- The page rejects a quantity of `1.500`, which the API accepts; a comma thousands separator typed into the
+  table gets a misleading message.
+- Validation errors appear on every row once any field is touched and are not announced to screen readers.
+- The replace confirmation is not a real modal dialog (no focus trap).
+- Unused strings in `BUDGET`; the estimate payload is read with three separate queries.
+- A CSV name that really starts with an apostrophe followed by `= + - @` loses the apostrophe on import.
+
+## Interface
+
+- File fields have a custom Hebrew button; dragging a file onto them no longer works.
+- API error text is English on the server; pages show Hebrew chosen by status.
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in
@@ -26,6 +43,7 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 
 ## Before production
 
+- Cache busting or cache headers for the static frontend, so a deploy cannot mix old and new modules.
 - Turn email confirmation on and configure SMTP. While it is off, someone can register with another person's address and it is shown to the designer as the client's email.
 - Rate limiting on the API.
 - `connect-src` in the content security policy, per environment.

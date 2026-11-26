@@ -41,6 +41,15 @@ Phase 2 (`supabase/migrations/20261123*`): `project_briefs` (one JSON document p
 `ai_conversations` (unique per project and user), `ai_messages`, `storage_deletions` (queue of files to remove).
 Their SELECT policies go through `projects`, except conversations: only their own user reads them.
 
+Budget (`supabase/migrations/20261127090000_estimates.sql`): `project_estimates` (currency) and
+`estimate_items` (ordered lines); signed-in users read through project visibility only. The list is replaced
+atomically by `replace_estimate` (advisory lock per project, service role only). API: `GET`/`PUT
+/v1/projects/{id}/estimate` (amounts, totals and budget status computed on read, rounded half up per line) and
+`GET /v1/estimate/sample` (`backend/app/data/sample_shopping_list.json`, synthetic). CSV import and export are
+browser only (`frontend/js/budget-logic.js`); an import is saved through the same `PUT`.
+
+Phase 2 writes work for projects without a studio; only a suspended studio blocks them.
+
 ## Plan geometry
 
 One JSON document per version, validated in `backend/app/schemas.py` and edited by pure functions in
