@@ -101,3 +101,8 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+
+## [2026-11-26] docs | Plan export specification added
+The plan export feature specification (PNG, PDF and DXF downloads of a saved plan version, with a
+conceptual-plan notice and a studio activity event) added as a raw source at `specs/plan-export.md`.
+Technical validation (section 10 of the spec) comes before implementation. Pages: [index](index.md).
