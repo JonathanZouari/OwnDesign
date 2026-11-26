@@ -123,6 +123,8 @@ def test_by_category(api, world, pr):
     [
         {"quantity": 0}, {"quantity": -1}, {"quantity": 10000.01}, {"quantity": 1.234}, {"quantity": "abc"}, {"quantity": True},
         {"quantity": "NaN"}, {"quantity": "Infinity"}, {"quantity": None}, {"quantity": [1]},
+        {"quantity": "1e400"}, {"quantity": 1e30}, {"quantity": "12345678901234567890123456789"}, {"quantity": "-0"},
+        {"quantity": "1e-400"}, {"quantity": " "},
         {"unit_price": -1}, {"unit_price": 1.5}, {"unit_price": 100_000_001}, {"unit_price": True}, {"unit_price": "5"},
         {"unit_price": None},
         {"name": ""}, {"name": "   "}, {"name": "x" * 121}, {"room": "r" * 61}, {"note": "n" * 201},
@@ -175,6 +177,30 @@ def test_quantity_given_as_decimal_string_or_with_trailing_zero(api, world, pr):
     assert [i["quantity"] for i in got["items"]] == [2.5, 3.0, 4.0]
 
 
+def test_quantity_with_extra_trailing_zeros_is_accepted(api, world, pr):
+    saved = put(api, world.client_a, pr.url, body([line(quantity="1.500")]))
+    assert saved.status_code == 200
+    assert saved.json()["data"]["items"][0]["quantity"] == 1.5
+
+
+@pytest.mark.parametrize("room", ["", "   "])
+def test_blank_room_is_stored_as_null(api, world, pr, room):
+    assert put(api, world.client_a, pr.url, body([line(room=room)])).status_code == 200
+    assert api.get(pr.url, headers=world.client_a.headers).json()["data"]["items"][0]["room"] is None
+
+
+def test_null_note_is_stored_as_empty(api, world, pr):
+    assert put(api, world.client_a, pr.url, body([line(note=None)])).status_code == 200
+    assert api.get(pr.url, headers=world.client_a.headers).json()["data"]["items"][0]["note"] == ""
+
+
+def test_omitted_source_is_stored_as_user(api, world, pr):
+    item = line()
+    del item["source"]
+    assert put(api, world.client_a, pr.url, body([item])).status_code == 200
+    assert api.get(pr.url, headers=world.client_a.headers).json()["data"]["items"][0]["source"] == "user"
+
+
 def test_markup_text_is_stored_verbatim(api, world, pr):
     text = "<script>alert(1)</script> & \"quotes\""
     got = put(api, world.client_a, pr.url, body([line(text, room="<b>x</b>", note="<img src=x onerror=1>")])).json()["data"]
@@ -201,6 +227,7 @@ def test_repeated_put_is_idempotent(api, world, pr):
         ({}, "no_budget"),
         ({"budget_min": 2000, "budget_max": 5000, "currency": "ILS"}, "under"),
         ({"budget_min": 1000, "budget_max": 5000, "currency": "ILS"}, "within"),
+        ({"budget_min": 1000, "budget_max": 1000, "currency": "ILS"}, "within"),  # min == max == total
         ({"budget_min": 100, "budget_max": 1000, "currency": "ILS"}, "within"),  # bounds are inclusive
         ({"budget_min": 1000, "currency": "ILS"}, "within"),  # open upper bound
         ({"budget_max": 5000, "currency": "ILS"}, "within"),  # open lower bound
