@@ -66,6 +66,7 @@ def test_reply_is_stored_and_context_is_sent(api, world, fake):
     assert "japandi" in sent and "lots of storage" in sent
     assert "SECRET-OF-OTHER-PROJECT" not in sent
     assert "never change" in call["instructions"].lower()
+    assert "Always answer in Hebrew" in call["instructions"]
 
     # The next turn carries the earlier turn as history.
     api.post(url(world.mine), json={"message": "And the walls?"}, headers=world.client.headers)
