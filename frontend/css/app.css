@@ -34,6 +34,7 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { min-height: 100vh; background: var(--surface); color: var(--ink); font: 400 14px/20px var(--font-body); }
 h1, h2, h3 { font-family: var(--font-head); margin: 0; }
 h1 { font-size: 30px; line-height: 38px; font-weight: 600; letter-spacing: -0.02em; }
@@ -102,18 +103,18 @@ td.mono { font-size: 12px; }
 .linkbox { display: flex; gap: 8px; }
 .linkbox input { font: 500 12px/18px var(--font-mono); }
 
-#toasts { position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 90; width: min(92vw, 28rem); }
+#toasts { position: fixed; bottom: calc(3rem + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 90; width: min(92vw, 28rem); }
 .toast { background: var(--inverse); color: var(--on-inverse); padding: 10px 14px; border-radius: 8px; box-shadow: var(--shadow-3); }
 .toast.error { background: var(--error); color: #fff; }
 
 dialog { width: min(92vw, 26rem); padding: 1.5rem; border: 1.5px solid rgb(36 37 35 / 0.16); border-radius: 12px; box-shadow: var(--shadow-3); color: var(--ink); }
 dialog::backdrop { background: rgb(243 239 234 / 0.65); backdrop-filter: blur(4px); }
-.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1rem; }
+.dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 1rem; }
 
 /* App bar (all pages) */
 .appbar {
-  position: sticky; top: 0; z-index: 50; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 0 12px; background: rgb(251 249 246 / 0.9); backdrop-filter: blur(20px); box-shadow: var(--shadow-1);
+  position: sticky; top: 0; z-index: 50; height: calc(64px + env(safe-area-inset-top, 0px)); display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: env(safe-area-inset-top, 0px) max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px)); background: rgb(251 249 246 / 0.9); backdrop-filter: blur(20px); box-shadow: var(--shadow-1);
 }
 .appbar .group { display: flex; align-items: center; gap: 12px; min-width: 0; flex: none; }
 .appbar .group:first-child { flex: 1 1 0; }
@@ -139,7 +140,7 @@ dialog::backdrop { background: rgb(243 239 234 / 0.65); backdrop-filter: blur(4p
 .page h2 { margin-bottom: 0.5rem; }
 
 /* App shell (wizard + editor): palette sidebar, workspace, status bar */
-body.app { height: 100vh; display: grid; grid-template: 64px minmax(0, 1fr) 32px / 256px minmax(0, 1fr); overflow: hidden; }
+body.app { height: 100vh; height: 100dvh; min-height: 0; display: grid; grid-template: auto minmax(0, 1fr) auto / 256px minmax(0, 1fr); overflow: hidden; }
 body.app > * { min-width: 0; }
 body.app .appbar { grid-column: 1 / -1; }
 .palette { grid-row: 2; background: var(--surface-low); box-shadow: var(--shadow-1); padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; overflow-y: auto; }
@@ -151,8 +152,9 @@ body.app .appbar { grid-column: 1 / -1; }
 .readout { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px; border-radius: 4px; background: var(--surface-mid); margin-top: 4px; }
 .readout .code { color: var(--primary); font-weight: 500; }
 .workspace { grid-row: 2; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
-.statusbar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 12px; background: var(--surface-highest); font: 500 11px/16px var(--font-mono); letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; }
+.statusbar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: calc(32px + env(safe-area-inset-bottom, 0px)); padding: 0 max(12px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(12px, env(safe-area-inset-left, 0px)); background: var(--surface-highest); font: 500 11px/16px var(--font-mono); letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; }
 .statusbar .sep { color: var(--outline); margin: 0 10px; }
+.statusbar > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .contextbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 12px; background: var(--surface-low); box-shadow: var(--shadow-1); z-index: 2; font: 500 11px/16px var(--font-mono); letter-spacing: 0.02em; }
 .contextbar .group { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .contextbar strong { color: var(--primary); font-weight: 600; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 30ch; }
@@ -264,18 +266,13 @@ body.app .appbar { grid-column: 1 / -1; }
   .tabs span, .crumb { display: none; }
 }
 @media (max-width: 767px) {
-  .appbar { height: 56px; }
-  body.app { grid-template-rows: 56px minmax(0, 1fr) 32px; }
+  .appbar { height: calc(56px + env(safe-area-inset-top, 0px)); gap: 8px; padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+  .appbar .group, .appbar nav:not(.tabs) { gap: 8px; }
+  .appbar nav:not(.tabs) > .button, .appbar nav:not(.tabs) > button { padding: 0 10px; }
+  .appbar .chip.studio { max-width: 12ch; }
   .tabs, .wide { display: none !important; }
   #save { padding: 0 10px; }
   .hero h1 { font-size: 28px; line-height: 36px; }
-  .editor { flex-direction: column; }
-  .stage { order: 1; }
-  .rail { order: 2; width: 100%; flex-direction: row; padding: 6px 8px; }
-  .rail .tools { grid-auto-flow: column; }
-  .rail hr { display: none; }
-  .inspector { order: 3; width: 100%; max-height: 34vh; }
-  #catalog { width: auto; right: 8px; bottom: auto; max-height: 60%; }
 }
 
 /* ==========================================================================
@@ -530,3 +527,143 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .board-item .board-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .msg { max-width: 100%; }
 }
+
+/* ==========================================================================
+   Phones and touch. Phone means max-width 767 px. The navigation drawer
+   replaces the sidebar and the header tabs at 1199 px and below.
+   ========================================================================== */
+
+/* Navigation drawer (js/nav-drawer.js fills it from the page's own links each time it opens) */
+.nav-menu { display: none; }
+#nav-menu { width: 40px; min-width: 40px; padding: 0; border-color: transparent; }
+#nav-menu .icon { font-size: 22px; }
+.drawer {
+  inset: 0 auto 0 0; width: min(86vw, 320px); max-width: none; height: 100%; max-height: none; margin: 0; padding: 0;
+  border: 0; border-radius: 0 12px 12px 0; background: var(--panel); box-shadow: var(--shadow-3); overflow: hidden;
+}
+.drawer[open] { animation: drawer-in 0.22s cubic-bezier(0.2, 0, 0, 1); }
+.drawer[open]::backdrop { animation: drawer-fade 0.22s ease-out; }
+@keyframes drawer-in { from { transform: translateX(-100%); } }
+@keyframes drawer-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .drawer[open], .drawer[open]::backdrop { animation: none; }
+}
+.drawer-body {
+  display: flex; flex-direction: column; gap: 12px; height: 100%; overflow-y: auto; overscroll-behavior: contain;
+  padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(16px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+}
+.drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding-left: 4px; }
+.drawer-head button { width: 44px; padding: 0; }
+.drawer-studio { align-self: flex-start; max-width: 100%; margin: 0; white-space: normal; overflow-wrap: anywhere; }
+.drawer-nav { display: grid; gap: 4px; }
+.drawer-nav > a, .drawer-nav > span {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; border-radius: 4px;
+  color: var(--ink-soft); font: 500 14px/20px var(--font-body); text-decoration: none; overflow-wrap: anywhere;
+}
+.drawer-nav > a:hover { background: var(--surface-mid); color: var(--ink); }
+.drawer-nav > a[aria-current="page"] { background: var(--primary-bright); color: var(--on-primary); font-weight: 600; }
+.drawer-nav > span { opacity: 0.45; }
+.drawer-foot { display: grid; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--hairline); }
+.drawer-foot:empty { display: none; }
+.drawer-foot button { width: 100%; min-height: 44px; }
+
+@media (max-width: 1199px) {
+  .nav-menu { display: inline-flex; }
+}
+
+/* Touch screens: every control is at least 44 x 44 px. */
+@media (pointer: coarse) {
+  button, .button { min-height: 44px; min-width: 44px; }
+  :where(input:not([type="checkbox"], [type="radio"]), select, textarea) { min-height: 44px; }
+  button.link { min-height: 44px; }
+  .brand, .quiet-link { display: inline-flex; align-items: center; min-height: 44px; }
+  .tabs a { display: flex; align-items: center; min-height: 44px; }
+  .palette nav > a, .project-nav a { min-height: 44px; }
+  .choice label, label.check, .swatch { min-height: 44px; }
+  #nav-menu, .rail button { width: 44px; min-width: 44px; height: 44px; }
+  #zoom button { width: 44px; min-height: 44px; }
+  .stepper { grid-template-columns: 44px 1fr auto 44px; height: 44px; }
+  .room-list button, .color-list button { min-height: 44px; }
+  .version { min-height: 44px; }
+}
+
+/* Phones: no horizontal page scroll from 320 px up, and no iOS zoom on focus (inputs at 16 px). */
+@media (max-width: 767px) {
+  :is(input, select, textarea):not([type="checkbox"], [type="radio"]) { font-size: 16px; }
+  .page { padding-left: max(1rem, env(safe-area-inset-left, 0px)); padding-right: max(1rem, env(safe-area-inset-right, 0px)); padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px)); }
+  .page h1 { overflow-wrap: anywhere; }
+  .hero { padding: 1.5rem 0 1rem; }
+  dialog:not(.drawer) { padding: 1.25rem; }
+
+  /* Wizard */
+  .wizard-head, .wizard-body, .wizard-foot { padding-left: 12px; padding-right: 12px; }
+  .steps { flex-wrap: wrap; gap: 8px 12px; }
+  .wizard-foot .row { width: 100%; }
+  .wizard-foot .row > button { flex: 1 1 auto; }
+
+  /* Design page: the section tabs scroll sideways instead of widening the page. */
+  .tablist { overscroll-behavior-x: contain; scrollbar-width: thin; }
+  .tablist button { flex: none; }
+
+  /* Consultant: the conversation comes first, and the composer stays reachable at the bottom. */
+  .consult-layout > aside { order: 2; }
+  .composer { position: sticky; bottom: max(8px, env(safe-area-inset-bottom, 0px)); z-index: 2; }
+
+  /* Studio dashboard */
+  .dash { padding: 16px max(12px, env(safe-area-inset-right, 0px)) 16px max(12px, env(safe-area-inset-left, 0px)); }
+
+  /* Editor: canvas on top, then the inspector sheet, then the tool rail as a bottom bar. */
+  .contextbar { overflow: hidden; }
+  .contextbar > .group:last-child { display: none; }
+  .editor { flex-direction: column; }
+  .stage { order: 1; flex: 1; min-height: 0; }
+  .sheet-handle { order: 2; }
+  .inspector { order: 3; width: 100%; max-height: 45vh; max-height: 45dvh; padding: 4px 16px 16px; box-shadow: none; }
+  .inspector:not(.sheet-open) { display: none; }
+  .rail {
+    order: 4; width: 100%; flex-direction: row; gap: 6px; padding: 6px 8px; overflow-x: auto; overflow-y: hidden;
+    overscroll-behavior-x: contain; box-shadow: 0 -1px 0 var(--hairline);
+  }
+  .rail .tools { grid-auto-flow: column; align-items: center; }
+  .rail hr { width: 0; height: 24px; margin: 0 2px; border-top: 0; border-left: 1px solid var(--surface-high); }
+  .rail button[aria-pressed="true"]::after { top: auto; right: auto; bottom: -5px; left: calc(50% - 6px); width: 12px; height: 3px; }
+
+  #zoom { right: 8px; bottom: 8px; z-index: 5; }
+  #zoom-level { display: none; } /* the status bar shows the zoom */
+  #actions { bottom: 8px; left: calc(50% - 26px); max-width: calc(100% - 68px); }
+  /* Icon-only on phones; the text stays in the button as its accessible name. */
+  #actions button { min-width: 44px; padding: 0 10px; font-size: 0; gap: 0; }
+  #actions button .icon { font-size: 20px; }
+  #catalog {
+    top: auto; left: 0; right: 0; bottom: 0; width: auto; height: min(55%, 320px); max-height: none; z-index: 6;
+    padding: 12px max(12px, env(safe-area-inset-right, 0px)) 12px max(12px, env(safe-area-inset-left, 0px));
+    border-width: 1px 0 0; border-radius: 12px 12px 0 0; box-shadow: var(--shadow-3);
+  }
+  #catalog .items { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .stage:has(#catalog:not([hidden])) #actions { bottom: calc(min(55%, 320px) + 8px); z-index: 7; }
+}
+
+/* Inspector sheet handle (editor, phones only). The open state is #inspector.sheet-open (js/editor/sheet.js). */
+.sheet-handle { display: none; }
+@media (max-width: 767px) {
+  .sheet-handle {
+    position: relative; z-index: 3; display: flex; width: 100%; min-height: 44px; padding: 10px 16px 6px; gap: 6px;
+    border: 0; border-top: 1px solid var(--hairline); border-radius: 12px 12px 0 0; background: var(--panel); box-shadow: var(--shadow-2);
+    color: var(--ink-soft); font: 600 11px/14px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .sheet-handle::before {
+    content: ""; position: absolute; top: 4px; left: calc(50% - 18px); width: 36px; height: 4px; border-radius: 4px; background: var(--hairline-strong);
+  }
+  .sheet-handle:hover { background: var(--panel); color: var(--ink); }
+  .sheet-handle .icon { transition: transform 0.15s; }
+  .sheet-handle[aria-expanded="true"] .icon { transform: rotate(180deg); }
+}
+
+/* Inserted by the editor at the top of the canvas on phones. */
+.phone-notice {
+  position: absolute; z-index: 5; top: 8px; left: 8px; right: 60px; /* clear of the zoom column */ display: flex; align-items: flex-start; gap: 8px; margin: 0;
+  padding: 8px 12px; border-radius: 8px; background: var(--caution-tint); color: var(--on-caution-tint);
+  font-size: 12px; line-height: 18px; box-shadow: var(--shadow-2);
+}
+.phone-notice .icon { color: var(--on-caution-tint); }
+.phone-notice button { margin-left: auto; flex: none; border-color: transparent; color: inherit; }

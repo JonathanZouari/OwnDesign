@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
   <title>2D Canvas · Atelier</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +13,7 @@
 <body class="app">
   <header class="appbar">
     <div class="group">
+      <button type="button" class="ghost nav-menu" id="nav-menu" aria-label="Open menu" aria-controls="nav-drawer" aria-expanded="false"><span class="icon" aria-hidden="true">menu</span></button>
       <a class="brand" id="home-link" href="index.html">ATELIER</a>
       <span class="chip studio" id="studio-brand" hidden></span>
       <div class="crumb">
@@ -20,7 +21,7 @@
         <strong id="crumb-name"></strong><span aria-hidden="true">•</span><span id="crumb-version"></span>
       </div>
     </div>
-    <nav class="tabs" aria-label="Workspace">
+    <nav class="tabs" aria-label="Workspace" data-drawer-links>
       <a href="wizard.html" id="tab-wizard">Guided Room Wizard</a>
       <a href="#" aria-current="page">2D Interactive Canvas</a>
       <a href="design.html" id="tab-design" class="compact-only" hidden>Brief &amp; Materials</a>
@@ -31,7 +32,7 @@
     <div class="group">
       <span class="chip caution" title="Conceptual plan. Not for construction. Requires review by a qualified professional."><span class="icon" aria-hidden="true" style="font-size: 14px">warning</span><span>Conceptual<span class="wide"> — Non-Structural Review</span></span></span>
       <button class="primary" id="save" type="button" aria-label="Save plan"><span class="icon" aria-hidden="true">save</span><span class="wide">Save plan</span></button>
-      <button id="account" class="wide" type="button"></button>
+      <button id="account" class="wide" type="button" data-drawer-action></button>
     </div>
   </header>
 
@@ -91,6 +92,7 @@
         </div>
       </div>
 
+      <button type="button" class="sheet-handle" id="sheet-toggle" aria-controls="inspector" aria-expanded="false">Inspector<span class="icon" aria-hidden="true">expand_less</span></button>
       <aside class="inspector" id="inspector" aria-label="Element inspector"></aside>
     </div>
   </main>
@@ -123,6 +125,18 @@
         <a class="button" href="auth.html?next=editor.html%3Fsave%3D1">I have an account</a>
         <a class="button primary" href="auth.html?mode=signup&next=editor.html%3Fsave%3D1">Create account</a>
       </div>
+    </div>
+  </dialog>
+
+  <dialog id="nav-drawer" class="drawer" aria-label="Menu">
+    <div class="drawer-body">
+      <div class="drawer-head">
+        <span class="brand">ATELIER</span>
+        <button type="button" class="ghost" data-drawer-close aria-label="Close menu"><span class="icon" aria-hidden="true">close</span></button>
+      </div>
+      <p class="chip studio drawer-studio" data-drawer-slot="studio" hidden></p>
+      <nav class="drawer-nav" aria-label="Pages" data-drawer-slot="links"></nav>
+      <div class="drawer-foot" data-drawer-slot="actions"></div>
     </div>
   </dialog>
 

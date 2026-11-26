@@ -1,8 +1,11 @@
 // Design consultant chat for one saved project (?project=<id>). Only messages returned by the API are shown.
 import { api, requireSession, signOut } from "../api.js";
 import { messageState } from "../design-logic.js";
+import { initNavDrawer } from "../nav-drawer.js";
 import { planThumbnail } from "../thumbnail.js";
 import { $, formatDate, h, run, showStudio } from "../ui.js";
+
+initNavDrawer();
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const requested = new URLSearchParams(location.search).get("project");

@@ -1,7 +1,10 @@
 // Design brief, finishes and moodboard for one saved project (?project=<id>). Everything shown comes from the API.
 import { api, requireSession, signOut } from "../api.js";
 import * as L from "../design-logic.js";
+import { initNavDrawer } from "../nav-drawer.js";
 import { $, h, run, showStudio } from "../ui.js";
+
+initNavDrawer();
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const requested = new URLSearchParams(location.search).get("project");

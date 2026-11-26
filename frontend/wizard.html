@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
   <title>Guided Room Wizard · Atelier</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,10 +13,11 @@
 <body class="app">
   <header class="appbar">
     <div class="group">
+      <button type="button" class="ghost nav-menu" id="nav-menu" aria-label="Open menu" aria-controls="nav-drawer" aria-expanded="false"><span class="icon" aria-hidden="true">menu</span></button>
       <span class="brand">ATELIER</span>
       <span class="chip studio" id="studio-brand" hidden></span>
     </div>
-    <nav class="tabs" aria-label="Workspace">
+    <nav class="tabs" aria-label="Workspace" data-drawer-links>
       <a href="wizard.html" aria-current="page">Guided Room Wizard</a>
       <a href="editor.html">2D Interactive Canvas</a>
       <span title="Coming in a later phase">3D Render Views</span>
@@ -154,6 +155,18 @@
     <span>Units: Metres / cm<span class="sep">|</span><span class="wide">Grid snap: 0.1 m</span></span>
     <span class="wide">Draft is kept in this browser until you save</span>
   </footer>
+  <dialog id="nav-drawer" class="drawer" aria-label="Menu">
+    <div class="drawer-body">
+      <div class="drawer-head">
+        <span class="brand">ATELIER</span>
+        <button type="button" class="ghost" data-drawer-close aria-label="Close menu"><span class="icon" aria-hidden="true">close</span></button>
+      </div>
+      <p class="chip studio drawer-studio" data-drawer-slot="studio" hidden></p>
+      <nav class="drawer-nav" aria-label="Pages" data-drawer-slot="links"></nav>
+      <div class="drawer-foot" data-drawer-slot="actions"></div>
+    </div>
+  </dialog>
+
   <script type="module" src="js/pages/wizard.js"></script>
 </body>
 </html>

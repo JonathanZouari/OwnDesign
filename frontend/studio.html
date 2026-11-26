@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'none'; base-uri 'self'">
   <title>Studio · Atelier</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,14 +12,14 @@
 </head>
 <body class="app">
   <header class="appbar">
-    <div class="group"><a class="brand" href="studio.html">ATELIER</a><span class="chip studio" id="studio-brand" hidden></span></div>
-    <nav aria-label="Account"><button id="sign-out" type="button">Sign out</button></nav>
+    <div class="group"><button type="button" class="ghost nav-menu" id="nav-menu" aria-label="Open menu" aria-controls="nav-drawer" aria-expanded="false"><span class="icon" aria-hidden="true">menu</span></button><a class="brand" href="studio.html">ATELIER</a><span class="chip studio" id="studio-brand" hidden></span></div>
+    <nav aria-label="Account"><button id="sign-out" type="button" data-drawer-action>Sign out</button></nav>
   </header>
 
   <aside class="palette">
     <div>
       <div class="row between"><span class="label">Workspace</span></div>
-      <nav aria-label="Sections">
+      <nav aria-label="Sections" data-drawer-links>
         <a href="studio.html" aria-current="page"><span class="icon" aria-hidden="true">dashboard</span>Studio overview</a>
         <a href="#projects"><span class="icon" aria-hidden="true">folder_open</span>Projects</a>
         <a href="#clients"><span class="icon" aria-hidden="true">group</span>Clients &amp; invites</a>
@@ -125,6 +125,18 @@
     <span>Areas in m², approximate</span>
     <span class="wide">Projects are visible only to your studio and each project's client</span>
   </footer>
+  <dialog id="nav-drawer" class="drawer" aria-label="Menu">
+    <div class="drawer-body">
+      <div class="drawer-head">
+        <span class="brand">ATELIER</span>
+        <button type="button" class="ghost" data-drawer-close aria-label="Close menu"><span class="icon" aria-hidden="true">close</span></button>
+      </div>
+      <p class="chip studio drawer-studio" data-drawer-slot="studio" hidden></p>
+      <nav class="drawer-nav" aria-label="Pages" data-drawer-slot="links"></nav>
+      <div class="drawer-foot" data-drawer-slot="actions"></div>
+    </div>
+  </dialog>
+
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/studio.js"></script>
 </body>
