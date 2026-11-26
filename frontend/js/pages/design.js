@@ -486,7 +486,10 @@ function initDetection() {
     busy($("#detect-accept"), $("#detect-status"), async () => {
       const body = D.acceptBody(detection.groups, chosenItems(), detection.asset.id);
       const result = await api(`${base}/owned-items`, { method: "POST", body });
-      $("#existing-items").value = result.brief.existing_items;
+      // The server already saved the line. Add it to the field as it is now, so text typed but not yet saved stays.
+      const field = $("#existing-items");
+      const line = result.brief.existing_items.split("\n").at(-1);
+      field.value = field.value.trim() ? `${field.value.trimEnd()}\n${line}` : line;
       state.owned = [...state.owned, ...result.items];
       renderOwned();
       dialog.close();

@@ -294,3 +294,35 @@ def test_items_stay_when_their_photo_is_deleted_and_go_with_the_project(api, wor
 
     admin.table("projects").delete().eq("id", world.theirs["id"]).execute()
     assert stored(admin, world.theirs) == []
+
+
+def test_accepting_items_never_overwrites_the_rest_of_the_brief(api, world):
+    """The line is appended in the database, so fields saved by someone else in the meantime stay."""
+    brief_url = f"/v1/projects/{world.mine['id']}/brief"
+    api.put(brief_url, json={"needs": "A desk for two", "existing_items": "Piano"}, headers=world.designer.headers)
+    api.post(items_url(world.mine), json={"items": [{"item_class": "clock", "quantity": 1}]}, headers=world.client.headers)
+    brief = api.get(brief_url, headers=world.client.headers).json()["data"]["brief"]
+    assert brief["needs"] == "A desk for two"
+    assert brief["existing_items"] == "Piano\nFrom a photo: Clock"
+
+
+def test_first_accept_creates_a_complete_brief(api, world, make_user):
+    client = make_user("det-new")
+    project = api.post("/v1/projects", json={"studio_id": world.studio["id"], "name": "New", "property_type": "existing"},
+                       headers=client.headers).json()["data"]
+    api.post(items_url(project), json={"items": [{"item_class": "bed", "quantity": 1}]}, headers=client.headers)
+    brief = api.get(f"/v1/projects/{project['id']}/brief", headers=client.headers).json()["data"]["brief"]
+    assert brief["existing_items"] == "From a photo: Bed"
+    assert brief["currency"] == "USD" and brief["styles"] == []  # every field of the brief is there
+
+
+def test_the_brief_function_is_not_callable_by_users(world):
+    from supabase import create_client
+
+    from app.db import settings
+
+    data_api = create_client(settings().supabase_url, settings().supabase_publishable_key)
+    data_api.postgrest.auth(world.client.token)
+    with pytest.raises(Exception, match="permission denied"):
+        data_api.rpc("append_existing_items", {"p_project": world.mine["id"], "p_line": "x", "p_user": world.client.id,
+                                               "p_max": 99999, "p_default": {}}).execute()

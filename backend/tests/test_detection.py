@@ -146,49 +146,109 @@ def test_detector_runs_the_session_on_the_prepared_image():
 # ---- model file ------------------------------------------------------------------------------------------------
 
 
-def test_model_with_the_wrong_hash_is_refused(monkeypatch, tmp_path):
-    monkeypatch.setattr(M, "CACHE_DIR", tmp_path)
+@pytest.fixture
+def fresh(monkeypatch, tmp_path):
+    """An empty private cache and no detector loaded yet."""
+    cache = tmp_path / "models"
+    monkeypatch.setattr(M, "CACHE_DIR", cache)
+    monkeypatch.setattr(M, "_detector", None)
+    monkeypatch.setattr(M, "_failed_at", 0.0)
+    return cache
+
+
+def pin(monkeypatch, data: bytes):
+    monkeypatch.setattr(M, "MODEL_SHA256", hashlib.sha256(data).hexdigest())
+
+
+def test_model_with_the_wrong_hash_is_refused(monkeypatch, fresh):
     monkeypatch.setattr(M, "_download", lambda: b"tampered model")
     with pytest.raises(M.ModelUnavailable):
         M.load_detector()
-    assert not (tmp_path / M.MODEL_OBJECT).exists()
+    assert not (fresh / M.MODEL_OBJECT).exists()
 
 
-def test_cached_model_with_the_right_hash_is_not_downloaded_again(monkeypatch, tmp_path):
+def test_session_is_built_from_the_checked_bytes(monkeypatch, fresh):
     data = b"pretend model"
-    monkeypatch.setattr(M, "CACHE_DIR", tmp_path)
-    monkeypatch.setattr(M, "MODEL_SHA256", hashlib.sha256(data).hexdigest())
-    (tmp_path / M.MODEL_OBJECT).write_bytes(data)
+    pin(monkeypatch, data)
+    monkeypatch.setattr(M, "_download", lambda: data)
+    seen = []
+    monkeypatch.setattr(M, "_session", lambda model: seen.append(model) or FakeSession(boxes_for([]), logits_for([])))
+    M.load_detector()
+    assert seen == [data]  # bytes, never a path that could be swapped after the check
+    assert (fresh / M.MODEL_OBJECT).read_bytes() == data
+    assert oct(fresh.stat().st_mode & 0o777) == "0o700"
+
+
+def test_cached_model_with_the_right_hash_is_not_downloaded_again(monkeypatch, fresh):
+    data = b"pretend model"
+    pin(monkeypatch, data)
+    fresh.mkdir(mode=0o700)
+    (fresh / M.MODEL_OBJECT).write_bytes(data)
     monkeypatch.setattr(M, "_download", lambda: pytest.fail("should use the cached file"))
-    monkeypatch.setattr(M, "_session", lambda path: ("session for", path))
-    assert M._model_path() == tmp_path / M.MODEL_OBJECT
+    assert M._model_bytes() == data
 
 
-def test_corrupted_cache_is_replaced(monkeypatch, tmp_path):
+def test_corrupted_cache_is_replaced(monkeypatch, fresh):
     good = b"good model"
-    monkeypatch.setattr(M, "CACHE_DIR", tmp_path)
-    monkeypatch.setattr(M, "MODEL_SHA256", hashlib.sha256(good).hexdigest())
-    (tmp_path / M.MODEL_OBJECT).write_bytes(b"half a download")
+    pin(monkeypatch, good)
+    fresh.mkdir(mode=0o700)
+    (fresh / M.MODEL_OBJECT).write_bytes(b"half a download")
     monkeypatch.setattr(M, "_download", lambda: good)
-    assert M._model_path().read_bytes() == good
+    assert M._model_bytes() == good
+    assert (fresh / M.MODEL_OBJECT).read_bytes() == good
 
 
-def test_missing_model_is_unavailable(monkeypatch, tmp_path):
-    monkeypatch.setattr(M, "CACHE_DIR", tmp_path)
+@pytest.mark.parametrize("unsafe", ["open to others", "symlink"])
+def test_unsafe_cache_folder_is_not_used(monkeypatch, fresh, tmp_path, unsafe):
+    data = b"pretend model"
+    pin(monkeypatch, data)
+    if unsafe == "symlink":
+        target = tmp_path / "elsewhere"
+        target.mkdir(mode=0o700)
+        fresh.symlink_to(target)
+    else:
+        fresh.mkdir()
+        fresh.chmod(0o777)
+    monkeypatch.setattr(M, "_download", lambda: data)
+    assert M._private_cache() is None
+    assert M._model_bytes() == data  # still works, from memory
+    assert not any(p.name == M.MODEL_OBJECT for p in tmp_path.rglob("*"))
+
+
+def test_missing_model_is_not_downloaded_again_at_once(monkeypatch, fresh):
+    calls = []
 
     def missing():
+        calls.append(1)
         raise RuntimeError("Object not found")
 
     monkeypatch.setattr(M, "_download", missing)
+    for _ in range(3):
+        with pytest.raises(M.ModelUnavailable):
+            M.load_detector()
+    assert len(calls) == 1
+    monkeypatch.setattr(M, "_failed_at", -10_000.0)  # a minute later it tries again
     with pytest.raises(M.ModelUnavailable):
         M.load_detector()
+    assert len(calls) == 2
+
+
+def test_only_uploadable_formats_are_decoded():
+    with pytest.raises(M.ImageError):
+        M.load_image(image_bytes(fmt="GIF"))
+
+
+def test_large_jpeg_is_decoded_at_a_reduced_size():
+    image = M.load_image(image_bytes((4000, 3000), fmt="JPEG"))
+    assert max(image.size) <= 2000 and image.size[0] / image.size[1] == pytest.approx(4 / 3, rel=0.01)
 
 
 # ---- the real model ----------------------------------------------------------------------------------------------
 
 
 @pytest.mark.skipif(not (M.CACHE_DIR / M.MODEL_OBJECT).exists(), reason="detection model not downloaded on this machine")
-def test_real_model_finds_living_room_furniture():
+def test_real_model_finds_living_room_furniture(monkeypatch):
+    monkeypatch.setattr(M, "_detector", None)
     detector = M.load_detector()
     found = {d.item_class for d in detector.detect((STITCH / "render-concept-a.jpg").read_bytes())}
     assert {"couch", "chair", "dining table"} <= found

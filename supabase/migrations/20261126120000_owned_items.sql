@@ -33,3 +33,27 @@ create policy owned_items_select_via_project on public.owned_items
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('models', 'models', false, 52428800)
 on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit;
+
+-- Adds a line to the brief's existing items in one statement, under a row lock, so it never overwrites a brief
+-- saved at the same moment (the backend's read-modify-write of the whole document could). Raises P0001 when the
+-- result would pass p_max characters. p_default is the empty brief used when the project has none yet.
+create function public.append_existing_items(p_project uuid, p_line text, p_user uuid, p_max int, p_default jsonb)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare current text; next text; result jsonb;
+begin
+  insert into public.project_briefs (project_id, brief, updated_by) values (p_project, p_default, p_user)
+    on conflict (project_id) do nothing;
+  select coalesce(brief->>'existing_items', '') into current
+    from public.project_briefs where project_id = p_project for update;
+  next := case when btrim(current) = '' then p_line else rtrim(current) || E'\n' || p_line end;
+  if char_length(next) > p_max then
+    raise exception 'existing items would be too long' using errcode = 'P0001';
+  end if;
+  update public.project_briefs
+     set brief = jsonb_set(brief, '{existing_items}', to_jsonb(next)), updated_by = p_user, updated_at = now()
+   where project_id = p_project
+  returning brief into result;
+  return result;
+end $$;
+revoke all on function public.append_existing_items(uuid, text, uuid, int, jsonb) from public, anon, authenticated;
+grant execute on function public.append_existing_items(uuid, text, uuid, int, jsonb) to service_role;

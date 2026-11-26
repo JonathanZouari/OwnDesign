@@ -9,7 +9,8 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import Field, ValidationError, model_validator
+from postgrest.exceptions import APIError
+from pydantic import Field, model_validator
 
 from app.auth import CurrentUser, current_user
 from app.db import audit, service
@@ -35,6 +36,7 @@ ItemClassName = Literal[
 ]
 ITEM_COLUMNS = "id, item_class, quantity, source_asset_id, created_at"
 MAX_ITEMS_PER_PROJECT = 100
+EXISTING_ITEMS_LIMIT = Brief.model_fields["existing_items"].metadata[0].max_length  # 1000, as the brief allows
 
 
 def get_detector_loader():
@@ -131,27 +133,23 @@ def add_owned_items(project_id: UUID, body: OwnedItemsBody, user: CurrentUser = 
     if len(stored) + len(body.items) > MAX_ITEMS_PER_PROJECT:
         raise HTTPException(409, "This project has reached its limit of owned items. Remove some, then try again.")
 
-    # Check the brief can take the line before storing anything.
-    current = user.db.table("project_briefs").select("brief").eq("project_id", project["id"]).execute().data
-    brief = current[0]["brief"] if current else Brief().model_dump()
-    existing = brief.get("existing_items", "")
+    # The line goes into the brief first, in one database statement that cannot overwrite a brief saved at the
+    # same moment; it refuses a result over the brief's limit, and then nothing is stored.
     try:
-        updated = Brief.model_validate({**brief, "existing_items": f"{existing}\n{brief_line(body.items)}".strip()})
-    except ValidationError:
-        raise HTTPException(422, "The brief's existing items would pass 1000 characters. Shorten them, then try again.") from None
-
+        brief = service().rpc("append_existing_items", {
+            "p_project": project["id"], "p_line": brief_line(body.items), "p_user": user.id,
+            "p_max": EXISTING_ITEMS_LIMIT, "p_default": Brief().model_dump(),
+        }).execute().data
+    except APIError as error:
+        if error.code == "P0001":
+            raise HTTPException(422, f"The brief's existing items would pass {EXISTING_ITEMS_LIMIT} characters. Shorten them, then try again.") from None
+        raise
     rows = [{"project_id": project["id"], "item_class": i.item_class, "quantity": i.quantity, "source_asset_id": source,
              "created_by": user.id} for i in body.items]
     inserted = service().table("owned_items").insert(rows).execute().data
-    # ponytail: two writes, not one transaction; if the brief write fails the items stay and can be removed.
-    saved = (
-        service().table("project_briefs")
-        .upsert({"project_id": project["id"], "brief": updated.model_dump(), "updated_by": user.id, "updated_at": "now()"})
-        .execute().data[0]
-    )
     audit("items.accepted", user.id, studio_id=project["studio_id"], project_id=project["id"], count=sum(i.quantity for i in body.items))
     items = [_with_labels({key: row[key] for key in ITEM_COLUMNS.split(", ")}) for row in inserted]
-    return ok({"items": items, "brief": saved["brief"]})
+    return ok({"items": items, "brief": brief})
 
 
 @router.delete("/owned-items/{item_id}")

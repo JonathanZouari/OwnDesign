@@ -7,8 +7,10 @@ first use, accepted only if its SHA-256 matches MODEL_SHA256, and kept in CACHE_
 import hashlib
 import io
 import os
+import stat
 import tempfile
 import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -48,10 +50,11 @@ class Detection:
 
 def load_image(data: bytes) -> Image.Image:
     try:
-        image = Image.open(io.BytesIO(data))
+        image = Image.open(io.BytesIO(data), formats=["JPEG", "PNG", "WEBP"])  # what uploads accept
         width, height = image.size
         if width * height > MAX_PIXELS:
             raise ImageError("This image is too large to analyse")
+        image.draft("RGB", (2 * INPUT_SIZE, 2 * INPUT_SIZE))  # JPEG only: decode at a reduced size, the model needs 512
         image.load()
         image = ImageOps.exif_transpose(image)  # phone photos store their rotation separately
     except ImageError:
@@ -99,9 +102,14 @@ class Detector:
 
 
 # ---- model file --------------------------------------------------------------------------------------------------
+# The bytes are hashed and the session is built from those same bytes, so a file swapped on disk after the check can
+# never be loaded. The cache lives in a folder only this user owns, written through a fresh temporary file.
+
+RETRY_AFTER_FAILURE = 60  # seconds before a missing or wrong model is downloaded again
 
 _lock = threading.Lock()
 _detector: Detector | None = None
+_failed_at = 0.0
 
 
 def _download() -> bytes:
@@ -110,35 +118,57 @@ def _download() -> bytes:
     return service().storage.from_(BUCKET).download(MODEL_OBJECT)
 
 
-def _model_path() -> Path:
-    path = CACHE_DIR / MODEL_OBJECT
-    if path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() == MODEL_SHA256:
-        return path
+def _private_cache() -> Path | None:
+    """The cache folder, or None when it is not safely ours (then the model is only kept in memory)."""
+    try:
+        CACHE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+        info = os.lstat(CACHE_DIR)
+    except OSError:
+        return None
+    if stat.S_ISLNK(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
+        return None
+    return CACHE_DIR
+
+
+def _model_bytes() -> bytes:
+    cache = _private_cache()
+    path = cache / MODEL_OBJECT if cache else None
+    if path and path.is_file() and not path.is_symlink():
+        data = path.read_bytes()
+        if hashlib.sha256(data).hexdigest() == MODEL_SHA256:
+            return data
     try:
         data = _download()
     except Exception as error:
         raise ModelUnavailable("The detection model could not be downloaded") from error
     if hashlib.sha256(data).hexdigest() != MODEL_SHA256:
         raise ModelUnavailable("The detection model is not the pinned file")
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    partial = path.with_suffix(f".{os.getpid()}.part")
-    partial.write_bytes(data)
-    partial.replace(path)  # atomic, so another process never reads half a file
-    return path
+    if cache:
+        handle, partial = tempfile.mkstemp(dir=cache, suffix=".part")  # O_EXCL, never follows a planted link
+        with os.fdopen(handle, "wb") as out:
+            out.write(data)
+        os.replace(partial, path)
+    return data
 
 
-def _session(path: Path):
+def _session(model: bytes):
     import onnxruntime
 
     options = onnxruntime.SessionOptions()
     options.intra_op_num_threads = 2  # leave cores for the other requests
-    return onnxruntime.InferenceSession(str(path), options, providers=["CPUExecutionProvider"])
+    return onnxruntime.InferenceSession(model, options, providers=["CPUExecutionProvider"])
 
 
 def load_detector() -> Detector:
     """The shared detector, loaded once. Raises ModelUnavailable if the model file is missing or wrong."""
-    global _detector
+    global _detector, _failed_at
     with _lock:
         if _detector is None:
-            _detector = Detector(_session(_model_path()))
+            if time.monotonic() - _failed_at < RETRY_AFTER_FAILURE:
+                raise ModelUnavailable("The detection model failed to load a moment ago")
+            try:
+                _detector = Detector(_session(_model_bytes()))
+            except ModelUnavailable:
+                _failed_at = time.monotonic()
+                raise
         return _detector
