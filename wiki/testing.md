@@ -54,8 +54,9 @@ failed in its first step. Not yet seen: a green `backend` run. It waits for the 
 
 ## Last result
 
-2026-11-26: backend 100 passed (9 browser tests), frontend 31 passed, locally. On GitHub: `frontend` green,
-`backend` not yet run to the end (see CI).
+2026-11-26, after merging pull requests #9, #8 and #14: backend 100 passed (9 browser tests; the guest journey
+now also walks in 3D), frontend 57 passed, locally. On GitHub: `frontend` green, `backend` not yet run to the
+end (see CI), so the 3D step has not yet run on a Linux runner.
 
 2026-11-23, new files:
 `backend/tests/test_design.py` (brief, finishes, uploads, moodboard, isolation, quota, suspended studio) and

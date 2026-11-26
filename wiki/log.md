@@ -172,3 +172,13 @@ Backend 100 passed, frontend 49 passed, as reported by the contributor. Pages: [
 ## [2026-11-26] docs | Walkthrough sent as a pull request
 No write access to the repository, so the work goes from a fork to `dev` as a pull request. The local
 commits were re-authored before publishing, and the hashes above updated. Pages: [log](log.md).
+
+## [2026-11-26] build | Pull request #14 merged: 3D walkthrough in the plan editor
+First-person, view-only walkthrough opened from the editor; three.js 0.180.0 vendored. Before any of it ran: the
+vendored files compared by SHA-256 with the npm package (identical), the test and editor changes read, then
+code-reviewer and security-reviewer agents: no critical or high finding. One medium and four low notes are in
+[open-items](open-items.md); the contributor's code was not changed. Six wiki conflicts resolved by keeping both
+sides; the contributor's wiki text spoke of "the user", which was re-attributed
+([decisions](decisions.md), "From merged pull requests"). On the merged tree: backend 100 passed, frontend 57
+passed. Commits `5bb03bf` (merge), `5c86f5b`. Pages: [decisions](decisions.md), [security](security.md),
+[testing](testing.md), [open-items](open-items.md).
