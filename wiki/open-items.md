@@ -21,7 +21,6 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 
 ## Client tasks gaps
 
-- **Branch not pushed.** `client-tasks` exists only locally; the GitHub account in use has no write access to the repository (403).
 - No notification when a task is created or completed; the client finds tasks through the projects list.
 - A studio member who is also the project's client sees the designer view only, so cannot mark done in the page (the API allows it).
 - The inbox counts open tasks of a suspended studio's projects, which cannot be completed (403).

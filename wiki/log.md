@@ -130,3 +130,9 @@ chose organisation, region and name. Applied all 7 migrations and the auth setti
 ## [2026-11-26] test | Client tasks verified against Supabase
 Backend 135 passed, 0 skipped (incl. `test_tasks.py` and the tasks browser journey, run for the first time);
 frontend 37 passed. Pages: [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] infra | Work moves to the user's fork
+The account in use has no write access to the original repository (403), so the user asked for a fork. Remotes:
+`origin` is the user's fork, `upstream` the original. `client-tasks` pushed to the fork; the fork's `dev`
+fast-forwarded to match `upstream/dev`; its `main` left 12 commits behind until the user asks to move it.
+Pages: [open-items](open-items.md).
