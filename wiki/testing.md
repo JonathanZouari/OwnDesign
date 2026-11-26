@@ -19,6 +19,7 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 | `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names) |
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
+| `frontend/tests/plan3d.test.js` | unit, edge | 3D wall boxes, doors, windows, overlapping walls, collision, sharp corners, oversized plans |
 
 ## Required after every change
 
@@ -53,8 +54,9 @@ failed in its first step. Not yet seen: a green `backend` run. It waits for the 
 
 ## Last result
 
-2026-11-26: backend 100 passed (9 browser tests), frontend 31 passed, locally. On GitHub: `frontend` green,
-`backend` not yet run to the end (see CI).
+2026-11-26, after merging pull requests #9, #8 and #14: backend 100 passed (9 browser tests; the guest journey
+now also walks in 3D), frontend 57 passed, locally. On GitHub: `frontend` green, `backend` not yet run to the
+end (see CI), so the 3D step has not yet run on a Linux runner.
 
 2026-11-23, new files:
 `backend/tests/test_design.py` (brief, finishes, uploads, moodboard, isolation, quota, suspended studio) and
@@ -76,6 +78,8 @@ one frame late) and three test mistakes.
 
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the
 journeys use the second). A system-level `OPENAI_API_KEY` overrides the one in `.env`; unset it before starting the backend.
+
+`python -m http.server` can refuse connections on a loaded machine.
 
 ## Not covered
 

@@ -210,8 +210,40 @@ function placeAtCentre() {
   editor.setTool("select");
 }
 
+let closeWalk = null; // set while the 3D walkthrough is open
+
+async function openWalk() {
+  const button = $("#walk-open");
+  const root = $("#walk");
+  const behind = [...root.parentElement.children].filter((node) => node !== root);
+  button.disabled = true;
+  try {
+    const { startWalk } = await import("./view3d.js");
+    root.hidden = false;
+    for (const node of behind) node.inert = true;
+    const stop = startWalk(root, editor.plan, () => closeWalk());
+    closeWalk = () => {
+      stop();
+      closeWalk = null;
+      root.hidden = true;
+      for (const node of behind) node.inert = false;
+      button.disabled = false;
+      button.focus();
+    };
+  } catch (error) {
+    console.error(error);
+    root.hidden = true;
+    for (const node of behind) node.inert = false;
+    button.disabled = false;
+    const reason = error instanceof RangeError ? error.message : "This browser or device may not support WebGL.";
+    toast(`The 3D view could not start. ${reason}`, "error");
+  }
+}
+
 function onKey(event) {
   if (!$("#compare").hidden) return; // the comparison handles its own keys and never edits the plan
+  // The walkthrough has its own keys (W and D are drawing tools here); only saving still works.
+  if (closeWalk && !((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s")) return;
   if (event.target.closest("input, select, textarea, dialog")) return;
   if (state.live || state.previewLine) return; // mid-drag: the drag would overwrite a keyboard edit
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
@@ -296,13 +328,16 @@ async function savePlan(label) {
 }
 
 function openCompare(pair) {
+  closeWalk?.(); // one full-screen view at a time
   if (!compare.open(pair)) return;
   $(".editor").hidden = true;
+  $("#walk-open").disabled = true; // the walkthrough lives inside the editor, which the comparison hides
 }
 
 function closeCompare() {
   compare.close();
   $(".editor").hidden = false;
+  $("#walk-open").disabled = false;
   render();
   $("#compare-open").focus();
 }
@@ -366,6 +401,8 @@ function buildChrome(name, role) {
   $("#zoom-in").addEventListener("click", () => zoomBy(1 / 1.25));
   $("#zoom-out").addEventListener("click", () => zoomBy(1.25));
   $("#zoom-fit").addEventListener("click", fit);
+  $("#walk-open").addEventListener("click", openWalk);
+  $("#walk-close").addEventListener("click", () => closeWalk?.());
   $("#save").addEventListener("click", openSave);
   $("#save-cancel").addEventListener("click", () => $("#save-dialog").close("cancel"));
   $("#save-dialog").addEventListener("close", action(async (event) => {

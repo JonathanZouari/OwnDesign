@@ -134,6 +134,64 @@ decisions" are the contributor's; the index line now says so. Conflict in this l
 sides. Frontend 31 passed; the backend suite was not run for a document. Commits `3a7a741`, `b63440f`.
 Pages: [index](index.md).
 
+## [2026-11-26] build | Studio branding preview
+`branding.html`: logo upload (PNG, JPG, WebP, 2 MB), four colour presets, custom primary, background and
+text colours with a contrast check, live preview. Browser only, nothing saved. Frontend 39 passed; manual
+check in Chrome. Backend integration and browser journeys not run (Supabase not configured).
+Pages: [overview](overview.md), [design](design.md), [open-items](open-items.md).
+
+## [2026-11-26] build | Pull request #8 merged: studio branding preview
+Browser-only preview page (`frontend/branding.html`); nothing saved or sent. Static read, then code-reviewer and
+security-reviewer agents: no critical or high finding; nine files, no network, storage or dynamic code; CSP as on
+the other pages. One medium note on the contrast check and smaller ones are in [open-items](open-items.md); the
+contributor's code was not changed. On the merged tree: backend 100 passed, frontend 39 passed. No browser journey
+for the page yet. Commits `2552d1d` (merge) and the two that follow it. Pages: [open-items](open-items.md).
+
+The six entries that follow came with pull request #14 and describe work in the contributor's fork. "The user"
+in them was the contributor's own user, and the Supabase project and test run were theirs, not this project's.
+
+## [2026-11-26] decision | 3D walkthrough chosen (in the contributor's fork)
+The contributor chose a first-person walkthrough, against PRD 3.3. Pages: [decisions](decisions.md),
+[open-items](open-items.md).
+
+## [2026-11-26] build | 3D walkthrough in the plan editor
+Tests first for the geometry. Commits `5b50e33`, `3a688e3`, `ed51665`. Pages: [overview](overview.md),
+[architecture](architecture.md).
+
+## [2026-11-26] security | Review of the walkthrough, and a code review
+No security finding. Code review: sharp-angle walls could be crossed, oversized plans froze the tab, Ctrl+S
+did not save in 3D. Fixed in `ff3c9bf`, which also fixes the new browser journey (the page's policy blocks
+`wait_for_function`). Pages: [security](security.md).
+
+## [2026-11-26] infra | The contributor's own Supabase project
+Created by the contributor for their fork, migrations and auth settings applied. Not this project's database.
+
+## [2026-11-26] test | Walkthrough verified (in the contributor's fork)
+Backend 100 passed, frontend 49 passed, as reported by the contributor. Pages: [testing](testing.md).
+
+## [2026-11-26] docs | Walkthrough sent as a pull request
+No write access to the repository, so the work goes from a fork to `dev` as a pull request. The local
+commits were re-authored before publishing, and the hashes above updated. Pages: [log](log.md).
+
+## [2026-11-26] build | Pull request #14 merged: 3D walkthrough in the plan editor
+First-person, view-only walkthrough opened from the editor; three.js 0.180.0 vendored. Before any of it ran: the
+vendored files compared by SHA-256 with the npm package (identical), the test and editor changes read, then
+code-reviewer and security-reviewer agents: no critical or high finding. One medium and four low notes are in
+[open-items](open-items.md); the contributor's code was not changed. Six wiki conflicts resolved by keeping both
+sides; the contributor's wiki text spoke of "the user", which was re-attributed
+([decisions](decisions.md), "From merged pull requests"). On the merged tree: backend 100 passed, frontend 57
+passed. Commits `5bb03bf` (merge), `5c86f5b`. Pages: [decisions](decisions.md), [security](security.md),
+[testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] test | Pull request #19 reviewed, not merged: version comparison
+Code-reviewer and security-reviewer agents, then its tests on a trial merge onto `dev`: frontend 63 passed, its
+unit and API tests passed, one of its four browser journeys failed (it asserts on text that the stylesheet
+uppercases, and a later step cannot pass). Also confirmed in the code: the details panel renders the text "null",
+and the comparison and the 3D walkthrough can be open at once. No security finding in the code; the endpoint
+reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
+not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
+Nothing of it is on `dev`.
+
 ## [2026-11-26] decision | The app is for customers
 The user: the app is only for customers, not internal designers. Recorded in [decisions](decisions.md).
 

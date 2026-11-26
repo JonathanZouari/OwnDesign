@@ -60,8 +60,9 @@
         <span class="chip ok" id="context-role"></span>
       </div>
       <div class="group">
-        <span class="chip"><span class="icon" aria-hidden="true" style="font-size: 14px">grid_4x4</span>Grid: 0.1m snap</span>
-        <span class="chip"><span class="icon" aria-hidden="true" style="font-size: 14px">straighten</span>Auto-dim: on</span>
+        <span class="chip wide"><span class="icon" aria-hidden="true" style="font-size: 14px">grid_4x4</span>Grid: 0.1m snap</span>
+        <span class="chip wide"><span class="icon" aria-hidden="true" style="font-size: 14px">straighten</span>Auto-dim: on</span>
+        <button type="button" id="walk-open"><span class="icon" aria-hidden="true">directions_walk</span>3D walkthrough</button>
         <button type="button" id="compare-open" hidden><span class="icon" aria-hidden="true">compare</span>Compare versions</button>
       </div>
     </div>
@@ -93,6 +94,19 @@
       </div>
 
       <aside class="inspector" id="inspector" aria-label="Element inspector"></aside>
+
+      <section class="walk" id="walk" hidden aria-label="3D walkthrough">
+        <p class="floating" id="walk-hint">Drag to look around. Walk with W A S D or the arrows. Esc returns to the plan.<br>Conceptual view with assumed heights.</p>
+        <button type="button" class="floating" id="walk-close">Back to 2D plan</button>
+        <div class="floating" id="walk-pad" role="group" aria-label="Walking controls">
+          <button type="button" data-move="turnLeft" aria-label="Turn left"><span class="icon" aria-hidden="true">rotate_left</span></button>
+          <button type="button" data-move="forward" aria-label="Walk forward"><span class="icon" aria-hidden="true">arrow_upward</span></button>
+          <button type="button" data-move="turnRight" aria-label="Turn right"><span class="icon" aria-hidden="true">rotate_right</span></button>
+          <button type="button" data-move="left" aria-label="Step left"><span class="icon" aria-hidden="true">arrow_back</span></button>
+          <button type="button" data-move="back" aria-label="Walk back"><span class="icon" aria-hidden="true">arrow_downward</span></button>
+          <button type="button" data-move="right" aria-label="Step right"><span class="icon" aria-hidden="true">arrow_forward</span></button>
+        </div>
+      </section>
     </div>
 
     <section class="compare" id="compare" hidden aria-labelledby="cmp-title">
