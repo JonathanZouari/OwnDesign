@@ -14,6 +14,10 @@ was not read: confirm with a lawyer before publishing.
 - `test_a11y.py`: axe-core (WCAG 2.2 A/AA) on all 10 pages, skip link, 320 px reflow, statement links.
   Needs no Supabase; signed-in states are not covered by axe.
 
+## Done: options widget
+
+`frontend/js/a11y-widget.js` (loaded on every page): floating button, panel with text size (4 steps, CSS `zoom`), high contrast, highlight links, readable font, wider spacing, stop animations, bold focus; stored in `localStorage` key `atelier-a11y`, validated on load; English or Hebrew by `<html lang>`. Rules at the end of `app.css`, plus `forced-colors`. Tests in `test_a11y.py` (axe with each option on, persistence, corrupt storage, Escape, 320 px at largest text).
+
 ## Done: responsive navigation (section links below 1200 px, tabs row and account button on phones)
 
 ## Not done

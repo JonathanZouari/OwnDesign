@@ -109,3 +109,6 @@ backend 49 passed / 64 skipped (no Supabase config). Pages: [accessibility](acce
 
 ## [2026-11-26] build | Accessibility: responsive navigation
 Section links on the studio dashboard below 1200 px; workspace tabs row and Sign in/out button on phones; axe on phone viewport. Backend 70 passed / 64 skipped (no Supabase config), frontend 31 passed. Pages: [accessibility](accessibility.md), [open-items](open-items.md).
+
+## [2026-11-26] build | Accessibility options widget
+Floating button with display options on every page, `forced-colors` support. Caught and fixed a bug where Reset left classes behind. backend 103 passed / 64 skipped (no Supabase config), frontend 31 passed. Pages: [accessibility](accessibility.md), [testing](testing.md).

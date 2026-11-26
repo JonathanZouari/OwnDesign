@@ -548,3 +548,42 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .appbar .tabs { display: flex !important; order: 3; width: 100%; overflow-x: auto; }
   .tabs span { display: none; }
 }
+
+/* Accessibility options widget (js/a11y-widget.js). Options are classes on <html>. */
+.a11y { position: fixed; inset-inline-start: 12px; bottom: 44px; z-index: 90; }
+.a11y-toggle { width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 50%; background: var(--primary); border-color: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-3); }
+.a11y-toggle:hover { background: var(--primary-bright); }
+.a11y-panel { position: absolute; bottom: 52px; inset-inline-start: 0; width: min(300px, calc(100vw - 24px)); max-height: calc(100vh - 120px); overflow: auto; padding: 14px; border: 1px solid var(--hairline-strong); border-radius: 8px; background: var(--panel); color: var(--ink); box-shadow: var(--shadow-3); }
+.a11y-panel[hidden] { display: none; }
+.a11y-panel h2 { margin-bottom: 10px; font-size: 16px; line-height: 22px; }
+.a11y-size, .a11y-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.a11y-readout { flex-basis: 100%; font: 400 12px/18px var(--font-mono); }
+.a11y-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0; }
+.a11y-panel button { min-height: 32px; justify-content: center; text-align: center; }
+.a11y-foot { justify-content: space-between; }
+
+html.a11y-text-1 { zoom: 1.15; }
+html.a11y-text-2 { zoom: 1.3; }
+html.a11y-text-3 { zoom: 1.5; }
+html.a11y-font, html.a11y-font body, html.a11y-font :is(button, input, select, textarea) { --font-head: Arial, Verdana, sans-serif; --font-body: Arial, Verdana, sans-serif; --font-mono: Arial, Verdana, sans-serif; font-family: Arial, Verdana, sans-serif; }
+html.a11y-spacing body { line-height: 1.8; letter-spacing: 0.04em; word-spacing: 0.12em; }
+html.a11y-spacing :is(p, li, dd, label, span) { line-height: 1.8; }
+html.a11y-links a { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; background: var(--primary-tint); }
+html.a11y-focus :focus-visible { outline: 4px solid var(--ink); outline-offset: 3px; box-shadow: 0 0 0 7px var(--primary-bright); }
+html.a11y-still *, html.a11y-still *::before, html.a11y-still *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+html.a11y-contrast {
+  --surface: #000; --surface-low: #0d0d0d; --surface-mid: #1a1a1a; --surface-high: #262626; --surface-highest: #303030; --panel: #000;
+  --ink: #fff; --ink-soft: #f2f2f2; --outline: #fff; --primary: #ffd400; --primary-bright: #ffe566; --on-primary: #000; --primary-tint: #3a3000;
+  --secondary: #7dffa0; --secondary-tint: #00401a; --on-secondary-tint: #fff; --caution-tint: #4d3500; --on-caution-tint: #fff;
+  --inverse: #fff; --on-inverse: #000; --error: #ff9a9a; --hairline: rgb(255 255 255 / 0.5); --hairline-strong: #fff;
+}
+html.a11y-contrast .appbar { background: #000; }
+html.a11y-contrast .palette nav a[aria-current="page"] { color: #000; }
+html.a11y-contrast a { color: var(--primary); }
+html.a11y-contrast .chip { border: 1px solid #fff; }
+
+@media (forced-colors: active) {
+  .chip, .card, .a11y-panel { border: 1px solid CanvasText; }
+  button:disabled { color: GrayText; }
+  :focus-visible { outline: 3px solid Highlight; }
+}
