@@ -317,7 +317,10 @@ function buildChrome(name, role) {
   $("#crumb-name").textContent = name;
   $("#context-name").textContent = name;
   $("#context-role").textContent = role;
-  $("#account").textContent = state.signedIn ? "Sign out" : "Sign in";
+  const account = state.signedIn ? "Sign out" : "Sign in";
+  $("#account").setAttribute("aria-label", account); // phones show the icon only
+  $("#account .icon").textContent = state.signedIn ? "logout" : "login";
+  $("#account .wide").textContent = account;
   $("#account").addEventListener("click", () => (state.signedIn ? signOut() : location.assign("auth.html?next=editor.html")));
   $("#home-link").href = state.signedIn ? "projects.html" : "index.html";
 
