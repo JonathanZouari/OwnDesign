@@ -606,7 +606,7 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 .strong { font-weight: 600; }
 .toolbar { align-items: end; }
 .currency-pick { min-width: 9rem; }
-.budget-table { margin-top: 1rem; max-width: 100%; }
+.budget-table { position: relative; margin-top: 1rem; max-width: 100%; } /* contains the .sr-only header, which would otherwise widen the RTL page */
 .budget-table table { min-width: 760px; }
 .budget-table th, .budget-table td { padding: 6px 4px; text-align: start; vertical-align: top; }
 .budget-table td.num, .budget-table th.num { text-align: end; }
