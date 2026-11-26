@@ -19,6 +19,9 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 | `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names) |
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
+| `backend/tests/test_walk.py` | integration, edge | walking paths: round trip, point and image bounds, malformed input, notes by both roles, isolation, RLS, quota race, suspended studio |
+| `backend/tests/test_e2e_walk.py` | end to end, edge | trace a path from a recorded video (runtime stubbed), notes, designer view, delete, narrow screen, markup as text; bad files; the real YOLOv8 model on a video with nobody in it; stranger and signed-out visitor |
+| `frontend/tests/walk.test.js` | unit, edge | path building, YOLOv8 letterbox, tensor input, output decoding and suppression |
 | `frontend/tests/plan3d.test.js` | unit, edge | 3D wall boxes, doors, windows, overlapping walls, collision, sharp corners, oversized plans |
 
 ## Required after every change
@@ -53,6 +56,12 @@ the environment ("not allowed to deploy to ci"), with no step run; with the secr
 failed in its first step. Not yet seen: a green `backend` run. It waits for the CI secret key.
 
 ## Last result
+
+2026-11-26, "How we move" (branch `feat/walk-paths`): frontend 71 passed; `test_walk.py` 34 passed;
+`test_e2e_walk.py` 3 passed, including the real YOLOv8 model in Chromium. Full backend suite: 133 passed, 1 failed
+(`test_client_portal_entry_points`: a Supabase Auth read timeout while creating a test user; passed when run
+again alone). A one-off run with the real model on a recorded walker traced the path to within 2 % of where it was
+drawn; the screenshots in `design/walk/` come from that run.
 
 2026-11-26, after merging pull requests #9, #8 and #14: backend 100 passed (9 browser tests; the guest journey
 now also walks in 3D), frontend 57 passed, locally. On GitHub: `frontend` green, `backend` not yet run to the

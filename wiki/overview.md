@@ -43,6 +43,11 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - Keyboard (any layout), drag to look, and on-screen buttons. Walls and windows block, doorways let through.
 - Heights are assumed, because the plan stores none ([architecture.md](architecture.md)).
 
+## Built: How we move
+
+- The client films a daily route; YOLOv8 in the browser traces it over a still of the room. Client and
+  designer pin notes on it. The video stays on the device ([walk-paths.md](walk-paths.md)).
+
 ## Not built yet
 
 Renderings, budget, dossier,

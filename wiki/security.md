@@ -75,6 +75,15 @@ served locally. The three vendored files are byte for byte the published npm pac
 compared at merge time). The guard against oversized plans counts wall cuts, not boxes: the largest plan the
 server accepts still makes the viewer's own tab sluggish ([open-items.md](open-items.md)).
 
+## Review of "How we move" (2026-11-26)
+
+`security-review` on commits `00d4342..878fb02`: no finding. Checked: a path id from another project (404 before
+any write), author role set by the server, RLS and grants (SELECT only), the quota trigger (`search_path = ''`,
+no EXECUTE for users), storage paths built by the server under `<project>/walk/`, image type from the bytes,
+note and label text set as text, no `storage_path` or user ids in responses. `walk.html` alone allows
+`'wasm-unsafe-eval'` (WebAssembly for the detector). Below the bar: `author_id` and `created_by` are readable
+through direct SELECT by members of the same project.
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

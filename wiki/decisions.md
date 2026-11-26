@@ -17,7 +17,13 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **The CI check reports only.** No branch protection for now.
 
 
+- **YOLOv8 for "How we move"** (2026-11-26). The user first picked COCO-SSD to avoid the AGPL licence, then
+  asked for YOLOv8 explicitly. See [walk-paths.md](walk-paths.md).
+
 ## By Claude (open to change)
+
+- **Person detection runs in the browser** (2026-11-26), not on the server: the video of a client's home never
+  leaves the device, and the backend does not need PyTorch. The cost is speed on weak phones.
 
 - **FastAPI**, managed with `uv`; **no-build frontend** with plain ES modules. Smallest stack that meets the PRD's "Python backend, HTML/CSS frontend".
 - **All writes go through the backend with the service key; users have SELECT only.** The approved plan limited the service key to three operations. Widened so geometry validation and the audit trail cannot be bypassed through the Supabase Data API ([architecture.md](architecture.md)).
