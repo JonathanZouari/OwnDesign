@@ -38,6 +38,16 @@ cd frontend && python -m http.server 5500
 
 Open <http://localhost:5500>. Create a studio, then open the studio link it shows to try the client journey.
 
+## Villa 3D demo
+
+A stand-alone first-person tour of a two-floor villa with a pool, at <http://localhost:5500/villa/> (also
+linked from the home page). It is not connected to saved projects. Download its assets once (about 57 MB,
+CC0 from [Poly Haven](https://polyhaven.com), git-ignored):
+
+```sh
+cd frontend && npm run villa:assets
+```
+
 ## Tests
 
 ```sh
