@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/app.css?v=client-plan">
 </head>
 <body class="app">
   <header class="appbar">
@@ -59,6 +59,7 @@
         <strong id="context-name"></strong><span class="muted" aria-hidden="true">/</span><span id="context-area"></span>
         <span class="chip ok" id="context-role"></span>
       </div>
+      <span id="status-save" class="save-indicator" role="status" aria-live="polite"></span>
       <div class="group">
         <span class="chip"><span class="icon" aria-hidden="true" style="font-size: 14px">grid_4x4</span>Grid: 0.1m snap</span>
         <span class="chip"><span class="icon" aria-hidden="true" style="font-size: 14px">straighten</span>Auto-dim: on</span>
@@ -79,6 +80,7 @@
         <svg id="canvas" tabindex="0" role="application" aria-label="Floor plan canvas. Tab to move between elements, arrow keys to nudge, Delete to remove. With a drawing tool active, Enter places it at the centre of the view." preserveAspectRatio="xMidYMid meet"></svg>
         <div class="floating" id="catalog" hidden aria-label="Furniture catalog"></div>
         <div class="floating" id="actions" hidden role="toolbar" aria-label="Selection actions">
+          <button type="button" id="reshape-selected" hidden>Change room shape</button>
           <button type="button" id="rotate"><span class="icon" aria-hidden="true">rotate_90_degrees_cw</span>Rotate 90°</button>
           <button type="button" id="duplicate"><span class="icon" aria-hidden="true">content_copy</span>Duplicate</button>
           <button type="button" id="delete" aria-label="Delete selection"><span class="icon" aria-hidden="true">delete</span></button>
@@ -97,9 +99,23 @@
 
   <footer class="statusbar">
     <span><span id="status-zoom"></span><span class="sep">|</span><span class="wide">Grid Snap: 0.1m active<span class="sep">|</span>Units: Metres / cm</span></span>
-    <span id="status-save"></span>
   </footer>
 
+  <dialog id="room-dialog" aria-labelledby="room-dialog-title">
+    <form method="dialog" class="stack">
+      <h2 id="room-dialog-title">Add a room</h2>
+      <label>Room shape <select name="shape">
+        <option value="ellipse">Ellipse</option><option value="hexagon">Hexagon</option>
+        <option value="chamfer">Angled corner</option><option value="notch">L-shaped</option>
+        <option value="rectangle">Rectangle</option>
+      </select></label>
+      <label>Room name <input name="name" required maxlength="80" value="New room"></label>
+      <label>Width (cm) <input name="width" required type="number" min="50" max="3000" value="600"></label>
+      <label>Length (cm) <input name="length" required type="number" min="50" max="3000" value="400"></label>
+      <label>Rotation (degrees) <input name="rotation" required type="number" min="-360" max="360" step="any" value="0"></label>
+      <div class="row"><button value="add">Add room</button><button value="cancel" formnovalidate>Cancel</button></div>
+    </form>
+  </dialog>
   <dialog id="save-dialog">
     <form method="dialog" class="stack">
       <h2>Save a new version</h2>
@@ -127,6 +143,6 @@
   </dialog>
 
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
-  <script type="module" src="js/editor/main.js"></script>
+  <script type="module" src="js/editor/main.js?v=isolated-room"></script>
 </body>
 </html>

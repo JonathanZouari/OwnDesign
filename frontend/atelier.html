@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self'; object-src 'none'; base-uri 'self'"
+    />
+    <title>אטלייה | שולחן התכנון</title>
+    <link rel="stylesheet" href="css/atelier.css" />
+  </head>
+  <body>
+    <header>
+      <a class="brand" dir="ltr" href="index.html">Atelier<span>.</span></a>
+      <nav><a id="back" href="index.html">חזרה לכניסה</a></nav>
+    </header>
+    <main id="workspace">
+      <section class="mast">
+        <div>
+          <p id="context" class="eyebrow">דירת הדגמה</p>
+          <h1 id="title">חמישה חדרים ומרפסת</h1>
+        </div>
+        <div class="modes">
+          <button id="designer">תכנון</button
+          ><button id="client">סיור לקוח</button>
+        </div>
+      </section>
+      <p id="notice" role="status"></p>
+      <div class="project-tools">
+        <details id="ellipse-tools" hidden><summary>שינוי צורת החדר הנבחר</summary>
+          <form id="ellipse-form">
+            <label>חדר קיים בדירה<select id="reshape-room" required></select></label>
+            <label>צורת החדר<select id="room-template"><option value="ellipse">אליפסה</option><option value="hexagon">משושה</option><option value="chamfer">פינה אלכסונית</option><option value="notch">צורת ר׳</option><option value="rectangle">מלבן</option></select></label>
+            <label>רוחב הצורה בס״מ<input id="ellipse-width" type="number" required min="50" max="3000" value="600"></label>
+            <label>אורך הצורה בס״מ<input id="ellipse-length" type="number" required min="50" max="3000" value="400"></label>
+            <label>זווית במעלות<input id="ellipse-angle" type="number" required min="-360" max="360" value="0"></label>
+            <button>החלת הצורה בחדר הקיים</button>
+          </form>
+          <p>הקו המקווקו מסמן את גבול החלופה בתוך המעטפת האדריכלית. הקירות, הפתחים והריהוט נשארים במקומם.</p>
+        </details>
+        <details id="audit-panel"><summary>ביקורת על התוכנית</summary>
+          <label>רוחב מעבר ועומק גישה רצויים בס״מ <input type="number" id="clearance" min="30" max="200" value="90"></label>
+          <button id="audit-run">בדיקת החלופה</button><p id="audit-result" role="status"></p><ul id="findings"></ul>
+        </details>
+        <details id="messages-panel"><summary>שיחת הפרויקט <span id="message-badge" aria-live="polite"></span></summary>
+          <button id="older" hidden>הודעות קודמות</button><ol id="messages"></ol>
+          <form id="compose"><label>הודעה לצוות הפרויקט<textarea id="message-text" maxlength="2000" required rows="2"></textarea></label><button>שליחה</button></form>
+          <p id="chat-status" role="status"></p>
+        </details>
+      </div>
+      <div class="workgrid">
+        <section class="sheet">
+          <div class="sheethead">
+            <button id="undo-edit" type="button" aria-keyshortcuts="Control+Z Meta+Z" title="Ctrl+Z / ⌘Z" disabled>↶ ביטול שינוי אחרון</button>
+            <button id="wall-edit" type="button" hidden>עריכת קיר</button>
+            <label
+              >חלל
+              <select id="room"></select></label
+            ><label
+              >חלופה
+              <select id="version"></select
+            ></label>
+          </div>
+          <div id="room-tools" hidden>
+            <div><label for="catalog">ריהוט לחדר</label><select id="catalog"></select>
+              <button class="primary" id="add" type="button">הוספת רהיט</button></div>
+            <div><label for="angle">סיבוב הרהיט</label>
+              <input id="angle" aria-label="מחוון סיבוב" type="range" min="0" max="360" step="0.1" dir="ltr">
+              <input id="exact-angle" aria-label="זווית מדויקת במעלות" type="number" min="0" max="360" step="any" dir="ltr"><span>°</span>
+            </div>
+            <small id="gesture">בחרו רהיט לסיבוב. גררו את הרהיט כדי להזיז אותו.</small>
+            <button id="revert" hidden type="button">ביטול הניסיון וחזרה לחלופה</button>
+          </div>
+          <div id="plan-stage">
+            <svg id="canvas" aria-label="תוכנית הדירה" role="group"></svg>
+            <div id="wall-controls" hidden>
+              <div class="wall-heading"><label><span class="visually-hidden">המחיצה הנבחרת</span><select id="partition-choice"></select></label>
+                <button id="wall-cancel" type="button" aria-label="סגירת עריכת הקיר">×</button></div>
+              <div class="wall-shapes" role="group" aria-label="צורת הקיר">
+                <button type="button" data-shape="move"><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 14H29 M16 12V3 M12 7l4-4 4 4"/></svg>הזזה</button>
+                <button type="button" data-shape="ellipse"><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 16 Q16 -8 29 16"/></svg>עיקול</button>
+                <button type="button" data-shape="parallel"><svg viewBox="0 0 32 20" aria-hidden="true"><path d="M3 4l13 12L29 4"/></svg>קודקוד</button>
+              </div>
+              <details id="more-wall-shapes"><summary>עוד צורות</summary><select id="wall-mode" aria-label="פעולת קיר">
+                <option value="move">הזזה</option><option value="ellipse">עיקול</option><option value="parallel">קודקוד</option>
+                <option value="bay">נישה</option><option value="start">הטיית הקצה הראשון</option><option value="end">הטיית הקצה השני</option>
+              </select></details>
+              <form id="wall-exact" hidden><label>הסטה בס״מ<input id="wall-distance" type="number" min="-3000" max="3000" step="1" value="0" required></label>
+                <button id="wall-apply" type="submit">עדכון מידה</button></form>
+            </div>
+          </div>
+          <p id="wall-info" role="status" hidden></p>
+          <div class="sheetfoot">
+            <span id="status" role="status"></span
+            ><button id="overview">הדירה כולה</button>
+          </div>
+        </section>
+        <aside>
+          <h2 id="paneltitle">כלי תכנון</h2>
+          <p id="selected"></p>
+          <p id="ellipse-area" hidden></p>
+          <div id="toolbar">
+            <div id="editing">
+              <details id="dimensions">
+                <summary>מידות ומקור</summary>
+                <label
+                  >רוחב בס״מ<input
+                    id="width"
+                    type="number"
+                    min="1"
+                    max="100000"
+                    step="any" /></label
+                ><label
+                  >עומק בס״מ<input
+                    id="depth"
+                    type="number"
+                    min="1"
+                    max="100000"
+                    step="any" /></label
+                ><button id="measure">עדכון מידות שנמדדו</button>
+              </details>
+              <button id="remove">הסרת הפריט הנבחר</button>
+            </div>
+            <label>השוואה לחלופה<select id="compare"></select></label>
+            <div id="comparison" hidden>
+              <svg id="before" aria-label="חלופה להשוואה"></svg
+              ><small id="compareLabel"></small>
+            </div>
+            <form id="review">
+              <h3>משוב לחלל או לרהיט</h3>
+              <label
+                >החלטה<select id="decision">
+                  <option value="comment">הערה</option>
+                  <option value="approve">אישור</option>
+                  <option value="revise">בקשת שינוי</option>
+                </select></label
+              ><label
+                >הערה<textarea
+                  id="note"
+                  maxlength="1200"
+                  rows="2"
+                ></textarea></label
+              ><button>שמירת משוב</button>
+            </form>
+            <ul id="reviews"></ul>
+          </div>
+          <form id="save">
+            <label
+              >שם החלופה<input
+                id="label"
+                maxlength="80"
+                required
+                placeholder="למשל, סלון פתוח" /></label
+            ><button class="primary">שמירת חלופה חדשה</button>
+          </form>
+        </aside>
+      </div>
+      <p class="footnote">
+        סף הגישה ניתן לשינוי בביקורת על התוכנית. אפשר להזיז רהיט במגע, בעכבר או
+        בחצים.
+      </p>
+    </main>
+    <script src="vendor/supabase-js-2.119.1.umd.js"></script>
+    <script type="module" src="js/pages/atelier.js"></script>
+  </body>
+</html>

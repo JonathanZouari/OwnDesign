@@ -1,8 +1,10 @@
+from datetime import datetime, timezone
 from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from postgrest.exceptions import APIError
+from pydantic import BaseModel, Field
 
 from app.auth import CurrentUser, current_user
 from app.db import audit, service
@@ -30,8 +32,44 @@ def _project_or_404(user: CurrentUser, project_id: UUID) -> dict:
 @router.get("")
 def list_projects(studio_id: UUID | None = None, user: CurrentUser = Depends(current_user)):
     query = user.db.table("projects").select(PROJECT_COLUMNS).order("created_at", desc=True)
-    query = query.eq("studio_id", str(studio_id)) if studio_id else query.eq("client_user_id", user.id)
-    return ok(query.execute().data)
+    if studio_id:
+        return ok(query.eq("studio_id", str(studio_id)).execute().data)
+    shares = {r["project_id"]: r["permission"] for r in user.db.table("project_shares").select("project_id,permission").execute().data}
+    if shares:
+        query = query.or_(f"client_user_id.eq.{user.id},id.in.({','.join(shares)})")
+    else:
+        query = query.eq("client_user_id", user.id)
+    return ok([{**r, "shared_access": shares.get(r["id"])} for r in query.execute().data])
+
+
+class ShareChoice(BaseModel):
+    client_id: UUID
+    permission: Literal["view", "save", "remove"]
+
+
+def project_access(user, project):
+    if user.role_in(project["studio_id"]) or project["client_user_id"] == user.id:
+        return "save"
+    rows = user.db.table("project_shares").select("permission").eq("project_id", project["id"]).eq("user_id", user.id).execute().data
+    return rows[0]["permission"] if rows else "view"
+
+
+@router.put("/{project_id}/share")
+def share_project(project_id: UUID, body: ShareChoice, user: CurrentUser = Depends(current_user)):
+    project = _project_or_404(user, project_id)
+    if not user.role_in(project["studio_id"]) or project["studio"]["status"] != "active":
+        raise HTTPException(403, "Active studio membership required")
+    uid = str(body.client_id)
+    clients = user.db.table("projects").select("id").eq("studio_id", project["studio_id"]).eq("client_user_id", uid).limit(1).execute().data
+    if not clients or uid == project["client_user_id"] or uid == user.id:
+        raise HTTPException(422, "Choose another registered client of this studio")
+    row = {"project_id": str(project_id), "user_id": uid}
+    table = service().table("project_shares")
+    if body.permission == "remove":
+        table.delete().eq("project_id", str(project_id)).eq("user_id", uid).execute()
+    else:
+        table.upsert({**row, "permission": body.permission}).execute()
+    return ok({"permission": body.permission})
 
 
 @router.post("", status_code=201)
@@ -66,7 +104,7 @@ def create_project(body: ProjectCreate, user: CurrentUser = Depends(current_user
 def get_project(project_id: UUID, user: CurrentUser = Depends(current_user)):
     project = _project_or_404(user, project_id)
     role = "designer" if user.role_in(project["studio_id"]) else "client"
-    return ok({**project, "my_role": role})
+    return ok({**project, "my_role": role, "access": project_access(user, project)})
 
 
 @router.get("/{project_id}/versions")
@@ -96,6 +134,8 @@ def get_version(project_id: UUID, version: UUID | Literal["latest"], user: Curre
 @router.post("/{project_id}/versions", status_code=201)
 def create_version(project_id: UUID, body: VersionCreate, user: CurrentUser = Depends(current_user)):
     project = _project_or_404(user, project_id)
+    if project_access(user, project) != "save":
+        raise HTTPException(403, "This project is shared for viewing only")
     if project["studio"]["status"] != "active":
         raise HTTPException(403, "This studio is not active")
     author_role = "designer" if user.role_in(project["studio_id"]) else "client"
@@ -141,3 +181,37 @@ def create_version(project_id: UUID, body: VersionCreate, user: CurrentUser = De
         author_role=author_role,
     )
     return ok({key: version[key] for key in ("id", "version_no", "label", "author_role", "created_at")})
+
+class LayoutReview(BaseModel):
+    room_id: str = Field(min_length=1, max_length=120)
+    item_id: str = Field(default="", max_length=120)
+    decision: Literal["comment", "approve", "revise"]
+    note: str = Field(default="", max_length=1200)
+
+
+@router.get("/{project_id}/versions/{version_id}/reviews")
+def list_layout_reviews(project_id: UUID, version_id: UUID, user: CurrentUser = Depends(current_user)):
+    get_version(project_id, version_id, user)
+    rows = user.db.table("layout_reviews").select("room_id,item_id,author_role,decision,note,updated_at").eq(
+        "version_id", str(version_id)
+    ).order("updated_at", desc=True).execute().data
+    return ok(rows)
+
+
+@router.put("/{project_id}/versions/{version_id}/reviews")
+def save_layout_review(project_id: UUID, version_id: UUID, body: LayoutReview, user: CurrentUser = Depends(current_user)):
+    project = _project_or_404(user, project_id)
+    if project["studio"]["status"] != "active":
+        raise HTTPException(403, "This studio is not active")
+    if body.decision == "comment" and not body.note.strip():
+        raise HTTPException(422, "A comment needs text")
+    geometry = get_version(project_id, version_id, user)["data"]["geometry"]
+    if not any(r["id"] == body.room_id for r in geometry["rooms"]):
+        raise HTTPException(422, "Unknown room")
+    if body.item_id and not any(f["id"] == body.item_id for f in geometry["furniture"]):
+        raise HTTPException(422, "Unknown item")
+    role = "designer" if user.role_in(project["studio_id"]) else "client"
+    row = {**body.model_dump(), "author_id": user.id, "version_id": str(version_id),
+           "author_role": role, "updated_at": datetime.now(timezone.utc).isoformat()}
+    service().table("layout_reviews").upsert(row).execute()
+    return ok({"saved": True})

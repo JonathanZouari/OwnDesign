@@ -10,6 +10,13 @@ const choice = (label, options, read, write) => ({ label, options, read, write }
 const text = (label, read, write) => ({ label, read, write, text: true });
 const set = (kind, key) => (plan, id, value) => P.patch(plan, kind, id, { [key]: value });
 
+const ellipseFields = [
+  ["Interior width","width","cm",50,3000], ["Interior length","length","cm",50,3000], ["Room rotation","rotation","deg",-360,360],
+].map(([label,key,unit,min,max]) => number(label,unit,room=>room.ellipse[key],(plan,id,value)=>{
+  const room=plan.rooms.find(r=>r.id===id);
+  return P.patch(plan,"rooms",id,{ellipse:{...room.ellipse,[key]:value}});
+},{min,max}));
+
 const SPEC = {
   walls: {
     title: (wall) => (wall.kind === "exterior" ? "Exterior wall" : "Partition wall"),
@@ -21,12 +28,12 @@ const SPEC = {
     ],
   },
   openings: {
-    title: (opening) => (opening.type === "door" ? "Door" : "Window"),
+    title: (opening) => ({door:"Door",window:"Window",sliding:"Sliding door",passage:"Open passage"})[opening.type],
     review: () => true,
     fields: [
       number("Width", "cm", (opening) => Math.round(opening.width), set("openings", "width"), { min: 30 }),
       number("From wall start", "cm", (opening) => Math.round(opening.offset), set("openings", "offset"), { min: 0, max: 100_000 }),
-      choice("Type", [["door", "Door"], ["window", "Window"]], (opening) => opening.type, set("openings", "type")),
+      choice("Type", [["door", "Door"], ["window", "Window"], ["sliding", "Sliding door"], ["passage", "Open passage"]], (opening) => opening.type, set("openings", "type")),
     ],
   },
   furniture: {
@@ -120,7 +127,7 @@ export function renderInspector(root, editor, { versions, onLoadVersion }) {
         spec
           ? [
               h("div", { class: "selection" }, h("span", { class: "label" }, "Active selection"), title),
-              h("div", { class: "stack" }, h("span", { class: "label" }, "Dimensions"), h("div", { class: "fields" }, spec.fields.map((field) => fieldNode(field, editor)))),
+              h("div", { class: "stack" }, h("span", { class: "label" }, "Dimensions"), h("div", { class: "fields" }, (item.ellipse ? [...spec.fields,...ellipseFields] : spec.fields).map((field) => fieldNode(field, editor)))),
               spec.review(item) && h("p", { class: "note" }, REVIEW_NOTE),
             ]
           : summaryNode(),

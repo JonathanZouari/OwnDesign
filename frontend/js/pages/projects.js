@@ -17,7 +17,7 @@ run(async () => {
       h(
         "tr",
         {},
-        h("td", {}, project.name),
+        h("td", {}, project.name, project.shared_access && h("span", {class:"access-label"}, project.shared_access === "view" ? "Shared · View only" : "Shared · Can save versions")),
         h("td", {}, project.studio?.name ?? ""),
         h("td", {}, TYPE_LABEL[project.property_type]),
         h("td", {}, formatDate(project.created_at)),

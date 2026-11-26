@@ -3,11 +3,12 @@
 import { api, getSession, requireSession, signOut } from "../api.js";
 import { FURNITURE, FURNITURE_BY_TYPE } from "../catalog.js";
 import * as P from "../plan.js";
+import { reshapeRoom } from "../room-layout.js";
 import { KEYS, load, save as store } from "../store.js";
 import { $, action, h, run, showStudio, toast } from "../ui.js";
-import { renderInspector } from "./panel.js";
+import { renderInspector } from "./panel.js?v=openings";
 import { attachPointer, zoomAt } from "./pointer.js";
-import { draw, visibleArea } from "./render.js";
+import { draw, drawClientPlan, visibleArea } from "./render.js?v=isolated-room";
 
 const TOOLS = [
   { id: "select", icon: "near_me", key: "V", label: "Select and move" },
@@ -23,6 +24,44 @@ const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], Arrow
 const params = new URLSearchParams(location.search);
 const projectId = params.get("project");
 const canvas = $("#canvas");
+let tour = false;
+let selectedRoom = null;
+
+function renderClientView(plan) {
+  drawClientPlan(canvas, plan, selectedRoom);
+  const room = plan.rooms.find(r => r.id === selectedRoom);
+  const panel = $("#inspector");
+  panel.dir = "rtl";
+  panel.replaceChildren(h("h2", {}, room?.name || "סיור בדירה"));
+  if (room) {
+    const box = P.roomBox(plan, room.id);
+    const furniture = plan.furniture.filter(f=>P.containsPoint(room,box,f));
+    panel.append(h("p", {}, "רוחב " + P.metres(room.ellipse?.width ?? box.w) + " מ׳ · אורך " + P.metres(room.ellipse?.length ?? box.h) + " מ׳"),
+      h("p", {}, "שטח " + P.roomArea(plan,room).toFixed(2) + " מ״ר"),
+      ...(furniture.length ? [h("h3",{},"ריהוט וציוד"), h("ul",{}, ...furniture.map(f=>h("li",{}, FURNITURE_BY_TYPE.get(f.type)?.label ?? f.type)))] : []),
+      h("button", {type:"button", onclick:() => selectRoom(null)}, "חזרה למבט הכללי"));
+  } else {
+    panel.append(h("p", {}, "לחצו על חדר כדי להגדיל אותו ולראות את הריהוט והמידות."));
+  }
+  $("#zoom-level").textContent = Math.round(100 / visibleArea(canvas).scale) + "%";
+  $("#status-save").textContent = state.versions?.length ? "Saved · v" + state.versions[0].version_no : "";
+  $("#status-save").dataset.state = "saved";
+}
+
+function selectRoom(id) {
+  const box = id && P.roomBox(editor.plan,id);
+  selectedRoom = box ? id : null;
+  if (!box) {
+    fit();
+    canvas.focus({preventScroll:true});
+    return;
+  }
+  const margin = Math.max(25,Math.min(box.w,box.h)*.12);
+  state.view = {x:box.x-margin,y:box.y-margin,w:box.w+2*margin,h:box.h+2*margin};
+  render();
+  if (id) canvas.querySelector('g[data-room="' + CSS.escape(id) + '"]')?.focus({preventScroll:true});
+  else canvas.focus({preventScroll:true});
+}
 
 const state = {
   history: null,
@@ -107,6 +146,7 @@ function render() {
 
   const { x, y, w, h: height } = state.view;
   canvas.setAttribute("viewBox", `${x} ${y} ${w} ${height}`);
+  if (tour) return renderClientView(plan);
   canvas.dataset.tool = state.tool;
   const hadFocus = canvas.contains(document.activeElement);
   draw(canvas, { plan, selection: state.selection, preview: state.previewLine });
@@ -129,6 +169,7 @@ function render() {
   $("#redo").disabled = state.history.future.length === 0;
 
   $("#actions").hidden = !state.selection;
+  $("#reshape-selected").hidden = state.selection?.kind !== "rooms";
   const isFurniture = state.selection?.kind === "furniture";
   $("#rotate").hidden = !isFurniture;
   $("#duplicate").hidden = !isFurniture;
@@ -139,9 +180,12 @@ function render() {
   $("#context-area").textContent = `${P.planArea(plan).toFixed(1)} m²`;
   const latest = state.versions?.[0];
   $("#crumb-version").textContent = state.project ? `Plan Editor (${latest ? `v${latest.version_no}` : "no versions"}${isDirty() ? ", edited" : ""})` : "Plan Editor (Draft)";
-  $("#status-save").textContent = state.project
+  const indicator = $("#status-save");
+  const message = state.project
     ? isDirty() ? "Unsaved changes" : latest ? `Saved · v${latest.version_no}` : "Nothing saved yet"
-    : state.signedIn ? "Draft · not saved to your account yet" : "Guest draft · kept in this browser only";
+    : "Draft · this browser only";
+  indicator.dataset.state = state.project && latest && !isDirty() ? "saved" : "pending";
+  if (indicator.textContent !== message) indicator.textContent = message;
 }
 
 function fit() {
@@ -280,7 +324,7 @@ async function savePlan(label) {
       return savePlan(label);
     }
     store(KEYS.draft, null);
-    return location.replace(`editor.html?project=${id}`);
+    return location.replace(`editor.html?project=${id}&mode=edit`);
   }
   const version = await api(`/v1/projects/${state.project.id}/versions`, { method: "POST", body: { label, geometry: plan } });
   state.saved = plan;
@@ -331,7 +375,7 @@ function buildChrome(name, role) {
   });
   $("#zoom-in").addEventListener("click", () => zoomBy(1 / 1.25));
   $("#zoom-out").addEventListener("click", () => zoomBy(1.25));
-  $("#zoom-fit").addEventListener("click", fit);
+  $("#zoom-fit").addEventListener("click", () => tour ? selectRoom(null) : fit());
   $("#save").addEventListener("click", openSave);
   $("#save-cancel").addEventListener("click", () => $("#save-dialog").close("cancel"));
   $("#save-dialog").addEventListener("close", action(async (event) => {
@@ -339,6 +383,79 @@ function buildChrome(name, role) {
     if (dialog.returnValue === "save") await savePlan(dialog.querySelector("input").value.trim());
   }));
 
+  if (tour) {
+    document.body.classList.add("client-tour");
+    canvas.setAttribute("aria-label", "תוכנית הדירה. לחצו על חדר להצגת מידותיו");
+    canvas.addEventListener("click", e => selectRoom(e.target.closest("[data-room]")?.dataset.room || null));
+    canvas.addEventListener("keydown", e => {
+      if (e.key === "Escape") selectRoom(null);
+      if (["Enter"," "].includes(e.key) && e.target.dataset.room) {
+        e.preventDefault(); selectRoom(e.target.dataset.room);
+      }
+    });
+    $("#save").hidden = true;
+    $("#context-role").textContent = state.project.access === "view" ? "צפייה בלבד" : "סיור לקוח";
+    return;
+  }
+  if (state.project?.access === "view") {
+    $("#save").hidden = true;
+    document.querySelector(".rail").hidden = true;
+    return;
+  }
+  const roomDialog = $("#room-dialog");
+  const roomForm = roomDialog.querySelector("form");
+  let editRoomId = null;
+  function openRoomDialog(room) {
+    editRoomId = room?.id || null;
+    roomForm.reset();
+    $("#room-dialog-title").textContent = room ? "Change shape · "+room.name : "Add a room";
+    roomForm.elements.namedItem("name").readOnly = Boolean(room);
+    roomForm.querySelector('[value="add"]').textContent = room ? "Apply to this room" : "Add room";
+    if (room) {
+      const b = P.roomBox(editor.plan,room.id);
+      const geometry = room.layout || room.ellipse;
+      for (const [field,value] of Object.entries({name:room.name,shape:room.layout?.shape || (room.ellipse?"ellipse":"rectangle"),
+        width:Math.round(geometry?.width ?? b.w),length:Math.round(geometry?.length ?? b.h),rotation:geometry?.rotation ?? 0})) {
+        roomForm.elements.namedItem(field).value = value;
+      }
+    }
+    roomDialog.showModal();
+  }
+  $("#reshape-selected").onclick = () => openRoomDialog(editor.plan.rooms.find(r=>r.id===state.selection?.id));
+  document.querySelector(".rail .tools:last-child").prepend(h("button", {
+    type:"button", title:"Add shaped room", "aria-label":"Add shaped room", onclick:()=>openRoomDialog(null),
+  }, h("span",{class:"icon","aria-hidden":"true"},"add_box")));
+  roomForm.addEventListener("submit", async event => {
+    if (event.submitter?.value === "cancel") return;
+    const fields = new FormData(roomForm);
+    if (editRoomId) {
+      event.preventDefault();
+      const roomId = editRoomId, plan = editor.plan;
+      roomForm.inert = true;
+      try {
+        const result = await reshapeRoom(plan,roomId,{width:Number(fields.get("width")),length:Number(fields.get("length")),
+          shape:fields.get("shape"),rotation:Number(fields.get("rotation"))});
+        if (!roomDialog.open || editor.plan !== plan) return;
+        editor.commit(P.patch(plan,"rooms",roomId,{layout:result.layout}));
+        roomDialog.close();
+        toast("Room updated · "+result.findings.length+" items to review");
+      } catch (error) { toast(error.message); }
+      finally { roomForm.inert = false; }
+      return;
+    }
+    const name = fields.get("name").trim();
+    if (!name || editor.plan.rooms.length >= 100) {
+      event.preventDefault();
+      toast("Enter a room name and keep the plan within 100 rooms.");
+      return;
+    }
+    const width = Number(fields.get("width")), length = Number(fields.get("length"));
+    const b = P.planBox(editor.plan);
+    const x = editor.plan.rooms.length || editor.plan.walls.length ? b.x+b.w+50+(Math.hypot(width,length)-width)/2 : 0;
+    const next = P.addRoom(editor.plan,{name,type:"other",shape:fields.get("shape"),width,length,rotation:Number(fields.get("rotation"))},x,b.y);
+    editor.commit(next,{kind:"rooms",id:next.rooms.at(-1).id});
+    fit();
+  });
   attachPointer(canvas, editor);
   canvas.addEventListener("focusin", (event) => {
     const target = event.target.closest?.("[data-kind]");
@@ -362,7 +479,17 @@ run(async () => {
     [state.project, state.versions] = await Promise.all([api(base), api(`${base}/versions`)]);
     plan = state.versions.length ? (await api(`${base}/versions/latest`)).geometry : P.emptyPlan();
     name = state.project.name;
-    role = `Editing as ${state.project.my_role}`;
+    if (state.project.my_role === "client") {
+      tour = state.project.access === "view" || params.get("mode") !== "edit";
+      if (state.project.access !== "view") {
+        const url = new URL(location.href);
+        if (tour) url.searchParams.set("mode","edit");
+        else url.searchParams.delete("mode");
+        $("#save").before(h("a",{class:"button tour-switch",href:url.href},tour ? "עריכת התוכנית" : "תצוגת לקוח"));
+      }
+    }
+    $("#save").before(h("a", {class: "button", href: "atelier.html?project="+encodeURIComponent(projectId)}, "סטודיו לחלופות"));
+    role = state.project.access === "view" ? "View only" : `Editing as ${state.project.my_role}`;
     showStudio(state.project.studio.name);
     // Starting over from the wizard would discard this saved plan's context, so those links go to the project list.
     $("#tab-wizard").href = state.project.my_role === "designer" ? "studio.html" : "projects.html";
@@ -388,5 +515,6 @@ run(async () => {
   state.saved = plan;
   buildChrome(name, role);
   fit();
+  if (tour && plan.rooms.some(r => r.id === params.get("room"))) selectRoom(params.get("room"));
   if (params.get("save") && state.draft && state.signedIn) openSave();
 });

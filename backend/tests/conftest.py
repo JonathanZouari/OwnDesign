@@ -15,7 +15,7 @@ needs_supabase = pytest.mark.skipif(
     reason="Supabase is not configured (backend/.env missing)",
 )
 
-TEST_EMAIL_DOMAIN = "owndesign-test.example.com"
+TEST_EMAIL_DOMAIN = f"{uuid.uuid4().hex}.owndesign-test.example.com"
 
 
 @pytest.fixture(scope="session")

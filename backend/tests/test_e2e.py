@@ -10,6 +10,7 @@ import socket
 import subprocess
 import sys
 import time
+from urllib.parse import parse_qs, urlsplit
 from pathlib import Path
 
 import pytest
@@ -136,7 +137,7 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     assert page.locator(".version").count() == 2
 
     # Scenario 6: the studio's designer sees the client's project and its latest plan.
-    project_id = page.url.split("project=")[1]
+    project_id = parse_qs(urlsplit(page.url).query)["project"][0]
     seen = api.get(f"/v1/projects/{project_id}", headers=designer.headers).json()["data"]
     assert (seen["name"], seen["client_email"], seen["my_role"]) == ("E2E Flat", client_email, "designer")
     versions = api.get(f"/v1/projects/{project_id}/versions", headers=designer.headers).json()["data"]
@@ -145,6 +146,22 @@ def test_guest_builds_plan_registers_and_saves(servers, page, api, make_user):
     latest = api.get(f"/v1/projects/{project_id}/versions/latest", headers=designer.headers).json()["data"]["geometry"]
     assert latest["furniture"][0]["x"] == first["furniture"][0]["x"] + 10
     assert latest["walls"] == first["walls"]
+
+    # A saved two-room plan opens in the client tour and can be explored without editing it.
+    page.get_by_role("link", name="תצוגת לקוח").click()
+    room_labels = page.locator("#canvas g[data-room]")
+    room_labels.first.wait_for()
+    assert room_labels.count() == 2
+    overview = page.locator("#canvas").get_attribute("viewBox")
+    room_name = room_labels.first.get_attribute("aria-label")
+    room_id = room_labels.first.get_attribute("data-room")
+    page.locator(f'#canvas rect[data-room="{room_id}"]').click()
+    page.get_by_role("heading", name=room_name, exact=True).wait_for()
+    assert room_labels.count() == 1
+    assert page.locator("#canvas").get_attribute("viewBox") != overview
+    page.get_by_role("button", name="חזרה למבט הכללי").click()
+    assert room_labels.count() == 2
+    assert page.locator("#canvas").get_attribute("viewBox") == overview
 
 
 def test_designer_opens_studio_invites_and_revises_client_plan(servers, page, api, make_user):

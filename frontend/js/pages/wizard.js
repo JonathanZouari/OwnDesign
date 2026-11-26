@@ -1,6 +1,6 @@
 import { ROOM_TYPES } from "../catalog.js";
-import { emptyPlan, fromRooms, metres, planBox, roomBox } from "../plan.js";
-import { svg } from "../editor/render.js";
+import { templateArea, emptyPlan, fromRooms, metres, planBox, roomBox } from "../plan.js";
+import { roomSurface, svg } from "../editor/render.js";
 import { KEYS, load, save } from "../store.js";
 import { $, action, h, showStudio } from "../ui.js";
 
@@ -25,7 +25,7 @@ let rooms = [
 ];
 let current = 0;
 
-const area = (room) => (room.width * room.length) / 10_000;
+const area = (room) => templateArea(room.shape,room.width,room.length);
 const toCm = (value) => Math.min(Math.max(Math.round(Number(value) * 10) * 10 || MIN_CM, MIN_CM), MAX_CM);
 
 function setRooms(next, select = current) {
@@ -47,6 +47,7 @@ function renderEditor() {
   if (!room) return;
   $("#room-id").textContent = `ROOM R-${String(current + 1).padStart(2, "0")}`;
   $("#room-name").value = room.name;
+  $("#room-shape").value=room.shape || "rectangle";
   $("#room-type").value = room.type;
   $("#room-width").value = metres(room.width);
   $("#room-length").value = metres(room.length);
@@ -64,7 +65,7 @@ function renderPreview() {
       const b = roomBox(plan, planRoom.id);
       const cx = b.x + b.w / 2;
       const cy = b.y + b.h / 2;
-      const rect = svg("rect", { x: b.x, y: b.y, width: b.w, height: b.h, class: i === current ? "room current" : "room" });
+      const rect = roomSurface(planRoom,b,{class: i === current ? "room current" : "room" });
       rect.addEventListener("click", () => setRooms(rooms, i));
       const name = svg("text", { x: cx, y: cy, "text-anchor": "middle", "font-size": font, "font-weight": 500 }, rooms[i].name.toUpperCase());
       const size = svg("text", { x: cx, y: cy + font * 1.3, "text-anchor": "middle", "font-size": font * 0.8 }, `${area(rooms[i]).toFixed(1)} m²`);
@@ -125,6 +126,7 @@ function start() {
   );
 
   $("#room-name").addEventListener("input", (event) => updateCurrent({ name: event.target.value }));
+  $("#room-shape").addEventListener("change",e=>updateCurrent({shape:e.target.value}));
   $("#room-type").addEventListener("change", (event) => updateCurrent({ type: event.target.value }));
   for (const [id, key] of [["room-width", "width"], ["room-length", "length"]]) {
     const input = $(`#${id}`);

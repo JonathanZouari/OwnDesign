@@ -155,6 +155,22 @@ body.app .appbar { grid-column: 1 / -1; }
 .statusbar .sep { color: var(--outline); margin: 0 10px; }
 .contextbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 12px; background: var(--surface-low); box-shadow: var(--shadow-1); z-index: 2; font: 500 11px/16px var(--font-mono); letter-spacing: 0.02em; }
 .contextbar .group { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.contextbar { flex-wrap: wrap; background: #faf7f0; padding-block: 9px; }
+.contextbar #context-name { font: 600 16px/1.3 Georgia, serif; text-transform: none; }
+.save-indicator { padding: 4px 10px; border-radius: 20px; font: 600 12px/1.4 system-ui, sans-serif; }
+.save-indicator:empty { display: none; }
+.share-panel {margin-top:12px;border-top:1px solid #d9d1c3;padding-top:10px}
+.share-panel summary {cursor:pointer;font-weight:600;color:#51412e}
+.share-form {display:grid;gap:9px;margin-top:12px}
+.share-form label {display:grid;gap:4px}
+.share-form select {width:100%;min-width:0}
+.share-form [role=status] {overflow-wrap:anywhere}
+.access-label {display:block;width:fit-content;margin-top:4px;padding:3px 9px;border-radius:12px;background:#e6ecdf;color:#36492f;font-size:12px}
+.save-indicator[data-state="pending"] { color: #713e0c; background: #f5e7cc; }
+.save-indicator[data-state="saved"] { color: #245343; background: #e0ede3; }
+.app:has(#canvas) .brand { font-family: Georgia, serif; letter-spacing: .12em; }
+.app:has(#canvas) .inspector { box-sizing: border-box; min-width: 0; grid-template-columns: minmax(0, 1fr); overflow-wrap: anywhere; }
+.app:has(#canvas) .inspector h2 { font-family: Georgia, serif; font-weight: 500; }
 .contextbar strong { color: var(--primary); font-weight: 600; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 30ch; }
 
 /* Wizard */
@@ -530,3 +546,15 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .board-item .board-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .msg { max-width: 100%; }
 }
+
+/* Room-first presentation for clients. Editing keeps its own controls. */
+.client-tour .rail,.client-tour .palette,.client-tour .contextbar .group:last-child,
+.client-tour .statusbar,.client-tour #catalog,.client-tour #actions { display:none }
+.client-tour .workspace {grid-column:1 / -1}
+.client-tour #canvas {background:#fcfaf5}
+.client-tour .tour-objects,.client-tour .tour-objects * {pointer-events:none}
+.client-tour [data-room] {cursor:pointer}
+.client-tour .tour-room-name {fill:#233c38;font-family:Arial,sans-serif;font-weight:600;paint-order:stroke;stroke:#fffaf2;stroke-width:3;stroke-linejoin:round}
+.client-tour .inspector {width:min(24%,250px);background:#faf8f2}
+.client-tour .inspector p {margin:0;line-height:1.6}
+@media(max-width:700px){.client-tour .inspector{width:100%}.client-tour .appbar .tabs{display:none}}

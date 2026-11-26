@@ -20,7 +20,34 @@ class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
 
 
+class Ellipse(Strict):
+    # Full interior diameters in centimetres.
+    cx: Cm
+    cy: Cm
+    width: Size
+    length: Size
+    rotation: Annotated[float, Field(ge=-360, le=360, allow_inf_nan=False)] = 0
+
+
+class RoomLayout(Strict):
+    shape: Literal["ellipse", "rectangle", "hexagon", "chamfer", "notch"]
+    width: Size
+    length: Size
+    rotation: Annotated[float, Field(ge=-360, le=360, allow_inf_nan=False)]
+    points: Annotated[list[tuple[Cm, Cm]], Field(min_length=3, max_length=2048)]
+
+    @model_validator(mode="after")
+    def _valid_outline(self):
+        from shapely.geometry import Polygon
+        polygon = Polygon(self.points)
+        if not polygon.is_valid or polygon.area <= 0.01:
+            raise ValueError("Layout must be a simple closed outline")
+        return self
+
+
 class Room(Strict):
+    layout: RoomLayout | None = None
+    ellipse: Ellipse | None = None
     id: Id
     name: Name
     type: Annotated[str, StringConstraints(max_length=30)]
@@ -50,12 +77,13 @@ class Wall(Strict):
 class Opening(Strict):
     id: Id
     wallId: Id
-    type: Literal["door", "window"]
+    type: Literal["door", "window", "sliding", "passage"]
     offset: Annotated[float, Field(ge=0, le=MAX_COORD_CM, allow_inf_nan=False)]  # from wall start to opening start
     width: Size
 
 
 class Furniture(Strict):
+    dimension_source: Literal["measured", "catalog"] | None = None
     id: Id
     type: Annotated[str, StringConstraints(pattern=r"^[a-z0-9_-]{1,40}$")]
     x: Cm
