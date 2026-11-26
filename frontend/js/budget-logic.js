@@ -130,3 +130,189 @@ export function toCsv(items, currency, labels) {
   const lines = [header, ...rows, totalRow].map((row) => row.map(csvCell).join(","));
   return `\uFEFF${lines.join("\r\n")}\r\n`;
 }
+
+// ---- CSV import --------------------------------------------------------------------------------------
+// Reads back what toCsv writes (and what a spreadsheet makes of it). All or nothing: any error imports nothing.
+
+export const MAX_CSV_BYTES = 1024 * 1024;
+
+// bytes -> {text} or {error}. Hebrew Excel's plain "CSV" is windows-1255; a NUL byte means a binary file (.xlsx).
+export function decodeCsv(bytes) {
+  if (bytes.length > MAX_CSV_BYTES) return { error: "tooLarge" };
+  if (bytes.includes(0)) return { error: "notText" };
+  try {
+    return { text: new TextDecoder("utf-8", { fatal: true }).decode(bytes) };
+  } catch {
+    return { text: new TextDecoder("windows-1255").decode(bytes) };
+  }
+}
+
+// The most frequent of , ; and tab outside quotes in the first line that has any text. Comma when there is none.
+function detectDelimiter(text) {
+  const counts = { ",": 0, ";": 0, "\t": 0 };
+  let quoted = false;
+  let content = false;
+  for (const char of text) {
+    if (char === '"') quoted = !quoted;
+    else if (!quoted && (char === "\n" || char === "\r")) {
+      if (content) break;
+      for (const key of Object.keys(counts)) counts[key] = 0;
+      continue;
+    } else if (!quoted && Object.hasOwn(counts, char)) {
+      counts[char] += 1;
+      continue;
+    }
+    if (char.trim()) content = true;
+  }
+  return Object.keys(counts).reduce((best, key) => (counts[key] > counts[best] ? key : best), ",");
+}
+
+// RFC 4180. Returns [{line, cells, error?}]: `line` is the 1-based line of the file on which the record starts.
+export function parseCsv(input) {
+  const text = String(input ?? "").replace(/^﻿/, "");
+  const delimiter = detectDelimiter(text);
+  const rows = [];
+  let cells = [];
+  let cell = "";
+  let error = null;
+  let quoted = false; // inside an open quoted cell
+  let closed = false; // the current cell was quoted and its closing quote was read
+  let line = 1;
+  let start = 1;
+  const endCell = () => {
+    cells.push(cell);
+    cell = "";
+    closed = false;
+  };
+  const endRow = () => {
+    endCell();
+    rows.push(error ? { line: start, cells, error } : { line: start, cells });
+    cells = [];
+    error = null;
+  };
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    const newline = char === "\n" || (char === "\r" && text[i + 1] !== "\n");
+    if (quoted) {
+      if (char !== '"') cell += char;
+      else if (text[i + 1] === '"') {
+        cell += '"';
+        i += 1;
+      } else {
+        quoted = false;
+        closed = true;
+      }
+      if (newline) line += 1;
+    } else if (char === delimiter) endCell();
+    else if (newline) {
+      endRow();
+      line += 1;
+      start = line;
+    } else if (char === "\r") continue; // the first half of CRLF
+    else if (char === '"' && cell === "" && !closed) quoted = true;
+    else {
+      if (closed) error = "badQuote";
+      cell += char;
+    }
+  }
+  if (quoted) error = "unterminatedQuote";
+  if (quoted || closed || cell !== "" || cells.length) endRow();
+  return rows;
+}
+
+const COLUMN_FIELDS = ["name", "category", "room", "quantity", "unit", "unit_price", "amount", "note"]; // order of labels.columns
+const REQUIRED_FIELDS = ["name", "category", "quantity", "unit", "unit_price"];
+
+// Hand-typed ASCII quotes count as the Hebrew gershayim / geresh of the labels.
+const normalise = (value) => String(value ?? "").trim().replaceAll("״", '"').replaceAll("׳", "'").toLowerCase();
+
+// The key for a typed label or key; unknown text is returned as is, for parseItem to reject.
+const keyOf = (value, keys, labels) => {
+  const wanted = normalise(value);
+  return keys.find((key) => key === wanted || normalise(labels[key]) === wanted) ?? value;
+};
+
+// "1,200" -> "1200". A comma that is not clearly a thousands separator ("2,5", "0,500") makes the number invalid.
+const plainNumber = (value) => {
+  const text = value.trim();
+  if (!text.includes(",")) return text;
+  return /^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(text) ? text.replaceAll(",", "") : "invalid";
+};
+
+// Removes the apostrophe that csvCell adds in front of a would-be formula.
+const unguard = (value) => value.replace(/^'(?=[=+\-@\t\r])/, "");
+
+// Header record -> {at: {field: index}, currency, errors}.
+function readHeader({ line, cells }, labels) {
+  const at = {};
+  const errors = [];
+  let currency = null;
+  cells.forEach((cell, index) => {
+    let title = normalise(cell);
+    const withCode = /^(.*?)\s*\(([a-z]{3})\)$/.exec(title); // the export writes "amount (ILS)"
+    if (withCode && withCode[1] === normalise(labels.columns[6])) {
+      title = withCode[1];
+      const code = withCode[2].toUpperCase();
+      if (CURRENCIES.includes(code)) currency = code;
+    }
+    const position = labels.columns.findIndex((label) => normalise(label) === title);
+    const field = COLUMN_FIELDS[position];
+    if (!field || field === "amount") return; // unknown columns are ignored; the amount is recalculated
+    if (Object.hasOwn(at, field)) errors.push({ line, key: "duplicateColumn", column: labels.columns[position] });
+    else at[field] = index;
+  });
+  for (const field of REQUIRED_FIELDS) {
+    if (!Object.hasOwn(at, field)) errors.push({ line, key: "missingColumn", column: labels.columns[COLUMN_FIELDS.indexOf(field)] });
+  }
+  return { at, currency, errors };
+}
+
+const isBlank = ({ cells, error }) => !error && cells.every((cell) => !cell.trim());
+
+// rows: from parseCsv; labels: the same object toCsv takes.
+// Returns {items, currency} (currency from the amount header, else null) or {errors: [{line, key, column?}]}.
+export function importItems(rows, labels) {
+  const [header, ...body] = rows.filter((row) => !isBlank(row));
+  if (!header) return { errors: [{ line: 1, key: "emptyFile" }] };
+  if (header.error) return { errors: [{ line: header.line, key: header.error }] };
+  const { at, currency, errors } = readHeader(header, labels);
+  if (errors.length) return { errors };
+
+  const items = [];
+  let count = 0;
+  for (const { line, cells, error } of body) {
+    if (error) {
+      errors.push({ line, key: error });
+      continue;
+    }
+    const value = (field) => unguard(cells[at[field]] ?? "");
+    const isTotal =
+      normalise(value("name")) === normalise(labels.total) && ["category", "quantity", "unit", "unit_price"].every((field) => !value(field).trim());
+    if (isTotal) continue;
+    count += 1;
+    if (count > MAX_ITEMS) {
+      errors.push({ line, key: "tooManyRows" });
+      break;
+    }
+    // Text beyond the last column means an unquoted delimiter has shifted the cells.
+    if (cells.slice(header.cells.length).some((cell) => cell.trim())) {
+      errors.push({ line, key: "extraCells" });
+      continue;
+    }
+    const parsed = parseItem({
+      name: value("name"),
+      category: keyOf(value("category"), CATEGORIES, labels.categories),
+      room: value("room"),
+      quantity: plainNumber(value("quantity")),
+      unit: keyOf(value("unit"), UNIT_KEYS, labels.units),
+      unit_price: plainNumber(value("unit_price")),
+      source: "user",
+      note: value("note"),
+    });
+    if (parsed.item) items.push(parsed.item);
+    else errors.push(...Object.values(parsed.errors).map((key) => ({ line, key })));
+  }
+  if (errors.length) return { errors };
+  if (!items.length) return { errors: [{ line: header.line, key: "noItems" }] };
+  return { items, currency };
+}

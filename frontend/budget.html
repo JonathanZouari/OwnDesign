@@ -61,8 +61,12 @@
           </label>
           <button type="button" id="add-row"><span class="icon" aria-hidden="true">add</span>הוספת שורה</button>
           <button type="button" id="load-sample"><span class="icon" aria-hidden="true">auto_awesome</span>טעינת רשימת דוגמה</button>
+          <button type="button" id="import" aria-describedby="import-hint"><span class="icon" aria-hidden="true">upload_file</span>ייבוא מקובץ CSV</button>
+          <input type="file" id="import-file" accept=".csv,text/csv" hidden>
         </div>
       </div>
+      <p class="muted small no-print" id="import-hint">הקובץ שנוצר ב״ייצוא ל-CSV״ משמש גם כתבנית לייבוא: ערכו אותו בגיליון אלקטרוני, שמרו בפורמט CSV UTF-8 וייבאו. הייבוא מחליף את הרשימה.</p>
+      <div class="import-report no-print" id="import-report" role="status" aria-live="polite"></div>
 
       <div class="confirm" id="confirm" role="alertdialog" aria-labelledby="confirm-title" aria-describedby="confirm-body" hidden>
         <strong id="confirm-title"></strong>

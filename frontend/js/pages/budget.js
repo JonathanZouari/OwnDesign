@@ -2,7 +2,7 @@
 import { api, requireSession, signOut } from "../api.js";
 import * as B from "../budget-logic.js";
 import { BUDGET, ltr } from "../strings.js";
-import { $, action, formatDate, h, run, showStudio, toast } from "../ui.js";
+import { $, action, formatDate, h, run, showStudio, toast, userMessage } from "../ui.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const requested = new URLSearchParams(location.search).get("project");
@@ -259,18 +259,55 @@ async function save() {
   }
   const estimate = await api(`${base}/estimate`, { method: "PUT", body: { currency: state.currency, items } });
   load(estimate);
+  report();
   toast(BUDGET.saved);
 }
 
-// ---- sample list with an in-page confirmation -------------------------------------------------------
+// ---- replacing the whole list (sample or CSV file) ---------------------------------------------------
+
+// What the last import did, or why it failed. The container is a live region that is always in the page.
+function report(lines = [], { error = false } = {}) {
+  if (!lines.length) return $("#import-report").replaceChildren();
+  const [first, ...rest] = lines;
+  $("#import-report").replaceChildren(
+    h("div", { class: error ? "error" : "" }, h("p", { class: "strong" }, first), rest.length ? h("ul", {}, ...rest.map((line) => h("li", {}, line))) : null),
+  );
+}
+
+// One replacement at a time: both buttons share the confirmation box.
+async function exclusive(trigger, task) {
+  const buttons = [$("#load-sample"), $("#import")];
+  for (const button of buttons) button.disabled = true;
+  try {
+    await task();
+  } catch (error) {
+    toast(userMessage(error), "error");
+  } finally {
+    for (const button of buttons) button.disabled = false;
+    trigger.focus();
+  }
+}
+
+// True when the list is empty or the user agrees to lose it.
+async function mayReplace(body) {
+  if (!state.rows.length) return true;
+  return askConfirm({ title: BUDGET.replaceTitle, body, yes: BUDGET.replaceConfirm, no: BUDGET.cancel });
+}
+
+function replaceRows(items, currency) {
+  state.currency = currency;
+  $("#currency").value = currency;
+  state.rows = items.map(rowFromItem);
+  state.showErrors = false;
+  renderRows();
+}
+
+// ---- sample list ------------------------------------------------------------------------------------
 
 async function applySample() {
   const sample = await api("/v1/estimate/sample");
-  state.currency = sample.currency;
-  $("#currency").value = state.currency;
-  state.rows = sample.items.map(rowFromItem);
-  state.showErrors = false;
-  renderRows();
+  replaceRows(sample.items, sample.currency);
+  report();
   toast(BUDGET.loadedSample);
 }
 
@@ -297,12 +334,62 @@ function askConfirm({ title, body, yes, no }) {
 }
 
 async function loadSample() {
-  if (state.rows.length) {
-    const yes = await askConfirm({ title: BUDGET.replaceTitle, body: BUDGET.replaceBody, yes: BUDGET.replaceConfirm, no: BUDGET.cancel });
-    $("#load-sample").focus();
-    if (!yes) return;
+  if (await mayReplace(BUDGET.replaceBody)) await applySample();
+}
+
+// ---- import -----------------------------------------------------------------------------------------
+
+const csvLabels = { columns: BUDGET.columns, total: BUDGET.csvTotal, categories: BUDGET.categories, units: BUDGET.units };
+const MAX_SHOWN_ERRORS = 10;
+
+// -> {items, currency} or {errors}
+async function readImport(file) {
+  const fail = (key) => ({ errors: [{ key }] });
+  if (file.size > B.MAX_CSV_BYTES) return fail("tooLarge"); // checked before reading it into memory
+  let bytes;
+  try {
+    bytes = new Uint8Array(await file.arrayBuffer());
+  } catch {
+    return fail("unreadable");
   }
-  await applySample();
+  const { text, error } = B.decodeCsv(bytes);
+  return error ? fail(error) : B.importItems(B.parseCsv(text), csvLabels);
+}
+
+function showImportErrors(errors) {
+  const describe = ({ line, key, column }) => {
+    const entry = BUDGET.importErrors[key] ?? BUDGET.errors[key];
+    const message = typeof entry === "function" ? entry(column) : entry;
+    return line ? BUDGET.importLine(line, message) : message;
+  };
+  const lines = errors.slice(0, MAX_SHOWN_ERRORS).map(describe);
+  if (errors.length > MAX_SHOWN_ERRORS) lines.push(BUDGET.importMore(errors.length - MAX_SHOWN_ERRORS));
+  report([BUDGET.importFailed, ...lines], { error: true });
+}
+
+// The selected currency wins; without one it comes from the file, then the brief, then shekels.
+function importCurrency(fileCurrency) {
+  if (state.currency) {
+    const differs = fileCurrency && fileCurrency !== state.currency;
+    return { currency: state.currency, note: differs ? BUDGET.importCurrency.kept(fileCurrency, state.currency) : null };
+  }
+  const [source, currency] = fileCurrency
+    ? ["file", fileCurrency]
+    : B.CURRENCIES.includes(state.budget?.currency)
+      ? ["brief", state.budget.currency]
+      : ["fallback", "ILS"];
+  return { currency, note: BUDGET.importCurrency[source](currency) };
+}
+
+// Nothing is saved here: the imported list replaces the rows on screen until the user saves.
+async function importFile(file) {
+  report();
+  const result = await readImport(file);
+  if (result.errors) return showImportErrors(result.errors);
+  if (!(await mayReplace(BUDGET.importReplaceBody(result.items.length)))) return;
+  const { currency, note } = importCurrency(result.currency);
+  replaceRows(result.items, currency);
+  report([BUDGET.imported(result.items.length), ...(note ? [note] : []), BUDGET.importUnsaved]);
 }
 
 // ---- export -----------------------------------------------------------------------------------------
@@ -318,7 +405,7 @@ function exportCsv() {
     }
     items.push(item);
   }
-  const csv = B.toCsv(items, state.currency, { columns: BUDGET.columns, total: BUDGET.csvTotal, categories: BUDGET.categories, units: BUDGET.units });
+  const csv = B.toCsv(items, state.currency, csvLabels);
   const slug = state.project.name.trim().replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "project";
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const link = h("a", { href: url, download: `budget-${slug}.csv` });
@@ -356,7 +443,13 @@ run(async () => {
     refresh();
   });
   $("#add-row").addEventListener("click", addRow);
-  $("#load-sample").addEventListener("click", action(loadSample));
+  $("#load-sample").addEventListener("click", (event) => exclusive(event.currentTarget, loadSample));
+  $("#import").addEventListener("click", () => $("#import-file").click());
+  $("#import-file").addEventListener("change", (event) => {
+    const [file] = event.target.files;
+    event.target.value = ""; // choosing the same file again must fire "change" again
+    if (file) exclusive($("#import"), () => importFile(file));
+  });
   $("#save").addEventListener("click", action(save));
   $("#export").addEventListener("click", exportCsv);
   $("#print").addEventListener("click", () => window.print());

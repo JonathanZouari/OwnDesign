@@ -628,6 +628,10 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 .budget-table tfoot th, .budget-table tfoot td { padding-top: 12px; border-top: 1px solid var(--hairline-strong); }
 .confirm { margin: 0.75rem 0; padding: 1rem; border-radius: 8px; background: var(--surface-low); border: 1px solid var(--hairline-strong); }
 .confirm p { margin: 4px 0 12px; }
+.import-report > div { margin: 0.75rem 0; padding: 0.75rem 1rem; border-radius: 8px; background: var(--surface-low); border: 1px solid var(--hairline-strong); overflow-wrap: anywhere; }
+.import-report > div.error { border-color: var(--error); color: var(--error); }
+.import-report p { margin: 0; }
+.import-report ul { margin: 4px 0 0; padding-inline-start: 1.25rem; }
 @media (max-width: 767px) { .toolbar { width: 100%; } .toolbar > * { flex: 1 1 auto; } }
 @media print {
   .appbar, .project-nav, .no-print, #toasts, .confirm { display: none !important; }
