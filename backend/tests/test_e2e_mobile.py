@@ -380,7 +380,7 @@ def test_phone_opens_the_3d_walkthrough_and_returns(servers, phone, world):
     page.locator("#walk canvas[data-position]").wait_for()
 
     # The 3D view gets the screen: no sheet handle, tool bar or notice under it, nothing sideways.
-    for selector in ("#sheet-toggle", ".rail", "#phone-notice"):
+    for selector in ("#sheet-toggle", ".rail", "#phone-notice", "#zoom"):
         expect(page.locator(selector)).to_be_hidden()
     for selector in ("#walk-pad", "#walk-close", "#walk-hint"):
         box = page.locator(selector).bounding_box()

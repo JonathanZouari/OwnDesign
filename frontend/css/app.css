@@ -629,7 +629,8 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   #walk-open { flex: none; min-width: 44px; padding: 0 10px; font-size: 0; gap: 0; }
   #walk-open .icon { font-size: 20px; }
   /* The 3D view gets the whole stage: the sheet, the tool bar and the notice step aside while it is open. */
-  .editor:has(#walk:not([hidden])) :is(.sheet-handle, .inspector, .rail, #phone-notice, #catalog, #actions) { display: none !important; }
+  .editor:has(#walk:not([hidden])) :is(.sheet-handle, .inspector, .rail, #phone-notice, #catalog, #actions, #zoom) { display: none !important; }
+  #context-area { white-space: nowrap; }
   /* The app bar and status bar already absorb the top and bottom safe areas; only the sides need them here. */
   #walk-close { top: 8px; right: max(8px, env(safe-area-inset-right, 0px)); min-height: 44px; }
   #walk-hint { top: 60px; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); max-width: none; }
