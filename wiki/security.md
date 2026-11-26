@@ -47,6 +47,17 @@ checks, signed URLs, no IDOR through asset or room ids. Not fixed: see the Phase
 duplicate chat message after a failed answer, unvalidated `?project=`); a security review of the frontend
 commits is still to do.
 
+## Review of the mobile web version
+
+`security-review` was run 3 times on branch `mobile-web`: on 9e90834, on 89e0e14..321fd81 and on 2992a42. All 3 found nothing.
+
+Checked:
+- The drawer copies links with `cloneNode` and names with `textContent`. Every copied `href` is a fixed page plus an `encodeURIComponent` project id, so no `javascript:` URL can appear. Its proxy buttons only call the original button's handler.
+- No `innerHTML`, inline scripts or `on*` attributes were added, and `script-src 'self'` is unchanged.
+- sessionStorage holds only a notice flag.
+
+The phone limits on the editor (walls, openings, room moves) are about UX, not security: the backend still validates every saved plan.
+
 ## Every stage
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add

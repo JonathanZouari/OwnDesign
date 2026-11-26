@@ -32,6 +32,12 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 
+## Built: mobile web version (branch `mobile-web`)
+
+- Every page works from 320 px. A navigation drawer stands in for the sidebar and tabs at 1199 px and below.
+- On phones the editor offers view and light edits: arrange furniture, rename rooms, undo and save. Walls, doors
+  and windows are changed on a tablet or computer ([design.md](design.md#phones)).
+
 ## Not built yet
 
 Renderings, budget, dossier,

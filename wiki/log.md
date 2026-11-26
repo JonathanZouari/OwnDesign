@@ -101,3 +101,32 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+## [2026-11-26] decision | Mobile web version scoped
+The user chose view and light edits for the editor on phones, layouts adapted from the existing Stitch screens, and a
+fork plus pull request because they have no write access to the original repository. Pages: [decisions](decisions.md).
+
+## [2026-11-26] infra | Separate Supabase project for development
+The CLI created a new project. `supabase db push --remote` applied the six migrations and `supabase config push` set the auth settings.
+The local `.env` and `config.js` were filled in; both are git-ignored. Pages: [testing](testing.md), [decisions](decisions.md).
+
+## [2026-11-26] build | Mobile web version
+Editor phone mode (9e90834), navigation drawer and phone layouts for every page (89e0e14), inspector bottom sheet
+(0c8b959), mobile browser tests (321fd81). A code review found that on a phone walls and openings could still be edited
+through the inspector, and dragging a room moved its walls. Fixed in 2992a42, together with a dismissible notice, the
+sheet height on short phones, the editor menu before and after a failed load, the drawer copying links from hidden
+sections, and 768 px overflow. The review's remaining low items were moved to [open-items](open-items.md). Pages:
+[design](design.md), [overview](overview.md).
+
+## [2026-11-26] test | Mobile web version verified
+Backend 119 passed (19 of them in `test_e2e_mobile.py`), frontend 41 passed; the mobile suite passed 3 times in a row. Pages:
+[testing](testing.md).
+
+## [2026-11-26] security | Review of the mobile web version
+`security-review` on 9e90834, 89e0e14..321fd81 and 2992a42: no findings. Pages: [security](security.md).
+
+## [2026-11-26] lint | End of the mobile web phase
+Removed open items that were resolved: the editor had no Phase 2 links at 767 px and below, its sign in/out button was hidden on phones, and the
+dashboard's section links could not be reached below 1200 px. All three are now reachable through the drawer. Updated the breakpoint line in design.md.
+No new pages, so the index is unchanged. The subagents named in `CLAUDE.md` (ux-ui-designer, code-reviewer, e2e-runner) are not installed
+in this environment; `general-purpose` with a narrow brief stood in for them.
+

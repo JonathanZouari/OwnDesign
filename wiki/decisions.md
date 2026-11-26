@@ -11,6 +11,16 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **UI follows the Stitch project** "AI Interior Design Platform" ([design.md](design.md)).
 - **GitHub repository is public.** The user chose to publish with the existing commit author address.
 - **Stitch screens for later phases stay as references** in `design/stitch/`; the two that match Phase 1 (client portal, studio dashboard) are built with real data only.
+- **Mobile web version: view and light edits in the editor on phones** (PRD §155 left this open). Phones can
+  arrange furniture, rename rooms, undo and save. Walls, doors and windows (drawing, moving, resizing, retyping) stay
+  on tablet and desktop ([design.md](design.md#phones)). Claude's reading of the decision, after the code review:
+  a room is not dragged on a phone either, because that moves its walls.
+- **Phone layouts are adapted from the existing Stitch screens**, with no new mobile screens in Stitch.
+- **Work for the mobile version goes through a fork.** The `mobile-web` branch is pushed to the user's own fork, with a pull request to the
+  original repository's `dev`. The user has no write access to the original.
+- **A separate Supabase project for this contributor's development and tests**, created with the CLI from the
+  migrations and `supabase/config.toml`. The backend suite deletes test accounts, so separate projects keep two developers'
+  runs apart.
 - **Working rules** in `CLAUDE.md`: plan first, Fable 5.2, three kinds of tests, security review at every stage, commit per finished piece of code, subagents for specialist work, memory in `wiki/`.
 
 ## By Claude (open to change)
