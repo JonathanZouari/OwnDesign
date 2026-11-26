@@ -29,7 +29,7 @@ there lists the Stitch screen ids. Pulled 2026-11-19.
 | Client AI Consultant & Spatial Advisor | `frontend/consultant.html` | Built (real data only; no credits, sample suggestions or action buttons) |
 | 3D Render Views & Photorealistic Gallery | none | Reference for the renderings phase |
 
-`index.html`, `auth.html`, `projects.html` and `design.html` (brief, materials, moodboard) have no Stitch screen; they follow the design system.
+`index.html`, `auth.html`, `projects.html`, `design.html` (brief, materials, moodboard) and `tasks.html` have no Stitch screen; they follow the design system. The tasks page styles are the `/* ---- tasks ---- */` block of `app.css`; deleting a task takes two clicks instead of a browser dialog.
 
 ## Rules for turning a Stitch screen into a page
 

@@ -19,6 +19,14 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Studio dashboard** does not link project cards to the brief, finishes or moodboard; designers reach them through the editor.
 - The editor has no link to the Phase 2 pages at 767 px and below.
 
+## Client tasks gaps
+
+- No notification when a task is created or completed; the client finds tasks through the projects list.
+- A studio member who is also the project's client sees the designer view only, so cannot mark done in the page (the API allows it).
+- The inbox counts open tasks of a suspended studio's projects, which cannot be completed (403).
+- A task deleted while the client is completing it answers "already done" instead of "not found"; the page reloads, so it corrects itself.
+- Length limits count UTF-16 units in the page and code points in the API, so a title full of emoji can be refused by the page although the API would accept it.
+
 ## Later phases with a Stitch screen waiting
 
 Studio branding, project dossier and export, 3D renderings: designs are in

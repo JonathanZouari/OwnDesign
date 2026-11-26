@@ -101,3 +101,46 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+
+## [2026-11-26] plan | Client tasks
+Approved plan: `project_tasks` table, tasks API, `tasks.html`, open-task counts in the projects list, tests of
+all three kinds. Work on the local branch `client-tasks` (user's request). Pages: [overview](overview.md).
+
+## [2026-11-26] build | Client tasks: designer asks, client marks done
+Migration with RLS, quota and update-guard triggers (reviewed by a database-review agent; its fixes applied, plus
+one correction so deleting a user still works); `backend/app/routes/tasks.py`; `tasks.html` (markup and CSS by a
+UX agent), `task-logic.js`, links from every project page and the projects list. Code review: one E2E timing race
+fixed, a designer's reopen now keeps the client's note; the rest recorded. Commits `03d3331`, `c348d56`,
+`882c5f8`, `077daa2`. Pages: [overview](overview.md), [architecture](architecture.md), [decisions](decisions.md),
+[design](design.md), [open-items](open-items.md).
+
+## [2026-11-26] security | Review of client tasks
+`security-review`: no finding at confidence 8 or above. Pages: [security](security.md).
+
+## [2026-11-26] test | Client tasks, partly verified
+Frontend 37 passed. Backend 22 passed, 98 skipped: no `backend/.env` on this machine and the migration is not
+applied to dev, so `test_tasks.py` and the tasks journey have not run yet. Pages: [testing](testing.md),
+[open-items](open-items.md).
+
+## [2026-11-26] infra | Own dev Supabase project
+Created `owndesign-dev` in the user's organisation (eu-central-1, free plan) with the Supabase CLI, after the user
+chose organisation, region and name. Applied all 7 migrations and the auth settings, wrote `backend/.env` and
+`frontend/js/config.js` from the project's keys without printing them. Pages: [architecture](architecture.md).
+
+## [2026-11-26] test | Client tasks verified against Supabase
+Backend 135 passed, 0 skipped (incl. `test_tasks.py` and the tasks browser journey, run for the first time);
+frontend 37 passed. Pages: [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] infra | Work moves to the user's fork
+The account in use has no write access to the original repository (403), so the user asked for a fork. Remotes:
+`origin` is the user's fork, `upstream` the original. `client-tasks` pushed to the fork; the fork's `dev`
+fast-forwarded to match `upstream/dev`; its `main` left 12 commits behind until the user asks to move it.
+Pages: [open-items](open-items.md).
+
+## [2026-11-26] infra | Fork's main matches the original repository
+At the user's request, the fork's `main` was fast-forwarded (no force) from `ff474ae` to `39134d8`, the original
+repository's `main`. The fork had no commits of its own on `main`.
+
+## [2026-11-26] infra | Pull request for client tasks
+Opened pull request #17 on the original repository: the fork's `client-tasks` into `dev`. It asks for the new
+migration to be applied to the dev Supabase project before merging.

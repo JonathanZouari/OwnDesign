@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 import pytest
 
@@ -270,3 +271,80 @@ def test_client_portal_entry_points(servers, page, api, make_user):
         page.goto(f"{SITE}/entry.html{query}")
         page.get_by_role("heading", name="This link is not valid").wait_for()
         assert page.get_by_role("link", name="Start designing").count() == 0
+
+
+def _sign_in(page, user, target: str):
+    page.goto(f"{SITE}/auth.html?next={quote(target, safe='')}")
+    page.get_by_label("Email").fill(user.email)
+    page.get_by_label("Password").fill(user.password)
+    page.get_by_role("button", name="Sign in").click()
+    page.wait_for_url(lambda url: url.split("#")[0] == f"{SITE}/{target}")
+
+
+def test_designer_asks_client_completes_a_task(servers, page, api, make_user):
+    designer, client, stranger = make_user("e2e-t-designer"), make_user("e2e-t-client"), make_user("e2e-t-stranger")
+    studio = api.post("/v1/studios", json={"name": "Task Studio"}, headers=designer.headers).json()["data"]
+    body = {"studio_id": studio["id"], "name": "Task Flat", "property_type": "existing"}
+    pid = api.post("/v1/projects", json=body, headers=client.headers).json()["data"]["id"]
+    target = f"tasks.html?project={pid}"
+    markup = '<img src=x onerror="window.__xss=1"><b>bold</b>'
+
+    # The designer asks. An empty title is refused in the page, before any request.
+    _sign_in(page, designer, target)
+    page.get_by_role("heading", name="Task Flat", level=1).wait_for()
+    page.get_by_role("button", name="Add task").click()
+    page.get_by_text("Write what the client should do.").wait_for()
+    page.get_by_label("Task", exact=True).fill("Measure the bedroom")
+    page.get_by_label("Details (optional)").fill("Wall to wall,\nboth directions.")
+    page.get_by_role("button", name="Add task").click()
+    page.locator("#open-list .task-title", has_text="Measure the bedroom").wait_for()
+    page.get_by_label("Task", exact=True).fill(markup)
+    page.get_by_role("button", name="Add task").click()
+    page.locator("#open-list .task-title", has_text="bold").wait_for()
+    assert page.locator("#open-list b, #open-list img").count() == 0
+    assert page.evaluate("window.__xss") is None
+    assert page.locator("#open-count").inner_text() == "(2)"
+    page.get_by_role("button", name="Sign out").click()
+    page.wait_for_url("**/index.html")
+
+    # The client sees the count in the project list, opens the tasks, and marks one done with a note.
+    _sign_in(page, client, "projects.html")
+    page.get_by_role("link", name="Tasks (2 open) for Task Flat").click()
+    page.wait_for_url(f"**/{target}")
+    assert page.locator("#task-new").is_hidden()
+    assert page.get_by_role("button", name="Delete: Measure the bedroom").count() == 0
+    form = page.get_by_role("form", name="Complete: Measure the bedroom")
+    form.get_by_label("Note (optional)").fill("3.40 x 2.90 m")
+    form.get_by_role("button", name="Mark as done").click()
+    page.get_by_text("Marked as done: Measure the bedroom").wait_for()
+    done = page.locator("#done-list .task", has_text="Measure the bedroom")
+    done.get_by_text("3.40 x 2.90 m").wait_for()
+    assert page.locator("#done-count").inner_text() == "(1)" and page.locator("#open-count").inner_text() == "(1)"
+    page.reload()
+    page.locator("#done-list .task", has_text="Measure the bedroom").wait_for()
+    page.set_viewport_size({"width": 390, "height": 800})
+    assert not overflows(page)
+    page.set_viewport_size({"width": 1280, "height": 720})
+    page.get_by_role("button", name="Sign out").click()
+    page.wait_for_url("**/index.html")
+
+    # The designer sees the note and reopens the task.
+    _sign_in(page, designer, target)
+    done = page.locator("#done-list .task", has_text="Measure the bedroom")
+    done.get_by_text("3.40 x 2.90 m").wait_for()
+    page.get_by_role("button", name="Reopen: Measure the bedroom").click()
+    page.locator("#open-list .task", has_text="Measure the bedroom").get_by_text("3.40 x 2.90 m").wait_for()
+    assert page.locator("#done-empty").is_visible()
+    # Delete takes two clicks.
+    page.get_by_role("button", name="Delete: Measure the bedroom").click()
+    page.get_by_role("button", name="Confirm delete: Measure the bedroom").click()
+    page.get_by_text("Deleted: Measure the bedroom").wait_for()
+    assert page.locator(".task", has_text="Measure the bedroom").count() == 0
+    page.get_by_role("button", name="Sign out").click()
+    page.wait_for_url("**/index.html")
+
+    # A stranger gets an error and none of the project's tasks.
+    _sign_in(page, stranger, target)
+    page.locator(".toast.error").wait_for()
+    assert page.locator("main").is_hidden()
+    assert "Task Flat" not in page.content() and "bold" not in page.content()

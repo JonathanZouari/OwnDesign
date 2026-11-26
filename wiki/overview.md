@@ -32,13 +32,19 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 
+## Built: client tasks
+
+- The studio's designer asks the client for something ("Measure the bedroom"), with optional details
+  (`tasks.html`). The client marks it done with an optional note ("3.40 x 2.90 m") or undoes it; the designer
+  sees the note, can reopen or delete. The projects list shows how many tasks are open per project.
+  Built on the local branch `client-tasks`.
+
 ## Not built yet
 
 Renderings, budget, dossier,
-messaging and tasks, studio branding, invitation emails, per-project team permissions, deployment,
+messaging, task deadlines and notifications, studio branding, invitation emails, per-project team permissions, deployment,
 rate limiting, subscriptions and credits.
 
 ## Next
 
-Per the PRD: renderings, version comparison, budget and shopping list, dossier and handoff, messaging and
-tasks, studio branding ([open-items.md](open-items.md) lists what must be settled before production).
+Per the PRD: renderings, version comparison, budget and shopping list, dossier and handoff, messaging, studio branding ([open-items.md](open-items.md) lists what must be settled before production).
