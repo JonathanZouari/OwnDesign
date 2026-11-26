@@ -212,3 +212,9 @@ Database and code reviews, findings fixed; `security-review`: no High or Medium 
 
 ## [2026-11-26] decision | Inspiration images: YOLOv8 plus colours
 User's choice, built after the room scan. Pages: [decisions](decisions.md), [open-items](open-items.md).
+
+## [2026-11-26] docs | Room scan sent as pull request #30
+Upstream `dev` merged into `feature/room-scan` (wiki conflicts kept both sides; `test_room_items.py` no longer
+imports `app.main` at module level, so collection works without secrets). Without secrets: backend 57 passed,
+123 skipped; frontend 66 passed. Pull request #30 to `dev` of the upstream repository, noting the overlap with
+pull request #28 (a spec that prefers RF-DETR for licence reasons) and the tests not yet run.
