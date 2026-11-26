@@ -32,6 +32,12 @@ Studio branding, project dossier and export, 3D renderings: designs are in
 - Railway deployment files and environments.
 - Sign-out does not invalidate an already issued token before it expires.
 
+## Accessibility
+
+- **Statement contact details.** The coordinator is named (Yonatan Zuari) but the email (`accessibility@example.com`) and phone (`000-000-0000`) in `frontend/accessibility.html` are invented and labelled as such on the page. Replace them before publishing.
+- **Legal review.** The statement follows Kol Zchut's summary; the text of the 2013 regulations was not read.
+- **Not done yet:** responsive navigation below 1200 px, target-size audit, axe on signed-in pages, a screen-reader pass.
+
 ## Smaller
 
 - Below 1200 px the sidebar is hidden, so the dashboard's in-page section links are not reachable there.

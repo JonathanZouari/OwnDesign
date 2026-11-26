@@ -10,7 +10,7 @@ was not read: confirm with a lawyer before publishing.
 ## Done
 - Skip link and `<main id="main">` on every page; labelled buttons; AA contrast (`--outline`, input borders);
   `prefers-reduced-motion`; disabled nav items shown in italics, not faded.
-- Hebrew statement `accessibility.html` (`lang="he" dir="rtl"`), linked from every page.
+- Hebrew statement `accessibility.html` (contact details are fictional, labelled on the page) (`lang="he" dir="rtl"`), linked from every page.
 - `test_a11y.py`: axe-core (WCAG 2.2 A/AA) on all 10 pages, skip link, 320 px reflow, statement links.
   Needs no Supabase; signed-in states are not covered by axe.
 
