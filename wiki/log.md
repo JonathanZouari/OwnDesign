@@ -246,3 +246,7 @@ Backend 295 passed; frontend 187 passed, 1 skipped.
 ## [2026-11-26] security | Merge, budget, translation and CSV import
 No high-confidence finding. Deferred code review items are in open-items. Pages updated: overview,
 architecture, decisions, design, testing, security, open-items.
+
+## [2026-11-26] decision | Goods receiving with YOLOv8 cancelled
+A camera goods-receiving feature was planned and partly started, then cancelled by the user. The uncommitted code
+was deleted and no library was added to the project. Only the `*.pt` ignore rule stays (`76ad49a`).
