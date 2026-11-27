@@ -101,6 +101,280 @@ Several findings fixed (suspended studios, upload race, consultant cap and conte
 ## [2026-11-23] test | Phase 2 verified
 Backend 94 passed, frontend 31 passed. Pages: [testing](testing.md).
 
+## [2026-11-24] plan | AI advisor with live replies
+The user asked to add streaming to the AI advisor. There was none: no OpenAI call, endpoint or screen.
+Plan approved after four changes: the notice says questions are sent to OpenAI, no question, history or
+reply text in any log (with a test), the pull request goes to the user's fork with base `dev`, and the
+advisor's RTL styles stay on the advisor page because another team owns Hebrew RTL; the daily quota's
+overlap with the "AI cost budget" team goes in open-items. User choices: nothing is saved, only the
+owning client, a new page `advisor.html`.
+Pages: [advisor](advisor.md), [decisions](decisions.md), [open-items](open-items.md).
+
+## [2026-11-24] build | Advisor core and endpoint
+`openai` 3.57.0 added (its signatures checked: `max_completion_tokens`, `AsyncStream.close()`).
+`POST /v1/projects/{id}/advisor` streams SSE; owner-only access, a constant system prompt, timeouts, a
+length cap, a daily quota, one open reply per user, no conversation text in logs. 32 unit and 22
+integration tests, OpenAI faked. Commits `baa3fa9`, `2490bec`. Pages: [advisor](advisor.md),
+[architecture](architecture.md).
+
+## [2026-11-24] security | Review of the advisor backend
+`security-review` on the two local commits. No finding. Checked: authorization order and RLS, the
+service-key uses, prompt construction, SSE framing, logging, the new dependencies.
+Pages: [security](security.md).
+
+## [2026-11-24] build | Advisor page and apiStream
+`advisor.html`, `js/pages/advisor.js`, `js/sse.js`, `css/advisor.css` (all selectors under `body.advisor`,
+`app.css` unchanged) and an "AI Consultant" tab in the editor for the client. `apiStream` was added to
+`js/api.js`, which the plan had not listed; the user approved it. A parser bug found by its own test (a
+final bare CR was never flushed) was fixed. 17 new frontend tests. Commit `e3d03d3`.
+Pages: [advisor](advisor.md), [decisions](decisions.md).
+
+## [2026-11-24] security | Review of the advisor page and apiStream
+`security-review` on the page commit. No finding. Checked: where the token is sent, every place reply,
+error and project text reaches the DOM, the `?project=` parameter, the CSS and HTML. Process note: the
+review sub-task ran two read-only shell commands although told to use file tools only.
+Pages: [security](security.md).
+
+## [2026-11-24] test | Advisor browser journeys and regression
+First run: all seven new journeys and the three existing ones failed. Cause: the browser opens the site
+at `127.0.0.1:5500`, which the backend's default allowed origin (`localhost`) rejects, so every API call
+was blocked by CORS. Fixed in the test fixture only (`ALLOWED_ORIGINS` set for the backend it starts;
+`.env` not touched). Two further failures were bugs in the new tests (a `.last` locator that follows the
+newest element; a text that also sits in a live region). Result: backend 104 passed, frontend 34 passed,
+none failed or skipped (baseline 43 and 17). No real OpenAI call was made at any point.
+Commit `e9b2c9a`. Pages: [testing](testing.md).
+
+## [2026-11-24] docs | Advisor documented
+New page [advisor](advisor.md); updated index, overview, decisions, open-items, architecture, security,
+testing, design, `README.md` and `design/stitch/README.md`. Open items added: conversation retention and
+consent, project data sent to OpenAI, overlap with the "AI cost budget" and "Hebrew RTL" teams, the
+per-process lock, an index for the quota query, running against the real OpenAI API, the tab hidden on
+phones, no copywriting or design review of the page, `.env.example` lacking the new variables.
+The commit that adds this entry.
+
+## [2026-11-24] lint | Wiki checked after the advisor
+Fixed claims the code no longer supports: "AI consultant" under Not built (overview, README, open-items),
+"AI advisor left out" (decisions), the Stitch screen's state (design, `design/stitch/README.md`), and the
+test counts (testing). Every page is in the index; links checked by reading. Nothing contradicting left.
+
+## [2026-11-24] docs | OpenAI settings listed in .env.example
+`backend/.env.example` now lists `OPENAI_API_KEY=` and `OPENAI_MODEL=` (names only). The open item that
+said they were missing is removed. Commit `70c17a2`; the wiki fix is the commit that adds this entry.
+Pages: [open-items](open-items.md).
+
+## [2026-11-24] security | Branch-wide review of the advisor
+`security-review` on all seven local commits. No vulnerability. Five LOW candidates, each checked by its own
+false-positive review and none held (1 to 2 out of 10): designer-written room names in the client's prompt,
+a notice that understated what is sent, the new dependency set (`httpx2` is the SDK's official HTTP layer),
+log pins aimed at the wrong logger names, the key held as a plain string. Two real, non-security findings
+came out of the checks: the log pin named `httpx` while the SDK uses `httpx2`, and a stale comment.
+Pages: [security](security.md), [open-items](open-items.md).
+
+## [2026-11-24] build | Advisor hardening before push
+The user asked for three fixes. Loggers `httpx2` and `httpcore2` pinned to WARNING and the stale comment
+corrected, with a test that runs the real SDK over a canned network at DEBUG and fails if a logger outside
+`app.*` speaks (and a control that lifts a pin). The notice now lists everything sent to OpenAI (room types
+included, since they are sent too). The system prompt says room and project names are data, not
+instructions. Backend 109 passed (was 104), frontend 34 passed, none failed or skipped.
+Commit `b259ea8`. Pages: [advisor](advisor.md), [testing](testing.md), [decisions](decisions.md).
+
+## [2026-11-24] security | Review of the hardening commit
+`security-review` on `b259ea8` only. No vulnerability; seven candidates, all non-findings (the prompt rule
+is additive, the pins only reduce logging, the notice is static text and matches what the code sends, the
+test key is a dummy). Not reachable and not introduced here: `hpack`/`h2` would log headers at DEBUG only
+with HTTP/2 enabled. Open items added: the tests import `httpx2` directly; `SecretStr` for the keys.
+Pages: [security](security.md), [open-items](open-items.md).
+
+## [2026-11-24] docs | Advisor wiki updated after the hardening
+`security.md`, `open-items.md`, `advisor.md`, `decisions.md`, `testing.md` and this log updated to match
+`b259ea8` (notice text, logger pins, prompt rule, test counts, review results). The commit that adds this entry.
+
+## [2026-11-25] plan | Switch the advisor from OpenAI to Groq
+The user asked to move the advisor to Groq's free tier because PRD 9.1 says no paid APIs, and to open the
+work as a pull request to the fork's `dev` (nothing to the upstream repository). Groq's docs read: base URL
+`https://api.groq.com/openai/v1`, OpenAI SDK compatible, `max_completion_tokens` and streaming supported,
+production models that stream listed. The user chose `llama-3.3-70b-versatile`, to keep the `openai`
+package, and that a poor Hebrew result in the live check means stop and report, not switch. Plan approved.
+Pages: [decisions](decisions.md).
+
+## [2026-11-25] test | Baseline before the Groq switch
+Before any change: backend 109 passed (10 browser journeys), frontend 34 passed. None failed or skipped.
+Pages: [testing](testing.md).
+
+## [2026-11-25] build | Advisor now calls Groq, with a friendly rate-limit message
+Settings `GROQ_API_KEY` and `GROQ_MODEL` replace the OpenAI ones; `GroqLlm` uses the SDK with the fixed base
+URL; Groq's 429 (`RateLimitError`) becomes the error code `rate_limited` with a fixed "busy" message; the
+page notice, `.env.example` and README say Groq. Tests first: the Groq settings, the request the SDK
+sends, chunks without text, the token limit, Hebrew split byte by byte, 429 before and after text, wider
+input limits at the API, two new browser journeys (English and Hebrew, with retry), the notice, and an SSE
+test for a Hebrew error message. Backend 142 passed (12 browser journeys), frontend 36 passed, none
+failed or skipped. Commits `d1608be`, `13d81bf`. No real Groq call has been made yet.
+Pages: [advisor](advisor.md), [architecture](architecture.md), [overview](overview.md),
+[testing](testing.md), [security](security.md), [open-items](open-items.md).
+
+## [2026-11-25] decision | Groq replaces OpenAI as the advisor's provider
+Groq's free tier fits PRD 9.1 ("no paid third-party API integrations"); OpenAI did not. Recorded in
+[decisions](decisions.md): the provider, the model, keeping the `openai` package, the friendly 429
+message. Open items updated: PRD 9.1 and the free tier's limit, per-organisation limits, a 429 still
+counting against the daily 50, the live check of the model and its Hebrew.
+
+## [2026-11-25] lint | Code review of the Groq switch, and fixes
+One `general-purpose` reviewer (Sonnet, read-only, `git diff dev...HEAD`). No high finding. Verified against
+the code and fixed: (1) the SDK raises a plain `APIError` for an error event inside an open stream, so
+"rate limit after some text" exists only in the fake; the wiki claimed otherwise and now says so, a test
+pins the generic message for that case, and an open item records it; (2) the message said "in a minute"
+but Groq also answers 429 for a daily quota, so it now says "in a little while"; (3) a duplicate line in
+`tests/e2e_app.py` removed; (4) the old-settings test now uses the real `Settings` class; (5) a vacuous
+assertion dropped. Not changed: the shared `_attempts` dict in `tests/e2e_app.py` is fragile if a journey is
+re-run against the same server (unique questions today), and the test modules import error factories from
+each other. Process note: the reviewer ran `grep -c` on `backend/.env` against the instruction not to open
+it; the output was a line count only. Backend 144 passed, frontend 36 passed, none failed or skipped.
+Pages: [advisor](advisor.md), [open-items](open-items.md), [testing](testing.md).
+
+## [2026-11-25] security | Reviews of the Groq switch (`dev...HEAD`)
+Two reviews, one at a time, both on `git diff dev...HEAD` as the owner asked. (1) `general-purpose` reviewer
+with a security brief, finished in about a minute: no vulnerability; candidates rejected (provider text in
+logs, `rate_limited` versus `upstream`, base URL override, leftover `OPENAI_*` variables, whitespace key,
+retries, key `repr`). It did not touch `.env`. (2) `security-review` skill: it diffs against `origin/main`
+and the base cannot be changed, so its analysis ran on a saved copy of the `dev...HEAD` diff; nothing at the
+8-of-10 bar, so no false-positive sub-tasks. That sub-task made only three tool calls and did not re-read
+`advisor.js`; the first reviewer had. No critical or high finding, nothing to fix before the push.
+Pages: [security](security.md).
+
+## [2026-11-25] test | Live check against Groq failed with 404
+With the owner's approval, one streaming call through `get_llm()` and `stream_reply` (short Hebrew question,
+empty project data, model `llama-3.3-70b-versatile`). Result: Groq answered HTTP 404 (`NotFoundError`) in
+0.27 s, no text; the advisor sent the generic error. Nothing secret was printed. Groq's docs (summarised by
+a small model) list the model as production and not deprecated, but mark both Llama production models
+"Enterprise" / "ContactSales"; this is a possible cause, not confirmed. The Hebrew quality could not be
+judged. No second call was made and the model was not changed. Waiting for the owner's decision.
+Pages: [advisor](advisor.md), [open-items](open-items.md).
+
+## [2026-11-25] decision | Model changed to openai/gpt-oss-120b
+The owner checked the Groq console: `llama-3.3-70b-versatile` is not in this account's model list (that was the
+404), `openai/gpt-oss-120b` is. The owner set it in `backend/.env` (not read by Claude). Because gpt-oss
+models reason before answering, the owner approved a guard: `reasoning_effort="low"` only for model IDs
+starting with `openai/gpt-oss`, and `MAX_REPLY_TOKENS` 1000 to 4000. Pages: [decisions](decisions.md),
+[advisor](advisor.md), [open-items](open-items.md).
+
+## [2026-11-25] build | Reasoning guard for gpt-oss models
+Tests first (7 failed for the right reasons, 4 more pinned existing behaviour and passed). Then
+`backend/app/advisor.py`: `REASONING_EFFORT`, `MAX_REPLY_TOKENS = 4000`, and the model-prefix condition;
+`.env.example` example ID. Raw results: backend 154 passed (was 144), browser journeys alone 12 passed,
+frontend 36 passed; none failed or skipped. Still no successful live call. Pages: [advisor](advisor.md),
+[testing](testing.md).
+
+## [2026-11-25] security | Review of the reasoning guard (`e0b4063..HEAD`)
+One reviewer (`general-purpose`, Sonnet, read-only), started once and finished in under a minute; told never to
+touch any `.env` file, and it reports it did not. No vulnerability. Two uncertainties, neither a finding:
+reasoning inside `content` would be shown to the user, and whether the requested maximum counts against
+Groq's shared per-minute limit (already an open item). No critical or high finding, nothing to fix before
+the push. Pages: [security](security.md).
+
+## [2026-11-25] test | Live check with openai/gpt-oss-120b succeeded
+With the owner's approval, one streaming call through `get_llm()` and `stream_reply` (short Hebrew question,
+empty project data, a wrapper that counted chunks and would have printed the error). Groq accepted
+`reasoning_effort: "low"` and `max_completion_tokens` 4000; 100 upstream chunks, 8 without text (7 before the
+first text); first text after 0.63 s, total 0.77 s; `finish_reason` `stop`; events ended `done`,
+`truncated: false`; 213 characters of fluent Hebrew with two small wording slips (Claude's reading; the owner
+judges). No key or `.env` content was printed. Not covered: a long answer, the 429 path, repeated
+questions. Pages: [advisor](advisor.md), [open-items](open-items.md).
+
+## [2026-11-25] docs | Pull request #2 to the fork's dev
+With the owner's go, `feat/advisor-groq` was pushed to the fork `sarah-s-1/OwnDesign` and PR #2 opened to its
+`dev` (nothing to the upstream course repository, `main` untouched). The head at that moment was `e7f37f8`
+(the same as the local head). Full backend suite 154 passed, frontend 36 passed, none failed or skipped. The
+repository has no CI workflows, so no CI run started. The PR body names the why (PRD 9.1), the model
+`openai/gpt-oss-120b`, `reasoning_effort` low, 4000 tokens, the live check and the open items. The owner
+reviewed every finding of the four reviews and accepted the unfixed ones as open items: the in-stream rate
+limit getting the generic message, a refused question still counting toward the daily 50, the fragile
+`_attempts` dict and the `httpx`/`httpx2` mix in `e2e_app.py`, tests importing factories from each other,
+the key as a plain string, a leftover `OPENAI_ORG_ID`, reasoning inside `content`, and the unknown effect of
+the requested maximum on Groq's shared per-minute limit. Those not already there were added to
+[open-items](open-items.md) in the commit that adds this entry, which also fixes the PR body's statement that
+all open items were in that page.
+
+## [2026-11-25] plan | Bring upstream into the advisor work, then a draft pull request to upstream
+The owner wanted the fork's work on a new branch with `upstream` merged in, and then a pull request to
+`JonathanZouari/OwnDesign`. Read-only GitHub queries (approved) showed upstream `main` and `dev` both at
+`39134d8`, 8 commits ahead of the fork's `main` (`472a0ed`), all Phase 2: design brief, finishes, images,
+moodboard, four SQL migrations and an AI consultant of its own (paid OpenAI, saved chat). All four open
+upstream pull requests target `dev`. Decisions by the owner: keep both AI features and open the pull request
+as a draft; merge, never rebase, never push to `main`; apply upstream's migrations only after a database
+review. Pages: [decisions](decisions.md), [advisor](advisor.md).
+
+## [2026-11-25] build | Merge of upstream/dev into feat/advisor-on-upstream
+`upstream` remote added and fetched (owner's go); baseline on `dev` first: backend 154 passed, frontend 36
+passed. `git merge-tree` predicted 14 conflicting files of the 17 changed on both sides, and the merge
+confirmed exactly those: 6 code files and 8 wiki pages. Resolved by keeping both sides: both settings blocks
+(`groq_*`, `openai_*`), both routers, both schema blocks, both editor links (the advisor tab renamed
+"AI Advisor"), `uv.lock` taken from upstream (`uv lock --check` passed; `uv sync --locked` installed one
+package, `python-multipart`, with the owner's go), `log.md` interleaved by date. Merge commit `a5f4715`.
+Follow-ups: `3a63961` (new `test_coexist.py`, body-limit and independent-cap tests, distinct tab names,
+`e2e_app.py` switches the consultant's OpenAI client off), `c87da3a` (the advisor page renamed), `780889f`,
+`ef57110`, `2cb7762` (test fixes from the reviews), `a538e7d`, `7a1a7fc` (docs). Pages:
+[architecture](architecture.md), [advisor](advisor.md), [decisions](decisions.md), [overview](overview.md),
+[testing](testing.md).
+
+## [2026-11-26] security | Database review of upstream's four migrations
+One `general-purpose` reviewer (Sonnet, read-only, no `.env`), about 8 minutes: no critical or high finding;
+two medium (a moodboard item's asset not tied to the same project; `reserve_ai_message` trusts its
+arguments and a `null` cap skips the limit) and six low ones; "safe to apply to a dev project: yes with
+these changes". RLS is on for all six new tables plus `storage_deletions`, with SELECT-only policies and tenant
+isolation inherited from `projects`; the `SECURITY DEFINER` functions pin `search_path` and are service-role
+only; nothing is destructive. The owner chose to apply the files as upstream wrote them (they are upstream's),
+so the findings are in [open-items](open-items.md). The owner checked in the dashboard that the project has no
+storage policies (`pg_policies` for schema `storage` returned no rows). Pages: [security](security.md).
+
+## [2026-11-26] infra | Upstream's four migrations applied to the linked project
+`supabase migration list --linked` (output filtered to version rows, nothing else printed) showed only the two
+Phase 1 migrations applied. `supabase db push --linked --dry-run` listed exactly the four Phase 2 files;
+after the owner's explicit go the real push applied them (exit 0), and the list then showed all 6 applied on
+both sides. No schema change was made by Claude beyond applying upstream's files as written.
+Pages: [decisions](decisions.md).
+
+## [2026-11-26] test | First run on the merged branch
+Backend 216 passed, 5 failed: all five in upstream's `tests/test_e2e_design.py`. Cause, shown by re-running
+those tests with `ALLOWED_ORIGINS` set in the environment (6 passed): upstream's fixture starts the backend
+without the origins the browser needs, so `ALLOWED_ORIGINS` in `backend/.env` must include
+`http://127.0.0.1:5500` (a setup requirement upstream's own wiki states). Not a code defect.
+Pages: [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-26] lint | Code reviews of the merge, four runs, and their fixes
+Four `general-purpose` runs (Sonnet, read-only), each re-run after code changed. Real defects found and fixed:
+the advisor page, tab and messages still said "AI Consultant" next to upstream's feature (`c87da3a`); false
+statements in the wiki and README after the merge (`a538e7d`); the scripted backend's OpenAI isolation now
+proven by a made-up key (502 if the override fails, 503 if it works); a header-overflow comparison test that
+had limits too tight and a check that could never fail (removed); a server-shutdown race in the test fixture.
+Found and accepted by the owner as open items: the editor header overflows by 38 px at about 900 px with the
+advisor tab (the designer view, without it, does not); upstream's consultant audit event and stale comment.
+The last two runs found nothing at medium or high. Pages: [open-items](open-items.md), [testing](testing.md).
+
+## [2026-11-26] security | Reviews of the merge: no vulnerability
+One security reviewer (`general-purpose`, Sonnet, read-only, told never to touch any `.env` file) and the
+`security-review` skill's analysis (it diffs against `origin/main`, which here would include all of upstream's
+code, so it ran on a saved diff of the merge resolution and follow-ups). Neither found a vulnerability. The
+reviewer's one unverified claim, that an explicit `base_url` beats `OPENAI_BASE_URL`, was checked in the
+installed SDK: only `None` falls back to the environment. The same SDK file also reads `OPENAI_CUSTOM_HEADERS`
+(added to the existing open item). No reviewer reported touching a `.env` file. Pages: [security](security.md).
+
+## [2026-11-26] test | Pre-push gate on the merged branch (`2cb7762`)
+Raw results, tree clean, ports 8000 and 5500 free: full backend as is `5 failed, 217 passed` (the five
+upstream browser tests above); full backend with `ALLOWED_ORIGINS` set `222 passed`; the browser journeys of
+both files alone `20 passed`; frontend `50 passed, 0 failed, 0 skipped`. Baseline on `dev`: backend 154
+passed, frontend 36 passed. Nothing is pushed. Pages: [testing](testing.md).
+
+## [2026-11-26] docs | Branch pushed, draft pull request to upstream
+With the owner's go, `feat/advisor-on-upstream` was pushed to the fork (remote tip `3a38a8f`, plain push, no
+force; the fork's `main` stays at `472a0ed`). The owner reviewed every finding of every review and accepted
+the unfixed low and medium ones as listed (all are in [open-items](open-items.md)). The owner approved the
+text of the pull request, which is opened right after this commit as a **draft** to `JonathanZouari/OwnDesign`,
+base `dev`, head `sarah-s-1:feat/advisor-on-upstream`: the two AI features side by side and the four questions
+for upstream's author (keep both, the provider and PRD 9.1, the header overflow, the consultant's audit event),
+the setup note that `tests/test_e2e_design.py` needs `http://127.0.0.1:5500` in `ALLOWED_ORIGINS`, and the two
+medium findings of the migration review. Upstream was still at `39134d8` when the pull request was opened.
+Pages: [decisions](decisions.md), [open-items](open-items.md).
+
 ## [2026-11-26] plan | Tests in GitHub Actions
 Plan approved by the user: everything runs in CI, a separate Supabase key for CI, report only.
 Pages: [decisions](decisions.md).
@@ -191,3 +465,47 @@ and the comparison and the 3D walkthrough can be open at once. No security findi
 reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
 not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
 Nothing of it is on `dev`.
+
+## [2026-11-27] plan | Second merge of upstream/dev into the advisor branch
+Pull request #5 (draft, to upstream `dev`) became conflicting because upstream moved from `39134d8` to `ac28aff`
+on 2026-11-26. `git fetch upstream` (owner's go) and read-only `gh` queries (owner's go): the new commits came from
+pull requests #9 (plan export specification), #8 (studio branding preview) and #14 (3D walkthrough), plus direct
+commits to `dev` (a CI workflow, a test-collection fix, wiki text). No new migration, no change to `uv.lock`, no
+change to `backend/app`. Pull requests #4 and #10 (Hebrew RTL) were still open, so the RTL check of the advisor
+page was not due. The installed git (2.34) lacks `merge-tree --write-tree`, so the legacy read-only form predicted
+the conflicts: 7 files. Decisions: merge, never rebase, no force-push, nothing pushed before the owner's go.
+Pages: [decisions](decisions.md), [open-items](open-items.md).
+
+## [2026-11-27] build | Merge of upstream/dev (`ac28aff`), seven conflicts resolved
+Merge commit `27cdc3f`, `git merge --no-ff`. The seven conflicts were exactly the predicted ones: the browser-test
+fixture `backend/tests/test_e2e.py` (our teardown, which waits and then kills, kept; it covers upstream's wait) and
+six wiki pages (both sides kept; our reworded "later-phase widgets" decision kept, since upstream's copy was the
+unchanged base line; one combined "Not built yet" list; upstream's own 2026-11-26 test figures kept and labelled as
+upstream's). Code that merged cleanly: the editor's walkthrough button, overlay and key guard next to our advisor
+tab. Diff of the merge against our branch: 28 files, 1374 insertions, 16 deletions. Pages:
+[overview](overview.md), [testing](testing.md), [security](security.md), [decisions](decisions.md),
+[open-items](open-items.md).
+
+## [2026-11-27] test | Baseline and after the merge
+Baseline on `7bc6c99`: backend `222 passed` as is; with `ALLOWED_ORIGINS` set `2 failed, 220 passed` once (one of
+them `test_e2e.py::test_designer_opens_studio_invites_and_revises_client_plan`; the other name was not kept) then
+`222 passed` twice; both browser files `20 passed`; frontend `50 passed`. After the merge: backend `222 passed` as
+is and with the variable; browser files `20 passed`; frontend `76 passed`; a clean worktree with no `.env` and no
+`config.js` (as the pull-request job): backend `99 passed, 123 skipped` (every skip is the missing-Supabase marker),
+frontend `76 passed`. The header-overflow test passed and a throwaway measurement gave the same numbers as before
+(designer 81 px at 768; client 170 px at 768 and 38 px at 900). Open item: the intermittent baseline failure.
+Pages: [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-27] lint | Code review of the merge resolution
+One read-only `general-purpose` review (Sonnet), resumed once because the first report stopped early. No finding at
+medium or high; four low: the pull-request CI row in `testing.md` quoted upstream's pre-advisor numbers (fixed),
+no "Last result" or log entry for the merged tree yet (fixed by this commit), the Phase 1 line "Secrets only in
+git-ignored files" in `security.md` (upstream's, present before the merge: not changed, recorded in open items), and
+header-overflow figures that might have moved (measured: unchanged). Pages: [testing](testing.md),
+[open-items](open-items.md).
+
+## [2026-11-27] security | `security-review` of the merge resolution: no finding
+The skill's own diff is against `origin/main`, which would hold all of upstream's code, so its analysis ran on saved
+diffs of the resolution and the cleanly merged code. No finding at confidence 8 or above, so there was nothing to
+filter. A short static pass (about 20 seconds, five tool calls). No `.env` file was opened. Pages:
+[security](security.md).

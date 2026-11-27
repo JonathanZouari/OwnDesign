@@ -16,10 +16,24 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 |---|---|---|
 | `backend/tests/test_geometry.py` | unit, edge | geometry validation: bounds, duplicates, openings outside walls |
 | `backend/tests/test_api.py` | integration, edge | auth, studios, invites, projects, versions, isolation, quotas, 413 on chunked upload, studio activity (members only) |
-| `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names) |
+| `backend/tests/test_e2e.py` | end to end, edge | client journey (portal, wizard, editor, sign-up, save, reload); designer journey (studio dashboard metrics, invite, project cards, search, activity, edit a client's project); portal entry points (personal invite, blank canvas, invalid links, markup and long names); eleven advisor tests (below) |
+| `backend/tests/test_advisor.py` | unit, edge | the advisor's SSE generator and prompt without Supabase: normal stream, Hebrew and emoji, newlines in text, error before and mid-stream, empty reply, both timeouts, length cap, closing the stream, injection text, input limits, the per-user lock; the real SDK over a canned network (`httpx2.MockTransport`): the Groq URL, key header and request body, Groq settings (missing, empty, spaces, old OpenAI names ignored), chunks without choices or text, the token limit, Hebrew split byte by byte across network chunks, 429 before and after text (with and without `retry-after`, JSON or not) answered with the friendly message and no provider text in events or logs, a limit reported inside an open stream giving the generic message, and the real `Settings` ignoring leftover `OPENAI_*` variables; `reasoning_effort: "low"` sent only to `openai/gpt-oss-*` models (and not to Llama, Qwen or an ID without the prefix) with a 4000-token budget, reasoning text kept out of events and logs, reasoning that uses the whole budget giving the `empty` error, a slow reasoning phase not tripping the first-piece timeout; every logger at DEBUG, failing if a logger outside `app.*` speaks, plus a control that lifts a pin |
+| `backend/tests/test_api.py` (advisor section) | integration, edge | who may use the advisor (owner 200; studio designer 403; other studio and other client 404; no or bad token 401; unknown and malformed id), Groq never called for a refusal, invalid input 422 (empty, spaces, 2001 characters in English and Hebrew, null, wrong type, 8001-character turn, 11 turns, body that is not JSON), the longest question and a full history, 503, daily quota and one open reply 429, a Groq 429 as a `rate_limited` event that frees the user for the next question, suspended studio, audit row has no text and is private, no question, history or reply text in logs (including after a 429), the largest request passes the 2 MB body limit, the advisor's and the consultant's daily caps are independent |
+| `backend/tests/fake_llm.py`, `backend/tests/e2e_app.py` | helpers | the Groq stand-in, and the real app with a scripted fake that the browser journeys use (`[busy]`, `[busy-late]`, `[flaky]`, `[error]`); the consultant's OpenAI client is switched off there. No test calls Groq or OpenAI |
+| `backend/tests/test_coexist.py` | unit, edge | the advisor and the consultant side by side: each configured only by its own settings (the other's do not count), each client carries only its own key to its own host, the consultant's default model does not leak into the advisor, both routes exist |
+| `backend/tests/test_design.py`, `test_consultant.py`, `test_e2e_design.py`, `frontend/tests/design-logic.test.js` | upstream | Phase 2: brief, finishes, uploads, moodboard and the consultant (see the 2026-11-23 result below); they need upstream's four Phase 2 migrations applied |
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
+| `frontend/tests/sse.test.js` | unit, edge | the SSE parser: a stream cut at every byte, a Hebrew letter split between chunks, CRLF and bare CR, comments, several data lines, an unknown event, an unfinished last event, a body that breaks part-way, an error event with a Hebrew message (whole and byte by byte) |
 | `frontend/tests/plan3d.test.js` | unit, edge | 3D wall boxes, doors, windows, overlapping walls, collision, sharp corners, oversized plans |
+
+Advisor browser journeys: the reply growing with the typing indicator and locked input, plus the tab and
+the notice (which says Groq and not OpenAI); a Hebrew question and reply laid out right to left next to an
+English one; a failed reply and "Try again"; Groq's rate limit before and after some text, with the busy
+message and a working retry, and the same for a Hebrew question; a dropped connection and a refused request; input limits and keys; the designer and
+other users refused; a phone width with a long unbroken word; the scripted backend never reaching OpenAI
+(503 although it holds a made-up key); the editor header with the advisor tab compared with the designer's
+view (the known overflow at 900 px, with a cap).
 
 ## Required after every change
 
@@ -33,7 +47,7 @@ Source: `.github/workflows/ci.yml`. Report only: a red check does not block a me
 |---|---|---|
 | `frontend` | every push to `dev`/`main`, every pull request | `npm test` |
 | `backend` | push to `dev`/`main` only | the full suite, browser journeys included, against the dev Supabase project |
-| `backend-unit` | pull requests only | the suite with no secrets: unit tests run, the rest skip (22 passed, 78 skipped) |
+| `backend-unit` | pull requests only | the suite with no secrets: unit tests run, the rest skip (upstream measured 22 passed, 78 skipped before the advisor; this branch after the second merge of `upstream/dev`: 99 passed, 123 skipped, all skips because `backend/.env` is missing, run in a clean worktree with Python 3.14, while CI uses 3.13) |
 
 - A pull request never gets secrets, also not from a branch of this repository. A pull request from
   `dev` to `main` still shows the full run, because checks attach to the commit and `dev` was pushed.
@@ -54,11 +68,20 @@ failed in its first step. Not yet seen: a green `backend` run. It waits for the 
 
 ## Last result
 
-2026-11-26, after merging pull requests #9, #8 and #14: backend 100 passed (9 browser tests; the guest journey
+2026-11-27 (`feat/advisor-on-upstream`, merge `27cdc3f`, upstream's PRs #8, #9 and #14 and its CI file merged in; no new migrations): full backend `222 passed` as is and `222 passed` with `ALLOWED_ORIGINS` set; browser journeys of both files alone `20 passed`; frontend `76 passed` (50 before, plus upstream's `plan3d` and `branding` tests); pull-request simulation in a clean worktree (no `.env`, no `config.js`): backend `99 passed, 123 skipped`, frontend `76 passed`. None failed. Baseline on `7bc6c99` before the merge: backend `222 passed` as is, frontend `50 passed`, both browser files `20 passed`; with `ALLOWED_ORIGINS` set the full backend failed 2 tests once (one was `test_e2e.py::test_designer_opens_studio_invites_and_revises_client_plan`; the other name was not kept) and passed in two reruns, so it is an intermittent failure not yet explained ([open-items.md](open-items.md)). The editor header overflow was measured again after the merge: designer 81 px at 768 px; client 170 px at 768 px and 38 px at 900 px, unchanged by upstream's "3D walkthrough" button.
+
+2026-11-26 (`feat/advisor-on-upstream`, `2cb7762`, upstream merged in, its four migrations applied): full backend `222 passed` with `ALLOWED_ORIGINS` including `http://127.0.0.1:5500` in the environment (as is: `5 failed, 217 passed`, the five failures being upstream's `test_e2e_design.py` on CORS because `.env` lacks that origin); browser journeys of both files alone `20 passed`; frontend `50 passed`. None skipped. Baseline on `dev` before the merge: backend 154 passed, frontend 36 passed.
+Before the merge: 2026-11-25 (`feat/advisor-groq`, after the reasoning guard): backend 154 passed (including 12 browser journeys, which also pass on their own), frontend 36 passed. None failed or skipped.
+Before the reasoning guard (after the code-review fixes): backend 144 passed, frontend 36 passed.
+Baseline run the same day before any change: backend 109 passed, frontend 34 passed.
+2026-11-24 (advisor branch, after the hardening commit): backend 109 passed (10 browser journeys), frontend 34 passed. None failed or skipped.
+Earlier baseline, 2026-11-19: backend 43 passed (3 browser journeys), frontend 17 passed.
+
+2026-11-26 (upstream, after merging its pull requests #9, #8 and #14, without the advisor): backend 100 passed (9 browser tests; the guest journey
 now also walks in 3D), frontend 57 passed, locally. On GitHub: `frontend` green, `backend` not yet run to the
 end (see CI), so the 3D step has not yet run on a Linux runner.
 
-2026-11-23, new files:
+2026-11-23 (upstream, before the advisor was merged in): backend 94 passed (incl. 3 browser journeys), frontend 31 passed. New files:
 `backend/tests/test_design.py` (brief, finishes, uploads, moodboard, isolation, quota, suspended studio) and
 `test_consultant.py` (fake OpenAI client: context, privacy, cap, failure, injection, tag escaping);
 `frontend/tests/design-logic.test.js`. `backend/tests/test_e2e_design.py` (6 browser tests: client journey for brief, finishes and moodboard with
@@ -70,6 +93,10 @@ reaches OpenAI in the suite; the real call was checked by hand once.
 
 `backend/.env` needs `ALLOWED_ORIGINS` to include both `http://localhost:5500` and `http://127.0.0.1:5500` (the
 journeys use the second). A system-level `OPENAI_API_KEY` overrides the one in `.env`; unset it before starting the backend.
+The advisor's own browser backend (`tests/e2e_app.py`) sets the origins itself and switches the consultant off, with a made-up OpenAI key so
+that a failure of the switch shows up as 502 and never as a billed call. Upstream's `test_e2e_design.py` does neither: it starts the real
+`app.main:app`, so it needs both origins in `ALLOWED_ORIGINS` (set it in the environment of the test command if `.env` lacks it) and
+relies on its browser route block to keep consultant messages away from OpenAI; run it with `OPENAI_API_KEY=` empty to be safe.
 
 `python -m http.server` can refuse connections on a loaded machine.
 
@@ -82,5 +109,17 @@ many projects. Code outside `backend/` and `frontend/` is not run by CI.
 
 - Every run of the backend suite deletes all `*@owndesign-test.example.com` accounts and their studios.
   Do not run it while someone is checking pages by hand with such accounts.
+- The browser journeys open the site at `http://127.0.0.1:5500`, but the backend only allows the origins
+  in `ALLOWED_ORIGINS` (default `http://localhost:5500`). The backend the E2E fixture starts is given
+  `ALLOWED_ORIGINS` for both addresses. Without it every page that calls the API shows an empty state and
+  the browser console reports a CORS error.
+- The fixture starts `tests.e2e_app:app` (the real app, with Groq replaced by a fake) on port 8000. If
+  something else already serves port 8000 the fixture uses it, and the advisor journeys are skipped,
+  because that backend could call real Groq. Stop it to run them.
+- To see why a browser journey failed: `uv run pytest tests/test_e2e.py -k <name> --screenshot only-on-failure --tracing retain-on-failure`.
+  The output goes to `backend/test-results/`, which is git-ignored.
+- Playwright locators are re-evaluated every time they are used, and matches are strict: a locator ending
+  in `.last` follows the newest element, and a text that also appears in a screen-reader live region
+  matches two elements.
 - Playwright matches accessible names by substring. A second link containing "Start designing" or a
   second heading containing the studio name breaks the journeys.

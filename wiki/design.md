@@ -26,10 +26,14 @@ there lists the Stitch screen ids. Pulled 2026-11-19.
 | Studio Overview & Project Directory | `frontend/studio.html` | Built |
 | Studio White-Label Branding & Atelier Settings | `frontend/branding.html` | Preview only: logo, colour presets and custom colours; nothing is saved |
 | Client & Designer Project Dossier & Specs Export | none | Reference for the dossier and budget phase |
-| Client AI Consultant & Spatial Advisor | `frontend/consultant.html` | Built (real data only; no credits, sample suggestions or action buttons) |
+| Client AI Consultant & Spatial Advisor | `frontend/advisor.html` and `frontend/consultant.html` | Built twice, both with real data only. `advisor.html` is the streaming advisor ([advisor.md](advisor.md)): conversation, composer and notices; the screen's sample-data panels (floor-plan view, cost impact, concept cards, credits, "Stage in 2D") have no real source and are left out. `consultant.html` is the saved-chat consultant (no credits, sample suggestions or action buttons) |
 | 3D Render Views & Photorealistic Gallery | none | Reference for the renderings phase |
 
 `index.html`, `auth.html`, `projects.html` and `design.html` (brief, materials, moodboard) have no Stitch screen; they follow the design system.
+
+Page-specific styles that must not affect other pages go in their own file with every selector under a
+body class, as `frontend/css/advisor.css` does under `body.advisor`; `app.css` has global classes that
+are easy to collide with ([open-items.md](open-items.md)).
 
 ## Rules for turning a Stitch screen into a page
 

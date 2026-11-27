@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     supabase_publishable_key: str
     supabase_secret_key: str
     allowed_origins: str = "http://localhost:5500"
+    # The AI advisor (streaming, Groq) answers 503 until both are set. There is deliberately no default model.
+    groq_api_key: str | None = None
+    groq_model: str | None = None
+    # The AI consultant (saved chat, OpenAI) is a separate feature with its own key.
     openai_api_key: str = ""  # empty: the consultant answers 503
     openai_model: str = "gpt-5-mini"
 

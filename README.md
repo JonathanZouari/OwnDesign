@@ -2,7 +2,9 @@
 
 Phase 1 of the product described in `Interior_Design_AI_PRD_EN.md`: studios, client entry
 (studio link, personal invite, guest trial), a guided room wizard, a 2D floor-plan editor,
-immutable plan versions, and tenant isolation.
+immutable plan versions, and tenant isolation. Phase 2 so far: a design brief, finishes and moodboard with
+a saved-chat AI consultant (OpenAI), and an AI advisor that streams its replies from Groq (free tier)
+(see `wiki/overview.md` and `wiki/advisor.md`).
 
 ```
 frontend/   Static HTML/CSS/ES modules, no build step. UI follows the Stitch "Architectural Atelier" design system.
@@ -27,7 +29,10 @@ supabase/   Database migrations and the auth settings this project manages.
 Prerequisites: Python 3.13 + [uv](https://docs.astral.sh/uv/), Node 22 (frontend tests only), the Supabase CLI.
 
 1. `backend/.env` — copy `backend/.env.example` and fill in the Supabase URL and keys
-   (`supabase projects api-keys --project-ref <ref> --reveal`).
+   (`supabase projects api-keys --project-ref <ref> --reveal`). To use the AI advisor also add
+   `GROQ_API_KEY` and `GROQ_MODEL` (the model has no default); the AI consultant uses `OPENAI_API_KEY`
+   (and `OPENAI_MODEL`, default `gpt-5-mini`). Until its settings are set each one answers "not available".
+   They stay in `backend/.env`, never in the frontend.
 2. `frontend/js/config.js` — copy `frontend/js/config.example.js` and fill in the URL and the **publishable** key.
 3. Start both servers:
 
@@ -47,7 +52,10 @@ cd frontend && npm test             # plan logic (node --test)
 
 Integration and E2E tests run against the project in `backend/.env`, create throw-away users
 (`*@owndesign-test.example.com`) and delete them afterwards. They are skipped when `.env` is missing.
-First E2E run needs `uv run playwright install chromium`.
+First E2E run needs `uv run playwright install chromium`. No test calls Groq or OpenAI: both are tested
+with fakes. Upstream's browser file `tests/test_e2e_design.py` starts the backend without setting origins, so
+`ALLOWED_ORIGINS` in `backend/.env` must include `http://127.0.0.1:5500` as well as `http://localhost:5500`. The browser journeys start their own backend on port 8000; if another backend is already
+running there, the advisor journeys are skipped.
 
 GitHub Actions runs both suites on every push to `dev` and `main`; a pull request runs the frontend tests and
 the backend tests that need no secrets (`.github/workflows/ci.yml`, `wiki/testing.md`).
@@ -65,6 +73,6 @@ site URL is `localhost:5500`. Production needs confirmation on, custom SMTP, and
 
 ## Not in Phase 1
 
-Design brief, moodboards, AI consultant, renderings, budget, dossier, messaging and tasks, studio
+Design brief, moodboards, saved AI conversations, renderings, budget, dossier, messaging and tasks, studio
 branding, invitation emails (the designer copies an invite link), per-project team permissions,
 Railway deployment files, rate limiting, subscriptions and credits.

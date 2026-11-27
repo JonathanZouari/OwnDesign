@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.db import settings
 from app.responses import fail, ok
-from app.routes import consultant, design, projects, studios
+from app.routes import advisor, consultant, design, projects, studios
 
 log = logging.getLogger(__name__)
 MAX_BODY_BYTES = 2_000_000  # a full 1000-item plan is well under this
@@ -22,6 +22,7 @@ app.add_middleware(
 )
 app.include_router(studios.router)
 app.include_router(projects.router)
+app.include_router(advisor.router)
 app.include_router(design.catalog_router)
 app.include_router(design.router)
 app.include_router(consultant.router)

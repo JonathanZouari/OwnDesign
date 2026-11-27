@@ -3,7 +3,7 @@
 Source: `Interior_Design_AI_PRD_EN.md`, `README.md`.
 
 A multi-tenant web platform where an interior design studio invites clients, and the client and
-designer work on the same floor plan. AI assistance comes in later phases.
+designer work on the same floor plan. AI assistance is arriving in phases: so far the consultant (saved chat) and the advisor (streaming).
 
 ## Built: Phase 1
 
@@ -32,6 +32,14 @@ designer work on the same floor plan. AI assistance comes in later phases.
 - The client and the studio's designers see the same brief, finishes and moodboard; the conversation is
   private to the user who held it.
 
+## Built: AI advisor (streaming, Groq)
+
+- A second AI feature next to the consultant. A client asks questions about their own saved project on
+  `advisor.html` and the reply is written on screen as it is generated (SSE), through Groq's free tier.
+  Nothing is saved. Details and limits: [advisor.md](advisor.md). One live call to Groq
+  (`openai/gpt-oss-120b`) has worked; longer answers, the rate-limit path and repeated use have not been
+  tried live.
+
 ## Preview only
 
 - Studio branding (`branding.html`): logo and three colours applied to a sample client entry page in the
@@ -45,9 +53,9 @@ designer work on the same floor plan. AI assistance comes in later phases.
 
 ## Not built yet
 
-Renderings, budget, dossier,
-messaging and tasks, saved and applied studio branding, invitation emails, per-project team permissions, deployment,
-rate limiting, subscriptions and credits.
+Saved advisor conversations (the consultant keeps its own), the advisor's suggestions on the plan,
+renderings, budget, dossier, messaging and tasks, saved and applied studio branding, invitation emails,
+per-project team permissions, deployment, general rate limiting, subscriptions and credits.
 
 ## Next
 

@@ -48,3 +48,25 @@ export async function api(path, { method = "GET", body } = {}) {
   }
   return payload.data;
 }
+
+// Opens a Server-Sent Events request. It is a POST with a bearer token, which EventSource cannot do.
+// Failures before the stream starts (not signed in, wrong project, invalid input, quota) arrive as the
+// usual JSON error envelope and are thrown like `api` does. The caller reads response.body.
+export async function apiStream(path, body, signal) {
+  const session = await getSession();
+  const headers = { "Content-Type": "application/json", ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) };
+  let response;
+  try {
+    response = await fetch(config.apiUrl + path, { method: "POST", headers, body: JSON.stringify(body), signal });
+  } catch (error) {
+    if (error.name === "AbortError") throw error;
+    throw new Error("Cannot reach the server. Check your connection and try again.");
+  }
+  if (!response.ok || !response.body) {
+    const payload = await response.json().catch(() => null);
+    const error = new Error(payload?.error ?? `Request failed (${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
+  return response;
+}

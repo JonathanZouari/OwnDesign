@@ -113,6 +113,21 @@ class VersionCreate(Strict):
     geometry: Geometry
 
 
+MAX_QUESTION_CHARS = 2000
+MAX_TURN_CHARS = 8000
+MAX_HISTORY_TURNS = 10
+
+
+class Turn(Strict):
+    role: Literal["user", "assistant"]
+    content: Annotated[str, StringConstraints(min_length=1, max_length=MAX_TURN_CHARS)]
+
+
+class AdvisorAsk(Strict):
+    question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_QUESTION_CHARS)]
+    history: Annotated[list[Turn], Field(max_length=MAX_HISTORY_TURNS)] = []
+
+
 Text = Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)]
 Hex = Annotated[str, StringConstraints(pattern=r"^#[0-9a-fA-F]{6}$")]
 Money = Annotated[int, Field(ge=0, le=100_000_000)]
