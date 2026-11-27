@@ -53,6 +53,12 @@ One JSON document per version, validated in `backend/app/schemas.py` and edited 
 (drag, draw, pan, pinch, wheel), `panel.js` (inspector and versions). The whole canvas is redrawn on
 each change; the plan object is never mutated.
 
+**3D walkthrough:** `frontend/js/plan3d.js` (pure: wall boxes, collision, start point) and
+`editor/view3d.js` (three.js, loaded with `import()` only when opened). three.js 0.180.0 is vendored in
+`frontend/vendor/`. Assumed heights in cm: wall 260, door 210, window 90 to 210, eye 160. An opening cuts
+every wall lying along it, because adjacent rooms have overlapping walls. Plans needing more than 5000
+cuts are refused. No server or database change.
+
 ## API
 
 Studios, invites, studio activity (`GET /v1/studios/{id}/audit`, the latest 10 audit events, members

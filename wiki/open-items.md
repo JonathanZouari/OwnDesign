@@ -13,7 +13,9 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 - **Overlap with the "AI cost budget" team.** The advisor's 50-questions-per-user-per-day quota (`MAX_QUESTIONS_PER_DAY` in `backend/app/routes/advisor.py`) is a stopgap. It must be reconciled with their budget before the advisor ships beyond dev.
 - **Overlap with the "Hebrew RTL" team.** The advisor's RTL rules are local to `frontend/css/advisor.css`. When their global RTL work lands, check the advisor page against it and decide whether those rules move.
 - **Two AI features in one product area** (for upstream's author to decide). The streaming Groq advisor and the saved-chat OpenAI consultant differ in provider (free Groq against paid OpenAI, which conflicts with PRD 9.1), memory (nothing saved against saved), cap (50 a day counted from audit events against 30 a day in SQL), audience (owning client against project writers) and privacy wording ("does not save the conversation" is true of the advisor only). Options: keep both, replace one, or fold streaming and Groq into the consultant. See [advisor.md](advisor.md).
-- **Other open upstream pull requests** (#2 sharing, tour and project chat; #4 Hebrew RTL and PDF import; #1 and #3 model setup) edit files this work also edits (`editor.html`, `js/editor/main.js`, `js/api.js`, `schemas.py`, `main.py`, the shared test modules, wiki pages). Whichever merges second needs another merge of `upstream/dev`; #4 is already reported as conflicting.
+- **Other open upstream pull requests** (#2 sharing, tour and project chat; #4 Hebrew RTL and PDF import; #10 EN/HE toggle and RTL layout; #1 and #3 model setup, and others) edit files this work also edits (`editor.html`, `js/editor/main.js`, `js/api.js`, `schemas.py`, `main.py`, the shared test modules, wiki pages). Whichever merges second needs another merge of `upstream/dev`; #4 and #10 are reported as conflicting (checked 2026-11-27). Upstream's #8, #9 and #14 merged on 2026-11-26 and are already merged into this branch. When #4 or #10 lands, check the advisor page in Hebrew and the editor header overflow again.
+- **PRD text** still says "no paid API", which the OpenAI decision overrides.
+- **PRD 3.3** still excludes interactive 3D navigation, which the walkthrough decision overrides.
 
 ## Phase 2 gaps
 
@@ -28,6 +30,30 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
   - medium: a moodboard item's `asset_id` is tied to the asset but not to the same project (`phase2_design.sql:36-47`); the backend checks it in code today. Fix: composite foreign key `(project_id, asset_id)`.
   - medium: `reserve_ai_message` does not check that the conversation belongs to the user, and a `null` cap skips the limit (`ai_message_reservation.sql:5-19`); only the backend (service role) can call it.
   - low: `for update` on `projects` is stronger than needed (`asset_quota.sql:6`, use `for no key update`); `storage_path` check is prefix-only (`phase2_design.sql:30`); `drop function` lacks `if exists` (`drop_release_ai_message.sql:2`); the daily cap resets if a project, studio or user is cascade-deleted; no way to delete an AI message except a cascade (intended); the 30-image cap is per project only; the comment in `consultant.py:21` says "per project and user" but the SQL caps per user.
+
+## Studio branding
+
+`branding.html` is a browser-only preview. Still needed: storage and a table for the logo and colours,
+owner-only write endpoints with server-side image and colour validation, a tenant-isolation test, applying
+the theme on the pages that show the studio, a link from the dashboard, and browser journeys.
+
+From the review of pull request #8, not fixed: the contrast check accepts colours whose derived tokens fail
+4.5:1 (text `#747474` on white passes, but the muted text it produces is 3.19:1), which matters once the check
+decides what may be saved; the preview holds a second `h1` and a button and link that do nothing; the status
+line is rewritten on every colour-picker move; a chosen logo has no pixel-size limit.
+
+## 3D walkthrough gaps
+
+- No collision with furniture, no ceiling, no catalog materials or colours.
+- Each box is its own draw call; the largest plans the server accepts may be slow, especially on phones.
+  Instancing would fix it. Frame rate on real phones is unmeasured.
+- A lost WebGL context is not handled: leave the view and open it again.
+- Possibly stuck walking on macOS if a key is released while Cmd is held (unverified).
+- From the review of pull request #14, not fixed: holding W or D while leaving the 3D view can pick the wall or
+  door tool (key repeat reaches the editor's shortcuts); the oversized-plan guard counts wall cuts, not boxes,
+  so the largest legal plan is slow; a failure after the WebGL renderer is created leaks its context and is
+  reported as "no WebGL"; if closing the view throws, the editor behind it stays inert; a furniture type named
+  `constructor` gives a broken box (`Object.hasOwn` fixes it).
 
 ## Later phases with a Stitch screen waiting
 
@@ -49,6 +75,14 @@ consultant screen is built twice, as the advisor ([advisor.md](advisor.md)) and 
 - `connect-src` in the content security policy, per environment.
 - Railway deployment files and environments.
 - Sign-out does not invalidate an already issued token before it expires.
+
+## CI
+
+- **The CI secret key is not set yet**, so `backend` fails in its first step. The user creates a secret key named `ci` in Supabase and stores it as `SUPABASE_SECRET_KEY` in the environment `ci`.
+- Make the check required on `main` after some stable runs.
+- A separate Supabase project for CI: today CI and local runs share the dev project and delete each other's test accounts.
+- Repository settings: allow-list the three actions and require pinning by hash.
+- Smaller review notes, not done: the guard step reads the secret values where a presence flag would do; a failed assertion can print a test account's email or part of a token; lint, type check and coverage are not in CI.
 
 ## Smaller
 

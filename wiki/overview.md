@@ -40,11 +40,22 @@ designer work on the same floor plan. AI assistance is arriving in phases: so fa
   (`openai/gpt-oss-120b`) has worked; longer answers, the rate-limit path and repeated use have not been
   tried live.
 
+## Preview only
+
+- Studio branding (`branding.html`): logo and three colours applied to a sample client entry page in the
+  browser. Nothing is saved, nothing reaches real client pages, and the page is not linked from the app.
+
+## Built: 3D walkthrough
+
+- A first-person walkthrough of the plan, opened from the editor, including unsaved drafts. View only.
+- Keyboard (any layout), drag to look, and on-screen buttons. Walls and windows block, doorways let through.
+- Heights are assumed, because the plan stores none ([architecture.md](architecture.md)).
+
 ## Not built yet
 
 Saved advisor conversations (the consultant keeps its own), the advisor's suggestions on the plan,
-renderings, budget, dossier, messaging and tasks, studio branding, invitation emails, per-project team
-permissions, deployment, general rate limiting, subscriptions and credits.
+renderings, budget, dossier, messaging and tasks, saved and applied studio branding, invitation emails,
+per-project team permissions, deployment, general rate limiting, subscriptions and credits.
 
 ## Next
 

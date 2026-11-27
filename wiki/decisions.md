@@ -25,6 +25,9 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Upstream's four Phase 2 migrations were applied as written** (decided 2026-11-26) to the project linked to the Supabase CLI, after a database review with no critical or high finding. The reviewer's suggested edits were not made, because they are upstream's files; they are in [open-items.md](open-items.md). Before applying, the owner checked in the dashboard that the project has no storage policies.
 - **The editor header overflow is accepted** (decided 2026-11-26): the "AI Advisor" tab makes the header overflow sideways by 38 px at about 900 px wide. The owner chose to record it as an open item and not to edit the shared stylesheet.
 - **Keep the `openai` Python package** as the client, pointed at Groq's OpenAI-compatible endpoint. Only the setting names changed (`GROQ_API_KEY`, `GROQ_MODEL`); no new dependency.
+- **Tests run in GitHub Actions**, the Supabase-backed ones included. The three Supabase values are kept as secrets of the GitHub environment `ci`; this is the one approved exception to "secrets only in git-ignored files".
+- **A separate Supabase secret key for CI**, created and entered by the user, so it can be revoked without breaking local work.
+- **The CI check reports only.** No branch protection for now.
 
 ## By Claude (open to change)
 
@@ -41,3 +44,15 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
 - **Phase 2 data model:** the brief is one JSON document per project; finishes and the moodboard are saved as a whole set (delete then insert, not atomic, saving again recovers).
 - **Consultant memory policy** (PRD 5.4 leaves it open): messages are stored per project and user, private to that user, capped at 30 a day per user. A failed OpenAI call still uses a slot because it may have been billed.
 - **Images go through the backend**, not directly to storage, so type, size, count and access are checked in one place.
+- **Pull requests never get secrets**; the full suite runs on push to `dev`/`main` only ([testing.md](testing.md)). Came out of the security review of the CI plan.
+
+## From merged pull requests
+
+Made by outside contributors in their own forks and accepted when the owner had the pull request merged.
+A pull request's wiki text may say "the user": that is the contributor's own user, never this project's owner.
+Such lines are moved here and reworded when the pull request is merged.
+
+- **A 3D walkthrough in the plan editor** (pull request #14), first person rather than a rotating or isometric
+  view. It goes against PRD 3.3, which excluded interactive 3D navigation; the PRD text has not been updated.
+- **three.js, vendored**, for the walkthrough, with controls written here (pull request #14). Its ready-made
+  controls need an import map, which the `script-src 'self'` policy would block as an inline script.

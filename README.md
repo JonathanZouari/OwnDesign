@@ -57,6 +57,9 @@ with fakes. Upstream's browser file `tests/test_e2e_design.py` starts the backen
 `ALLOWED_ORIGINS` in `backend/.env` must include `http://127.0.0.1:5500` as well as `http://localhost:5500`. The browser journeys start their own backend on port 8000; if another backend is already
 running there, the advisor journeys are skipped.
 
+GitHub Actions runs both suites on every push to `dev` and `main`; a pull request runs the frontend tests and
+the backend tests that need no secrets (`.github/workflows/ci.yml`, `wiki/testing.md`).
+
 ## Database and auth settings
 
 ```sh

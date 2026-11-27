@@ -8,7 +8,7 @@ cd frontend && npm test          # plan logic, node --test
 ```
 
 First E2E run needs `uv run playwright install chromium`. Integration and E2E tests are skipped when
-`backend/.env` is missing. They create users at `*@owndesign-test.example.com` and delete them afterwards.
+`backend/.env` is missing (a test module must not import `app.main` at module level, or collection fails there). They create users at `*@owndesign-test.example.com` and delete them afterwards.
 
 ## Suites
 
@@ -25,6 +25,7 @@ First E2E run needs `uv run playwright install chromium`. Integration and E2E te
 | `frontend/tests/plan.test.js` | unit | plan functions: add, move, remove, undo, rooms from the wizard |
 | `frontend/tests/studio.test.js` | unit, edge | dashboard metrics, activity sentences, project filter |
 | `frontend/tests/sse.test.js` | unit, edge | the SSE parser: a stream cut at every byte, a Hebrew letter split between chunks, CRLF and bare CR, comments, several data lines, an unknown event, an unfinished last event, a body that breaks part-way, an error event with a Hebrew message (whole and byte by byte) |
+| `frontend/tests/plan3d.test.js` | unit, edge | 3D wall boxes, doors, windows, overlapping walls, collision, sharp corners, oversized plans |
 
 Advisor browser journeys: the reply growing with the typing indicator and locked input, plus the tab and
 the notice (which says Groq and not OpenAI); a Hebrew question and reply laid out right to left next to an
@@ -38,6 +39,33 @@ view (the known overflow at 900 px, with a cap).
 
 End to end, regression (both full suites) and edge cases for the change (`CLAUDE.md`, step 5).
 
+## CI
+
+Source: `.github/workflows/ci.yml`. Report only: a red check does not block a merge ([open-items.md](open-items.md)).
+
+| Job | Runs on | What it does |
+|---|---|---|
+| `frontend` | every push to `dev`/`main`, every pull request | `npm test` |
+| `backend` | push to `dev`/`main` only | the full suite, browser journeys included, against the dev Supabase project |
+| `backend-unit` | pull requests only | the suite with no secrets: unit tests run, the rest skip (22 passed, 78 skipped) |
+
+- A pull request never gets secrets, also not from a branch of this repository. A pull request from
+  `dev` to `main` still shows the full run, because checks attach to the commit and `dev` was pushed.
+- `backend` takes its three Supabase values from the GitHub environment `ci`, which only `dev` and `main`
+  may use ([security.md](security.md)). Its first step fails when one is missing, so a missing secret
+  cannot turn into a green run of skipped tests.
+- `backend` runs are never parallel (concurrency group `supabase-dev`): the suite deletes every test
+  account at the end. GitHub keeps one waiting run; a newer push replaces an older waiting one, which then
+  shows as cancelled.
+- A local `uv run pytest` during a CI run breaks whichever finishes last, for the same reason. Wait for the
+  run on `dev` before running the suite locally.
+- Pull requests from forks may wait for "Approve and run" by the owner before any job starts.
+
+Checked on 2026-11-26: a pull request with a failing test showed a red check (`frontend` failed,
+`backend-unit` passed, `backend` skipped); a branch that added itself to the push trigger was refused by
+the environment ("not allowed to deploy to ci"), with no step run; with the secret key missing, `backend`
+failed in its first step. Not yet seen: a green `backend` run. It waits for the CI secret key.
+
 ## Last result
 
 2026-11-26 (`feat/advisor-on-upstream`, `2cb7762`, upstream merged in, its four migrations applied): full backend `222 passed` with `ALLOWED_ORIGINS` including `http://127.0.0.1:5500` in the environment (as is: `5 failed, 217 passed`, the five failures being upstream's `test_e2e_design.py` on CORS because `.env` lacks that origin); browser journeys of both files alone `20 passed`; frontend `50 passed`. None skipped. Baseline on `dev` before the merge: backend 154 passed, frontend 36 passed.
@@ -46,6 +74,10 @@ Before the reasoning guard (after the code-review fixes): backend 144 passed, fr
 Baseline run the same day before any change: backend 109 passed, frontend 34 passed.
 2026-11-24 (advisor branch, after the hardening commit): backend 109 passed (10 browser journeys), frontend 34 passed. None failed or skipped.
 Earlier baseline, 2026-11-19: backend 43 passed (3 browser journeys), frontend 17 passed.
+
+2026-11-26 (upstream, after merging its pull requests #9, #8 and #14, without the advisor): backend 100 passed (9 browser tests; the guest journey
+now also walks in 3D), frontend 57 passed, locally. On GitHub: `frontend` green, `backend` not yet run to the
+end (see CI), so the 3D step has not yet run on a Linux runner.
 
 2026-11-23 (upstream, before the advisor was merged in): backend 94 passed (incl. 3 browser journeys), frontend 31 passed. New files:
 `backend/tests/test_design.py` (brief, finishes, uploads, moodboard, isolation, quota, suspended studio) and
@@ -64,10 +96,12 @@ that a failure of the switch shows up as 502 and never as a billed call. Upstrea
 `app.main:app`, so it needs both origins in `ALLOWED_ORIGINS` (set it in the environment of the test command if `.env` lacks it) and
 relies on its browser route block to keep consultant messages away from OpenAI; run it with `OPENAI_API_KEY=` empty to be safe.
 
+`python -m http.server` can refuse connections on a loaded machine.
+
 ## Not covered
 
 Real touch devices (pinch zoom), browsers other than Chromium, screen readers, load, a studio with
-many projects, a clean clone on another machine.
+many projects. Code outside `backend/` and `frontend/` is not run by CI.
 
 ## Gotchas
 
