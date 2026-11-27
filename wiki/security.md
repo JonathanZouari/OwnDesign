@@ -148,6 +148,17 @@ The streaming Groq advisor now lives next to upstream's saved-chat OpenAI consul
 - Not changed, recorded as open items: the OpenAI organisation, project and custom-header environment variables would
   also be sent to Groq by the advisor's client; the consultant's audit event carries the studio id.
 
+## Second merge of upstream/dev (2026-11-27)
+
+Merge `27cdc3f` brought in upstream's studio branding preview, 3D walkthrough, plan-export specification and CI
+workflow; no new migration. Two reviews of the resolution (a code review and the `security-review` analysis, both
+on saved diffs of the resolution, not on the whole of upstream's code): no vulnerability, nothing at medium or high.
+The security analysis was a short, read-only static pass: the walkthrough receives the plan only as numbers and
+writes none of it to the page as HTML; the editor page's content security policy is unchanged; the new CI file keeps
+its secrets in a job that runs only on pushes to `dev` and `main`, and this branch's test change keeps the
+secret-free pull-request job from importing the app at collection time. Not a substitute for upstream's own review
+of its code ([walkthrough review below](#review-of-the-3d-walkthrough-pull-request-14)).
+
 ## CI (GitHub Actions)
 
 Source: `.github/workflows/ci.yml`. The plan and the file were each reviewed by a security-reviewer agent, and

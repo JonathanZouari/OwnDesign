@@ -465,3 +465,47 @@ and the comparison and the 3D walkthrough can be open at once. No security findi
 reads through RLS. Its wiki recorded "the app is for customers, not internal designers" as the user's decision;
 not adopted. A comment on the pull request lists what blocks it; its base was changed from `main` to `dev`.
 Nothing of it is on `dev`.
+
+## [2026-11-27] plan | Second merge of upstream/dev into the advisor branch
+Pull request #5 (draft, to upstream `dev`) became conflicting because upstream moved from `39134d8` to `ac28aff`
+on 2026-11-26. `git fetch upstream` (owner's go) and read-only `gh` queries (owner's go): the new commits came from
+pull requests #9 (plan export specification), #8 (studio branding preview) and #14 (3D walkthrough), plus direct
+commits to `dev` (a CI workflow, a test-collection fix, wiki text). No new migration, no change to `uv.lock`, no
+change to `backend/app`. Pull requests #4 and #10 (Hebrew RTL) were still open, so the RTL check of the advisor
+page was not due. The installed git (2.34) lacks `merge-tree --write-tree`, so the legacy read-only form predicted
+the conflicts: 7 files. Decisions: merge, never rebase, no force-push, nothing pushed before the owner's go.
+Pages: [decisions](decisions.md), [open-items](open-items.md).
+
+## [2026-11-27] build | Merge of upstream/dev (`ac28aff`), seven conflicts resolved
+Merge commit `27cdc3f`, `git merge --no-ff`. The seven conflicts were exactly the predicted ones: the browser-test
+fixture `backend/tests/test_e2e.py` (our teardown, which waits and then kills, kept; it covers upstream's wait) and
+six wiki pages (both sides kept; our reworded "later-phase widgets" decision kept, since upstream's copy was the
+unchanged base line; one combined "Not built yet" list; upstream's own 2026-11-26 test figures kept and labelled as
+upstream's). Code that merged cleanly: the editor's walkthrough button, overlay and key guard next to our advisor
+tab. Diff of the merge against our branch: 28 files, 1374 insertions, 16 deletions. Pages:
+[overview](overview.md), [testing](testing.md), [security](security.md), [decisions](decisions.md),
+[open-items](open-items.md).
+
+## [2026-11-27] test | Baseline and after the merge
+Baseline on `7bc6c99`: backend `222 passed` as is; with `ALLOWED_ORIGINS` set `2 failed, 220 passed` once (one of
+them `test_e2e.py::test_designer_opens_studio_invites_and_revises_client_plan`; the other name was not kept) then
+`222 passed` twice; both browser files `20 passed`; frontend `50 passed`. After the merge: backend `222 passed` as
+is and with the variable; browser files `20 passed`; frontend `76 passed`; a clean worktree with no `.env` and no
+`config.js` (as the pull-request job): backend `99 passed, 123 skipped` (every skip is the missing-Supabase marker),
+frontend `76 passed`. The header-overflow test passed and a throwaway measurement gave the same numbers as before
+(designer 81 px at 768; client 170 px at 768 and 38 px at 900). Open item: the intermittent baseline failure.
+Pages: [testing](testing.md), [open-items](open-items.md).
+
+## [2026-11-27] lint | Code review of the merge resolution
+One read-only `general-purpose` review (Sonnet), resumed once because the first report stopped early. No finding at
+medium or high; four low: the pull-request CI row in `testing.md` quoted upstream's pre-advisor numbers (fixed),
+no "Last result" or log entry for the merged tree yet (fixed by this commit), the Phase 1 line "Secrets only in
+git-ignored files" in `security.md` (upstream's, present before the merge: not changed, recorded in open items), and
+header-overflow figures that might have moved (measured: unchanged). Pages: [testing](testing.md),
+[open-items](open-items.md).
+
+## [2026-11-27] security | `security-review` of the merge resolution: no finding
+The skill's own diff is against `origin/main`, which would hold all of upstream's code, so its analysis ran on saved
+diffs of the resolution and the cleanly merged code. No finding at confidence 8 or above, so there was nothing to
+filter. A short static pass (about 20 seconds, five tool calls). No `.env` file was opened. Pages:
+[security](security.md).

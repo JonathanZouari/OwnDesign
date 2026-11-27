@@ -47,7 +47,7 @@ Source: `.github/workflows/ci.yml`. Report only: a red check does not block a me
 |---|---|---|
 | `frontend` | every push to `dev`/`main`, every pull request | `npm test` |
 | `backend` | push to `dev`/`main` only | the full suite, browser journeys included, against the dev Supabase project |
-| `backend-unit` | pull requests only | the suite with no secrets: unit tests run, the rest skip (22 passed, 78 skipped) |
+| `backend-unit` | pull requests only | the suite with no secrets: unit tests run, the rest skip (upstream measured 22 passed, 78 skipped before the advisor; this branch after the second merge of `upstream/dev`: 99 passed, 123 skipped, all skips because `backend/.env` is missing, run in a clean worktree with Python 3.14, while CI uses 3.13) |
 
 - A pull request never gets secrets, also not from a branch of this repository. A pull request from
   `dev` to `main` still shows the full run, because checks attach to the commit and `dev` was pushed.
@@ -67,6 +67,8 @@ the environment ("not allowed to deploy to ci"), with no step run; with the secr
 failed in its first step. Not yet seen: a green `backend` run. It waits for the CI secret key.
 
 ## Last result
+
+2026-11-27 (`feat/advisor-on-upstream`, merge `27cdc3f`, upstream's PRs #8, #9 and #14 and its CI file merged in; no new migrations): full backend `222 passed` as is and `222 passed` with `ALLOWED_ORIGINS` set; browser journeys of both files alone `20 passed`; frontend `76 passed` (50 before, plus upstream's `plan3d` and `branding` tests); pull-request simulation in a clean worktree (no `.env`, no `config.js`): backend `99 passed, 123 skipped`, frontend `76 passed`. None failed. Baseline on `7bc6c99` before the merge: backend `222 passed` as is, frontend `50 passed`, both browser files `20 passed`; with `ALLOWED_ORIGINS` set the full backend failed 2 tests once (one was `test_e2e.py::test_designer_opens_studio_invites_and_revises_client_plan`; the other name was not kept) and passed in two reruns, so it is an intermittent failure not yet explained ([open-items.md](open-items.md)). The editor header overflow was measured again after the merge: designer 81 px at 768 px; client 170 px at 768 px and 38 px at 900 px, unchanged by upstream's "3D walkthrough" button.
 
 2026-11-26 (`feat/advisor-on-upstream`, `2cb7762`, upstream merged in, its four migrations applied): full backend `222 passed` with `ALLOWED_ORIGINS` including `http://127.0.0.1:5500` in the environment (as is: `5 failed, 217 passed`, the five failures being upstream's `test_e2e_design.py` on CORS because `.env` lacks that origin); browser journeys of both files alone `20 passed`; frontend `50 passed`. None skipped. Baseline on `dev` before the merge: backend 154 passed, frontend 36 passed.
 Before the merge: 2026-11-25 (`feat/advisor-groq`, after the reasoning guard): backend 154 passed (including 12 browser journeys, which also pass on their own), frontend 36 passed. None failed or skipped.
