@@ -2,7 +2,7 @@
 import { api, requireSession, signOut } from "../api.js";
 import * as B from "../budget-logic.js";
 import { BUDGET, ltr } from "../strings.js";
-import { $, action, formatDate, h, run, showStudio, toast, userMessage } from "../ui.js";
+import { $, formatDate, h, run, showStudio, toast, userMessage } from "../ui.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const requested = new URLSearchParams(location.search).get("project");
@@ -14,9 +14,11 @@ const state = {
   currency: null, // the list's currency (null until chosen)
   budget: null, // {min, max, currency} from the brief, as last returned by the server
   rows: [], // editable rows; quantity and unit_price are the typed text
+  updatedAt: null, // the server's version of the saved list, an opaque string sent back unchanged (null: no list yet)
+  saving: false,
+  touched: new Set(), // "<row key>:<field>" of the fields whose errors are shown
   saved: "", // snapshot of the last saved state, to detect unsaved changes
   nextKey: 1,
-  showErrors: false, // inline errors appear once the user has typed in a field or tried to save
 };
 
 const icon = (name) => h("span", { class: "icon", "aria-hidden": "true" }, name);
@@ -98,19 +100,56 @@ function renderSummary() {
   renderDirty();
 }
 
+// A live region is written only when its text changes, so typing does not repeat the announcement.
+function setText(node, text) {
+  if (node.textContent !== text) node.textContent = text;
+}
+
 function renderDirty() {
-  const status = $("#save-status");
-  status.textContent = isDirty() ? BUDGET.unsaved : state.saved ? BUDGET.allSaved : "";
+  setText($("#save-status"), isDirty() ? BUDGET.unsaved : state.saved ? BUDGET.allSaved : "");
+}
+
+// ---- errors -----------------------------------------------------------------------------------------
+
+const fieldId = (row, field) => `${row.key}:${field}`;
+
+// The announced summary of the errors on screen. It waits for a pause in typing; after a save or export attempt it
+// is cleared first, so the same text is announced again.
+let summaryTimer;
+function summarise({ attempt = false } = {}) {
+  const box = $("#error-summary");
+  clearTimeout(summaryTimer);
+  if (attempt) box.textContent = "";
+  summaryTimer = setTimeout(() => {
+    const count = $("#rows").querySelectorAll('[aria-invalid="true"]').length;
+    setText(box, count ? BUDGET.errorSummary(count) : "");
+  }, attempt ? 50 : 800);
+}
+
+// A save or export attempt shows every error and moves to the first one. -> the API items, or null.
+function collect() {
+  for (const row of state.rows) for (const field of Object.keys(BUDGET.fields)) state.touched.add(fieldId(row, field));
+  refresh();
+  const parsed = state.rows.map(B.parseItem);
+  const bad = parsed.findIndex(({ item }) => !item);
+  if (bad < 0) return parsed.map(({ item }) => item);
+  summarise({ attempt: true });
+  $(`#err-${state.rows[bad].key}-${Object.keys(parsed[bad].errors)[0]}`)?.previousElementSibling?.focus();
+  return null;
+}
+
+// Showing an error moves what is below it. Done during a click, that would move the button from under the pointer, so
+// the update waits until the click is over (a tap sends its mouse events after pointerup, within one task).
+let pointerHeld = false;
+function afterClick(task) {
+  if (!pointerHeld) return setTimeout(task);
+  window.addEventListener("pointerup", () => setTimeout(task), { once: true });
 }
 
 // ---- table ------------------------------------------------------------------------------------------
 
-function rowErrors(row) {
-  return B.validateItem(row);
-}
-
 function setError(input, holder, key) {
-  const message = key && state.showErrors ? BUDGET.errors[key] : "";
+  const message = key ? BUDGET.errors[key] : "";
   input.setAttribute("aria-invalid", String(Boolean(message)));
   holder.textContent = message;
   holder.hidden = !message;
@@ -121,13 +160,22 @@ function buildRow(row, index) {
   const label = (field) => BUDGET.rowLabel(BUDGET.fields[field], row.name.trim(), position);
   const refs = {};
 
-  // One cell: control + its inline error message, linked with aria-describedby.
-  const cell = (field, control, extra = {}) => {
+  // One cell: control, its inline error message (linked with aria-describedby), and the text printed instead of
+  // the control, which can wrap.
+  const cell = (field, control) => {
     const error = h("p", { class: "field-error", id: `err-${row.key}-${field}`, hidden: true });
+    const printed = h("span", { class: "print-only", dir: control.dir || "auto" });
     control.setAttribute("aria-describedby", error.id);
     control.setAttribute("aria-label", label(field));
-    refs[field] = { control, error };
-    return h("td", extra, control, error);
+    control.addEventListener("blur", () => {
+      state.touched.add(fieldId(row, field));
+      afterClick(() => {
+        tr.update();
+        summarise();
+      });
+    });
+    refs[field] = { control, error, printed };
+    return h("td", {}, control, error, printed);
   };
 
   const text = (field, props = {}) =>
@@ -137,7 +185,7 @@ function buildRow(row, index) {
       ...props,
       oninput: (event) => {
         row[field] = event.target.value;
-        state.showErrors = true;
+        state.touched.add(fieldId(row, field));
         refresh();
       },
     });
@@ -169,17 +217,17 @@ function buildRow(row, index) {
 
   // Updates the parts of this row that depend on what was typed, without rebuilding the inputs (focus is kept).
   const update = () => {
-    const errors = rowErrors(row);
+    const errors = B.validateItem(row);
     for (const field of Object.keys(refs)) {
-      const { control, error } = refs[field];
+      const { control, error, printed } = refs[field];
       control.setAttribute("aria-label", label(field));
-      setError(control, error, errors[field]);
+      setError(control, error, state.touched.has(fieldId(row, field)) ? errors[field] : null);
+      printed.textContent = control.tagName === "SELECT" ? (control.selectedOptions[0]?.textContent ?? "") : row[field];
     }
     const quantity = B.parseQuantity(row.quantity);
     const price = B.parsePrice(row.unit_price);
     amount.textContent = quantity.error || price.error ? "—" : money(B.lineAmount(quantity.value, price.value));
     remove.setAttribute("aria-label", BUDGET.removeRow(row.name.trim(), position));
-    return errors;
   };
   tr.update = update;
   update();
@@ -189,6 +237,7 @@ function buildRow(row, index) {
 function renderRows(focusKey = null) {
   $("#rows").replaceChildren(...state.rows.map(buildRow));
   renderSummary();
+  summarise();
   if (focusKey != null) $(`tr[data-key="${focusKey}"] input`)?.focus();
 }
 
@@ -196,6 +245,7 @@ function renderRows(focusKey = null) {
 function refresh() {
   for (const tr of $("#rows").children) tr.update();
   renderSummary();
+  summarise();
 }
 
 function removeRow(row) {
@@ -223,44 +273,76 @@ function addRow() {
 function load(estimate) {
   state.currency = estimate.currency ?? null;
   state.budget = estimate.budget ?? null;
+  state.updatedAt = estimate.updated_at ?? null;
   state.rows = estimate.items.map(rowFromItem);
-  state.showErrors = false;
+  state.touched.clear();
   state.saved = snapshot();
   $("#currency").value = state.currency ?? "";
-  $("#save-status").textContent = "";
   renderRows();
-  $("#updated").textContent = estimate.updated_at ? BUDGET.updatedAt(formatDate(estimate.updated_at)) : "";
-  renderDirty();
+  $("#updated").textContent = state.updatedAt ? BUDGET.updatedAt(formatDate(state.updatedAt)) : "";
 }
 
-// Parses every row; returns the API items, or null after marking the invalid fields.
-function collect() {
-  state.showErrors = true;
-  refresh();
-  const items = [];
-  for (const row of state.rows) {
-    const { item } = B.parseItem(row);
-    if (!item) {
-      $(`#err-${row.key}-${Object.keys(rowErrors(row))[0]}`)?.previousElementSibling?.focus();
-      toast(BUDGET.fixErrors, "error");
-      return null;
-    }
-    items.push(item);
-  }
-  return items;
+// While a save is pending the list cannot be edited: the answer replaces the rows, and would drop what was typed.
+function setSaving(saving) {
+  state.saving = saving;
+  $("#list-card").inert = saving;
+  $("#saving").textContent = saving ? BUDGET.saving : "";
 }
 
 async function save() {
+  if (state.saving) return;
   const items = collect();
   if (!items) return;
   if (!state.currency) {
     toast(BUDGET.needCurrency, "error");
     return $("#currency").focus();
   }
-  const estimate = await api(`${base}/estimate`, { method: "PUT", body: { currency: state.currency, items } });
+  const body = { currency: state.currency, items, base_updated_at: state.updatedAt };
+  let estimate;
+  setSaving(true);
+  try {
+    estimate = await api(`${base}/estimate`, { method: "PUT", body });
+  } catch (error) {
+    setSaving(false);
+    $("#save").focus(); // inert took the focus away
+    if (error.status === 409) return resolveConflict();
+    throw error;
+  }
+  setSaving(false);
   load(estimate);
   report();
-  toast(BUDGET.saved);
+  $("#save").focus();
+}
+
+// Someone else saved since this page read the list. Nothing is overwritten: the user takes their changes out as a
+// file, loads the other version, or goes back to editing (and the next save conflicts again).
+function resolveConflict() {
+  return showDialog({
+    title: BUDGET.conflictTitle,
+    body: BUDGET.conflictBody,
+    actions: (dialog) => [
+      { label: BUDGET.conflictExport, run: () => downloadCsv() && dialog.note(BUDGET.exported) },
+      {
+        label: BUDGET.conflictLoad,
+        kind: "danger",
+        run: async () => {
+          dialog.busy(true);
+          try {
+            const latest = await api(`${base}/estimate`);
+            if (!dialog.isOpen()) return; // cancelled while loading: the edits stay
+            load(latest);
+            report();
+            dialog.close();
+          } catch (error) {
+            dialog.note(userMessage(error));
+          } finally {
+            dialog.busy(false);
+          }
+        },
+      },
+      { label: BUDGET.cancel, initial: true, run: () => dialog.close() },
+    ],
+  });
 }
 
 // ---- replacing the whole list (sample or CSV file) ---------------------------------------------------
@@ -274,9 +356,9 @@ function report(lines = [], { error = false } = {}) {
   );
 }
 
-// One replacement at a time: both buttons share the confirmation box.
+// One replacement at a time, and no save while the rows are about to be replaced.
 async function exclusive(trigger, task) {
-  const buttons = [$("#load-sample"), $("#import")];
+  const buttons = [$("#load-sample"), $("#import"), $("#save")];
   for (const button of buttons) button.disabled = true;
   try {
     await task();
@@ -298,7 +380,7 @@ function replaceRows(items, currency) {
   state.currency = currency;
   $("#currency").value = currency;
   state.rows = items.map(rowFromItem);
-  state.showErrors = false;
+  state.touched.clear();
   renderRows();
 }
 
@@ -311,26 +393,71 @@ async function applySample() {
   toast(BUDGET.loadedSample);
 }
 
-function askConfirm({ title, body, yes, no }) {
+// The modal dialog. `actions(dialog)` returns the buttons: {label, kind?, initial?, run}; the initial one takes the
+// focus and stays enabled while busy. Esc closes the dialog. Resolves once it is closed, with the focus back where
+// it was.
+function showDialog({ title, body, actions }) {
   const box = $("#confirm");
+  const opener = document.activeElement;
+  let buttons = [];
+  // The one <dialog> is reused: a late answer must not act on a dialog opened after this one was closed.
+  const isOpen = () => box.open && buttons.some(({ node }) => node.isConnected);
+  const dialog = {
+    isOpen,
+    close: () => isOpen() && box.close(),
+    note: (text) => isOpen() && ($("#confirm-note").textContent = text),
+    busy: (busy) => {
+      for (const { node, initial } of buttons) node.disabled = busy && !initial;
+      if (busy) buttons.find(({ initial }) => initial)?.node.focus(); // a disabled button cannot keep the focus
+    },
+  };
+  buttons = actions(dialog).map(({ label, kind = "", initial = false, run: onclick }) => ({
+    initial,
+    node: h("button", { type: "button", class: kind, onclick }, label),
+  }));
   $("#confirm-title").textContent = title;
   $("#confirm-body").textContent = body;
-  $("#confirm-yes").textContent = yes;
-  $("#confirm-no").textContent = no;
-  box.hidden = false;
-  $("#confirm-no").focus();
+  $("#confirm-note").textContent = "";
+  $("#confirm-actions").replaceChildren(...buttons.map(({ node }) => node));
   return new Promise((resolve) => {
-    const finish = (answer) => {
-      box.hidden = true;
-      box.onkeydown = null;
-      resolve(answer);
+    const closed = () => {
+      opener?.focus();
+      resolve();
     };
-    $("#confirm-yes").onclick = () => finish(true);
-    $("#confirm-no").onclick = () => finish(false);
-    box.onkeydown = (event) => {
-      if (event.key === "Escape") finish(false);
-    };
+    box.addEventListener("close", closed, { once: true });
+    box.showModal();
+    buttons.find(({ initial }) => initial)?.node.focus();
   });
+}
+
+// showModal() makes the page behind inert, but Tab could still leave for the browser's own controls.
+function trapTab(event) {
+  if (event.key !== "Tab") return;
+  event.preventDefault();
+  const buttons = [...event.currentTarget.querySelectorAll("button:not(:disabled)")];
+  const at = buttons.indexOf(document.activeElement);
+  const next = event.shiftKey ? (at <= 0 ? buttons.length : at) - 1 : (at + 1) % buttons.length;
+  buttons[next]?.focus();
+}
+
+async function askConfirm({ title, body, yes, no }) {
+  let answer = false;
+  await showDialog({
+    title,
+    body,
+    actions: (dialog) => [
+      {
+        label: yes,
+        kind: "danger",
+        run: () => {
+          answer = true;
+          dialog.close();
+        },
+      },
+      { label: no, initial: true, run: () => dialog.close() },
+    ],
+  });
+  return answer;
 }
 
 async function loadSample() {
@@ -394,17 +521,10 @@ async function importFile(file) {
 
 // ---- export -----------------------------------------------------------------------------------------
 
-function exportCsv() {
-  const items = [];
-  for (const row of state.rows) {
-    const { item } = B.parseItem(row);
-    if (!item) {
-      state.showErrors = true;
-      refresh();
-      return toast(BUDGET.fixErrors, "error");
-    }
-    items.push(item);
-  }
+// -> false when a row is invalid (its errors are then shown)
+function downloadCsv() {
+  const items = collect();
+  if (!items) return false;
   const csv = B.toCsv(items, state.currency, csvLabels);
   const slug = state.project.name.trim().replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "project";
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -413,7 +533,11 @@ function exportCsv() {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  toast(BUDGET.exported);
+  return true;
+}
+
+function exportCsv() {
+  if (downloadCsv()) toast(BUDGET.exported);
 }
 
 // ---- start ------------------------------------------------------------------------------------------
@@ -450,7 +574,11 @@ run(async () => {
     event.target.value = ""; // choosing the same file again must fire "change" again
     if (file) exclusive($("#import"), () => importFile(file));
   });
-  $("#save").addEventListener("click", action(save));
+  $("#save").addEventListener("click", () => save().catch((error) => toast(userMessage(error), "error")));
+  $("#confirm").addEventListener("keydown", trapTab);
+  for (const [type, held] of [["pointerdown", true], ["pointerup", false], ["pointercancel", false]]) {
+    window.addEventListener(type, () => (pointerHeld = held), true);
+  }
   $("#export").addEventListener("click", exportCsv);
   $("#print").addEventListener("click", () => window.print());
   window.addEventListener("beforeunload", (event) => {

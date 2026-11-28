@@ -52,7 +52,7 @@
 
     <section class="subtotals" id="subtotals" aria-label="סיכומי ביניים לפי קטגוריה"></section>
 
-    <section class="card" aria-labelledby="list-title">
+    <section class="card" id="list-card" aria-labelledby="list-title">
       <div class="row between">
         <h2 id="list-title">רשימת הפריטים</h2>
         <div class="row no-print toolbar">
@@ -67,15 +67,6 @@
       </div>
       <p class="muted small no-print" id="import-hint">הקובץ שנוצר ב״ייצוא ל-CSV״ משמש גם כתבנית לייבוא: ערכו אותו בגיליון אלקטרוני, שמרו בפורמט CSV UTF-8 וייבאו. הייבוא מחליף את הרשימה.</p>
       <div class="import-report no-print" id="import-report" role="status" aria-live="polite"></div>
-
-      <div class="confirm" id="confirm" role="alertdialog" aria-labelledby="confirm-title" aria-describedby="confirm-body" hidden>
-        <strong id="confirm-title"></strong>
-        <p id="confirm-body"></p>
-        <div class="row">
-          <button type="button" class="danger" id="confirm-yes"></button>
-          <button type="button" id="confirm-no"></button>
-        </div>
-      </div>
 
       <p class="muted" id="empty" hidden>הרשימה ריקה. הוסיפו שורה, או טענו רשימת דוגמה כדי להתחיל.</p>
 
@@ -106,9 +97,19 @@
         <button type="button" id="print"><span class="icon" aria-hidden="true">print</span>הדפסה</button>
         <p class="status" id="save-status" role="status" aria-live="polite"></p>
       </div>
+      <p class="error-summary no-print" id="error-summary" role="status" aria-live="polite"></p>
       <p class="muted small" id="updated"></p>
     </section>
+    <!-- Outside the card, which is inert while saving. -->
+    <p class="status no-print" id="saving" role="status" aria-live="polite"></p>
   </main>
+
+  <dialog id="confirm" role="alertdialog" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-body"></p>
+    <p class="status" id="confirm-note" role="status" aria-live="polite"></p>
+    <div class="dialog-actions" id="confirm-actions"></div>
+  </dialog>
   <script src="vendor/supabase-js-2.119.1.umd.js"></script>
   <script type="module" src="js/pages/budget.js"></script>
 </body>

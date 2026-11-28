@@ -626,15 +626,20 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
 .budget-table input[aria-invalid="true"] { border-color: var(--error); }
 .field-error { margin: 2px 0 0; font-size: 12px; line-height: 16px; color: var(--error); }
 .budget-table tfoot th, .budget-table tfoot td { padding-top: 12px; border-top: 1px solid var(--hairline-strong); }
-.confirm { margin: 0.75rem 0; padding: 1rem; border-radius: 8px; background: var(--surface-low); border: 1px solid var(--hairline-strong); }
-.confirm p { margin: 4px 0 12px; }
+#list-card[inert] { opacity: 0.6; }
+#saving { text-align: center; font-size: 14px; }
+.error-summary { margin: 0.5rem 0 0; color: var(--error); }
+.error-summary:empty { margin: 0; }
+#confirm p { margin: 8px 0 0; }
+#confirm .dialog-actions { flex-wrap: wrap; }
+.print-only { display: none; }
 .import-report > div { margin: 0.75rem 0; padding: 0.75rem 1rem; border-radius: 8px; background: var(--surface-low); border: 1px solid var(--hairline-strong); overflow-wrap: anywhere; }
 .import-report > div.error { border-color: var(--error); color: var(--error); }
 .import-report p { margin: 0; }
 .import-report ul { margin: 4px 0 0; padding-inline-start: 1.25rem; }
 @media (max-width: 767px) { .toolbar { width: 100%; } .toolbar > * { flex: 1 1 auto; } }
 @media print {
-  .appbar, .project-nav, .no-print, #toasts, .confirm { display: none !important; }
+  .appbar, .project-nav, .no-print, #toasts, dialog { display: none !important; }
   body { background: #fff; }
   .page { max-width: none; padding: 0; }
   .card { box-shadow: none; border-color: #999; break-inside: avoid; }
@@ -642,6 +647,16 @@ label.check { display: flex; align-items: center; gap: 8px; align-self: end; min
   .subtotals .card.total .label { color: #000; }
   .budget-table { overflow: visible; }
   .budget-table table { min-width: 0; font-size: 11px; }
-  .budget-table input, .budget-table select { border: 0; background: none; padding: 0; height: auto; appearance: none; -webkit-appearance: none; }
-  .budget-table .field-error { display: none; }
+  /* A control cannot wrap or grow: its text mirror is printed instead. Fixed columns keep long text on the page. */
+  .budget-table input, .budget-table select, .budget-table .field-error { display: none; }
+  .budget-table .print-only { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .budget-table table { table-layout: fixed; }
+  .budget-table th { overflow-wrap: anywhere; }
+  .budget-table thead th:nth-child(1) { width: 26%; }
+  .budget-table thead th:nth-child(2) { width: 13%; }
+  .budget-table thead th:nth-child(3) { width: 16%; }
+  .budget-table thead th:nth-child(4), .budget-table thead th:nth-child(5) { width: 9%; }
+  .budget-table .num { white-space: normal; overflow-wrap: anywhere; }
+  .budget-table tr { break-inside: avoid; }
+  .budget #list-card { break-inside: auto; } /* a long list starts on the first page and flows over */
 }

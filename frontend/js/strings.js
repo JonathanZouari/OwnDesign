@@ -98,12 +98,9 @@ export const BUDGET = {
   },
   statusTag: { no_items: "אין פריטים", no_budget: "אין תקציב", currency_mismatch: "מטבע שונה", under: "מתחת לטווח", within: "בתוך התקציב", over: "חריגה" },
   budgetRange: (min, max) => (min && max ? `${min} עד ${max}` : min ? `מ-${min}` : `עד ${max}`),
-  setBudgetLink: "הגדרת תקציב בבריף",
-  openBrief: "פתיחת הבריף",
   rowLabel: (field, name, index) => `${field}${name ? ` של ${name}` : ` בשורה ${index}`}`,
   fields: { name: "שם הפריט", category: "קטגוריה", room: "חדר", quantity: "כמות", unit: "יחידה", unit_price: "מחיר ליחידה" },
   removeRow: (name, index) => (name ? `מחיקת השורה ${name}` : `מחיקת שורה ${index}`),
-  newRowName: "פריט חדש",
   errors: {
     nameRequired: "יש להזין שם.",
     nameTooLong: "השם ארוך מדי (עד 120 תווים).",
@@ -119,10 +116,14 @@ export const BUDGET = {
     categoryInvalid: "יש לבחור קטגוריה.",
     unitInvalid: "יש לבחור יחידה.",
   },
-  fixErrors: "יש לתקן את השדות המסומנים לפני השמירה.",
+  errorSummary: (count) => (count === 1 ? "יש לתקן שדה אחד המסומן ברשימה." : `יש לתקן ${count} שדות המסומנים ברשימה.`),
   needCurrency: "בחרו מטבע לרשימה לפני השמירה.",
   tooMany: "אפשר להוסיף עד 200 פריטים.",
-  saved: "הרשימה נשמרה",
+  saving: "שומר…",
+  conflictTitle: "הרשימה השתנתה על ידי מישהו אחר",
+  conflictBody: "השינויים שלכם לא נשמרו. אפשר לייצא אותם לקובץ CSV, לטעון את הגרסה העדכנית (השינויים שלכם יימחקו), או לבטל ולהמשיך לערוך. שמירה נוספת תציג שוב את ההודעה.",
+  conflictExport: "ייצוא השינויים שלי ל־CSV",
+  conflictLoad: "טעינת הגרסה העדכנית",
   unsaved: "יש שינויים שלא נשמרו",
   allSaved: "הכול שמור",
   updatedAt: (date) => `עודכן ${date}`,
@@ -158,7 +159,6 @@ export const BUDGET = {
   },
   exported: "הקובץ ירד למחשב",
   total: "סה״כ",
-  rowAmount: (amount) => `סכום השורה ${amount}`,
 };
 
 export const STUDIO = {

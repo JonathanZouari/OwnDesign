@@ -213,13 +213,14 @@ def test_invalid_input_blocks_saving_and_markup_stays_text(servers, page, api, s
         ("0", "הכמות חייבת להיות מספר גדול מאפס."),
         ("1.234", "הכמות יכולה לכלול עד שתי ספרות אחרי הנקודה."),
         ("", "הכמות חייבת להיות מספר גדול מאפס."),
+        ("1,5", "פסיק מותר בכמות רק להפרדת אלפים (למשל 1,000). לשבר עשרוני השתמשו בנקודה."),
     )
     for bad, message in cases:
         field(page, 0, "quantity").fill(bad)
         assert rows(page).nth(0).locator(".field-error:not([hidden])").inner_text() == message
         assert field(page, 0, "quantity").get_attribute("aria-invalid") == "true"
         save.click()
-        page.locator(".toast.error").first.wait_for()
+        page.locator("#error-summary").get_by_text("יש לתקן שדה אחד").wait_for()
     field(page, 0, "quantity").fill("1")
     field(page, 0, "name").fill("   ")
     assert "יש להזין שם." in rows(page).nth(0).inner_text()
@@ -332,7 +333,7 @@ def test_import_replaces_the_list_after_confirmation_and_saves(servers, page, ap
     dialog.get_by_role("button", name="ביטול").click()
     assert rows(page).count() == 1 and field(page, 0, "name").input_value() == "Old chair"
     assert page.locator("#save-status").inner_text() == "הכול שמור"
-    assert page.get_by_role("button", name=IMPORT_BUTTON).is_enabled()
+    wait_until(page, page.get_by_role("button", name=IMPORT_BUTTON).is_enabled)  # once the dialog has closed
 
     choose_file(page, content)  # the same file again must work
     dialog.get_by_role("button", name="החלפה").click()
@@ -486,3 +487,412 @@ def test_import_has_no_horizontal_overflow_on_a_phone(servers, page, api, solo):
     choose_file(page, SAMPLE_FILE.read_bytes())
     page.get_by_role("alertdialog").wait_for()
     assert not overflows(page)
+
+
+# ---- saving, concurrency, errors, dialog, print ------------------------------------------------------
+
+SAVE_BUTTON = "שמירה"
+CONFLICT_TITLE = "הרשימה השתנתה על ידי מישהו אחר"
+EXPORT_MINE = "ייצוא השינויים שלי ל־CSV"
+LOAD_LATEST = "טעינת הגרסה העדכנית"
+
+
+def save_button(page):
+    return page.get_by_role("button", name=SAVE_BUTTON, exact=True)
+
+
+def watch_puts(page) -> list:
+    """The JSON bodies of the list saves the page sends."""
+    sent = []
+    page.on("request", lambda r: sent.append(r.post_data_json) if r.method == "PUT" and r.url.endswith("/estimate") else None)
+    return sent
+
+
+def wait_saved(page):
+    page.locator("#save-status").get_by_text("הכול שמור").wait_for()
+
+
+def focused(locator) -> bool:
+    return locator.evaluate("node => node === document.activeElement")
+
+
+def visible_errors(page) -> list[str]:
+    return page.locator("#rows .field-error:not([hidden])").all_inner_texts()
+
+
+def only(method: str, action):
+    """A route handler that applies `action` to one method and lets the rest through. It takes exactly one argument:
+    Playwright passes the request too to a handler that accepts two."""
+
+    def handle(route):
+        if route.request.method == method:
+            action(route)
+        else:
+            route.fallback()
+
+    return handle
+
+
+def only_puts(action):
+    return only("PUT", action)
+
+
+def hold_puts(page) -> list:
+    """Keeps every save waiting until the test continues its route."""
+    held = []
+    page.route("**/estimate", only_puts(held.append))
+    return held
+
+
+def wait_until(page, condition):
+    for _ in range(100):
+        if condition():
+            return
+        page.wait_for_timeout(100)
+    raise AssertionError("condition was never met")
+
+
+def click_at(page, locator):
+    """A raw pointer click where the control is, without Playwright's own checks that it can be clicked."""
+    locator.scroll_into_view_if_needed()
+    box = locator.bounding_box()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+
+
+def test_the_list_cannot_be_edited_while_a_save_is_pending(servers, page, api, solo):
+    put_items(api, solo, [{"name": "Sofa"}])
+    open_budget(page, solo.owner, solo.pid)
+    sent = watch_puts(page)
+    held = hold_puts(page)
+    field(page, 0, "name").fill("Edited sofa")
+    save_button(page).click()
+    page.locator("#saving").get_by_text("שומר…").wait_for()
+    wait_until(page, lambda: held)
+    assert page.locator("#saving").is_visible()
+    assert page.locator("#list-card").evaluate("node => node.inert") is True
+
+    # Typing, focusing and clicking do nothing, on every control of the card.
+    name = field(page, 0, "name")
+    click_at(page, name)
+    page.keyboard.type("lost")
+    assert name.input_value() == "Edited sofa" and not focused(name)
+    for selector in ("#add-row", "#load-sample", "#import", "#currency", "#save", "#rows button.danger"):
+        assert page.locator(selector).evaluate("node => { node.focus(); return node !== document.activeElement; }"), selector
+    for selector in ("#add-row", "#rows button.danger", "#save"):
+        click_at(page, page.locator(selector))
+    assert rows(page).count() == 1 and len(held) == 1 and len(sent) == 1
+
+    held[0].continue_()
+    wait_saved(page)
+    assert page.locator("#list-card").evaluate("node => node.inert") is False
+    assert page.locator("#saving").inner_text() == ""
+    assert focused(save_button(page))
+    assert page.locator(".toast").count() == 0  # the status line is the only announcement
+    assert stored_items(api, solo)[0]["name"] == "Edited sofa"
+
+
+def test_a_failed_save_keeps_the_edits_and_can_be_retried(servers, page, api, solo):
+    put_items(api, solo, [{"name": "Sofa"}])
+    open_budget(page, solo.owner, solo.pid)
+    sent = watch_puts(page)
+    field(page, 0, "name").fill("Kept edit")
+    cors = {"Access-Control-Allow-Origin": SITE}
+    failures = (
+        lambda route: route.abort(),
+        lambda route: route.fulfill(status=500, headers=cors, content_type="application/json", body='{"success": false}'),
+    )
+    for failure in failures:
+        page.route("**/estimate", only_puts(failure))
+        save_button(page).click()
+        page.locator(".toast.error").wait_for()
+        page.evaluate("document.querySelector('#toasts').replaceChildren()")
+        assert page.locator("#list-card").evaluate("node => node.inert") is False
+        assert page.locator("#saving").inner_text() == ""
+        assert field(page, 0, "name").input_value() == "Kept edit"
+        assert page.locator("#save-status").inner_text() == "יש שינויים שלא נשמרו"
+        assert page.get_by_role("alertdialog").is_hidden()
+        assert focused(save_button(page))
+        page.unroute("**/estimate")
+    assert stored_items(api, solo)[0]["name"] == "Sofa"
+    save_button(page).click()
+    wait_saved(page)
+    assert stored_items(api, solo)[0]["name"] == "Kept edit"
+    assert len(sent) == 3 and len({body["base_updated_at"] for body in sent}) == 1  # a failure does not move the version
+
+
+def test_two_tabs_the_second_save_conflicts_instead_of_overwriting(servers, page, api, solo):
+    put_items(api, solo, [{"name": "Sofa"}])
+    version = api.get(f"{solo.base}/estimate", headers=solo.owner.headers).json()["data"]["updated_at"]
+    open_budget(page, solo.owner, solo.pid)
+    other = page.context.new_page()
+    other.goto(f"{SITE}/budget.html?project={solo.pid}")
+    other.locator("#budget").wait_for()
+    sent = watch_puts(page)
+
+    field(other, 0, "name").fill("Their sofa")
+    save_button(other).click()
+    wait_saved(other)
+    # The same tab saves again: it moved on to the version it received.
+    field(other, 0, "price").fill("500")
+    save_button(other).click()
+    wait_saved(other)
+    assert other.get_by_role("alertdialog").is_hidden()
+
+    page.bring_to_front()
+    field(page, 0, "name").fill("My sofa")
+    save_button(page).click()
+    dialog = page.get_by_role("alertdialog")
+    dialog.wait_for()
+    assert sent[0]["base_updated_at"] == version  # sent back exactly as received
+    assert CONFLICT_TITLE in dialog.inner_text()
+    assert [i["name"] for i in stored_items(api, solo)] == ["Their sofa"]
+    assert page.locator("#list-card").evaluate("node => node.inert") is False
+    cancel = dialog.get_by_role("button", name="ביטול")
+    assert focused(cancel)
+    assert dialog.get_by_role("button").all_inner_texts() == [EXPORT_MINE, LOAD_LATEST, "ביטול"]  # no way to force
+
+    # Export: my changes go to a file; the dialog and the edits stay.
+    with page.expect_download() as info:
+        dialog.get_by_role("button", name=EXPORT_MINE).click()
+    with open(info.value.path(), "rb") as handle:
+        assert "My sofa" in handle.read().decode("utf-8-sig")
+    dialog.get_by_text("הקובץ ירד למחשב").wait_for()
+    assert dialog.is_visible() and field(page, 0, "name").input_value() == "My sofa"
+
+    for _ in range(5):
+        page.keyboard.press("Tab")
+        assert page.evaluate("document.querySelector('#confirm').contains(document.activeElement)")
+
+    # Cancel keeps editing, and the next save conflicts again.
+    cancel.click()
+    dialog.wait_for(state="hidden")
+    assert field(page, 0, "name").input_value() == "My sofa"
+    assert page.locator("#save-status").inner_text() == "יש שינויים שלא נשמרו"
+    wait_until(page, lambda: focused(save_button(page)))
+    save_button(page).click()
+    dialog.wait_for()
+    assert dialog.get_by_text("הקובץ ירד למחשב").count() == 0
+    page.keyboard.press("Escape")
+    dialog.wait_for(state="hidden")
+    assert field(page, 0, "name").input_value() == "My sofa"
+    wait_until(page, lambda: focused(save_button(page)))
+    assert len(sent) == 2 and sent[1]["base_updated_at"] == version
+    assert [i["name"] for i in stored_items(api, solo)] == ["Their sofa"]
+
+    # A failed load keeps the edits and the dialog.
+    save_button(page).click()
+    dialog.wait_for()
+    page.route("**/estimate", only("GET", lambda route: route.abort()))
+    dialog.get_by_role("button", name=LOAD_LATEST).click()
+    dialog.locator("#confirm-note:not(:empty)").wait_for()
+    assert dialog.is_visible() and field(page, 0, "name").input_value() == "My sofa"
+    assert dialog.get_by_role("button", name=LOAD_LATEST).is_enabled()
+    page.unroute("**/estimate")
+
+    # Loading the latest version discards my changes, and saving works again.
+    dialog.get_by_role("button", name=LOAD_LATEST).click()
+    dialog.wait_for(state="hidden")
+    wait_saved(page)
+    assert field(page, 0, "name").input_value() == "Their sofa" and field(page, 0, "price").input_value() == "500"
+    wait_until(page, lambda: focused(save_button(page)))
+    field(page, 0, "name").fill("Agreed sofa")
+    save_button(page).click()
+    wait_saved(page)
+    assert dialog.is_hidden() and [i["name"] for i in stored_items(api, solo)] == ["Agreed sofa"]
+
+
+def test_cancelling_while_the_latest_version_loads_keeps_the_edits(servers, page, api, solo):
+    put_items(api, solo, [{"name": "Sofa"}])
+    open_budget(page, solo.owner, solo.pid)
+    put_items(api, solo, [{"name": "Changed elsewhere"}])
+    field(page, 0, "name").fill("My sofa")
+    save_button(page).click()
+    dialog = page.get_by_role("alertdialog")
+    dialog.wait_for()
+    held = []
+    page.route("**/estimate", only("GET", held.append))
+    dialog.get_by_role("button", name=LOAD_LATEST).click()
+    wait_until(page, lambda: held)
+    assert dialog.get_by_role("button", name=LOAD_LATEST).is_disabled()
+    assert focused(dialog.get_by_role("button", name="ביטול"))
+    page.keyboard.press("Escape")
+    dialog.wait_for(state="hidden")
+    wait_until(page, lambda: focused(save_button(page)))
+    save_button(page).click()  # a new conflict dialog opens while the first load is still pending
+    dialog.wait_for()
+    with page.expect_response(lambda r: r.request.method == "GET" and r.url.endswith("/estimate")):
+        held[0].continue_()
+    page.wait_for_timeout(500)
+    assert dialog.is_visible()  # the late answer neither closes it nor replaces the rows
+    assert dialog.get_by_role("button", name=LOAD_LATEST).is_enabled()
+    assert field(page, 0, "name").input_value() == "My sofa"
+    page.keyboard.press("Escape")
+    assert page.locator("#save-status").inner_text() == "יש שינויים שלא נשמרו"
+
+
+def test_first_save_of_a_list_someone_else_created_meanwhile_conflicts(servers, page, api, solo):
+    open_budget(page, solo.owner, solo.pid)
+    sent = watch_puts(page)
+    page.get_by_role("button", name="הוספת שורה").click()
+    field(page, 0, "name").fill("Mine")
+    page.locator("#currency").select_option("ILS")
+    put_items(api, solo, [{"name": "Created meanwhile"}])
+    save_button(page).click()
+    page.get_by_role("alertdialog").get_by_text(CONFLICT_TITLE).wait_for()
+    assert sent[0]["base_updated_at"] is None
+    assert [i["name"] for i in stored_items(api, solo)] == ["Created meanwhile"]
+
+
+def test_errors_show_only_on_touched_fields_until_a_save_attempt(servers, page, api, solo):
+    open_budget(page, solo.owner, solo.pid)
+    page.locator("#currency").select_option("ILS")
+    add = page.get_by_role("button", name="הוספת שורה")
+    summary = page.locator("#error-summary")
+    assert summary.get_attribute("aria-live") == "polite"
+    add.click()
+    assert focused(field(page, 0, "name"))
+    assert visible_errors(page) == [] and summary.inner_text() == ""
+
+    # Leaving the empty name shows its error, and the click that caused it still lands.
+    add.click()
+    wait_until(page, lambda: rows(page).count() == 2 and visible_errors(page) == ["יש להזין שם."])
+    summary.get_by_text("יש לתקן שדה אחד").wait_for()
+
+    # Typing shows only that field's error; the summary waits for a pause instead of changing on every key.
+    quantity = field(page, 1, "quantity")
+    quantity.focus()  # leaves the second name, which shows its error
+    summary.get_by_text("יש לתקן 2 שדות").wait_for()
+    page.evaluate(
+        """() => { window.__changes = 0;
+        new MutationObserver(() => (window.__changes += 1))
+          .observe(document.querySelector('#error-summary'), { childList: true, characterData: true, subtree: true }); }"""
+    )
+    quantity.fill("")
+    quantity.press_sequentially("1,5555", delay=30)
+    assert page.evaluate("window.__changes") == 0
+    summary.get_by_text("יש לתקן 3 שדות").wait_for()
+    assert page.evaluate("window.__changes") == 1
+    assert len(visible_errors(page)) == 3
+
+    quantity.fill("1")
+    field(page, 0, "quantity").fill("1,000")
+    field(page, 0, "price").fill("1,200")
+    field(page, 0, "name").fill("Tiles")
+    field(page, 1, "name").fill("Lamp")
+    wait_until(page, lambda: summary.inner_text() == "")
+    assert visible_errors(page) == [] and total(page) == 1_200_000
+
+    # A new row shows nothing; saving straight from its empty name shows every error and no extra toast.
+    add.click()
+    assert visible_errors(page) == []
+    field(page, 2, "price").evaluate("node => { node.value = 'x'; node.dispatchEvent(new Event('input')); }")
+    field(page, 2, "name").focus()
+    save_button(page).click()
+    summary.get_by_text("יש לתקן 2 שדות").wait_for()
+    assert focused(field(page, 2, "name"))
+    assert page.locator(".toast").count() == 0
+    add.click()  # rows added after the attempt start clean
+    assert rows(page).count() == 4 and len(visible_errors(page)) == 2
+
+    rows(page).nth(3).locator("button.danger").click()
+    field(page, 2, "name").fill("Rug")
+    field(page, 2, "price").fill("10")
+    save_button(page).click()
+    wait_saved(page)
+    saved = stored_items(api, solo)
+    assert [(i["name"], i["quantity"], i["unit_price"]) for i in saved] == [("Tiles", 1000, 1200), ("Lamp", 1, 0), ("Rug", 1, 10)]
+
+
+def test_an_export_attempt_shows_the_errors(servers, page, api, solo):
+    put_items(api, solo, [{"name": "Sofa"}])
+    open_budget(page, solo.owner, solo.pid)
+    field(page, 0, "price").fill("1,5")
+    page.get_by_role("button", name="ייצוא ל-CSV").click()
+    page.locator("#error-summary").get_by_text("יש לתקן שדה אחד").wait_for()
+    assert visible_errors(page) == ["פסיק מותר במחיר רק להפרדת אלפים (למשל 1,200)."]
+    assert focused(field(page, 0, "price"))
+    assert page.locator(".toast").count() == 0
+
+
+def test_the_confirm_dialog_traps_focus_and_returns_it(servers, page, api, solo):
+    put_items(api, solo, [{"name": "Mine"}])
+    open_budget(page, solo.owner, solo.pid)
+    dialog = page.get_by_role("alertdialog")
+    opener = page.locator("#load-sample")
+    for close_with in ("Escape", "Enter"):
+        opener.focus()
+        page.keyboard.press("Enter")
+        dialog.wait_for()
+        assert page.locator("#confirm").evaluate("node => node.matches(':modal')")
+        cancel, confirm = dialog.get_by_role("button", name="ביטול"), dialog.get_by_role("button", name="החלפה")
+        assert focused(cancel)
+        for key, expected in (("Tab", confirm), ("Tab", cancel), ("Shift+Tab", confirm), ("Shift+Tab", cancel)):
+            page.keyboard.press(key)
+            assert focused(expected), key
+        page.keyboard.press(close_with)  # Enter presses the focused "cancel"
+        dialog.wait_for(state="hidden")
+        wait_until(page, lambda: focused(opener))
+        assert field(page, 0, "name").input_value() == "Mine"
+
+    choose_file(page, SAMPLE_FILE.read_bytes())
+    dialog.wait_for()
+    page.keyboard.press("Escape")
+    wait_until(page, lambda: focused(page.locator("#import")))
+    assert rows(page).count() == 1
+
+
+def test_print_shows_long_text_in_full(servers, page, api, solo):
+    long_name = ("ארון־מטבח־ארוך " * 4) + "W" * 60
+    assert len(long_name) == 120
+    put_items(api, solo, [
+        {"name": long_name, "room": "R" * 60, "quantity": 10000, "unit_price": 100_000_000},
+        *[{"name": f"item {n}"} for n in range(40)],
+    ])  # fmt: skip
+    page.set_viewport_size({"width": 700, "height": 1000})  # about the printable width of A4
+    open_budget(page, solo.owner, solo.pid)
+    first = rows(page).nth(0)
+    printed = first.locator(".print-only")
+    assert printed.first.is_hidden()
+    field(page, 0, "room").fill("S" * 60)  # the printed text follows the edits
+
+    page.emulate_media(media="print")
+    assert printed.all_inner_texts() == [long_name, "רהיטים", "S" * 60, "10000", "יחידה", "100000000"]
+    assert first.locator("input, select").evaluate_all("nodes => nodes.every(n => getComputedStyle(n).display === 'none')")
+    for index in range(printed.count()):
+        sizes = printed.nth(index).evaluate(
+            """n => { const own = n.getBoundingClientRect(), cell = n.parentElement.getBoundingClientRect();
+            return { clipped: n.scrollWidth > n.clientWidth + 1 || n.scrollHeight > n.clientHeight + 1,
+                     outside: own.left < cell.left - 1 || own.right > cell.right + 1, left: own.left, right: own.right }; }"""
+        )
+        assert not sizes["clipped"] and not sizes["outside"], (index, sizes)
+        assert sizes["left"] >= 0 and sizes["right"] <= 700, (index, sizes)
+    assert printed.first.bounding_box()["height"] > 30  # it wrapped onto several lines
+    assert not overflows(page)
+    assert page.locator("#list-card").evaluate("n => getComputedStyle(n).breakInside") == "auto"
+    assert first.evaluate("n => getComputedStyle(n).breakInside") == "avoid"
+    assert page.locator("#save").is_hidden()
+
+
+def test_conflict_saving_and_errors_fit_a_phone(servers, page, api, solo):
+    put_items(api, solo, [{"name": "Sofa"}])
+    page.set_viewport_size({"width": 375, "height": 700})
+    open_budget(page, solo.owner, solo.pid)
+    field(page, 0, "price").fill("1,5")
+    save_button(page).click()
+    page.locator("#error-summary").get_by_text("יש לתקן").wait_for()
+    assert not overflows(page)
+    field(page, 0, "price").fill("5")
+    put_items(api, solo, [{"name": "Changed elsewhere"}])
+    held = hold_puts(page)
+    save_button(page).click()
+    wait_until(page, lambda: held)
+    assert page.locator("#saving").is_visible() and not overflows(page)
+    held[0].continue_()
+    dialog = page.get_by_role("alertdialog")
+    dialog.wait_for()
+    assert not overflows(page)
+    box = dialog.bounding_box()
+    assert box["x"] >= 0 and box["x"] + box["width"] <= 375 and box["y"] >= 0 and box["y"] + box["height"] <= 700
+    for button in dialog.get_by_role("button").all():
+        inner = button.bounding_box()
+        assert inner["x"] >= box["x"] and inner["x"] + inner["width"] <= box["x"] + box["width"]
