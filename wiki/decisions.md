@@ -31,3 +31,5 @@ Each line: the decision, who made it, why. Dates are in [log.md](log.md).
   and quantities, comparison with the brief budget, CSV and print export, then CSV import.
 - **The whole UI is Hebrew** (user, 2026-11-26), catalog labels included; ids stay English.
 - **Budget goes upstream as its own pull request, in English** (user, 2026-11-26); `dev` is pushed as usual.
+- **No force-overwrite on a shopping list conflict** (2026-11-28): the user exports or reloads. The user chose to fix
+  every recorded budget gap.

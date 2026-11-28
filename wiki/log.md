@@ -261,3 +261,10 @@ it into a formula. Fixed in `725b428` (`frontend/js/budget-logic.js`, tests firs
 Budget feature ported to `feat/budget-shopping-list` on the upstream `dev` (`ac28aff`), in English: pull request #33.
 Backend 237 passed and frontend 97 passed there; one Medium CSV finding fixed (`de9a23c`). Upstream pull request #13
 covers the same roadmap item. The upstream database (and its CI) still needs the estimates migration.
+
+## [2026-11-28] build | Budget gaps fixed
+Version check migration (`008da81`, applied with the user's approval), number rules, reversible CSV guard, save
+lock, conflict dialog, field errors, print, modal confirm (`3758c8b`, `59c1248`, `a6fadbb`, `190b9b0`) and review
+fixes (`60ec8f8`, `f2a7283`, `261ded7`, `e767411`). Backend 375 passed; frontend 203 passed, 1 skipped.
+Security and code review: no critical or high finding. Pages updated: open-items, testing, architecture,
+decisions, security.

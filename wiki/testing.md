@@ -31,6 +31,8 @@ End to end, regression (both full suites) and edge cases for the change (`CLAUDE
 
 ## Last result
 
+2026-11-28: backend `uv run pytest` 375 passed; frontend `npm test` 203 passed, 1 skipped.
+
 2026-11-26: backend `uv run pytest` 295 passed (incl. browser journeys); frontend `npm test` 187 passed,
 1 skipped (pdf.js smoke test needs a browser). No lint run: ruff is not installed in the backend environment.
 

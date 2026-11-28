@@ -50,6 +50,11 @@ browser only (`frontend/js/budget-logic.js`); an import is saved through the sam
 
 Phase 2 writes work for projects without a studio; only a suspended studio blocks them.
 
+Concurrent editing (`20261127100000_estimate_version_check.sql`): `PUT .../estimate` may send
+`base_updated_at` (the `updated_at` it read, null for no list). The function refuses a stale base (`PT409`, HTTP
+409) unless the stored list already equals the submitted one. Without the field the save is unconditional. The page
+locks the list while saving, gives up after 30 s and offers export or reload on a conflict.
+
 ## Plan geometry
 
 One JSON document per version, validated in `backend/app/schemas.py` and edited by pure functions in

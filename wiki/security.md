@@ -64,3 +64,10 @@ so `x;=1+1;y` could become a formula in a spreadsheet with a `;` list separator.
 
 Run the `security-review` skill on the branch's local commits before pushing (`CLAUDE.md`, step 7), and add
 the outcome here and to [log.md](log.md).
+
+## Review of the budget gap fixes (2026-11-28)
+
+No high-confidence finding in `5c5c739..190b9b0`: grants and `search_path` of the new function, 409 text,
+authorization, CSV guard (fuzzed), no markup injection. The four follow-up commits (`60ec8f8..e767411`) were
+checked by reading the diff: authorization unchanged, the audit failure log holds only the project id and error
+type. A code review found no critical or high issue; its medium and low findings were fixed.

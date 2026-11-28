@@ -21,16 +21,11 @@ Remove an item when it is resolved and note the resolution in [log.md](log.md).
 
 ## Budget and shopping list
 
-- Typing while a save is in flight is overwritten by the server response.
-- Print clips long item names and rooms (printed as form controls) and the list card may start on page 2.
-- Two editors (client and designer) overwrite each other silently: no `updated_at` conflict check.
-- The page rejects a quantity of `1.500`, which the API accepts; a comma thousands separator typed into the
-  table gets a misleading message.
-- Validation errors appear on every row once any field is touched and are not announced to screen readers.
-- The replace confirmation is not a real modal dialog (no focus trap).
-- Unused strings in `BUDGET`; the estimate payload is read with three separate queries.
-- CSV import drops an apostrophe that stands before `= + - @` at the start of a value or after a `;`, tab or line
-  break (for example `x;'=1` comes back as `x;=1`): it cannot be told apart from the export's formula guard.
+- Printing was checked only by print emulation, not on a real printer or PDF; screen reader announcements,
+  Firefox, Safari and touch devices were not checked.
+- If a timed-out save did reach the server and the user edits before retrying, the conflict dialog appears.
+- A retry of an already stored list writes no audit event, so a save whose audit write failed stays unaudited.
+- Pull request #33 (the English budget branch) has none of these fixes.
 
 ## Interface
 
