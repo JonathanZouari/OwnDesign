@@ -1,4 +1,5 @@
 import json
+import logging
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from uuid import UUID
@@ -15,6 +16,7 @@ from app.schemas import EstimateBody
 
 router = APIRouter(prefix="/v1/projects/{project_id}")
 sample_router = APIRouter(prefix="/v1/estimate")
+log = logging.getLogger(__name__)
 
 ITEM_COLUMNS = "id, position, category, name, room, quantity, unit, unit_price, source, note"
 STALE_VERSION = "PT409"  # raised by replace_estimate when p_base is not the current updated_at
@@ -70,6 +72,19 @@ def _payload(user: CurrentUser, project_id: str) -> dict:
     }
 
 
+def _comparable(item: dict) -> tuple:
+    return (
+        item["category"], item["name"], item["room"] or "", Decimal(str(item["quantity"])), item["unit"], item["unit_price"],
+        item["source"], item["note"] or "",
+    )  # fmt: skip
+
+
+def _same_list(stored: dict, body: EstimateBody) -> bool:
+    """True when the stored list is exactly what is being saved (positions are the order of the items)."""
+    submitted = [_comparable(item.model_dump()) for item in body.items]
+    return stored["currency"] == body.currency and [_comparable(item) for item in stored["items"]] == submitted
+
+
 @router.get("/estimate")
 def get_estimate(project_id: UUID, user: CurrentUser = Depends(current_user)):
     project = _project_or_404(user, project_id)
@@ -87,10 +102,19 @@ def put_estimate(project_id: UUID, body: EstimateBody, user: CurrentUser = Depen
     try:
         service().rpc("replace_estimate", params).execute()
     except APIError as error:
-        if error.code == STALE_VERSION:
-            raise HTTPException(409, "The shopping list was changed by someone else. Load the latest version before saving.") from None
-        raise
-    audit("estimate.saved", user.id, studio_id=project["studio_id"], project_id=project["id"], count=len(items))
+        if error.code != STALE_VERSION:
+            raise
+        # A save that committed but whose answer was lost comes back with the old version. When the stored list is
+        # already the submitted one, nothing is left to write or to lose.
+        current = _payload(user, project["id"])
+        if _same_list(current, body):
+            return ok(current)
+        raise HTTPException(409, "The shopping list was changed since it was loaded. Load the latest version before saving.") from None
+    try:
+        audit("estimate.saved", user.id, studio_id=project["studio_id"], project_id=project["id"], count=len(items))
+    except Exception as error:  # the list is already saved; failing now would report the opposite
+        # Only the error's type: its text could carry data from the request.
+        log.error("audit event estimate.saved was not recorded for project %s (%s)", project["id"], type(error).__name__)
     return ok(_payload(user, project["id"]))
 
 

@@ -492,7 +492,7 @@ def test_import_has_no_horizontal_overflow_on_a_phone(servers, page, api, solo):
 # ---- saving, concurrency, errors, dialog, print ------------------------------------------------------
 
 SAVE_BUTTON = "שמירה"
-CONFLICT_TITLE = "הרשימה השתנתה על ידי מישהו אחר"
+CONFLICT_TITLE = "הרשימה בשרת שונה מזו שנטענה"
 EXPORT_MINE = "ייצוא השינויים שלי ל־CSV"
 LOAD_LATEST = "טעינת הגרסה העדכנית"
 
@@ -618,6 +618,38 @@ def test_a_failed_save_keeps_the_edits_and_can_be_retried(servers, page, api, so
     wait_saved(page)
     assert stored_items(api, solo)[0]["name"] == "Kept edit"
     assert len(sent) == 3 and len({body["base_updated_at"] for body in sent}) == 1  # a failure does not move the version
+
+
+def commit_then(route, then):
+    """Lets the save reach the server, which commits it, and gives the page `then` instead of the answer."""
+    assert route.fetch().status == 200
+    then(route)
+
+
+def test_a_save_whose_answer_was_lost_succeeds_when_retried(servers, page, api, solo):
+    put_items(api, solo, [{"name": "Sofa"}])
+    open_budget(page, solo.owner, solo.pid)
+    sent = watch_puts(page)
+    field(page, 0, "name").fill("Committed sofa")
+    field(page, 0, "quantity").fill("2.50")
+    page.route("**/estimate", only_puts(lambda route: commit_then(route, lambda r: r.abort())))
+    save_button(page).click()
+    page.locator(".toast.error").wait_for()
+    stored = stored_items(api, solo)
+    assert [i["name"] for i in stored] == ["Committed sofa"]
+    assert page.locator("#save-status").inner_text() == "יש שינויים שלא נשמרו"
+
+    page.unroute("**/estimate")
+    save_button(page).click()
+    wait_saved(page)
+    assert page.get_by_role("alertdialog").is_hidden()
+    assert stored_items(api, solo) == stored  # nothing was written again
+    assert len(sent) == 2 and sent[0] == sent[1]
+    # The page moved on to the stored version, so the next change saves.
+    field(page, 0, "name").fill("Next sofa")
+    save_button(page).click()
+    wait_saved(page)
+    assert page.get_by_role("alertdialog").is_hidden() and [i["name"] for i in stored_items(api, solo)] == ["Next sofa"]
 
 
 def test_two_tabs_the_second_save_conflicts_instead_of_overwriting(servers, page, api, solo):

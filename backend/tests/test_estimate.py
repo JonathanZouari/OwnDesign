@@ -400,7 +400,7 @@ def test_malformed_base_is_422_and_nothing_changes(api, world, pr, base):
 )
 def test_extreme_but_well_formed_bases_never_fail_the_server(api, world, pr, base, status):
     assert put(api, world.client_a, pr.url, body()).status_code == 200
-    assert put(api, world.client_a, pr.url, {**body(), "base_updated_at": base}).status_code == status
+    assert put(api, world.client_a, pr.url, {**body([line("other")]), "base_updated_at": base}).status_code == status
 
 
 def test_a_stale_base_does_not_reveal_anything_to_a_stranger(api, world, pr):
@@ -423,3 +423,106 @@ def test_two_concurrent_saves_with_the_same_base_end_in_one_200_and_one_409(api,
         codes = list(pool.map(save, lists))
     assert sorted(codes) == [200, 409]
     assert names(listing(api, world.client_a, pr.url)) == [i["name"] for i in lists[codes.index(200)]]
+
+
+# ---- a repeated save of what is already stored (the first answer was lost) ------------------------------------
+
+RETRY_ITEMS = [
+    line("Sofa", quantity="2.50", room=None, note=None, source="synthetic"),
+    line("  Lamp ", category="lighting", quantity=3, room=" Hall ", note=" warm ", unit="set", unit_price=0),
+]
+# The same list written differently: blank for null, 2.5 for "2.50", text already trimmed.
+SAME_ITEMS = [
+    line("Sofa", quantity=2.5, room="", note="", source="synthetic"),
+    line("Lamp", category="lighting", quantity="3.00", room="Hall", note="warm", unit="set", unit_price=0),
+]
+
+
+@pytest.mark.parametrize("retry", [RETRY_ITEMS, SAME_ITEMS])
+def test_identical_retry_with_a_stale_base_is_200_and_nothing_changes(api, world, pr, retry):
+    first = put(api, world.client_a, pr.url, body([line("before")])).json()["data"]
+    data = {**body(RETRY_ITEMS), "base_updated_at": first["updated_at"]}
+    saved = put(api, world.client_a, pr.url, data).json()["data"]
+    for _ in range(2):
+        response = put(api, world.client_a, pr.url, {**data, "items": retry})
+        assert response.status_code == 200, response.text
+        assert response.json()["data"] == saved  # the same version and the same row ids: nothing was written
+    assert listing(api, world.client_a, pr.url) == saved
+
+
+def test_identical_first_save_and_empty_list_can_be_retried(api, make_user):
+    user = make_user("es-retry")
+    project = api.post("/v1/projects", json={"name": "R", "property_type": "existing"}, headers=user.headers).json()["data"]
+    url = f"/v1/projects/{project['id']}/estimate"
+    empty = {**body([]), "base_updated_at": None}
+    saved = put(api, user, url, empty).json()["data"]
+    again = put(api, user, url, empty)
+    assert again.status_code == 200 and again.json()["data"] == saved
+    assert put(api, user, url, {**body([], "USD"), "base_updated_at": None}).status_code == 409
+    assert put(api, user, url, {**body(), "base_updated_at": None}).status_code == 409
+    assert listing(api, user, url) == saved
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"name": "sofa"}, {"room": "Hall"}, {"note": "x"}, {"quantity": 2.51}, {"unit_price": 1001}, {"category": "other"},
+        {"unit": "set"}, {"source": "synthetic"},
+    ],
+)  # fmt: skip
+def test_a_stale_save_that_differs_in_one_field_is_409(api, world, pr, change):
+    stored = [line("Sofa", quantity=2.5), line("Chair")]
+    saved = put(api, world.client_a, pr.url, body(stored)).json()["data"]
+    data = {**body([{**stored[0], **change}, stored[1]]), "base_updated_at": None}
+    assert put(api, world.client_a, pr.url, data).status_code == 409
+    assert listing(api, world.client_a, pr.url) == saved
+
+
+def test_a_stale_save_with_another_currency_order_or_length_is_409(api, world, pr):
+    stored = [line("a"), line("b")]
+    saved = put(api, world.client_a, pr.url, body(stored)).json()["data"]
+    for data in (body(stored, "USD"), body(stored[::-1]), body(stored[:1]), body([*stored, line("c")]), body([])):
+        assert put(api, world.client_a, pr.url, {**data, "base_updated_at": None}).status_code == 409
+    assert listing(api, world.client_a, pr.url) == saved
+
+
+def test_concurrent_identical_saves_with_the_same_base_both_succeed_and_write_once(api, world, pr):
+    base = put(api, world.client_a, pr.url, body([line("start")])).json()["data"]["updated_at"]
+    data = {**body([line(f"same{n}") for n in range(25)]), "base_updated_at": base}
+
+    def save(_):
+        with TestClient(app) as thread_client:
+            response = thread_client.put(pr.url, json=data, headers=world.client_a.headers)
+            return response.status_code, response.json()["data"]["updated_at"]
+
+    with ThreadPoolExecutor(2) as pool:
+        results = list(pool.map(save, range(2)))
+    assert [code for code, _ in results] == [200, 200]
+    assert {stamp for _, stamp in results} == {listing(api, world.client_a, pr.url)["updated_at"]}
+
+
+def broken(*_, **__):
+    raise RuntimeError("secret detail")
+
+
+def test_an_audit_failure_after_the_commit_does_not_fail_the_save(api, world, pr, monkeypatch, caplog):
+    monkeypatch.setattr("app.routes.estimate.audit", broken)
+    response = put(api, world.client_a, pr.url, body([line("private item")]))
+    assert response.status_code == 200, response.text
+    assert names(response.json()["data"]) == ["private item"]
+    assert names(listing(api, world.client_a, pr.url)) == ["private item"]
+    logged = [r.getMessage() for r in caplog.records if r.name == "app.routes.estimate"]
+    assert len(logged) == 1 and "estimate.saved" in logged[0] and "RuntimeError" in logged[0]
+    assert "secret detail" not in caplog.text and "private item" not in caplog.text
+
+
+def test_a_save_whose_answer_failed_after_the_commit_can_be_retried(api, world, pr, monkeypatch):
+    base = put(api, world.client_a, pr.url, body([line("start")])).json()["data"]["updated_at"]
+    data = {**body([line("committed")]), "base_updated_at": base}
+    with monkeypatch.context() as patch:
+        patch.setattr("app.routes.estimate._payload", broken)
+        with TestClient(app, raise_server_exceptions=False) as failing:
+            assert failing.put(pr.url, json=data, headers=world.client_a.headers).status_code == 500
+    retry = put(api, world.client_a, pr.url, data)
+    assert retry.status_code == 200, retry.text
+    assert names(retry.json()["data"]) == ["committed"]
