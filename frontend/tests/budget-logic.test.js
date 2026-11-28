@@ -229,7 +229,7 @@ test("round trip: export then import reproduces the items", () => {
 test("import strips the formula guard only before a formula character", () => {
   const names = ["'=a", "'+a", "'-a", "'@a", "'a", "''=a", "a'=b"];
   const result = imp(csvOf(HEADER, ...names.map((n) => `${n},רהיטים,,1,יחידה,1,1,`)));
-  assert.deepEqual(result.items.map((i) => i.name), ["=a", "+a", "-a", "@a", "'a", "''=a", "a'=b"]);
+  assert.deepEqual(result.items.map((i) => i.name), ["=a", "+a", "-a", "@a", "'a", "'=a", "a'=b"]);
 });
 
 // A spreadsheet whose list separator is ; or tab splits inside our cells: no piece may look like a formula.
@@ -269,9 +269,50 @@ test("round trip: separators and formula characters inside name, room and note",
   assert.deepEqual(result.items, items);
 });
 
-test("known limitation: an apostrophe already between a separator and a formula character is dropped on import", () => {
-  const result = imp(B.toCsv([item({ name: "x;'=1" })], "USD", IMPORT));
-  assert.equal(result.items[0].name, "x;=1");
+test("round trip: apostrophes that were already there survive", () => {
+  const values = ["'=1", "''=1", "'''@x", "x;'=1", "x;''=1", 'x; "\'-1', "x\t'+1", "x\n''=1", "'a", "a'", "''", "'", "'=a;'=b", "-1;'-2"];
+  const items = values.map((value) => item({ name: value, room: value, note: value }));
+  const result = imp(B.toCsv(items, "USD", IMPORT));
+  assert.deepEqual(result.errors, undefined);
+  assert.deepEqual(result.items, items);
+});
+
+test("csvCell adds one apostrophe in front of an apostrophe run that precedes a formula character", () => {
+  assert.equal(B.csvCell("'=1"), "''=1");
+  assert.equal(B.csvCell("''=1"), "'''=1");
+  assert.equal(B.csvCell("x;'=1"), `"x;''=1"`);
+  assert.equal(B.csvCell("'\t1"), `"''\t1"`);
+  assert.equal(B.csvCell("'a"), "'a");
+});
+
+// Every string up to `length` over the characters that matter to the guard, to CSV syntax and to spreadsheets.
+function* strings(alphabet, length, prefix = "") {
+  yield prefix;
+  if (length) for (const char of alphabet) yield* strings(alphabet, length - 1, prefix + char);
+}
+
+function assertRoundTrip(value) {
+  const rows = B.parseCsv(`${B.csvCell(value)},end\r\n`);
+  const [cell, end] = rows[0].cells;
+  // Plain checks first: building a message for every one of the passing cases is slow.
+  if (rows.length !== 1 || end !== "end" || B.unguard(cell) !== value) assert.fail(`not restored: ${JSON.stringify(value)} -> ${JSON.stringify(cell)}`);
+  if (/^[=+\-@\t\r]/.test(cell) || FORMULA_PIECE.test(cell)) assert.fail(`formula left: ${JSON.stringify(value)} -> ${JSON.stringify(cell)}`);
+}
+
+test("property: export then import is the identity for every short string", () => {
+  let count = 0;
+  for (const value of strings(["'", ";", ",", "\t", "\n", "\r", "=", "+", "-", "@", '"', " ", "a"], 5)) {
+    assertRoundTrip(value);
+    count += 1;
+  }
+  assert.equal(count, (13 ** 6 - 1) / 12);
+});
+
+test("property: export then import is the identity for long random strings", () => {
+  const alphabet = ["'", "'", "'", ";", ",", "\t", "\n", "\r", "\r\n", "=", "+", "-", "@", '"', " ", "\u00a0", "א", "1"];
+  let seed = 12345; // fixed, so a failure can be repeated
+  const next = (n) => (seed = (seed * 48271) % 2147483647) % n;
+  for (let run = 0; run < 20_000; run += 1) assertRoundTrip(Array.from({ length: 6 + next(30) }, () => alphabet[next(alphabet.length)]).join(""));
 });
 
 test("import handles a huge cell of line breaks and separators", () => {

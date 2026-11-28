@@ -117,7 +117,8 @@ export const validateItem = (raw) => parseItem(raw).errors;
 // Where a spreadsheet may start a cell: the start of the value, or after a ; tab or line break inside it (with a
 // ";" list separator Excel splits there, quoted or not), skipping blanks and quotes.
 const CELL_START = String.raw`(^|[;\t\r\n](?:[^\S\t\r\n]|")*)`;
-const FORMULA_AHEAD = String.raw`(?=[=+\-@])`;
+// Apostrophes in front count too: each guarded position gets exactly one more, so the import can remove exactly one.
+const FORMULA_AHEAD = String.raw`(?='*[=+\-@])`;
 const UNGUARDED = new RegExp(`${CELL_START}${FORMULA_AHEAD}`, "g");
 const GUARDED = new RegExp(`${CELL_START}'${FORMULA_AHEAD}`, "g");
 
@@ -125,7 +126,7 @@ const GUARDED = new RegExp(`${CELL_START}'${FORMULA_AHEAD}`, "g");
 export function csvCell(value) {
   let text = value == null ? "" : String(value);
   text = text.replace(UNGUARDED, "$1'");
-  if (/^[\t\r]/.test(text)) text = `'${text}`;
+  if (/^'*[\t\r]/.test(text)) text = `'${text}`;
   return /[",;\t\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
@@ -249,8 +250,8 @@ const keyOf = (value, keys, labels) => {
   return keys.find((key) => key === wanted || normalise(labels[key]) === wanted) ?? value;
 };
 
-// Removes the apostrophes that csvCell adds in front of would-be formulas.
-const unguard = (value) => value.replace(GUARDED, "$1").replace(/^'(?=[\t\r])/, "");
+// The exact inverse of the guard in csvCell: removes one apostrophe at each guarded position.
+export const unguard = (value) => value.replace(GUARDED, "$1").replace(/^'(?='*[\t\r])/, "");
 
 // Header record -> {at: {field: index}, currency, errors}.
 function readHeader({ line, cells }, labels) {
