@@ -30,7 +30,9 @@ export async function signOut() {
 // The user always sees Hebrew text chosen by status; the server's English `error` text is never shown.
 export const apiMessage = (status) => API_ERRORS[status] ?? API_ERRORS.generic;
 
-export async function api(path, { method = "GET", body } = {}) {
+// `signal` (e.g. AbortSignal.timeout) gives up on the request; the error then has `aborted` set. Giving up says
+// nothing about what the server did with it.
+export async function api(path, { method = "GET", body, signal } = {}) {
   const session = await getSession();
   // A FormData body (file upload) is sent as is: the browser sets the multipart Content-Type and boundary.
   const isForm = body instanceof FormData;
@@ -38,13 +40,15 @@ export async function api(path, { method = "GET", body } = {}) {
     ...(body && !isForm ? { "Content-Type": "application/json" } : {}),
     ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
   };
+  const noAnswer = () => Object.assign(new Error(API_ERRORS.network), { aborted: Boolean(signal?.aborted) });
   let response;
   try {
-    response = await fetch(config.apiUrl + path, { method, headers, body: isForm ? body : body ? JSON.stringify(body) : undefined });
+    response = await fetch(config.apiUrl + path, { method, headers, signal, body: isForm ? body : body ? JSON.stringify(body) : undefined });
   } catch {
-    throw new Error(API_ERRORS.network);
+    throw noAnswer();
   }
   const payload = await response.json().catch(() => null);
+  if (!payload && signal?.aborted) throw noAnswer(); // given up while the answer was still arriving
   if (!response.ok || !payload?.success) {
     const error = new Error(apiMessage(response.status));
     error.status = response.status;

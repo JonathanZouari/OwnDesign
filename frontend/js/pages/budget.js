@@ -8,6 +8,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const requested = new URLSearchParams(location.search).get("project");
 const projectId = UUID.test(requested ?? "") ? requested : null; // anything else is never used in an API path
 const base = `/v1/projects/${encodeURIComponent(projectId)}`;
+const SAVE_TIMEOUT_MS = 30_000;
 
 const state = {
   project: null,
@@ -311,11 +312,14 @@ async function save() {
   let estimate;
   setSaving(true);
   try {
-    estimate = await api(`${base}/estimate`, { method: "PUT", body });
+    const signal = AbortSignal.timeout(globalThis.atelierSaveTimeoutMs ?? SAVE_TIMEOUT_MS); // the global is for tests
+    estimate = await api(`${base}/estimate`, { method: "PUT", body, signal });
   } catch (error) {
     setSaving(false);
     $("#save").focus(); // inert took the focus away
     if (error.status === 409) return resolveConflict();
+    // The list may have been saved: saving again is safe, because the server accepts what it already holds.
+    if (error.aborted) throw new Error(BUDGET.saveTimedOut);
     throw error;
   }
   setSaving(false);

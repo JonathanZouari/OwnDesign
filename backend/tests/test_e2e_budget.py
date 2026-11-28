@@ -709,6 +709,67 @@ def test_a_save_whose_answer_was_lost_succeeds_when_retried(servers, page, api, 
     assert page.get_by_role("alertdialog").is_hidden() and [i["name"] for i in stored_items(api, solo)] == ["Next sofa"]
 
 
+SAVE_TIMED_OUT = "לא ידוע אם הרשימה נשמרה"
+
+
+def shorten_save_timeout(page, milliseconds: int):
+    """The page reads this global at each save; the real limit is 30 seconds."""
+    page.evaluate("ms => { globalThis.atelierSaveTimeoutMs = ms; }", milliseconds)
+
+
+def restore_save_timeout(page):
+    page.evaluate("() => { delete globalThis.atelierSaveTimeoutMs; }")
+
+
+@pytest.mark.parametrize("committed", [False, True])
+def test_a_save_that_gets_no_answer_times_out_and_can_be_retried(servers, page, api, solo, committed):
+    put_items(api, solo, [{"name": "Sofa"}])
+    open_budget(page, solo.owner, solo.pid)
+    sent = watch_puts(page)
+    held = []
+
+    def never_answer(route):
+        if committed:
+            assert route.fetch().status == 200
+        held.append(route)
+
+    page.route("**/estimate", only_puts(never_answer))
+    shorten_save_timeout(page, 1000)
+    field(page, 0, "name").fill("Slow sofa")
+    save_button(page).click()
+    page.locator(".toast.error").get_by_text(SAVE_TIMED_OUT).wait_for()
+    wait_until(page, lambda: held)  # the server has answered the test, not the page
+    assert len(held) == 1
+    assert page.locator("#list-card").evaluate("node => node.inert") is False
+    assert page.locator("#saving").inner_text() == ""
+    assert field(page, 0, "name").input_value() == "Slow sofa"
+    assert page.locator("#save-status").inner_text() == "יש שינויים שלא נשמרו"
+    assert page.get_by_role("alertdialog").is_hidden()
+    wait_until(page, lambda: focused(save_button(page)))
+    assert [i["name"] for i in stored_items(api, solo)] == ["Slow sofa" if committed else "Sofa"]
+
+    page.unroute("**/estimate")
+    restore_save_timeout(page)
+    save_button(page).click()
+    wait_saved(page)
+    assert page.get_by_role("alertdialog").is_hidden()
+    assert [i["name"] for i in stored_items(api, solo)] == ["Slow sofa"]
+    assert len(sent) == 2 and sent[0] == sent[1]
+
+
+def test_a_save_is_given_thirty_seconds(servers, page, api, solo):
+    put_items(api, solo, [{"name": "Sofa"}])
+    page.add_init_script(
+        "window.timeouts = []; const original = AbortSignal.timeout.bind(AbortSignal);"
+        "AbortSignal.timeout = (ms) => { window.timeouts.push(ms); return original(ms); };"
+    )
+    open_budget(page, solo.owner, solo.pid)
+    field(page, 0, "name").fill("Sofa 2")
+    save_button(page).click()
+    wait_saved(page)
+    assert page.evaluate("window.timeouts") == [30000]
+
+
 def test_two_tabs_the_second_save_conflicts_instead_of_overwriting(servers, page, api, solo):
     put_items(api, solo, [{"name": "Sofa"}])
     version = api.get(f"{solo.base}/estimate", headers=solo.owner.headers).json()["data"]["updated_at"]
