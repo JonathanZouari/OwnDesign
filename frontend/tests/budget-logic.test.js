@@ -451,3 +451,27 @@ test("the row message names the row by position and name, and is Hebrew", () => 
   const unnamed = BUDGET.rowError("", 1, BUDGET.errors.noteTooLong);
   assert.ok(unnamed.startsWith("שורה 1:") && !unnamed.includes("()"));
 });
+
+const amountHeader = (amount) => HEADER.replace("סכום (ILS)", amount);
+
+test("the currency in the amount header: accepted and ignored forms", () => {
+  for (const [title, currency] of [["סכום (ILS)", "ILS"], ["סכום(usd)", "USD"], ["סכום \t  (Eur)  ", "EUR"], ["סכום (XYZ)", null], ["סכום", null]]) {
+    assert.equal(imp(csvOf(amountHeader(title), GOOD)).currency, currency, title);
+  }
+  // Not the export's form: an unknown column, so no currency and no error.
+  for (const title of ["(ILS)", "סכום (IL)", "סכום (ILSS)", "סכום (I1S)", "סכום (ILS) x", "סכום ((ILS))", "אחר (ILS)", "סכום ILS)", ")", "()"]) {
+    const result = imp(csvOf(amountHeader(title), GOOD));
+    assert.equal(result.currency, null, title);
+    assert.equal(result.items.length, 1, title);
+  }
+});
+
+test("a header cell with 200,000 spaces is read quickly", () => {
+  const gap = " ".repeat(200_000);
+  for (const title of [`a${gap}b`, `a${gap}(ILS`, `a${gap}(ILS)x`, `x${gap}(ILS)`, `סכום${gap}(ILS)`]) {
+    const started = performance.now();
+    const result = imp(csvOf(`${HEADER},"${title}"`, GOOD));
+    assert.ok(performance.now() - started < 1000, `${title.slice(0, 5)}… took too long`);
+    assert.equal(result.items.length, 1);
+  }
+});

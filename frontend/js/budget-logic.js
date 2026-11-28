@@ -256,6 +256,14 @@ const keyOf = (value, keys, labels) => {
 // The exact inverse of the guard in csvCell: removes one apostrophe at each guarded position.
 export const unguard = (value) => value.replace(GUARDED, "$1").replace(/^'(?='*[\t\r])/, "");
 
+// The code in a title written as the export writes it, "amount (ILS)": {title, code}, or null. Plain string work, in
+// linear time: a pattern that allows any run of spaces before the bracket is quadratic on a hostile header cell.
+function splitCurrency(title) {
+  const code = title.slice(-4, -1);
+  if (title.at(-5) !== "(" || !title.endsWith(")") || !/^[a-z]{3}$/.test(code)) return null;
+  return { title: title.slice(0, -5).trimEnd(), code: code.toUpperCase() };
+}
+
 // Header record -> {at: {field: index}, currency, errors}.
 function readHeader({ line, cells }, labels) {
   const at = {};
@@ -263,11 +271,10 @@ function readHeader({ line, cells }, labels) {
   let currency = null;
   cells.forEach((cell, index) => {
     let title = normalise(cell);
-    const withCode = /^(.*?)\s*\(([a-z]{3})\)$/.exec(title); // the export writes "amount (ILS)"
-    if (withCode && withCode[1] === normalise(labels.columns[6])) {
-      title = withCode[1];
-      const code = withCode[2].toUpperCase();
-      if (CURRENCIES.includes(code)) currency = code;
+    const withCode = splitCurrency(title);
+    if (withCode && withCode.title === normalise(labels.columns[6])) {
+      title = withCode.title;
+      if (CURRENCIES.includes(withCode.code)) currency = withCode.code;
     }
     const position = labels.columns.findIndex((label) => normalise(label) === title);
     const field = COLUMN_FIELDS[position];
