@@ -69,7 +69,6 @@ test("parseItem accepts a valid row and normalises it", () => {
   assert.deepEqual(errors, {});
   assert.deepEqual(parsed, item({ quantity: 2.5, source: "synthetic", note: "x" }));
   assert.equal(B.parseItem(raw({ source: "bogus" })).item.source, "user");
-  assert.equal(B.parseItem(raw({ quantity: "1,5" })).item.quantity, 1.5);
 });
 
 test("quantity boundaries", () => {
@@ -84,6 +83,40 @@ test("price boundaries", () => {
     assert.equal(B.validateItem(raw({ unit_price: text })).unit_price, key, text);
   }
   for (const ok of ["0", "1", "100000000"]) assert.equal(B.validateItem(raw({ unit_price: ok })).unit_price, undefined, ok);
+});
+
+test("numbers: commas are thousands separators only", () => {
+  assert.equal(B.parseQuantity("1,000").value, 1000);
+  assert.equal(B.parseQuantity(" 1,000.5 ").value, 1000.5);
+  assert.equal(B.parseQuantity("10,000.00").value, 10000);
+  assert.equal(B.parsePrice("1,200").value, 1200);
+  assert.equal(B.parsePrice("100,000,000").value, 100_000_000);
+  for (const bad of ["1,5", "1,00", "0,500", "12,34", "1,0000", ",100", "100,", ",", "1,,000", "1.000,5", "1,000,00", "-1,000", "1 ,000"]) {
+    assert.deepEqual(B.parseQuantity(bad), { error: "quantityComma" }, bad);
+    assert.deepEqual(B.parsePrice(bad), { error: "priceComma" }, bad);
+  }
+  assert.deepEqual(B.parseQuantity("10,001"), { error: "quantityRange" });
+  assert.deepEqual(B.parseQuantity("1,000,000"), { error: "quantityRange" });
+  assert.deepEqual(B.parsePrice("100,000,001"), { error: "priceRange" });
+  assert.deepEqual(B.parsePrice("1,200.5"), { error: "priceInvalid" });
+});
+
+test("numbers: trailing zeros are not decimals, and a leading dot is accepted", () => {
+  for (const [text, value] of [["1.500", 1.5], ["1.5000000", 1.5], ["2.350", 2.35], ["3.000", 3], [".5", 0.5], [".05", 0.05], [".500", 0.5], ["10000.000", 10000]]) {
+    assert.deepEqual(B.parseQuantity(text), { value }, text);
+  }
+  for (const text of ["1.001", "1.5001", ".005", "0.0100001"]) assert.deepEqual(B.parseQuantity(text), { error: "quantityDecimals" }, text);
+  for (const text of [".", "5.", "..5", ".5.", "-.5", ".0", "0.000"]) assert.deepEqual(B.parseQuantity(text), { error: "quantityInvalid" }, text);
+  assert.deepEqual(B.parsePrice(".5"), { error: "priceInvalid" });
+});
+
+test("numbers: the page and the CSV import follow the same rule", () => {
+  for (const text of ["1,000", "1,000.5", "1.500", ".5", "1,5", "1,00", "0,500", "1.001", "5.", "1,200"]) {
+    const page = B.parseItem(raw({ room: "", quantity: text, unit_price: text }));
+    const file = imp(csvOf(HEADER, `ספה,רהיטים,,"${text}",יחידה,"${text}",,`));
+    assert.deepEqual(file.items, page.item ? [page.item] : undefined, text);
+    assert.deepEqual(file.errors?.map((e) => e.key), page.item ? undefined : Object.values(page.errors), text);
+  }
 });
 
 test("name, room, note, category and unit limits", () => {
@@ -318,8 +351,14 @@ test("import: thousands separators only when unambiguous", () => {
   assert.equal(imp(row("1", "100,000,000")).items[0].unit_price, 100_000_000);
   assert.equal(imp(csvOf(HEADER, 'x,רהיטים,,1,יחידה,"1,200",,')).items[0].unit_price, 1200);
   for (const bad of ["2,5", "0,500", "1,00", "12,34,567", "1,0000", ",100", "100,"]) {
-    assert.deepEqual(imp(row(bad, "1")).errors, [{ line: 2, key: "quantityInvalid" }], bad);
-    assert.deepEqual(imp(row("1", bad)).errors, [{ line: 2, key: "priceInvalid" }], bad);
+    assert.deepEqual(imp(row(bad, "1")).errors, [{ line: 2, key: "quantityComma" }], bad);
+    assert.deepEqual(imp(row("1", bad)).errors, [{ line: 2, key: "priceComma" }], bad);
+  }
+});
+
+test("every field error key has a Hebrew message", () => {
+  for (const key of ["nameRequired", "nameTooLong", "roomTooLong", "noteTooLong", "quantityInvalid", "quantityComma", "quantityDecimals", "quantityRange", "priceInvalid", "priceComma", "priceRange", "categoryInvalid", "unitInvalid"]) {
+    assert.match(BUDGET.errors[key] ?? "", /[֐-׿]/, key);
   }
 });
 

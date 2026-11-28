@@ -49,11 +49,19 @@ export function compareToBudget(total, currency, budget, itemCount = null) {
 // ---- parsing and validation of what the user typed ---------------------------------------------------
 // Errors are keys; strings.js (BUDGET.errors) maps each to Hebrew.
 
+// The one number rule, for the page and for CSV files: "1,200" is 1200. A comma that is not clearly a thousands
+// separator ("2,5", "0,500", "1,00") gives null, because guessing would change the number by a factor.
+function plainNumber(text) {
+  const value = String(text ?? "").trim();
+  if (!value.includes(",")) return value;
+  return /^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(value) ? value.replaceAll(",", "") : null;
+}
+
 export function parseQuantity(text) {
-  const raw = String(text ?? "").trim().replace(",", ".");
-  if (raw === "") return { error: "quantityInvalid" };
-  if (!/^\d+(\.\d+)?$/.test(raw)) return { error: "quantityInvalid" };
-  if (/\.\d{3,}/.test(raw)) return { error: "quantityDecimals" };
+  const raw = plainNumber(text);
+  if (raw === null) return { error: "quantityComma" };
+  if (!/^(\d+(\.\d+)?|\.\d+)$/.test(raw)) return { error: "quantityInvalid" };
+  if (/\.\d\d\d*[1-9]/.test(raw)) return { error: "quantityDecimals" }; // trailing zeros are not decimals
   const value = Number(raw);
   if (value <= 0) return { error: "quantityInvalid" };
   if (value > MAX_QUANTITY) return { error: "quantityRange" };
@@ -61,8 +69,9 @@ export function parseQuantity(text) {
 }
 
 export function parsePrice(text) {
-  const raw = String(text ?? "").trim();
-  if (raw === "" || !/^\d+$/.test(raw)) return { error: "priceInvalid" };
+  const raw = plainNumber(text);
+  if (raw === null) return { error: "priceComma" };
+  if (!/^\d+$/.test(raw)) return { error: "priceInvalid" };
   const value = Number(raw);
   if (!Number.isSafeInteger(value) || value > MAX_PRICE) return { error: "priceRange" };
   return { value };
@@ -240,13 +249,6 @@ const keyOf = (value, keys, labels) => {
   return keys.find((key) => key === wanted || normalise(labels[key]) === wanted) ?? value;
 };
 
-// "1,200" -> "1200". A comma that is not clearly a thousands separator ("2,5", "0,500") makes the number invalid.
-const plainNumber = (value) => {
-  const text = value.trim();
-  if (!text.includes(",")) return text;
-  return /^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(text) ? text.replaceAll(",", "") : "invalid";
-};
-
 // Removes the apostrophes that csvCell adds in front of would-be formulas.
 const unguard = (value) => value.replace(GUARDED, "$1").replace(/^'(?=[\t\r])/, "");
 
@@ -311,9 +313,9 @@ export function importItems(rows, labels) {
       name: value("name"),
       category: keyOf(value("category"), CATEGORIES, labels.categories),
       room: value("room"),
-      quantity: plainNumber(value("quantity")),
+      quantity: value("quantity"),
       unit: keyOf(value("unit"), UNIT_KEYS, labels.units),
-      unit_price: plainNumber(value("unit_price")),
+      unit_price: value("unit_price"),
       source: "user",
       note: value("note"),
     });
