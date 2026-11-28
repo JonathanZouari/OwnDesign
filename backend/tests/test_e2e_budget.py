@@ -620,6 +620,63 @@ def test_a_failed_save_keeps_the_edits_and_can_be_retried(servers, page, api, so
     assert len(sent) == 3 and len({body["base_updated_at"] for body in sent}) == 1  # a failure does not move the version
 
 
+LAMP = "\U0001F4A1"  # one code point, two UTF-16 units
+
+
+def test_emoji_text_at_the_limits_saves_and_one_more_is_refused(servers, page, api, solo):
+    put_items(api, solo, [{"name": LAMP * 120, "room": LAMP * 60, "note": LAMP * 200}])
+    open_budget(page, solo.owner, solo.pid)
+    sent = watch_puts(page)
+    field(page, 0, "price").fill("700")
+    save_button(page).click()
+    wait_saved(page)
+    assert visible_errors(page) == []
+    stored = stored_items(api, solo)[0]
+    assert (stored["name"], stored["room"], stored["note"], stored["unit_price"]) == (LAMP * 120, LAMP * 60, LAMP * 200, 700)
+
+    # Typed in the page: all 120 fit in the field, and the 121st shows an error instead of being cut.
+    field(page, 0, "name").fill("")
+    field(page, 0, "name").fill(LAMP * 121)
+    assert field(page, 0, "name").input_value() == LAMP * 121
+    assert visible_errors(page) == ["השם ארוך מדי (עד 120 תווים)."]
+    save_button(page).click()
+    page.locator("#error-summary").get_by_text("יש לתקן שדה אחד").wait_for()
+    assert len(sent) == 1
+
+
+def test_an_error_in_the_note_names_the_row_and_can_be_resolved(servers, page, api, solo):
+    put_items(api, solo, [{"name": "Chair"}, {"name": "Table", "note": "short"}])
+
+    def too_long(route):  # the server never stores such a note; the page must still not fail silently
+        response = route.fetch()
+        payload = response.json()
+        payload["data"]["items"][1]["note"] = LAMP * 201
+        route.fulfill(response=response, json=payload)
+
+    page.route("**/estimate", only("GET", too_long))
+    open_budget(page, solo.owner, solo.pid)
+    sent = watch_puts(page)
+    save_button(page).click()
+    page.locator("#error-summary").get_by_text("יש לתקן שדה אחד").wait_for()
+    (message,) = visible_errors(page)
+    assert message.startswith("שורה 2 (Table): ההערה ארוכה מדי (עד 200 תווים).")
+    assert rows(page).nth(1).locator(".field-error:not([hidden])").is_visible()
+    name = field(page, 1, "name")
+    assert focused(name) and name.get_attribute("aria-invalid") == "false"
+    assert page.locator(f"#{name.get_attribute('aria-describedby').split()[-1]}").inner_text() == message
+    with_export = page.get_by_role("button", name="ייצוא ל-CSV")
+    with_export.click()
+    wait_until(page, lambda: focused(name))
+    assert sent == [] and page.locator(".toast").count() == 0
+
+    # What the message says to do works.
+    rows(page).nth(1).locator("button.danger").click()
+    assert visible_errors(page) == []
+    save_button(page).click()
+    wait_saved(page)
+    assert [i["name"] for i in stored_items(api, solo)] == ["Chair"]
+
+
 def commit_then(route, then):
     """Lets the save reach the server, which commits it, and gives the page `then` instead of the answer."""
     assert route.fetch().status == 200

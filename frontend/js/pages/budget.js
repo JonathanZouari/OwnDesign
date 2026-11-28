@@ -121,7 +121,7 @@ function summarise({ attempt = false } = {}) {
   clearTimeout(summaryTimer);
   if (attempt) box.textContent = "";
   summaryTimer = setTimeout(() => {
-    const count = $("#rows").querySelectorAll('[aria-invalid="true"]').length;
+    const count = $("#rows").querySelectorAll('[aria-invalid="true"], .row-error:not([hidden])').length;
     setText(box, count ? BUDGET.errorSummary(count) : "");
   }, attempt ? 50 : 800);
 }
@@ -134,7 +134,9 @@ function collect() {
   const bad = parsed.findIndex(({ item }) => !item);
   if (bad < 0) return parsed.map(({ item }) => item);
   summarise({ attempt: true });
-  $(`#err-${state.rows[bad].key}-${Object.keys(parsed[bad].errors)[0]}`)?.previousElementSibling?.focus();
+  const { key } = state.rows[bad];
+  const inCell = Object.keys(parsed[bad].errors).map((field) => $(`#err-${key}-${field}`)).find(Boolean);
+  (inCell?.previousElementSibling ?? $(`tr[data-key="${key}"] input`)).focus(); // no cell: the row's first field
   return null;
 }
 
@@ -200,12 +202,15 @@ function buildRow(row, index) {
     return node;
   };
 
+  // Errors of fields without a cell are shown under the name, and name the row.
+  const rowError = h("p", { class: "field-error row-error", id: `err-${row.key}-row`, hidden: true });
   const amount = h("td", { class: "num" });
   const remove = h("button", { type: "button", class: "danger", onclick: () => removeRow(row) }, icon("delete"));
   const tr = h(
     "tr",
     { "data-key": row.key },
-    cell("name", text("name", { maxLength: 200, autocomplete: "off" })),
+    // maxLength counts UTF-16 units: room for more than MAX_NAME emoji, so a name that is too long shows an error.
+    cell("name", text("name", { maxLength: 4 * B.MAX_NAME, autocomplete: "off" })),
     cell("category", select("category", B.CATEGORIES, BUDGET.categories)),
     cell("room", text("room", { autocomplete: "off" })),
     cell("quantity", text("quantity", { inputmode: "decimal", dir: "ltr" })),
@@ -214,6 +219,8 @@ function buildRow(row, index) {
     amount,
     h("td", { class: "no-print" }, remove),
   );
+  refs.name.error.after(rowError);
+  refs.name.control.setAttribute("aria-describedby", `${refs.name.error.id} ${rowError.id}`);
 
   // Updates the parts of this row that depend on what was typed, without rebuilding the inputs (focus is kept).
   const update = () => {
@@ -224,6 +231,9 @@ function buildRow(row, index) {
       setError(control, error, state.touched.has(fieldId(row, field)) ? errors[field] : null);
       printed.textContent = control.tagName === "SELECT" ? (control.selectedOptions[0]?.textContent ?? "") : row[field];
     }
+    const unseen = Object.keys(errors).filter((field) => !refs[field]);
+    rowError.textContent = unseen.map((field) => BUDGET.rowError(row.name.trim(), position, BUDGET.errors[errors[field]])).join(" ");
+    rowError.hidden = !unseen.length;
     const quantity = B.parseQuantity(row.quantity);
     const price = B.parsePrice(row.unit_price);
     amount.textContent = quantity.error || price.error ? "—" : money(B.lineAmount(quantity.value, price.value));

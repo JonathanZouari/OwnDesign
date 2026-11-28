@@ -431,3 +431,23 @@ test("the sample file for users imports cleanly", () => {
   for (const entry of result.items) assert.match(entry.name, /[א-ת]/);
   assert.doesNotMatch(text, /פנטהאוז|מגדל העמק/);
 });
+
+// The server and the database count characters (code points), not UTF-16 units: an emoji is one.
+test("name, room and note limits count code points", () => {
+  for (const [field, max, key] of [["name", 120, "nameTooLong"], ["room", 60, "roomTooLong"], ["note", 200, "noteTooLong"]]) {
+    for (const char of ["\u{1F6CB}", "א", "a"]) {
+      assert.deepEqual(B.validateItem(raw({ [field]: char.repeat(max) })), {}, `${field} ${char}`);
+      assert.deepEqual(B.validateItem(raw({ [field]: ` ${char.repeat(max)} ` })), {}, `${field} ${char} padded`);
+      assert.deepEqual(B.validateItem(raw({ [field]: char.repeat(max + 1) })), { [field]: key }, `${field} ${char} over`);
+    }
+  }
+  const emoji = "\u{1F4A1}".repeat(120);
+  assert.deepEqual(imp(csvOf(HEADER, `${emoji},רהיטים,,1,יחידה,1,1,`)).items.map((i) => i.name), [emoji]);
+});
+
+test("the row message names the row by position and name, and is Hebrew", () => {
+  const message = BUDGET.rowError("Table", 3, BUDGET.errors.noteTooLong);
+  for (const part of ["שורה 3", "Table", BUDGET.errors.noteTooLong]) assert.ok(message.includes(part), part);
+  const unnamed = BUDGET.rowError("", 1, BUDGET.errors.noteTooLong);
+  assert.ok(unnamed.startsWith("שורה 1:") && !unnamed.includes("()"));
+});

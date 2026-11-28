@@ -116,6 +116,9 @@ export const BUDGET = {
     categoryInvalid: "יש לבחור קטגוריה.",
     unitInvalid: "יש לבחור יחידה.",
   },
+  // An error in a field the table has no cell for (the note), so only removing the row resolves it.
+  rowError: (name, position, message) =>
+    `שורה ${position}${name ? ` (${name})` : ""}: ${message} את השדה הזה אי אפשר לערוך בדף, לכן כדי לשמור יש למחוק את השורה ולהוסיף אותה מחדש.`,
   errorSummary: (count) => (count === 1 ? "יש לתקן שדה אחד המסומן ברשימה." : `יש לתקן ${count} שדות המסומנים ברשימה.`),
   needCurrency: "בחרו מטבע לרשימה לפני השמירה.",
   tooMany: "אפשר להוסיף עד 200 פריטים.",

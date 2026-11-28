@@ -77,17 +77,20 @@ export function parsePrice(text) {
   return { value };
 }
 
+// Characters as the server and the database count them: code points, so an emoji is one, not two.
+const length = (text) => [...text].length;
+
 // raw: {name, category, room, quantity, unit, unit_price, source, note} where quantity and unit_price are the typed text.
 // Returns {item, errors}: `item` is the API shape when errors is empty, else null.
 export function parseItem(raw) {
   const errors = {};
   const name = String(raw.name ?? "").trim();
   if (!name) errors.name = "nameRequired";
-  else if (name.length > MAX_NAME) errors.name = "nameTooLong";
+  else if (length(name) > MAX_NAME) errors.name = "nameTooLong";
   const room = String(raw.room ?? "").trim();
-  if (room.length > MAX_ROOM) errors.room = "roomTooLong";
+  if (length(room) > MAX_ROOM) errors.room = "roomTooLong";
   const note = String(raw.note ?? "").trim();
-  if (note.length > MAX_NOTE) errors.note = "noteTooLong";
+  if (length(note) > MAX_NOTE) errors.note = "noteTooLong";
   const quantity = parseQuantity(raw.quantity);
   if (quantity.error) errors.quantity = quantity.error;
   const price = parsePrice(raw.unit_price);
