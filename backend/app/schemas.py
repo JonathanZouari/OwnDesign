@@ -1,12 +1,13 @@
 """Request schemas. Geometry is the canonical 2D plan: centimetres, origin top-left, y down."""
 
 import math
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Annotated, Literal
 from uuid import UUID
 
 from app.catalog import MATERIALS_BY_ID, STYLE_IDS
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator, model_validator
 
 MAX_COORD_CM = 100_000  # 1 km: far beyond any residential plan
 MAX_ITEMS = 1000
@@ -248,3 +249,23 @@ class EstimateItem(Strict):
 class EstimateBody(Strict):
     currency: Literal["USD", "EUR", "GBP", "ILS"]
     items: Annotated[list[EstimateItem], Field(max_length=MAX_ESTIMATE_ITEMS)]
+    # The updated_at the caller read. Sent (null = "no list yet"): refuse to overwrite another version.
+    # Omitted: replace unconditionally.
+    base_updated_at: AwareDatetime | None = None
+
+    @field_validator("base_updated_at", mode="before")
+    @classmethod
+    def _base_is_an_iso_string(cls, value):
+        # pydantic would also read numbers and bare dates as points in time
+        if value is not None and not (isinstance(value, str) and "T" in value):
+            raise ValueError("base_updated_at must be an ISO 8601 date and time")
+        return value
+
+    @field_validator("base_updated_at")
+    @classmethod
+    def _base_in_utc(cls, value):
+        # the database rejects some offsets that are valid ISO 8601, so it always gets UTC
+        try:
+            return value.astimezone(timezone.utc) if value else None
+        except OverflowError:
+            raise ValueError("base_updated_at is out of range") from None

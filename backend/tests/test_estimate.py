@@ -1,6 +1,8 @@
-"""Estimate API: budget and shopping list. Needs migration 20261127090000_estimates.sql applied."""
+"""Estimate API: budget and shopping list. Needs migrations 20261127090000_estimates.sql and
+20261127100000_estimate_version_check.sql applied."""
 
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
@@ -313,3 +315,111 @@ def test_concurrent_puts_end_in_exactly_one_list(api, world, pr):
     assert codes == [200, 200, 200]
     names = [i["name"] for i in api.get(pr.url, headers=world.client_a.headers).json()["data"]["items"]]
     assert names in [[i["name"] for i in items] for items in lists]
+
+
+# ---- concurrency: base_updated_at ---------------------------------------------------------------------------
+
+
+def listing(api, user, url):
+    return api.get(url, headers=user.headers).json()["data"]
+
+
+def names(data):
+    return [i["name"] for i in data["items"]]
+
+
+def microsecond_before(stamp: str) -> str:
+    return (datetime.fromisoformat(stamp) - timedelta(microseconds=1)).isoformat()
+
+
+def test_matching_base_is_accepted_and_each_save_returns_the_next_version(api, world, pr):
+    current = put(api, world.client_a, pr.url, body([line("v1")])).json()["data"]
+    for name in ("v2", "v3"):
+        response = put(api, world.client_a, pr.url, {**body([line(name)]), "base_updated_at": current["updated_at"]})
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["updated_at"] > current["updated_at"]
+        current = response.json()["data"]
+        assert names(current) == [name]
+
+
+def test_the_same_instant_written_with_z_matches(api, world, pr):
+    saved = put(api, world.client_a, pr.url, body()).json()["data"]
+    assert saved["updated_at"].endswith("+00:00")
+    base = saved["updated_at"].replace("+00:00", "Z")
+    assert put(api, world.client_a, pr.url, {**body(), "base_updated_at": base}).status_code == 200
+
+
+def test_stale_base_is_409_and_the_list_is_unchanged(api, world, pr):
+    first = put(api, world.client_a, pr.url, body([line("first")])).json()["data"]
+    second = put(api, world.designer_a, pr.url, body([line("theirs")], "USD")).json()["data"]
+    for stale in (first["updated_at"], microsecond_before(second["updated_at"]), "2001-01-01T00:00:00+00:00"):
+        response = put(api, world.client_a, pr.url, {**body([line("mine")]), "base_updated_at": stale})
+        assert response.status_code == 409, response.text
+        assert response.json()["success"] is False and "changed" in response.json()["error"]
+    assert listing(api, world.client_a, pr.url) == second
+
+
+def test_null_base_against_an_existing_list_is_409(api, world, pr):
+    before = put(api, world.client_a, pr.url, body([line("existing")])).json()["data"]
+    assert put(api, world.client_a, pr.url, {**body([line("mine")]), "base_updated_at": None}).status_code == 409
+    assert listing(api, world.client_a, pr.url) == before
+
+
+def test_first_save_with_null_base_and_a_base_for_a_list_never_saved(api, make_user):
+    user = make_user("es-version")
+    project = api.post("/v1/projects", json={"name": "V", "property_type": "existing"}, headers=user.headers).json()["data"]
+    url = f"/v1/projects/{project['id']}/estimate"
+    stamp = "2026-01-01T00:00:00+00:00"
+    assert put(api, user, url, {**body(), "base_updated_at": stamp}).status_code == 409
+    assert listing(api, user, url)["updated_at"] is None
+    assert put(api, user, url, {**body([line("first")]), "base_updated_at": None}).status_code == 200
+    assert put(api, user, url, {**body([line("again")]), "base_updated_at": None}).status_code == 409
+    assert names(listing(api, user, url)) == ["first"]
+
+
+def test_omitted_base_overwrites_whatever_is_there(api, world, pr):
+    assert put(api, world.client_a, pr.url, body([line("old")])).status_code == 200
+    assert put(api, world.designer_a, pr.url, body([line("newer")])).status_code == 200
+    assert put(api, world.client_a, pr.url, body([line("forced")])).status_code == 200
+    assert names(listing(api, world.client_a, pr.url)) == ["forced"]
+
+
+@pytest.mark.parametrize(
+    "base",
+    ["abc", "", "   ", "2026-01-01", "2026-01-01T10:00:00", "2026-13-01T00:00:00+00:00", 0, 1764300000, "1764300000", True, [], {}],
+)
+def test_malformed_base_is_422_and_nothing_changes(api, world, pr, base):
+    before = put(api, world.client_a, pr.url, body([line("keep")])).json()["data"]
+    assert put(api, world.client_a, pr.url, {**body([line("new")]), "base_updated_at": base}).status_code == 422
+    assert listing(api, world.client_a, pr.url) == before
+
+
+@pytest.mark.parametrize(
+    "base, status",
+    [("2026-01-01T00:00:00+23:00", 409), ("0001-01-01T00:00:00+00:00", 409), ("9999-12-31T23:59:59-12:00", 422)],
+)
+def test_extreme_but_well_formed_bases_never_fail_the_server(api, world, pr, base, status):
+    assert put(api, world.client_a, pr.url, body()).status_code == 200
+    assert put(api, world.client_a, pr.url, {**body(), "base_updated_at": base}).status_code == status
+
+
+def test_a_stale_base_does_not_reveal_anything_to_a_stranger(api, world, pr):
+    assert put(api, world.client_a, pr.url, body([line("secret")])).status_code == 200
+    for user in (world.stranger, world.designer_b):
+        assert put(api, user, pr.url, {**body(), "base_updated_at": None}).status_code == 404
+    assert names(listing(api, world.client_a, pr.url)) == ["secret"]
+
+
+def test_two_concurrent_saves_with_the_same_base_end_in_one_200_and_one_409(api, world, pr):
+    base = put(api, world.client_a, pr.url, body([line("start")])).json()["data"]["updated_at"]
+    lists = [[line(f"{tag}{n}") for n in range(25)] for tag in ("a", "b")]
+
+    def save(items):
+        with TestClient(app) as thread_client:
+            data = {**body(items), "base_updated_at": base}
+            return thread_client.put(pr.url, json=data, headers=world.client_a.headers).status_code
+
+    with ThreadPoolExecutor(2) as pool:
+        codes = list(pool.map(save, lists))
+    assert sorted(codes) == [200, 409]
+    assert names(listing(api, world.client_a, pr.url)) == [i["name"] for i in lists[codes.index(200)]]

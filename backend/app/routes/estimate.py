@@ -3,7 +3,8 @@ from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from postgrest.exceptions import APIError
 
 from app.auth import CurrentUser, current_user
 from app.db import audit, service
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/v1/projects/{project_id}")
 sample_router = APIRouter(prefix="/v1/estimate")
 
 ITEM_COLUMNS = "id, position, category, name, room, quantity, unit, unit_price, source, note"
+STALE_VERSION = "PT409"  # raised by replace_estimate when p_base is not the current updated_at
 
 # Fail fast: a broken sample file stops the app from starting instead of failing for the first user.
 _SAMPLE = json.loads((Path(__file__).resolve().parent.parent / "data" / "sample_shopping_list.json").read_text(encoding="utf-8"))
@@ -41,6 +43,8 @@ def _status(items: list, total: int, budget: dict | None, currency: str | None) 
 
 
 def _payload(user: CurrentUser, project_id: str) -> dict:
+    # The header is read before the items: a save in between then leaves updated_at older than the items, so the
+    # next checked save conflicts instead of overwriting something the caller never saw.
     head = user.db.table("project_estimates").select("currency, updated_at").eq("project_id", project_id).execute().data
     rows = user.db.table("estimate_items").select(ITEM_COLUMNS).eq("project_id", project_id).order("position").execute().data
     brief = user.db.table("project_briefs").select("brief").eq("project_id", project_id).execute().data
@@ -76,7 +80,16 @@ def get_estimate(project_id: UUID, user: CurrentUser = Depends(current_user)):
 def put_estimate(project_id: UUID, body: EstimateBody, user: CurrentUser = Depends(current_user)):
     project = _writable_project(user, project_id)
     items = [{**item.model_dump(), "quantity": str(item.quantity)} for item in body.items]
-    service().rpc("replace_estimate", {"p_project": project["id"], "p_user": user.id, "p_currency": body.currency, "p_items": items}).execute()
+    params = {"p_project": project["id"], "p_user": user.id, "p_currency": body.currency, "p_items": items}
+    if "base_updated_at" in body.model_fields_set:
+        base = body.base_updated_at
+        params |= {"p_check": True, "p_base": base.isoformat() if base else None}  # keeps the microseconds
+    try:
+        service().rpc("replace_estimate", params).execute()
+    except APIError as error:
+        if error.code == STALE_VERSION:
+            raise HTTPException(409, "The shopping list was changed by someone else. Load the latest version before saving.") from None
+        raise
     audit("estimate.saved", user.id, studio_id=project["studio_id"], project_id=project["id"], count=len(items))
     return ok(_payload(user, project["id"]))
 
